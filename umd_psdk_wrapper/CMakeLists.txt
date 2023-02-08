@@ -23,16 +23,26 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(nav2_util REQUIRED)
 
 include_directories(include)
 
 set(dependencies
   rclcpp
   rclcpp_lifecycle
+  nav2_util
 )
 
 ament_target_dependencies(${PROJECT_NAME}
   ${dependencies}
+)
+
+add_executable(psdk_wrapper_node
+  src/main.cpp
+)
+
+add_library(${PROJECT_NAME} SHARED
+  src/psdk_wrapper.cpp
 )
 
 install(TARGETS

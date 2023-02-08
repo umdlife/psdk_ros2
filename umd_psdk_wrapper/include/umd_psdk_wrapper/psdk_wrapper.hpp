@@ -16,6 +16,8 @@
 #ifndef UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
 #define UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
 
+#include <nav2_util/lifecycle_node.hpp>
+
 namespace umd_psdk
 {
     /**

@@ -14,6 +14,7 @@
 
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>nav2_util</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
