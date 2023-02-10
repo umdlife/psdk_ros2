@@ -15,12 +15,13 @@
 #include "rclcpp/rclcpp.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper.hpp"
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
-    rclcpp::init(argc, argv);
-    auto node = std::make_shared<umd_psdk::PSDKWrapper>();
-    rclcpp::spin(node->get_node_base_interface());
-    rclcpp::shutdown();
+  rclcpp::init(argc, argv);
+  auto psdk_node = std::make_shared<umd_psdk::PSDKWrapper>("psdk_node");
+  rclcpp::spin(psdk_node->get_node_base_interface());
+  rclcpp::shutdown();
 
-    return 0;
+  return 0;
 }
