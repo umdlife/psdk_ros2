@@ -1,0 +1,11 @@
+psdk_wrapper_node:
+  ros__parameters:
+    app_name: "TestPSDK"
+    app_id: "***REMOVED***"
+    app_key: "***REMOVED***"
+    app_license: "***REMOVED***"
+    developer_account: "developer_account"
+    baudrate: "921600"
+    hardware_connection: "DJI_USE_UART_AND_USB_BULK_DEVICE"
+
+
