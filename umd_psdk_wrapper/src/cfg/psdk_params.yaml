@@ -8,4 +8,20 @@ psdk_wrapper_node:
     baudrate: "921600"
     hardware_connection: "DJI_USE_UART_AND_USB_BULK_DEVICE"
 
+    data_frequency:
+      timestamp: 50 
+      attitude_quaternions: 100
+      acceleration: 50
+      velocity: 50
+      angular_velocity: 100
+      position: 50
+      gps_data: 50
+      rtk_data: 10
+      magnetometer: 50
+      rc_channels_data: 1
+      gimbal_data: 1
+      flight_status: 1
+      battery_level: 1
+      control_information: 50
+
 
