@@ -25,6 +25,11 @@ find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(umd_psdk_interfaces REQUIRED)
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -58,12 +63,15 @@ include_directories(${OSAL_PATH})
 include_directories(${HAL_PATH})
 include_directories(include)
 
-
-
 set(dependencies
   rclcpp
   rclcpp_lifecycle
   nav2_util
+  sensor_msgs
+  geometry_msgs
+  std_msgs
+  nav_msgs
+  umd_psdk_interfaces
 )
 
 add_executable(psdk_wrapper_node
@@ -72,6 +80,7 @@ add_executable(psdk_wrapper_node
 
 add_library(psdk_wrapper_libs SHARED
   src/psdk_wrapper.cpp
+  src/modules/telemetry.cpp
   ${OSAL_PATH}/osal_fs.c
   ${OSAL_PATH}/osal_socket.c
   ${OSAL_PATH}/osal.c
