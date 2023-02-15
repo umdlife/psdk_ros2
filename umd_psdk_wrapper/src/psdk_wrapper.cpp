@@ -19,6 +19,7 @@ namespace umd_psdk {
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())
 {
+  RCLCPP_INFO(get_logger(), "Constructor PSDKWrapper");
 }
 
 PSDKWrapper::~PSDKWrapper() {}
@@ -47,6 +48,8 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
+  activate_ros_elements();
+
   if (!init_telemetry()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -59,7 +62,7 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
   umd_psdk::PSDKWrapper::on_deactivate(state);
-
+  deactivate_ros_elements();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -67,6 +70,7 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
+  clean_ros_elements();
   umd_psdk::PSDKWrapper::on_cleanup(state);
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -92,6 +96,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 void
 PSDKWrapper::set_environment()
 {
+  RCLCPP_INFO(get_logger(), "Setting environment");
   T_DjiReturnCode return_code;
   T_DjiOsalHandler osal_handler;
   T_DjiHalUartHandler uart_handler;
@@ -195,6 +200,7 @@ PSDKWrapper::set_environment()
 void
 PSDKWrapper::load_parameters()
 {
+  RCLCPP_INFO(get_logger(), "Loading parameters");
   if (!get_parameter("app_name", params_.app_name)) {
     RCLCPP_ERROR(get_logger(), "app_name param not defined");
     exit(-1);
@@ -226,62 +232,90 @@ PSDKWrapper::load_parameters()
 #define HARDWARE_CONNECTION params_.hardware_connection;
 
   // Get data frequency
-  if (!get_parameter("timestamp", data_frequency_.timestamp)) {
+  int frequency = 0;
+  if (!get_parameter("timestamp", frequency)) {
     RCLCPP_ERROR(get_logger(), "timestamp param not defined");
     exit(-1);
   }
-  if (!get_parameter("attitude_quaternions", data_frequency_.attitude_quaternions)) {
+  set_topic_frequency(telemetry_.timestamp_topics, frequency);
+
+  if (!get_parameter("attitude_quaternions", frequency)) {
     RCLCPP_ERROR(get_logger(), "attitude_quaternions param not defined");
     exit(-1);
   }
-  if (!get_parameter("acceleration", data_frequency_.acceleration)) {
+  set_topic_frequency(telemetry_.attitude_topics, frequency);
+
+  if (!get_parameter("acceleration", frequency)) {
     RCLCPP_ERROR(get_logger(), "acceleration param not defined");
     exit(-1);
   }
-  if (!get_parameter("velocity", data_frequency_.velocity)) {
+  set_topic_frequency(telemetry_.acceleration_topics, frequency);
+
+  if (!get_parameter("velocity", frequency)) {
     RCLCPP_ERROR(get_logger(), "velocity param not defined");
     exit(-1);
   }
-  if (!get_parameter("angular_velocity", data_frequency_.angular_velocity)) {
+  set_topic_frequency(telemetry_.velocity_topics, frequency);
+
+  if (!get_parameter("angular_velocity", frequency)) {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
     exit(-1);
   }
-  if (!get_parameter("position", data_frequency_.position)) {
+  set_topic_frequency(telemetry_.angular_velocity_topics, frequency);
+
+  if (!get_parameter("position", frequency)) {
     RCLCPP_ERROR(get_logger(), "position param not defined");
     exit(-1);
   }
-  if (!get_parameter("gps_data", data_frequency_.gps_data)) {
+  set_topic_frequency(telemetry_.position_topics, frequency);
+
+  if (!get_parameter("gps_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "gps_data param not defined");
     exit(-1);
   }
-  if (!get_parameter("rtk_data", data_frequency_.rtk_data)) {
+  set_topic_frequency(telemetry_.gps_data_topics, frequency);
+
+  if (!get_parameter("rtk_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "rtk_data param not defined");
     exit(-1);
   }
-  if (!get_parameter("magnetometer", data_frequency_.magnetometer)) {
+  set_topic_frequency(telemetry_.rtk_data_topics, frequency);
+
+  if (!get_parameter("magnetometer", frequency)) {
     RCLCPP_ERROR(get_logger(), "magnetometer param not defined");
     exit(-1);
   }
-  if (!get_parameter("rc_channels_data", data_frequency_.rc_channels_data)) {
+  set_topic_frequency(telemetry_.magnetometer_topics, frequency);
+
+  if (!get_parameter("rc_channels_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "rc_channels_data param not defined");
     exit(-1);
   }
-  if (!get_parameter("gimbal_data", data_frequency_.gimbal_data)) {
+  set_topic_frequency(telemetry_.rc_channel_topics, frequency);
+
+  if (!get_parameter("gimbal_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "gimbal_data param not defined");
     exit(-1);
   }
-  if (!get_parameter("flight_status", data_frequency_.flight_status)) {
+  set_topic_frequency(telemetry_.gimbal_topics, frequency);
+
+  if (!get_parameter("flight_status", frequency)) {
     RCLCPP_ERROR(get_logger(), "flight_status param not defined");
     exit(-1);
   }
-  if (!get_parameter("battery_level", data_frequency_.battery_level)) {
+  set_topic_frequency(telemetry_.flight_status_topics, frequency);
+
+  if (!get_parameter("battery_level", frequency)) {
     RCLCPP_ERROR(get_logger(), "battery_level param not defined");
     exit(-1);
   }
-  if (!get_parameter("control_information", data_frequency_.control_information)) {
+  set_topic_frequency(telemetry_.battery_status_topics, frequency);
+
+  if (!get_parameter("control_information", frequency)) {
     RCLCPP_ERROR(get_logger(), "control_information param not defined");
     exit(-1);
   }
+  set_topic_frequency(telemetry_.control_topics, frequency);
 }
 
 bool

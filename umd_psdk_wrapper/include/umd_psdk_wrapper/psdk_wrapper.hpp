@@ -18,7 +18,6 @@
 
 #include <dji_aircraft_info.h>
 #include <dji_core.h>
-#include <dji_fc_subscription.h>
 #include <dji_logger.h>
 #include <dji_platform.h>
 
@@ -50,83 +49,20 @@
 #include "umd_psdk_interfaces/msg/battery.hpp"
 #include "umd_psdk_interfaces/msg/flight_anomaly.hpp"
 #include "umd_psdk_interfaces/msg/gimbal_status.hpp"
+#include "umd_psdk_interfaces/msg/home_position.hpp"
 #include "umd_psdk_interfaces/msg/position_fused.hpp"
 #include "umd_psdk_interfaces/msg/relative_obstacle_info.hpp"
-#include "umd_psdk_interfaces/msg/home_position.hpp"
-
+#include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 namespace umd_psdk {
 /**
  * @class umd_psdk::PSDKWrapper
  * @brief
  */
+
 class PSDKWrapper : public nav2_util::LifecycleNode {
  public:
   PSDKWrapper(const std::string& node_name);
   ~PSDKWrapper();
-
- protected:
-  /*
-   * @brief Lifecycle configure
-   */
-  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State& state) override;
-  /*
-   * @brief Lifecycle activate
-   */
-  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State& state) override;
-  /*
-   * @brief Lifecycle deactivate
-   */
-  nav2_util::CallbackReturn on_deactivate(
-      const rclcpp_lifecycle::State& state) override;
-  /*
-   * @brief Lifecycle cleanup
-   */
-  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State& state) override;
-  /*
-   * @brief Lifecycle shutdown
-   */
-  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override;
-
-  struct PsdkParams {
-    std::string app_name;
-    std::string app_id;
-    std::string app_key;
-    std::string app_license;
-    std::string developer_account;
-    std::string baudrate;
-    std::string hardware_connection;
-  };
-
-  struct DataFrequency {
-    int timestamp;
-    int attitude_quaternions;
-    int acceleration;
-    int velocity;
-    int angular_velocity;
-    int position;
-    int gps_data;
-    int rtk_data;
-    int magnetometer;
-    int rc_channels_data;
-    int gimbal_data;
-    int flight_status;
-    int battery_level;
-    int control_information;
-  };
-
-  void set_environment();
-  bool set_user_info(T_DjiUserInfo* user_info);
-  void load_parameters();
-  bool init(T_DjiUserInfo* user_info);
-  bool init_telemetry();
-
-  // Variables
-
-  PsdkParams params_;
-  DataFrequency data_frequency_;
-
- private:
-  rclcpp::Node::SharedPtr node_;
 
   // ROS Publishers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::QuaternionStamped>::SharedPtr
@@ -167,8 +103,89 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       SharedPtr relative_obstacle_info_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
+
+ protected:
+  /*
+   * @brief Lifecycle configure
+   */
+  nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State& state) override;
+  /*
+   * @brief Lifecycle activate
+   */
+  nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State& state) override;
+  /*
+   * @brief Lifecycle deactivate
+   */
+  nav2_util::CallbackReturn on_deactivate(
+      const rclcpp_lifecycle::State& state) override;
+  /*
+   * @brief Lifecycle cleanup
+   */
+  nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State& state) override;
+  /*
+   * @brief Lifecycle shutdown
+   */
+  nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override;
+
+  struct PsdkParams {
+    std::string app_name;
+    std::string app_id;
+    std::string app_key;
+    std::string app_license;
+    std::string developer_account;
+    std::string baudrate;
+    std::string hardware_connection;
+  };
+
+  struct DataFrequency {
+    int timestamp;
+    int attitude;
+    int acceleration;
+    int velocity;
+    int angular_velocity;
+    int position;
+    int gps_data;
+    int rtk_data;
+    int magnetometer;
+    int rc_channels_data;
+    int gimbal_data;
+    int flight_status;
+    int battery_level;
+    int control_information;
+  };
+
+  void set_environment();
+  bool set_user_info(T_DjiUserInfo* user_info);
+  void load_parameters();
+  bool init(T_DjiUserInfo* user_info);
+  bool init_telemetry();
+  E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
+  void set_topic_frequency(std::vector<Telemetry::DJITopic> topics,
+                           const int frequency);
+
+  T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
+                                    const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_callback_wrapper(const uint8_t* data, uint16_t dataSize,
+                                            const T_DjiDataTimestamp* timestamp);
+
+  void subscribe_psdk_topics();
+  void activate_ros_elements();
+  void deactivate_ros_elements();
+  void clean_ros_elements();
+
+  // Variables
+
+  PsdkParams params_;
+  DataFrequency data_frequency_;
+  Telemetry telemetry_;
+
+ private:
+  rclcpp::Node::SharedPtr node_;
+
   void initialize_ros_publishers();
+  void subscribe_attitude_topic();
 };
+static PSDKWrapper* global_ptr_;
 
 }  // namespace umd_psdk
 
