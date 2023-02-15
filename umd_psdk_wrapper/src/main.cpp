@@ -20,6 +20,9 @@ main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
   auto psdk_node = std::make_shared<umd_psdk::PSDKWrapper>("psdk_node");
+  umd_psdk::PSDKWrapper *global_ptr =
+      static_cast<umd_psdk::PSDKWrapper *>(psdk_node.get());
+  umd_psdk::global_ptr_ = global_ptr;
   rclcpp::spin(psdk_node->get_node_base_interface());
   rclcpp::shutdown();
 
