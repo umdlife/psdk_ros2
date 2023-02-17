@@ -19,19 +19,45 @@ namespace umd_psdk {
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())
 {
-  RCLCPP_INFO(get_logger(), "Constructor PSDKWrapper");
-}
+  RCLCPP_INFO(get_logger(), "Creating Constructor PSDKWrapper");
+  declare_parameter("app_name", rclcpp::ParameterValue(""));
+  declare_parameter("app_id", rclcpp::ParameterValue(""));
+  declare_parameter("app_key", rclcpp::ParameterValue(""));
+  declare_parameter("app_license", rclcpp::ParameterValue(""));
+  declare_parameter("developer_account", rclcpp::ParameterValue(""));
+  declare_parameter("baudrate", rclcpp::ParameterValue(""));
+  declare_parameter("hardware_connection", rclcpp::ParameterValue(""));
+  declare_parameter("uart_dev_1", rclcpp::ParameterValue(""));
+  declare_parameter("uart_dev_2", rclcpp::ParameterValue(""));
 
+  declare_parameter("data_frequency.timestamp", 1);
+  declare_parameter("data_frequency.attitude", 1);
+  declare_parameter("data_frequency.acceleration", 1);
+  declare_parameter("data_frequency.velocity", 1);
+  declare_parameter("data_frequency.angular_velocity", 1);
+  declare_parameter("data_frequency.position", 1);
+  declare_parameter("data_frequency.gps_data", 1);
+  declare_parameter("data_frequency.rtk_data", 1);
+  declare_parameter("data_frequency.magnetometer", 1);
+  declare_parameter("data_frequency.rc_channels_data", 1);
+  declare_parameter("data_frequency.gimbal_data", 1);
+  declare_parameter("data_frequency.flight_status", 1);
+  declare_parameter("data_frequency.battery_level", 1);
+  declare_parameter("data_frequency.control_information", 1);
+}
 PSDKWrapper::~PSDKWrapper() {}
 
 nav2_util::CallbackReturn
 PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
+  std::cout << "Address of global ptr is " << global_ptr_.get() << std::endl;
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
-  umd_psdk::PSDKWrapper::on_configure(state);
-  set_environment();
   load_parameters();
+  if (!set_environment()) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
   initialize_ros_publishers();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -39,7 +65,6 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Activating PSDKWrapper");
-  umd_psdk::PSDKWrapper::on_activate(state);
 
   T_DjiUserInfo user_info;
   set_user_info(&user_info);
@@ -54,6 +79,8 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return nav2_util::CallbackReturn::FAILURE;
   }
 
+  subscribe_psdk_topics();
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -61,7 +88,6 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
-  umd_psdk::PSDKWrapper::on_deactivate(state);
   deactivate_ros_elements();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -71,7 +97,7 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
   clean_ros_elements();
-  umd_psdk::PSDKWrapper::on_cleanup(state);
+  unsubscribe_psdk_topics();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -80,7 +106,6 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
-  umd_psdk::PSDKWrapper::on_shutdown(state);
 
   if (DjiCore_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
     return nav2_util::CallbackReturn::FAILURE;
@@ -93,7 +118,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
-void
+bool
 PSDKWrapper::set_environment()
 {
   RCLCPP_INFO(get_logger(), "Setting environment");
@@ -137,29 +162,36 @@ PSDKWrapper::set_environment()
   uart_handler.UartReadData = HalUart_ReadData;
   uart_handler.UartGetStatus = HalUart_GetStatus;
 
-  file_system_handler.FileOpen = Osal_FileOpen,
-  file_system_handler.FileClose = Osal_FileClose,
-  file_system_handler.FileWrite = Osal_FileWrite,
-  file_system_handler.FileRead = Osal_FileRead,
-  file_system_handler.FileSync = Osal_FileSync,
-  file_system_handler.FileSeek = Osal_FileSeek,
-  file_system_handler.DirOpen = Osal_DirOpen,
-  file_system_handler.DirClose = Osal_DirClose,
-  file_system_handler.DirRead = Osal_DirRead, file_system_handler.Mkdir = Osal_Mkdir,
-  file_system_handler.Unlink = Osal_Unlink, file_system_handler.Rename = Osal_Rename,
-  file_system_handler.Stat = Osal_Stat,
+  file_system_handler.FileOpen = Osal_FileOpen;
+  file_system_handler.FileClose = Osal_FileClose;
+  file_system_handler.FileWrite = Osal_FileWrite;
+  file_system_handler.FileRead = Osal_FileRead;
+  file_system_handler.FileSync = Osal_FileSync;
+  file_system_handler.FileSeek = Osal_FileSeek;
+  file_system_handler.DirOpen = Osal_DirOpen;
+  file_system_handler.DirClose = Osal_DirClose;
+  file_system_handler.DirRead = Osal_DirRead;
+  file_system_handler.Mkdir = Osal_Mkdir;
+  file_system_handler.Unlink = Osal_Unlink;
+  file_system_handler.Rename = Osal_Rename;
+  file_system_handler.Stat = Osal_Stat;
 
   return_code = DjiPlatform_RegOsalHandler(&osal_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(node_->get_logger(), "Register OSAL handler error");
+    RCLCPP_ERROR(get_logger(), "Register OSAL handler error");
+    return false;
   }
+  RCLCPP_INFO(get_logger(), "Registered OSAL handler");
 
   return_code = DjiPlatform_RegHalUartHandler(&uart_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(node_->get_logger(), "Register HAL handler error");
+    RCLCPP_ERROR(get_logger(), "Register HAL handler error");
+    return false;
   }
+  RCLCPP_INFO(get_logger(), "Registered HAL handler");
 
 #if (HARDWARE_CONNECTION == DJI_USE_UART_AND_USB_BULK_DEVICE)
+  RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_USB_BULK_DEVICE");
   T_DjiHalUsbBulkHandler usb_bulk_handler;
   usb_bulk_handler.UsbBulkInit = HalUsbBulk_Init;
   usb_bulk_handler.UsbBulkDeInit = HalUsbBulk_DeInit;
@@ -168,18 +200,21 @@ PSDKWrapper::set_environment()
   usb_bulk_handler.UsbBulkGetDeviceInfo = HalUsbBulk_GetDeviceInfo;
   if (DjiPlatform_RegHalUsbBulkHandler(&usb_bulk_handler) !=
       DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(node_->get_logger(), "Register HAL USB BULK handler error");
+    RCLCPP_ERROR(get_logger(), "Register HAL USB BULK handler error");
+    return false;
   }
 #elif (HARDWARE_CONNECTION == DJI_USE_UART_AND_NETWORK_DEVICE)
+  RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_NETWORK_DEVICE");
   T_DjiHalNetworkHandler network_handler;
   network_handler.NetworkInit = HalNetWork_Init;
   network_handler.NetworkDeInit = HalNetWork_DeInit;
   network_handler.NetworkGetDeviceInfo = HalNetWork_GetDeviceInfo;
   if (DjiPlatform_RegHalNetworkHandler(&network_handler) !=
       DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(node_->get_logger(), "Register HAL Network handler error");
+    RCLCPP_ERROR(get_logger(), "Register HAL Network handler error");
   }
 #elif (HARDWARE_CONNECTION == DJI_USE_ONLY_UART)
+  RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
   /*!< Attention: Only use uart hardware connection.
    */
 #endif
@@ -187,14 +222,18 @@ PSDKWrapper::set_environment()
   // Attention: if you want to use camera stream view function, please uncomment it.
   return_code = DjiPlatform_RegSocketHandler(&socket_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(node_->get_logger(), "Register OSAL SOCKET handler error");
+    RCLCPP_ERROR(get_logger(), "Register OSAL SOCKET handler error");
+    return false;
   }
 
   return_code = DjiPlatform_RegFileSystemHandler(&file_system_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(node_->get_logger(), "Register OSAL filesystem handler error");
+    RCLCPP_ERROR(get_logger(), "Register OSAL filesystem handler error");
     throw std::runtime_error("Register osal filesystem handler error.");
+    return false;
   }
+  RCLCPP_INFO(get_logger(), "Environment has been set!");
+  return true;
 }
 
 void
@@ -225,97 +264,112 @@ PSDKWrapper::load_parameters()
     RCLCPP_ERROR(get_logger(), "baudrate param not defined");
     exit(-1);
   }
+  RCLCPP_INFO(get_logger(), "Baudrate: %s", params_.baudrate.c_str());
   if (!get_parameter("hardware_connection", params_.hardware_connection)) {
     RCLCPP_ERROR(get_logger(), "hardware_connection param not defined");
     exit(-1);
   }
 #define HARDWARE_CONNECTION params_.hardware_connection;
+  RCLCPP_INFO(get_logger(), "Hardware connection: %s",
+              params_.hardware_connection.c_str());
+
+  if (!get_parameter("uart_dev_1", params_.uart_dev_1)) {
+    RCLCPP_ERROR(get_logger(), "uart_dev_1 param not defined");
+    exit(-1);
+  }
+  RCLCPP_INFO(get_logger(), "Uart dev 1: %s", params_.uart_dev_1.c_str());
+
+  if (!get_parameter("uart_dev_2", params_.uart_dev_2)) {
+    RCLCPP_ERROR(get_logger(), "uart_dev_2 param not defined");
+    exit(-1);
+  }
+  RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
 
   // Get data frequency
   int frequency = 0;
-  if (!get_parameter("timestamp", frequency)) {
+  if (!get_parameter("data_frequency.timestamp", frequency)) {
     RCLCPP_ERROR(get_logger(), "timestamp param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.timestamp_topics, frequency);
+  set_topic_frequency(&telemetry_.timestamp_topics, frequency);
 
-  if (!get_parameter("attitude_quaternions", frequency)) {
-    RCLCPP_ERROR(get_logger(), "attitude_quaternions param not defined");
+  if (!get_parameter("data_frequency.attitude", frequency)) {
+    RCLCPP_ERROR(get_logger(), "attitude param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.attitude_topics, frequency);
+  set_topic_frequency(&telemetry_.attitude_topics, frequency);
 
-  if (!get_parameter("acceleration", frequency)) {
+  if (!get_parameter("data_frequency.acceleration", frequency)) {
     RCLCPP_ERROR(get_logger(), "acceleration param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.acceleration_topics, frequency);
+  set_topic_frequency(&telemetry_.acceleration_topics, frequency);
 
-  if (!get_parameter("velocity", frequency)) {
+  if (!get_parameter("data_frequency.velocity", frequency)) {
     RCLCPP_ERROR(get_logger(), "velocity param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.velocity_topics, frequency);
+  set_topic_frequency(&telemetry_.velocity_topics, frequency);
 
-  if (!get_parameter("angular_velocity", frequency)) {
+  if (!get_parameter("data_frequency.angular_velocity", frequency)) {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.angular_velocity_topics, frequency);
+  set_topic_frequency(&telemetry_.angular_velocity_topics, frequency);
 
-  if (!get_parameter("position", frequency)) {
+  if (!get_parameter("data_frequency.position", frequency)) {
     RCLCPP_ERROR(get_logger(), "position param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.position_topics, frequency);
+  set_topic_frequency(&telemetry_.position_topics, frequency);
 
-  if (!get_parameter("gps_data", frequency)) {
+  if (!get_parameter("data_frequency.gps_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "gps_data param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.gps_data_topics, frequency);
+  set_topic_frequency(&telemetry_.gps_data_topics, frequency);
 
-  if (!get_parameter("rtk_data", frequency)) {
+  if (!get_parameter("data_frequency.rtk_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "rtk_data param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.rtk_data_topics, frequency);
+  set_topic_frequency(&telemetry_.rtk_data_topics, frequency);
 
-  if (!get_parameter("magnetometer", frequency)) {
+  if (!get_parameter("data_frequency.magnetometer", frequency)) {
     RCLCPP_ERROR(get_logger(), "magnetometer param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.magnetometer_topics, frequency);
+  set_topic_frequency(&telemetry_.magnetometer_topics, frequency);
 
-  if (!get_parameter("rc_channels_data", frequency)) {
+  if (!get_parameter("data_frequency.rc_channels_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "rc_channels_data param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.rc_channel_topics, frequency);
+  set_topic_frequency(&telemetry_.rc_channel_topics, frequency);
 
-  if (!get_parameter("gimbal_data", frequency)) {
+  if (!get_parameter("data_frequency.gimbal_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "gimbal_data param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.gimbal_topics, frequency);
+  set_topic_frequency(&telemetry_.gimbal_topics, frequency);
 
-  if (!get_parameter("flight_status", frequency)) {
+  if (!get_parameter("data_frequency.flight_status", frequency)) {
     RCLCPP_ERROR(get_logger(), "flight_status param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.flight_status_topics, frequency);
+  set_topic_frequency(&telemetry_.flight_status_topics, frequency);
 
-  if (!get_parameter("battery_level", frequency)) {
+  if (!get_parameter("data_frequency.battery_level", frequency)) {
     RCLCPP_ERROR(get_logger(), "battery_level param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.battery_status_topics, frequency);
+  set_topic_frequency(&telemetry_.battery_status_topics, frequency);
 
-  if (!get_parameter("control_information", frequency)) {
+  if (!get_parameter("data_frequency.control_information", frequency)) {
     RCLCPP_ERROR(get_logger(), "control_information param not defined");
     exit(-1);
   }
-  set_topic_frequency(telemetry_.control_topics, frequency);
+  set_topic_frequency(&telemetry_.control_topics, frequency);
 }
 
 bool
@@ -355,6 +409,7 @@ PSDKWrapper::set_user_info(T_DjiUserInfo *user_info)
 bool
 PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
+  RCLCPP_INFO(get_logger(), "Init DJI Core...");
   if (DjiCore_Init(user_info) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
     RCLCPP_ERROR(get_logger(), "DJI core could not be initiated.");
     return false;

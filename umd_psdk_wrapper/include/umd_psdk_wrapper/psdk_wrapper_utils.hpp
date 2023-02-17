@@ -4,7 +4,6 @@
 
 #include <vector>
 
-#include "umd_psdk_wrapper/psdk_wrapper.hpp"
 namespace umd_psdk {
 class Telemetry {
  public:

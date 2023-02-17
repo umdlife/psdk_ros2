@@ -53,6 +53,7 @@
 #include "umd_psdk_interfaces/msg/position_fused.hpp"
 #include "umd_psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
+
 namespace umd_psdk {
 /**
  * @class umd_psdk::PSDKWrapper
@@ -135,6 +136,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
     std::string developer_account;
     std::string baudrate;
     std::string hardware_connection;
+    std::string uart_dev_1;
+    std::string uart_dev_2;
   };
 
   struct DataFrequency {
@@ -154,13 +157,13 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
     int control_information;
   };
 
-  void set_environment();
+  bool set_environment();
   bool set_user_info(T_DjiUserInfo* user_info);
   void load_parameters();
   bool init(T_DjiUserInfo* user_info);
   bool init_telemetry();
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
-  void set_topic_frequency(std::vector<Telemetry::DJITopic> topics,
+  void set_topic_frequency(std::vector<Telemetry::DJITopic>* topics,
                            const int frequency);
 
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
@@ -169,9 +172,11 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                             const T_DjiDataTimestamp* timestamp);
 
   void subscribe_psdk_topics();
+  void unsubscribe_psdk_topics();
   void activate_ros_elements();
   void deactivate_ros_elements();
   void clean_ros_elements();
+  void test();
 
   // Variables
 
@@ -185,8 +190,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void initialize_ros_publishers();
   void subscribe_attitude_topic();
 };
-static PSDKWrapper* global_ptr_;
-
+extern std::shared_ptr<PSDKWrapper> global_ptr_;
 }  // namespace umd_psdk
 
 #endif  // UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
