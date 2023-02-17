@@ -1,0 +1,31 @@
+$ROBOT_NS:
+  psdk_wrapper_node:
+    ros__parameters:
+      app_name: "TestPSDK"
+      app_id: "127179"
+      app_key: "591db151944fba0b9acab08217f2f73"
+      app_license: "zldHdiIMWWdRuFKybq+gqwrnlsP7s1K2VI+9DrpZ8GMQ31w3kwJ6lfU2GUiCbhn4SlEAHqlBcgbly+gnzPwy7ymRNtqLP3L93ur6ZJh/kypMhKyAlIbzPq8lvsiBe94VrwKCuxMuyQW638fXveq+YTB9XEz5Wic0HukL8dO/Adc7AHObq5Dxo791+UaPzJbkJdKuUL1qmP/KQ4hMHnCbmtfC7Jpe4Na+CEIywOE1Yavgrel6MNfV1DnOCrS6GBAvbM/AaqnWv9Sbml5vaDWHDKMZMDhXp9F9A2zGd6k0UkHzFI9Ey4ZjCrUO/7OzecFD9ycsJCxGsTWjOyZIBAXjbw=="
+      developer_account: "developer_account"
+      baudrate: "921600"
+      hardware_connection: "DJI_USE_UART_AND_USB_BULK_DEVICE"
+      uart_dev_1: "/dev/ttyUSB1"
+      uart_dev_2: "/dev/ttyACM1"
+  
+      data_frequency: # Options are: 1, 5, 10, 50, 100, 200, 400 Hz 
+        timestamp: 50 
+        attitude: 100
+        acceleration: 50
+        velocity: 50
+        angular_velocity: 100
+        position: 50
+        gps_data: 50
+        rtk_data: 10
+        magnetometer: 50
+        rc_channels_data: 1
+        gimbal_data: 1
+        flight_status: 1
+        battery_level: 1
+        control_information: 50
+
+
+

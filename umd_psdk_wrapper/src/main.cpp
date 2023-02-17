@@ -15,15 +15,18 @@
 #include "rclcpp/rclcpp.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper.hpp"
 
+std::shared_ptr<umd_psdk::PSDKWrapper> umd_psdk::global_ptr_;
 int
 main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
   auto psdk_node = std::make_shared<umd_psdk::PSDKWrapper>("psdk_node");
-  umd_psdk::PSDKWrapper *global_ptr =
-      static_cast<umd_psdk::PSDKWrapper *>(psdk_node.get());
-  umd_psdk::global_ptr_ = global_ptr;
+
+  umd_psdk::global_ptr_ = psdk_node;
+  std::cout << "Address of psdk is " << psdk_node.get() << std::endl;
+  std::cout << "Address of global ptr is " << umd_psdk::global_ptr_.get() << std::endl;
   rclcpp::spin(psdk_node->get_node_base_interface());
+
   rclcpp::shutdown();
 
   return 0;

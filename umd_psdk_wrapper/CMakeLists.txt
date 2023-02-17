@@ -104,13 +104,19 @@ target_link_libraries(
 )
 
 install(TARGETS
+  psdk_wrapper_node
   psdk_wrapper_libs
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/psdk_wrapper_libs
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 install(DIRECTORY include/
   DESTINATION include/
+)
+
+install(DIRECTORY
+  cfg
+  DESTINATION share/${PROJECT_NAME}/
 )
 
 ament_export_dependencies(
