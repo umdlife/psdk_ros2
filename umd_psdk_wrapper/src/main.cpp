@@ -23,8 +23,6 @@ main(int argc, char **argv)
   auto psdk_node = std::make_shared<umd_psdk::PSDKWrapper>("psdk_node");
 
   umd_psdk::global_ptr_ = psdk_node;
-  std::cout << "Address of psdk is " << psdk_node.get() << std::endl;
-  std::cout << "Address of global ptr is " << umd_psdk::global_ptr_.get() << std::endl;
   rclcpp::spin(psdk_node->get_node_base_interface());
 
   rclcpp::shutdown();
