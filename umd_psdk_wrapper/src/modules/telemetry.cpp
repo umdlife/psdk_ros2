@@ -21,11 +21,11 @@ namespace umd_psdk {
 bool
 PSDKWrapper::init_telemetry()
 {
-  // RCLCPP_INFO(get_logger(), "Initiating telemetry...");
-  // if (DjiFcSubscription_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-  //   RCLCPP_ERROR(get_logger(), "Could not initialize data subscription module.");
-  //   return false;
-  // }
+  RCLCPP_INFO(get_logger(), "Initiating telemetry...");
+  if (DjiFcSubscription_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "Could not initialize data subscription module.");
+    return false;
+  }
   return true;
 }
 
@@ -157,12 +157,6 @@ T_DjiReturnCode
 c_callback_wrapper(const uint8_t *data, uint16_t dataSize,
                    const T_DjiDataTimestamp *timestamp)
 {
-  // PSDKWrapper *local_ptr;
-  //  local_ptr = global_ptr_;
-  //  return &global_ptr_->attitude_callback;
-  //  return (local_ptr->*&PSDKWrapper::attitude_callback)(data, dataSize, timestamp);
-  std::cout << "Address of global ptr is in static method " << global_ptr_.get()
-            << std::endl;
   return global_ptr_->attitude_callback(data, dataSize, timestamp);
 }
 
@@ -185,7 +179,6 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
 void
 PSDKWrapper::subscribe_psdk_topics()
 {
-  RCLCPP_INFO(get_logger(), "Subscribing to topics");
   T_DjiReturnCode return_code;
   return_code = DjiFcSubscription_SubscribeTopic(DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION,
                                                  DJI_DATA_SUBSCRIPTION_TOPIC_10_HZ,

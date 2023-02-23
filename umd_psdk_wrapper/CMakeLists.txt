@@ -59,9 +59,10 @@ set(HAL_PATH /Tools/Payload-SDK/samples/sample_c++/platform/linux/manifold2/hal)
 
 # Include PSDK header files + low level OSAL and HAL libraries
 include_directories(/Tools/Payload-SDK/psdk_lib/include)
-include_directories(${OSAL_PATH})
-include_directories(${HAL_PATH})
+#include_directories(${OSAL_PATH})
+#include_directories(${HAL_PATH})
 include_directories(include)
+include_directories(src/common)
 
 set(dependencies
   rclcpp
@@ -81,12 +82,12 @@ add_executable(psdk_wrapper_node
 add_library(psdk_wrapper_libs SHARED
   src/psdk_wrapper.cpp
   src/modules/telemetry.cpp
-  ${OSAL_PATH}/osal_fs.c
-  ${OSAL_PATH}/osal_socket.c
-  ${OSAL_PATH}/osal.c
-  ${HAL_PATH}/hal_network.c
-  ${HAL_PATH}/hal_uart.c
-  ${HAL_PATH}/hal_usb_bulk.c
+  src/common/osal_fs.c
+  src/common/osal_socket.c
+  src/common/osal.c
+  src/common/hal_network.c
+  src/common/hal_uart.c
+  src/common/hal_usb_bulk.c
 )
 
 ament_target_dependencies(psdk_wrapper_libs

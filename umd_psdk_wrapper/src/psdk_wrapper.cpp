@@ -50,7 +50,6 @@ PSDKWrapper::~PSDKWrapper() {}
 nav2_util::CallbackReturn
 PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
-  std::cout << "Address of global ptr is " << global_ptr_.get() << std::endl;
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
   load_parameters();
   if (!set_environment()) {
@@ -277,12 +276,16 @@ PSDKWrapper::load_parameters()
     RCLCPP_ERROR(get_logger(), "uart_dev_1 param not defined");
     exit(-1);
   }
+  const char *name = "UART_DEV_1";
+  setenv(name, params_.uart_dev_1.c_str(), 1);
   RCLCPP_INFO(get_logger(), "Uart dev 1: %s", params_.uart_dev_1.c_str());
 
   if (!get_parameter("uart_dev_2", params_.uart_dev_2)) {
     RCLCPP_ERROR(get_logger(), "uart_dev_2 param not defined");
     exit(-1);
   }
+  name = "UART_DEV_2";
+  setenv(name, params_.uart_dev_2.c_str(), 1);
   RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
 
   // Get data frequency
