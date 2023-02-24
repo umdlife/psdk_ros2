@@ -128,7 +128,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override;
 
-  struct PsdkParams {
+  struct PSDKParams {
     std::string app_name;
     std::string app_id;
     std::string app_key;
@@ -138,23 +138,20 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
     std::string hardware_connection;
     std::string uart_dev_1;
     std::string uart_dev_2;
-  };
-
-  struct DataFrequency {
-    int timestamp;
-    int attitude;
-    int acceleration;
-    int velocity;
-    int angular_velocity;
-    int position;
-    int gps_data;
-    int rtk_data;
-    int magnetometer;
-    int rc_channels_data;
-    int gimbal_data;
-    int flight_status;
-    int battery_level;
-    int control_information;
+    int timestamp_frequency;
+    int attitude_frequency;
+    int acceleration_frequency;
+    int velocity_frequency;
+    int angular_velocity_frequency;
+    int position_frequency;
+    int gps_data_frequency;
+    int rtk_data_frequency;
+    int magnetometer_frequency;
+    int rc_channels_data_frequency;
+    int gimbal_data_frequency;
+    int flight_status_frequency;
+    int battery_level_frequency;
+    int control_information_frequency;
   };
 
   bool set_environment();
@@ -163,26 +160,22 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   bool init(T_DjiUserInfo* user_info);
   bool init_telemetry();
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
-  void set_topic_frequency(std::vector<Telemetry::DJITopic>* topics,
-                           const int frequency);
 
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
                                     const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_callback_wrapper(const uint8_t* data, uint16_t dataSize,
-                                            const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_attitude_callback(const uint8_t* data, uint16_t dataSize,
+                                             const T_DjiDataTimestamp* timestamp);
 
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
   void activate_ros_elements();
   void deactivate_ros_elements();
   void clean_ros_elements();
-  void test();
 
   // Variables
 
-  PsdkParams params_;
-  DataFrequency data_frequency_;
-  Telemetry telemetry_;
+  PSDKParams params_;
+  Utils utils_;
 
  private:
   rclcpp::Node::SharedPtr node_;

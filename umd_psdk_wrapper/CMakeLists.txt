@@ -54,13 +54,9 @@ else()
   message(FATAL_ERROR "PSDK library NOT found")
 endif()
 
-set(OSAL_PATH /Tools/Payload-SDK/samples/sample_c++/platform/linux/common/osal)
-set(HAL_PATH /Tools/Payload-SDK/samples/sample_c++/platform/linux/manifold2/hal)
 
-# Include PSDK header files + low level OSAL and HAL libraries
+# Include PSDK header files
 include_directories(/Tools/Payload-SDK/psdk_lib/include)
-#include_directories(${OSAL_PATH})
-#include_directories(${HAL_PATH})
 include_directories(include)
 include_directories(src/common)
 
