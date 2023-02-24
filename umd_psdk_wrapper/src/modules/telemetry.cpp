@@ -152,10 +152,9 @@ PSDKWrapper::clean_ros_elements()
   home_position_pub_.reset();
 }
 
-// Implementation of the
 T_DjiReturnCode
-c_callback_wrapper(const uint8_t *data, uint16_t dataSize,
-                   const T_DjiDataTimestamp *timestamp)
+c_attitude_callback(const uint8_t *data, uint16_t dataSize,
+                    const T_DjiDataTimestamp *timestamp)
 {
   return global_ptr_->attitude_callback(data, dataSize, timestamp);
 }
@@ -167,7 +166,7 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
   T_DjiFcSubscriptionQuaternion *quaternion = (T_DjiFcSubscriptionQuaternion *)data;
   dji_f64_t pitch, yaw, roll;
   geometry_msgs::msg::QuaternionStamped quaternion_msg;
-  quaternion_msg.header.stamp.sec = timestamp->millisecond;
+  quaternion_msg.header.stamp = node_->get_clock()->now();
   quaternion_msg.quaternion.w = quaternion->q0;
   quaternion_msg.quaternion.x = quaternion->q1;
   quaternion_msg.quaternion.y = quaternion->q2;
@@ -180,28 +179,20 @@ void
 PSDKWrapper::subscribe_psdk_topics()
 {
   T_DjiReturnCode return_code;
-  return_code = DjiFcSubscription_SubscribeTopic(DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION,
-                                                 DJI_DATA_SUBSCRIPTION_TOPIC_10_HZ,
-                                                 c_callback_wrapper);
+  return_code = DjiFcSubscription_SubscribeTopic(
+      DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, get_frequency(params_.attitude_frequency),
+      c_attitude_callback);
 }
 
 void
 PSDKWrapper::unsubscribe_psdk_topics()
 {
-  T_DjiReturnCode return_code =
-      DjiFcSubscription_UnSubscribeTopic(DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION);
-}
-
-void
-PSDKWrapper::set_topic_frequency(std::vector<Telemetry::DJITopic> *topics,
-                                 const int frequency)
-{
-  for (auto &topic : *topics) {
-    if (frequency <= topic.max_freq) {
-      topic.freq = get_frequency(frequency);
-    }
-    else {
-      topic.freq = get_frequency(topic.max_freq);
+  for (auto topic : utils_.topics_to_subscribe) {
+    T_DjiReturnCode return_code;
+    return_code = DjiFcSubscription_UnSubscribeTopic(topic.label);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(), "Could not unsubscribe successfully from topic %d",
+                   topic.label);
     }
   }
 }
