@@ -20,6 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/AircraftStatus.msg"
@@ -31,6 +32,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PositionFused.msg"
   "msg/RelativeObstacleInfo.msg"
   "msg/SDKCtrlInfo.msg"
+  "srv/CameraStartShootSinglePhoto.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
