@@ -30,6 +30,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(umd_psdk_interfaces REQUIRED)
+find_package(std_srvs REQUIRED)
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -54,9 +55,13 @@ else()
   message(FATAL_ERROR "PSDK library NOT found")
 endif()
 
+set(OSAL_PATH /Tools/Payload-SDK/samples/sample_c++/platform/linux/common/osal)
+set(HAL_PATH /Tools/Payload-SDK/samples/sample_c++/platform/linux/manifold2/hal)
 
-# Include PSDK header files
+# Include PSDK header files + low level OSAL and HAL libraries
 include_directories(/Tools/Payload-SDK/psdk_lib/include)
+#include_directories(${OSAL_PATH})
+#include_directories(${HAL_PATH})
 include_directories(include)
 include_directories(src/common)
 
@@ -69,6 +74,7 @@ set(dependencies
   std_msgs
   nav_msgs
   umd_psdk_interfaces
+  std_srvs
 )
 
 add_executable(psdk_wrapper_node
@@ -78,6 +84,7 @@ add_executable(psdk_wrapper_node
 add_library(psdk_wrapper_libs SHARED
   src/psdk_wrapper.cpp
   src/modules/telemetry.cpp
+  src/modules/camera.cpp
   src/common/osal_fs.c
   src/common/osal_socket.c
   src/common/osal.c
