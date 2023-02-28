@@ -54,6 +54,12 @@
 #include "umd_psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
+// Sensors includes
+#include "std_srvs/srv/empty.hpp"
+#include "umd_psdk_interfaces/srv/camera_start_shoot_single_photo.hpp"
+#include "dji_camera_manager.h"
+#include <functional>
+
 namespace umd_psdk {
 /**
  * @class umd_psdk::PSDKWrapper
@@ -105,6 +111,11 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   rclcpp_lifecycle::LifecyclePublisher<
       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
 
+  // ROS services
+  using CameraStartShootSinglePhoto = umd_psdk_interfaces::srv::CameraStartShootSinglePhoto;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr init_camera_manager_service_;
+  rclcpp::Service<CameraStartShootSinglePhoto>::SharedPtr camera_start_shoot_single_photo_service_;
+
  protected:
   /*
    * @brief Lifecycle configure
@@ -128,7 +139,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override;
 
-  struct PSDKParams {
+  struct PsdkParams {
     std::string app_name;
     std::string app_id;
     std::string app_key;
@@ -138,20 +149,23 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
     std::string hardware_connection;
     std::string uart_dev_1;
     std::string uart_dev_2;
-    int timestamp_frequency;
-    int attitude_frequency;
-    int acceleration_frequency;
-    int velocity_frequency;
-    int angular_velocity_frequency;
-    int position_frequency;
-    int gps_data_frequency;
-    int rtk_data_frequency;
-    int magnetometer_frequency;
-    int rc_channels_data_frequency;
-    int gimbal_data_frequency;
-    int flight_status_frequency;
-    int battery_level_frequency;
-    int control_information_frequency;
+  };
+
+  struct DataFrequency {
+    int timestamp;
+    int attitude;
+    int acceleration;
+    int velocity;
+    int angular_velocity;
+    int position;
+    int gps_data;
+    int rtk_data;
+    int magnetometer;
+    int rc_channels_data;
+    int gimbal_data;
+    int flight_status;
+    int battery_level;
+    int control_information;
   };
 
   bool set_environment();
@@ -159,29 +173,48 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void load_parameters();
   bool init(T_DjiUserInfo* user_info);
   bool init_telemetry();
+  bool init_camera_manager();
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
+  void set_topic_frequency(std::vector<Telemetry::DJITopic>* topics,
+                           const int frequency);
 
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
                                     const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_attitude_callback(const uint8_t* data, uint16_t dataSize,
-                                             const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_callback_wrapper(const uint8_t* data, uint16_t dataSize,
+                                            const T_DjiDataTimestamp* timestamp);
 
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
   void activate_ros_elements();
   void deactivate_ros_elements();
   void clean_ros_elements();
+  void test();
 
   // Variables
 
-  PSDKParams params_;
-  Utils utils_;
+  PsdkParams params_;
+  DataFrequency data_frequency_;
+  Telemetry telemetry_;
+
+//////////////////////////////////////// Sensors ////////////////////////////////////////
+  bool init_camera_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
+                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);
+  bool camera_start_shoot_single_photo_callback_(const std::shared_ptr<CameraStartShootSinglePhoto::Request> request,
+                                                 const std::shared_ptr<CameraStartShootSinglePhoto::Response> response);
+  const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
+  void clean_ros_services();
+
+//////////////////////////////////////// Sensors ////////////////////////////////////////
 
  private:
   rclcpp::Node::SharedPtr node_;
 
   void initialize_ros_publishers();
+  // Sensors
+  // TODO(@lidiadltv): Is it a good practice to "share" this methods between modules?
+  void initialize_ros_camera_services(); 
   void subscribe_attitude_topic();
+
 };
 extern std::shared_ptr<PSDKWrapper> global_ptr_;
 }  // namespace umd_psdk
