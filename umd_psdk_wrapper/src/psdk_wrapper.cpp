@@ -56,6 +56,8 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
     return nav2_util::CallbackReturn::FAILURE;
   }
   initialize_ros_publishers();
+  // Sensors
+  initialize_ros_camera_services();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -73,12 +75,18 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   }
 
   activate_ros_elements();
+  // Sensors
+  // active_ros_services();
 
   if (!init_telemetry()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
   subscribe_psdk_topics();
+
+  if(!init_camera_manager()){
+    return nav2_util::CallbackReturn::FAILURE;
+  }
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -88,6 +96,8 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
   deactivate_ros_elements();
+  // Sensors
+  // deactive_ros_services();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -95,6 +105,8 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
+  clean_ros_elements();
+  // Sensors
   clean_ros_elements();
   unsubscribe_psdk_topics();
 
@@ -289,182 +301,90 @@ PSDKWrapper::load_parameters()
   RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
 
   // Get data frequency
-  if (!get_parameter("data_frequency.timestamp", params_.timestamp_frequency)) {
-    RCLCPP_ERROR(get_logger(), "timestamp frequency param not defined");
+  int frequency = 0;
+  if (!get_parameter("data_frequency.timestamp", frequency)) {
+    RCLCPP_ERROR(get_logger(), "timestamp param not defined");
     exit(-1);
   }
-  if (params_.timestamp_frequency > TIMESTAMP_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the timestamp topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                TIMESTAMP_TOPICS_MAX_FREQ);
-    params_.timestamp_frequency = TIMESTAMP_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.timestamp_topics, frequency);
 
-  if (!get_parameter("data_frequency.attitude", params_.attitude_frequency)) {
+  if (!get_parameter("data_frequency.attitude", frequency)) {
     RCLCPP_ERROR(get_logger(), "attitude param not defined");
     exit(-1);
   }
-  if (params_.attitude_frequency > ATTITUDE_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the attitude topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                ATTITUDE_TOPICS_MAX_FREQ);
-    params_.attitude_frequency = ATTITUDE_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.attitude_topics, frequency);
 
-  if (!get_parameter("data_frequency.acceleration", params_.acceleration_frequency)) {
+  if (!get_parameter("data_frequency.acceleration", frequency)) {
     RCLCPP_ERROR(get_logger(), "acceleration param not defined");
     exit(-1);
   }
-  if (params_.acceleration_frequency > ACCELERATION_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the acceleration topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        ACCELERATION_TOPICS_MAX_FREQ);
-    params_.acceleration_frequency = ACCELERATION_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.acceleration_topics, frequency);
 
-  if (!get_parameter("data_frequency.velocity", params_.velocity_frequency)) {
+  if (!get_parameter("data_frequency.velocity", frequency)) {
     RCLCPP_ERROR(get_logger(), "velocity param not defined");
     exit(-1);
   }
-  if (params_.velocity_frequency > VELOCITY_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the velocity topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                VELOCITY_TOPICS_MAX_FREQ);
-    params_.velocity_frequency = VELOCITY_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.velocity_topics, frequency);
 
-  if (!get_parameter("data_frequency.angular_velocity",
-                     params_.angular_velocity_frequency)) {
+  if (!get_parameter("data_frequency.angular_velocity", frequency)) {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
     exit(-1);
   }
-  if (params_.angular_velocity_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the angular velocity topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
-    params_.angular_velocity_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.angular_velocity_topics, frequency);
 
-  if (!get_parameter("data_frequency.position", params_.position_frequency)) {
+  if (!get_parameter("data_frequency.position", frequency)) {
     RCLCPP_ERROR(get_logger(), "position param not defined");
     exit(-1);
   }
-  if (params_.position_frequency > POSITION_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the position topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                POSITION_TOPICS_MAX_FREQ);
-    params_.position_frequency = POSITION_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.position_topics, frequency);
 
-  if (!get_parameter("data_frequency.gps_data", params_.gps_data_frequency)) {
+  if (!get_parameter("data_frequency.gps_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "gps_data param not defined");
     exit(-1);
   }
-  if (params_.gps_data_frequency > GPS_DATA_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the GPS topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                GPS_DATA_TOPICS_MAX_FREQ);
-    params_.gps_data_frequency = GPS_DATA_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.gps_data_topics, frequency);
 
-  if (!get_parameter("data_frequency.rtk_data", params_.rtk_data_frequency)) {
+  if (!get_parameter("data_frequency.rtk_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "rtk_data param not defined");
     exit(-1);
   }
-  if (params_.rtk_data_frequency > RTK_DATA_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the RTK topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                RTK_DATA_TOPICS_MAX_FREQ);
-    params_.rtk_data_frequency = RTK_DATA_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.rtk_data_topics, frequency);
 
-  if (!get_parameter("data_frequency.magnetometer", params_.magnetometer_frequency)) {
+  if (!get_parameter("data_frequency.magnetometer", frequency)) {
     RCLCPP_ERROR(get_logger(), "magnetometer param not defined");
     exit(-1);
   }
-  if (params_.magnetometer_frequency > MAGNETOMETER_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the magnetometer topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        MAGNETOMETER_TOPICS_MAX_FREQ);
-    params_.magnetometer_frequency = MAGNETOMETER_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.magnetometer_topics, frequency);
 
-  if (!get_parameter("data_frequency.rc_channels_data",
-                     params_.rc_channels_data_frequency)) {
+  if (!get_parameter("data_frequency.rc_channels_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "rc_channels_data param not defined");
     exit(-1);
   }
-  if (params_.rc_channels_data_frequency > RC_CHANNELS_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the RC channel topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        RC_CHANNELS_TOPICS_MAX_FREQ);
-    params_.rc_channels_data_frequency = RC_CHANNELS_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.rc_channel_topics, frequency);
 
-  if (!get_parameter("data_frequency.gimbal_data", params_.gimbal_data_frequency)) {
+  if (!get_parameter("data_frequency.gimbal_data", frequency)) {
     RCLCPP_ERROR(get_logger(), "gimbal_data param not defined");
     exit(-1);
   }
-  if (params_.gimbal_data_frequency > GIMBAL_DATA_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the gimbal topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                GIMBAL_DATA_TOPICS_MAX_FREQ);
-    params_.gimbal_data_frequency = GIMBAL_DATA_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.gimbal_topics, frequency);
 
-  if (!get_parameter("data_frequency.flight_status", params_.flight_status_frequency)) {
+  if (!get_parameter("data_frequency.flight_status", frequency)) {
     RCLCPP_ERROR(get_logger(), "flight_status param not defined");
     exit(-1);
   }
-  if (params_.flight_status_frequency > FLIGHT_STATUS_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the flight status topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        FLIGHT_STATUS_TOPICS_MAX_FREQ);
-    params_.flight_status_frequency = FLIGHT_STATUS_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.flight_status_topics, frequency);
 
-  if (!get_parameter("data_frequency.battery_level", params_.battery_level_frequency)) {
+  if (!get_parameter("data_frequency.battery_level", frequency)) {
     RCLCPP_ERROR(get_logger(), "battery_level param not defined");
     exit(-1);
   }
-  if (params_.battery_level_frequency > BATTERY_STATUS_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the battery status topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        BATTERY_STATUS_TOPICS_MAX_FREQ);
-    params_.battery_level_frequency = BATTERY_STATUS_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.battery_status_topics, frequency);
 
-  if (!get_parameter("data_frequency.control_information",
-                     params_.control_information_frequency)) {
+  if (!get_parameter("data_frequency.control_information", frequency)) {
     RCLCPP_ERROR(get_logger(), "control_information param not defined");
     exit(-1);
   }
-  if (params_.control_information_frequency > CONTROL_DATA_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the control topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                CONTROL_DATA_TOPICS_MAX_FREQ);
-    params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
-  }
+  set_topic_frequency(&telemetry_.control_topics, frequency);
 }
 
 bool
