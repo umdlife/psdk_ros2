@@ -40,7 +40,6 @@ RCLCPP_INFO(get_logger(), "Initiating camera manager...");
     return false;
   }
   return true;
-
 }
 
 
@@ -80,36 +79,28 @@ bool PSDKWrapper::camera_start_shoot_single_photo_callback_(
     T_DjiReturnCode returnCode;
     E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
     /*!< set camera work mode as shoot photo */
-    returnCode = DjiCameraManager_SetMode(DJI_MOUNT_POSITION_PAYLOAD_PORT_NO1, DJI_CAMERA_MANAGER_WORK_MODE_SHOOT_PHOTO);
+    returnCode = DjiCameraManager_SetMode(index, DJI_CAMERA_MANAGER_WORK_MODE_SHOOT_PHOTO);
     if (returnCode != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
         returnCode != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
-        std::cout << "0" << std::endl;
-        RCLCPP_INFO(get_logger(),"set mounted position %d camera's work mode as shoot-photo mode failed,"
-                       " error code :0x%08X", request->payload_index, returnCode);
+        // RCLCPP_INFO(get_logger(),"set mounted position %d camera's work mode as shoot-photo mode failed,"
+        //                " error code :0x%08X", request->payload_index, returnCode);
         return response->result;
     }
-    std::cout << "1" << std::endl;
     /*!< set shoot-photo mode */
-    returnCode = DjiCameraManager_SetShootPhotoMode(DJI_MOUNT_POSITION_PAYLOAD_PORT_NO1, DJI_CAMERA_MANAGER_SHOOT_PHOTO_MODE_SINGLE);
+    returnCode = DjiCameraManager_SetShootPhotoMode(index, DJI_CAMERA_MANAGER_SHOOT_PHOTO_MODE_SINGLE);
     if (returnCode != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
         returnCode != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
-            std::cout << "2" << std::endl;
-        RCLCPP_INFO(get_logger(),"set mounted position %d camera's shoot photo mode as single-photo mode failed,"
-                       " error code :0x%08X", request->payload_index, returnCode);
+        // RCLCPP_INFO(get_logger(),"set mounted position %d camera's shoot photo mode as single-photo mode failed,"
+        //                " error code :0x%08X", request->payload_index, returnCode);
         return response->result;
     }
-    std::cout << "3" << std::endl;
     // TODO(@lidiadltv): Do I have to add a sleep like in the Payload-SDK examples??
 
     /*!< start to shoot single photo */
-    returnCode = DjiCameraManager_StartShootPhoto(DJI_MOUNT_POSITION_PAYLOAD_PORT_NO1, DJI_CAMERA_MANAGER_SHOOT_PHOTO_MODE_SINGLE);
+    returnCode = DjiCameraManager_StartShootPhoto(index, DJI_CAMERA_MANAGER_SHOOT_PHOTO_MODE_SINGLE);
     if (returnCode != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        // USER_LOG_ERROR("Mounted position %d camera shoot photo failed, "
-        //                "error code :0x%08X", request->payload_index, returnCode);
-        std::cout << "4" << std::endl;
         return response->result;
     }
-    std::cout << "5" << std::endl;
     response->result = true;
     return response->result;
 }
