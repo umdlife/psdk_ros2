@@ -50,6 +50,7 @@ PSDKWrapper::~PSDKWrapper() {}
 nav2_util::CallbackReturn
 PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
+  (void)state;
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
   load_parameters();
   if (!set_environment()) {
@@ -58,13 +59,14 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   initialize_ros_publishers();
   // Sensors
   initialize_ros_camera_services();
-
+  
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
 nav2_util::CallbackReturn
 PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 {
+  (void)state;
   RCLCPP_INFO(get_logger(), "Activating PSDKWrapper");
 
   T_DjiUserInfo user_info;
@@ -76,7 +78,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   activate_ros_elements();
   // Sensors
-  // active_ros_services();
+  activate_ros_actions();
 
   if (!init_telemetry()) {
     return nav2_util::CallbackReturn::FAILURE;
@@ -87,7 +89,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if(!init_camera_manager()){
     return nav2_util::CallbackReturn::FAILURE;
   }
-
+  createBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -95,9 +97,11 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
+  (void)state;
   deactivate_ros_elements();
   // Sensors
-  // deactive_ros_services();
+  deactivate_ros_actions();
+  destroyBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -105,9 +109,10 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
+  (void)state;
   clean_ros_elements();
   // Sensors
-  clean_ros_elements();
+  clean_ros_actions();
   unsubscribe_psdk_topics();
 
   return nav2_util::CallbackReturn::SUCCESS;

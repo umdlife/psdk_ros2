@@ -23,6 +23,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/CameraStartShootSinglePhoto.action"
+  "action/CameraStartShootBurstPhoto.action"
   "msg/AircraftStatus.msg"
   "msg/Altitude.msg"
   "msg/Battery.msg"
@@ -32,7 +34,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PositionFused.msg"
   "msg/RelativeObstacleInfo.msg"
   "msg/SDKCtrlInfo.msg"
-  "srv/CameraStartShootSinglePhoto.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
