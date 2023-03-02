@@ -55,10 +55,13 @@
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
 // Sensors includes
-#include "std_srvs/srv/empty.hpp"
-#include "umd_psdk_interfaces/srv/camera_start_shoot_single_photo.hpp"
+#include "umd_psdk_interfaces/action/camera_start_shoot_single_photo.hpp"
+#include "umd_psdk_interfaces/action/camera_start_shoot_burst_photo.hpp"
+#include <nav2_util/simple_action_server.hpp>
 #include "dji_camera_manager.h"
+#include "dji_platform.h"
 #include <functional>
+
 
 namespace umd_psdk {
 /**
@@ -112,9 +115,12 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
 
   // ROS services
-  using CameraStartShootSinglePhoto = umd_psdk_interfaces::srv::CameraStartShootSinglePhoto;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr init_camera_manager_service_;
-  rclcpp::Service<CameraStartShootSinglePhoto>::SharedPtr camera_start_shoot_single_photo_service_;
+  using CameraStartShootSinglePhoto = umd_psdk_interfaces::action::CameraStartShootSinglePhoto;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootSinglePhoto>> 
+    camera_start_shoot_single_photo_action_;
+  using CameraStartShootBurstPhoto = umd_psdk_interfaces::action::CameraStartShootBurstPhoto;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootBurstPhoto>> 
+    camera_start_shoot_burst_photo_action_;
 
  protected:
   /*
@@ -188,6 +194,10 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void activate_ros_elements();
   void deactivate_ros_elements();
   void clean_ros_elements();
+  // Sensors
+  void activate_ros_actions();
+  void deactivate_ros_actions();
+  void clean_ros_actions();
   void test();
 
   // Variables
@@ -197,13 +207,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   Telemetry telemetry_;
 
 //////////////////////////////////////// Sensors ////////////////////////////////////////
-  bool init_camera_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);
-  bool camera_start_shoot_single_photo_callback_(const std::shared_ptr<CameraStartShootSinglePhoto::Request> request,
-                                                 const std::shared_ptr<CameraStartShootSinglePhoto::Response> response);
-  const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
-  void clean_ros_services();
-
+  void camera_start_shoot_single_photo_callback_();
+  void camera_start_shoot_burst_photo_callback_();
 //////////////////////////////////////// Sensors ////////////////////////////////////////
 
  private:
