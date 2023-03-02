@@ -289,16 +289,16 @@ PSDKWrapper::load_parameters()
   RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
 
   // Get data frequency
-  if (!get_parameter("data_frequency.timestamp", params_.timestamp_frequency)) {
-    RCLCPP_ERROR(get_logger(), "timestamp frequency param not defined");
+  if (!get_parameter("data_frequency.imu", params_.imu_frequency)) {
+    RCLCPP_ERROR(get_logger(), "imu frequency param not defined");
     exit(-1);
   }
-  if (params_.timestamp_frequency > TIMESTAMP_TOPICS_MAX_FREQ) {
+  if (params_.imu_frequency > IMU_TOPIC_MAX_FREQ) {
     RCLCPP_WARN(get_logger(),
-                "Frequency defined for the timestamp topics is higher than the maximum "
+                "Frequency defined for the imu topics is higher than the maximum "
                 "allowed %d. Tha maximum value is set",
-                TIMESTAMP_TOPICS_MAX_FREQ);
-    params_.timestamp_frequency = TIMESTAMP_TOPICS_MAX_FREQ;
+                IMU_TOPIC_MAX_FREQ);
+    params_.imu_frequency = IMU_TOPIC_MAX_FREQ;
   }
 
   if (!get_parameter("data_frequency.attitude", params_.attitude_frequency)) {

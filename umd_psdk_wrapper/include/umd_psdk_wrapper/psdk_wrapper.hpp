@@ -49,6 +49,7 @@
 #include "umd_psdk_interfaces/msg/battery.hpp"
 #include "umd_psdk_interfaces/msg/flight_anomaly.hpp"
 #include "umd_psdk_interfaces/msg/gimbal_status.hpp"
+#include "umd_psdk_interfaces/msg/gps_fused.hpp"
 #include "umd_psdk_interfaces/msg/home_position.hpp"
 #include "umd_psdk_interfaces/msg/position_fused.hpp"
 #include "umd_psdk_interfaces/msg/relative_obstacle_info.hpp"
@@ -138,7 +139,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
     std::string hardware_connection;
     std::string uart_dev_1;
     std::string uart_dev_2;
-    int timestamp_frequency;
+    int imu_frequency;
     int attitude_frequency;
     int acceleration_frequency;
     int velocity_frequency;
@@ -161,11 +162,26 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   bool init_telemetry();
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
 
-  T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
-                                    const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_attitude_callback(const uint8_t* data, uint16_t dataSize,
                                              const T_DjiDataTimestamp* timestamp);
-
+  friend T_DjiReturnCode c_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                             const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_imu_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_position_vo_callback(const uint8_t* data, uint16_t dataSize,
+                                                const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_fused_callback(const uint8_t* data, uint16_t dataSize,
+                                              const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
+                                    const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                    const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode imu_callback(const uint8_t* data, uint16_t dataSize,
+                               const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode position_vo_callback(const uint8_t* data, uint16_t dataSize,
+                                       const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_fused_callback(const uint8_t* data, uint16_t dataSize,
+                                     const T_DjiDataTimestamp* timestamp);
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
   void activate_ros_elements();
