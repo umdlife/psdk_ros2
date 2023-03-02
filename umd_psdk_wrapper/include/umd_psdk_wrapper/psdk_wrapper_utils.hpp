@@ -1,9 +1,11 @@
 #pragma once
 
 #include <dji_fc_subscription.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
 
 #include <vector>
-#define TIMESTAMP_TOPICS_MAX_FREQ 400
+#define IMU_TOPIC_MAX_FREQ 400
 #define ATTITUDE_TOPICS_MAX_FREQ 100
 #define ACCELERATION_TOPICS_MAX_FREQ 200
 #define VELOCITY_TOPICS_MAX_FREQ 50
@@ -27,11 +29,13 @@ class Utils {
   };
 
   std::vector<DJITopic> topics_to_subscribe{
-      DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC, TIMESTAMP_TOPICS_MAX_FREQ},
+      DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC, IMU_TOPIC_MAX_FREQ},
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, ATTITUDE_TOPICS_MAX_FREQ},
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_GROUND,
                ACCELERATION_TOPICS_MAX_FREQ},
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_BODY,
+               ACCELERATION_TOPICS_MAX_FREQ},
+      DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_RAW,
                ACCELERATION_TOPICS_MAX_FREQ},
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_VELOCITY, VELOCITY_TOPICS_MAX_FREQ},
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ANGULAR_RATE_FUSIONED,
@@ -72,5 +76,10 @@ class Utils {
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_STATUS_MOTOR_START_ERROR,
                BATTERY_STATUS_TOPICS_MAX_FREQ},
   };
+
+  // const tf2::Matrix3x3 R_ENU2NED{0, 1, 0, 1, 0, 0, 0, 0, -1};
+  const tf2::Matrix3x3 R_NED2ENU{0, -1, 0, 1, 0, 0, 0, 0, -1};
+  const tf2::Matrix3x3 R_FLU2FRD{1, 0, 0, 0, -1, 0, 0, 0, -1};
+  const float gravity_constant = 9.8;
 };
 }  // namespace umd_psdk
