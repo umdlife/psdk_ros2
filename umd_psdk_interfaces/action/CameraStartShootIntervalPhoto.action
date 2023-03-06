@@ -1,9 +1,9 @@
 # Goal definition
 uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
-uint8 photo_burst_count #see enum E_DjiCameraBurstCount in dji_typedef.h
+uint8 photo_num_conticap # 0:reserve 1~254:number 255:keep capturing till stop
+int16 time_interval #/ time interval between two captures (second)
 ---
 # Result definition
 bool result
 ---
 # Feedback definition
-

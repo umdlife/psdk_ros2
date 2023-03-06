@@ -58,7 +58,8 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   }
   initialize_ros_publishers();
   // Sensors
-  initialize_ros_camera_services();
+  initialize_ros_camera_elements();
+  initialize_ros_gimbal_elements();
   
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -89,6 +90,9 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if(!init_camera_manager()){
     return nav2_util::CallbackReturn::FAILURE;
   }
+  if(!init_gimbal_manager()){
+    return nav2_util::CallbackReturn::FAILURE;
+  }
   createBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -113,6 +117,7 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
   clean_ros_elements();
   // Sensors
   clean_ros_actions();
+  clean_ros_gimbal_services();
   unsubscribe_psdk_topics();
 
   return nav2_util::CallbackReturn::SUCCESS;

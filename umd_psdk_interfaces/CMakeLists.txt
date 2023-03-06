@@ -25,6 +25,10 @@ find_package(std_srvs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/CameraStartShootSinglePhoto.action"
   "action/CameraStartShootBurstPhoto.action"
+  "action/CameraStartShootAEBPhoto.action"
+  "action/CameraStartShootIntervalPhoto.action"
+  "action/CameraStopShootPhoto.action"
+  "action/CameraRecordVideo.action"
   "msg/AircraftStatus.msg"
   "msg/Altitude.msg"
   "msg/Battery.msg"
@@ -34,6 +38,21 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PositionFused.msg"
   "msg/RelativeObstacleInfo.msg"
   "msg/SDKCtrlInfo.msg"
+  "srv/CameraGetType.srv"
+  "srv/CameraSetEV.srv"
+  "srv/CameraGetEV.srv"
+  "srv/CameraSetShutterSpeed.srv"
+  "srv/CameraGetShutterSpeed.srv"
+  "srv/CameraSetISO.srv"
+  "srv/CameraGetISO.srv"
+  "srv/CameraSetFocusTarget.srv"
+  "srv/CameraGetFocusTarget.srv"
+  "srv/CameraSetFocusMode.srv"
+  "srv/CameraGetFocusMode.srv"
+  "srv/CameraSetOpticalZoom.srv"
+  "srv/CameraGetOpticalZoom.srv"
+  "srv/CameraSetInfraredZoom.srv"
+  "srv/GimbalSetMode.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

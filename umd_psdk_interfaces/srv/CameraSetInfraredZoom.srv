@@ -1,0 +1,7 @@
+#request
+uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
+float32 zoom_factor
+
+---
+#response
+bool result

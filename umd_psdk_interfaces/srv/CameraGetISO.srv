@@ -1,0 +1,5 @@
+#request
+uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h 
+---
+#response
+int8 result # iso_factor see enum E_DjiCameraManagerISO in dji_camera_manager.h
