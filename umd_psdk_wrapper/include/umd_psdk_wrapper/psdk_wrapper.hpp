@@ -55,10 +55,31 @@
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
 // Sensors includes
+#include "std_srvs/srv/empty.hpp"
+#include "umd_psdk_interfaces/srv/camera_get_type.hpp"
+#include "umd_psdk_interfaces/srv/camera_set_ev.hpp"
+#include "umd_psdk_interfaces/srv/camera_get_ev.hpp"
+#include "umd_psdk_interfaces/srv/camera_set_shutter_speed.hpp"
+#include "umd_psdk_interfaces/srv/camera_get_shutter_speed.hpp"
+#include "umd_psdk_interfaces/srv/camera_set_iso.hpp"
+#include "umd_psdk_interfaces/srv/camera_get_iso.hpp"
+#include "umd_psdk_interfaces/srv/camera_set_focus_target.hpp"
+#include "umd_psdk_interfaces/srv/camera_get_focus_target.hpp"
+#include "umd_psdk_interfaces/srv/camera_set_focus_mode.hpp"
+#include "umd_psdk_interfaces/srv/camera_get_focus_mode.hpp"
+#include "umd_psdk_interfaces/srv/camera_set_optical_zoom.hpp"
+#include "umd_psdk_interfaces/srv/camera_get_optical_zoom.hpp"
+#include "umd_psdk_interfaces/srv/camera_set_infrared_zoom.hpp"
 #include "umd_psdk_interfaces/action/camera_start_shoot_single_photo.hpp"
 #include "umd_psdk_interfaces/action/camera_start_shoot_burst_photo.hpp"
+#include "umd_psdk_interfaces/action/camera_start_shoot_aeb_photo.hpp"
+#include "umd_psdk_interfaces/action/camera_start_shoot_interval_photo.hpp"
+#include "umd_psdk_interfaces/action/camera_stop_shoot_photo.hpp"
+#include "umd_psdk_interfaces/action/camera_record_video.hpp"
+#include "umd_psdk_interfaces/srv/gimbal_set_mode.hpp"
 #include <nav2_util/simple_action_server.hpp>
 #include "dji_camera_manager.h"
+#include "dji_gimbal_manager.h"
 #include "dji_platform.h"
 #include <functional>
 
@@ -114,13 +135,62 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   rclcpp_lifecycle::LifecyclePublisher<
       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
 
-  // ROS services
+  // ROS actions
   using CameraStartShootSinglePhoto = umd_psdk_interfaces::action::CameraStartShootSinglePhoto;
   std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootSinglePhoto>> 
     camera_start_shoot_single_photo_action_;
   using CameraStartShootBurstPhoto = umd_psdk_interfaces::action::CameraStartShootBurstPhoto;
   std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootBurstPhoto>> 
     camera_start_shoot_burst_photo_action_;
+  using CameraStartShootAEBPhoto = umd_psdk_interfaces::action::CameraStartShootAEBPhoto;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootAEBPhoto>> 
+    camera_start_shoot_aeb_photo_action_;
+  using CameraStartShootIntervalPhoto = umd_psdk_interfaces::action::CameraStartShootIntervalPhoto;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootIntervalPhoto>> 
+    camera_start_shoot_interval_photo_action_;
+  using CameraStopShootPhoto = umd_psdk_interfaces::action::CameraStopShootPhoto;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraStopShootPhoto>> 
+    camera_stop_shoot_photo_action_;
+  using CameraRecordVideo = umd_psdk_interfaces::action::CameraRecordVideo;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraRecordVideo>> 
+    camera_record_video_action_;
+  // ROS services
+  // Camera
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr init_camera_manager_service_;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr deinit_camera_manager_service_;  
+  using CameraGetType = umd_psdk_interfaces::srv::CameraGetType;
+  rclcpp::Service<CameraGetType>::SharedPtr camera_get_type_service_;  
+  using CameraSetEV = umd_psdk_interfaces::srv::CameraSetEV;
+  rclcpp::Service<CameraSetEV>::SharedPtr camera_set_ev_service_;  
+  using CameraGetEV = umd_psdk_interfaces::srv::CameraGetEV;
+  rclcpp::Service<CameraGetEV>::SharedPtr camera_get_ev_service_;
+  using CameraSetShutterSpeed = umd_psdk_interfaces::srv::CameraSetShutterSpeed;
+  rclcpp::Service<CameraSetShutterSpeed>::SharedPtr camera_set_shutter_speed_service_;
+  using CameraGetShutterSpeed = umd_psdk_interfaces::srv::CameraGetShutterSpeed;
+  rclcpp::Service<CameraGetShutterSpeed>::SharedPtr camera_get_shutter_speed_service_;
+  using CameraSetISO = umd_psdk_interfaces::srv::CameraSetISO;
+  rclcpp::Service<CameraSetISO>::SharedPtr camera_set_iso_service_;
+  using CameraGetISO = umd_psdk_interfaces::srv::CameraGetISO;
+  rclcpp::Service<CameraGetISO>::SharedPtr camera_get_iso_service_;
+  using CameraSetFocusTarget = umd_psdk_interfaces::srv::CameraSetFocusTarget;
+  rclcpp::Service<CameraSetFocusTarget>::SharedPtr camera_set_focus_target_service_;
+  using CameraGetFocusTarget = umd_psdk_interfaces::srv::CameraGetFocusTarget;
+  rclcpp::Service<CameraGetFocusTarget>::SharedPtr camera_get_focus_target_service_;
+  using CameraSetFocusMode = umd_psdk_interfaces::srv::CameraSetFocusMode;
+  rclcpp::Service<CameraSetFocusMode>::SharedPtr camera_set_focus_mode_service_;
+  using CameraGetFocusMode = umd_psdk_interfaces::srv::CameraGetFocusMode;
+  rclcpp::Service<CameraGetFocusMode>::SharedPtr camera_get_focus_mode_service_;
+  using CameraSetOpticalZoom = umd_psdk_interfaces::srv::CameraSetOpticalZoom;
+  rclcpp::Service<CameraSetOpticalZoom>::SharedPtr camera_set_optical_zoom_service_;
+  using CameraGetOpticalZoom = umd_psdk_interfaces::srv::CameraGetOpticalZoom;
+  rclcpp::Service<CameraGetOpticalZoom>::SharedPtr camera_get_optical_zoom_service_;
+  using CameraSetInfraredZoom = umd_psdk_interfaces::srv::CameraSetInfraredZoom;
+  rclcpp::Service<CameraSetInfraredZoom>::SharedPtr camera_set_infrared_zoom_service_;
+  // Gimbal
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr init_gimbal_manager_service_;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr deinit_gimbal_manager_service_;
+  using GimbalSetMode = umd_psdk_interfaces::srv::GimbalSetMode;
+  rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
 
  protected:
   /*
@@ -180,6 +250,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   bool init(T_DjiUserInfo* user_info);
   bool init_telemetry();
   bool init_camera_manager();
+  bool init_gimbal_manager();
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
   void set_topic_frequency(std::vector<Telemetry::DJITopic>* topics,
                            const int frequency);
@@ -195,10 +266,14 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void deactivate_ros_elements();
   void clean_ros_elements();
   // Sensors
+  // TODO(@lidiadltv): Try putting everything inside 
+  // activate_ros_elements, deactivate_ros_elements and clean_ros_elements
+  // instead of the following methods. If not possible, change names to 
+  // something generic, not actions
   void activate_ros_actions();
   void deactivate_ros_actions();
   void clean_ros_actions();
-  void test();
+  void clean_ros_gimbal_services();
 
   // Variables
 
@@ -207,8 +282,54 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   Telemetry telemetry_;
 
 //////////////////////////////////////// Sensors ////////////////////////////////////////
+  // Action callbacks
   void camera_start_shoot_single_photo_callback_();
   void camera_start_shoot_burst_photo_callback_();
+  void camera_start_shoot_aeb_photo_callback_();
+  void camera_start_shoot_interval_photo_callback_();
+  void camera_stop_shoot_photo_callback_();
+  void camera_record_video_callback_();
+  // Service callbacks
+  bool init_camera_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
+                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);
+  bool deinit_camera_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
+                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);                                     
+  bool camera_get_type_callback_(const std::shared_ptr<CameraGetType::Request> request, 
+                                 const std::shared_ptr<CameraGetType::Response> response); 
+  bool camera_set_ev_callback_(const std::shared_ptr<CameraSetEV::Request> request, 
+                                 const std::shared_ptr<CameraSetEV::Response> response);     
+  bool camera_get_ev_callback_(const std::shared_ptr<CameraGetEV::Request> request, 
+                                 const std::shared_ptr<CameraGetEV::Response> response);  
+  bool camera_set_shutter_speed_callback_(const std::shared_ptr<CameraSetShutterSpeed::Request> request, 
+                                 const std::shared_ptr<CameraSetShutterSpeed::Response> response);   
+  bool camera_get_shutter_speed_callback_(const std::shared_ptr<CameraGetShutterSpeed::Request> request, 
+                                 const std::shared_ptr<CameraGetShutterSpeed::Response> response); 
+  bool camera_set_iso_callback_(const std::shared_ptr<CameraSetISO::Request> request, 
+                                 const std::shared_ptr<CameraSetISO::Response> response);    
+  bool camera_get_iso_callback_(const std::shared_ptr<CameraGetISO::Request> request, 
+                                 const std::shared_ptr<CameraGetISO::Response> response);                                                                                                                                                                                                                 
+  bool camera_set_focus_target_callback_(const std::shared_ptr<CameraSetFocusTarget::Request> request, 
+                                 const std::shared_ptr<CameraSetFocusTarget::Response> response);
+  bool camera_get_focus_target_callback_(const std::shared_ptr<CameraGetFocusTarget::Request> request, 
+                                 const std::shared_ptr<CameraGetFocusTarget::Response> response); 
+  bool camera_set_focus_mode_callback_(const std::shared_ptr<CameraSetFocusMode::Request> request, 
+                                 const std::shared_ptr<CameraSetFocusMode::Response> response); 
+  bool camera_get_focus_mode_callback_(const std::shared_ptr<CameraGetFocusMode::Request> request, 
+                                 const std::shared_ptr<CameraGetFocusMode::Response> response);  
+  bool camera_set_optical_zoom_callback_(const std::shared_ptr<CameraSetOpticalZoom::Request> request, 
+                                 const std::shared_ptr<CameraSetOpticalZoom::Response> response); 
+  bool camera_get_optical_zoom_callback_(const std::shared_ptr<CameraGetOpticalZoom::Request> request, 
+                                 const std::shared_ptr<CameraGetOpticalZoom::Response> response);   
+  bool camera_set_infrared_zoom_callback_(const std::shared_ptr<CameraSetInfraredZoom::Request> request, 
+                                 const std::shared_ptr<CameraSetInfraredZoom::Response> response); 
+  bool init_gimbal_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
+                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);
+  bool deinit_gimbal_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
+                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);                                                                                                                                                                                 
+  bool gimbal_set_mode_callback_(const std::shared_ptr<GimbalSetMode::Request> request, 
+                                     const std::shared_ptr<GimbalSetMode::Response> response);                                    
+
+  const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 //////////////////////////////////////// Sensors ////////////////////////////////////////
 
  private:
@@ -217,7 +338,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void initialize_ros_publishers();
   // Sensors
   // TODO(@lidiadltv): Is it a good practice to "share" this methods between modules?
-  void initialize_ros_camera_services(); 
+  void initialize_ros_camera_elements(); 
+  void initialize_ros_gimbal_elements(); 
   void subscribe_attitude_topic();
 
 };

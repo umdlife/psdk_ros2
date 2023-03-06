@@ -85,6 +85,7 @@ add_library(psdk_wrapper_libs SHARED
   src/psdk_wrapper.cpp
   src/modules/telemetry.cpp
   src/modules/camera.cpp
+  src/modules/gimbal.cpp
   src/common/osal_fs.c
   src/common/osal_socket.c
   src/common/osal.c

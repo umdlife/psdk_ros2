@@ -9,7 +9,7 @@ $ROBOT_NS:
       baudrate: "921600"
       hardware_connection: "DJI_USE_UART_AND_USB_BULK_DEVICE"
       uart_dev_1: "/dev/ttyUSB0"
-      uart_dev_2: "/dev/ttyACM1"
+      uart_dev_2: "/dev/ttyACM0"
   
       data_frequency: # Options are: 1, 5, 10, 50, 100, 200, 400 Hz 
         timestamp: 50 
