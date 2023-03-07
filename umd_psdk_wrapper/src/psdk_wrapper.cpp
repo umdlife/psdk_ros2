@@ -80,7 +80,8 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   activate_ros_elements();
   // Sensors
   activate_ros_actions();
-
+  activate_gimbal_ros_elements();
+  
   if (!init_telemetry()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -105,6 +106,7 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
   deactivate_ros_elements();
   // Sensors
   deactivate_ros_actions();
+  deactivate_gimbal_ros_elements();
   destroyBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }

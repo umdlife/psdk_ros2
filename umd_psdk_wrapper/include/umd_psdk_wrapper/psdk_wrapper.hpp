@@ -76,7 +76,13 @@
 #include "umd_psdk_interfaces/action/camera_start_shoot_interval_photo.hpp"
 #include "umd_psdk_interfaces/action/camera_stop_shoot_photo.hpp"
 #include "umd_psdk_interfaces/action/camera_record_video.hpp"
+#include "umd_psdk_interfaces/action/camera_get_laser_ranging_info.hpp"
+#include "umd_psdk_interfaces/action/camera_download_file_list.hpp"
+#include "umd_psdk_interfaces/action/camera_download_file_by_index.hpp"
+#include "umd_psdk_interfaces/action/camera_delete_file_by_index.hpp"
 #include "umd_psdk_interfaces/srv/gimbal_set_mode.hpp"
+#include "umd_psdk_interfaces/srv/gimbal_reset.hpp"
+#include "umd_psdk_interfaces/action/gimbal_rotation.hpp"
 #include <nav2_util/simple_action_server.hpp>
 #include "dji_camera_manager.h"
 #include "dji_gimbal_manager.h"
@@ -136,6 +142,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
 
   // ROS actions
+  // Camera
   using CameraStartShootSinglePhoto = umd_psdk_interfaces::action::CameraStartShootSinglePhoto;
   std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootSinglePhoto>> 
     camera_start_shoot_single_photo_action_;
@@ -154,6 +161,22 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   using CameraRecordVideo = umd_psdk_interfaces::action::CameraRecordVideo;
   std::unique_ptr<nav2_util::SimpleActionServer<CameraRecordVideo>> 
     camera_record_video_action_;
+  using CameraGetLaserRangingInfo = umd_psdk_interfaces::action::CameraGetLaserRangingInfo;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraGetLaserRangingInfo>> 
+    camera_get_laser_ranging_info_action_;
+  using CameraDownloadFileList = umd_psdk_interfaces::action::CameraDownloadFileList;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraDownloadFileList>> 
+    camera_download_file_list_action_;
+  using CameraDownloadFileByIndex = umd_psdk_interfaces::action::CameraDownloadFileByIndex;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>> 
+    camera_download_file_by_index_action_;
+  using CameraDeleteFileByIndex = umd_psdk_interfaces::action::CameraDeleteFileByIndex;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>> 
+    camera_delete_file_by_index_action_;
+  // Gimbal
+  using GimbalRotation = umd_psdk_interfaces::action::GimbalRotation;
+  std::unique_ptr<nav2_util::SimpleActionServer<GimbalRotation>> 
+    gimbal_rotation_action_;
   // ROS services
   // Camera
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr init_camera_manager_service_;
@@ -191,6 +214,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr deinit_gimbal_manager_service_;
   using GimbalSetMode = umd_psdk_interfaces::srv::GimbalSetMode;
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
+  using GimbalReset = umd_psdk_interfaces::srv::GimbalReset;
+  rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
 
  protected:
   /*
@@ -263,6 +288,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
   void activate_ros_elements();
+  void activate_gimbal_ros_elements();
   void deactivate_ros_elements();
   void clean_ros_elements();
   // Sensors
@@ -272,6 +298,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   // something generic, not actions
   void activate_ros_actions();
   void deactivate_ros_actions();
+  void deactivate_gimbal_ros_elements();
   void clean_ros_actions();
   void clean_ros_gimbal_services();
 
@@ -289,6 +316,11 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void camera_start_shoot_interval_photo_callback_();
   void camera_stop_shoot_photo_callback_();
   void camera_record_video_callback_();
+  void camera_get_laser_ranging_info_callback_();
+  void camera_download_file_list_callback_();
+  void camera_download_file_by_index_callback_();
+  void camera_delete_file_by_index_callback_();
+  void gimbal_rotation_callback_();
   // Service callbacks
   bool init_camera_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
                                      const std::shared_ptr<std_srvs::srv::Empty::Response> response);
@@ -327,7 +359,9 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   bool deinit_gimbal_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
                                      const std::shared_ptr<std_srvs::srv::Empty::Response> response);                                                                                                                                                                                 
   bool gimbal_set_mode_callback_(const std::shared_ptr<GimbalSetMode::Request> request, 
-                                     const std::shared_ptr<GimbalSetMode::Response> response);                                    
+                                     const std::shared_ptr<GimbalSetMode::Response> response);  
+  bool gimbal_reset_callback_(const std::shared_ptr<GimbalReset::Request> request, 
+                                     const std::shared_ptr<GimbalReset::Response> response);                                                                       
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 //////////////////////////////////////// Sensors ////////////////////////////////////////
