@@ -1,0 +1,15 @@
+# Goal definition
+uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
+---
+# Result definition
+float64 longitude
+float64 latitude
+int32 altitude
+int32 distance
+int16 screen_x
+int16 screen_y
+bool enable_lidar
+uint8 exception
+
+---
+# Feedback definition

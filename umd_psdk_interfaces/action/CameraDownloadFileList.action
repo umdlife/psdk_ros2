@@ -1,0 +1,8 @@
+# Goal definition
+uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
+---
+# Result definition
+int16 result # total_count from enum T_DjiCameraManagerFileList in dji_camera_manager.h
+
+---
+# Feedback definition

@@ -29,6 +29,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/CameraStartShootIntervalPhoto.action"
   "action/CameraStopShootPhoto.action"
   "action/CameraRecordVideo.action"
+  "action/CameraGetLaserRangingInfo.action"
+  "action/CameraDownloadFileList.action"
+  "action/CameraDownloadFileByIndex.action"
+  "action/CameraDeleteFileByIndex.action"
+  "action/GimbalRotation.action"
   "msg/AircraftStatus.msg"
   "msg/Altitude.msg"
   "msg/Battery.msg"
@@ -53,6 +58,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraGetOpticalZoom.srv"
   "srv/CameraSetInfraredZoom.srv"
   "srv/GimbalSetMode.srv"
+  "srv/GimbalReset.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
