@@ -49,6 +49,7 @@
 #include "umd_psdk_interfaces/msg/battery.hpp"
 #include "umd_psdk_interfaces/msg/flight_anomaly.hpp"
 #include "umd_psdk_interfaces/msg/gimbal_status.hpp"
+#include "umd_psdk_interfaces/msg/gps_details.hpp"
 #include "umd_psdk_interfaces/msg/gps_fused.hpp"
 #include "umd_psdk_interfaces/msg/home_position.hpp"
 #include "umd_psdk_interfaces/msg/position_fused.hpp"
@@ -172,6 +173,16 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                                 const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_gps_fused_callback(const uint8_t* data, uint16_t dataSize,
                                               const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_position_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_details_callback(const uint8_t* data, uint16_t dataSize,
+                                                const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_signal_callback(const uint8_t* data, uint16_t dataSize,
+                                               const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_control_callback(const uint8_t* data, uint16_t dataSize,
+                                                const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
                                     const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t dataSize,
@@ -182,9 +193,18 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                        const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode gps_fused_callback(const uint8_t* data, uint16_t dataSize,
                                      const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_position_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_details_callback(const uint8_t* data, uint16_t dataSize,
+                                       const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_signal_callback(const uint8_t* data, uint16_t dataSize,
+                                      const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_control_callback(const uint8_t* data, uint16_t dataSize,
+                                       const T_DjiDataTimestamp* timestamp);
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
-
 
   // Variables
 

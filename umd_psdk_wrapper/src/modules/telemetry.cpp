@@ -4,7 +4,7 @@
  * the terms and conditions defined in the file LICENSE.txt contained therein.
  */
 /**
- * @file publishers.cpp
+ * @file telemetry.cpp
  *
  * @brief
  *
@@ -62,6 +62,41 @@ c_gps_fused_callback(const uint8_t *data, uint16_t dataSize,
                      const T_DjiDataTimestamp *timestamp)
 {
   return global_ptr_->gps_fused_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_gps_position_callback(const uint8_t *data, uint16_t dataSize,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->gps_position_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_gps_velocity_callback(const uint8_t *data, uint16_t dataSize,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->gps_velocity_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_gps_details_callback(const uint8_t *data, uint16_t dataSize,
+                       const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->gps_details_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_gps_signal_callback(const uint8_t *data, uint16_t dataSize,
+                      const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->gps_signal_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_gps_control_callback(const uint8_t *data, uint16_t dataSize,
+                       const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->gps_control_callback(data, dataSize, timestamp);
 }
 
 T_DjiReturnCode
@@ -186,6 +221,78 @@ PSDKWrapper::gps_fused_callback(const uint8_t *data, uint16_t dataSize,
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
+T_DjiReturnCode
+PSDKWrapper::gps_position_callback(const uint8_t *data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  T_DjiFcSubscriptionGpsPosition *gps_position = (T_DjiFcSubscriptionGpsPosition *)data;
+  sensor_msgs::msg::NavSatFix gps_position_msg;
+  gps_position_msg.header.stamp = node_->get_clock()->now();
+  gps_position_msg.longitude = gps_position->x;  // unit: deg*10<SUP>-7</SUP>
+  gps_position_msg.latitude = gps_position->y;   // unit: deg*10<SUP>-7</SUP>
+  gps_position_msg.altitude = gps_position->z;   // mm
+
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::gps_velocity_callback(const uint8_t *data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  T_DjiFcSubscriptionGpsVelocity *gps_velocity = (T_DjiFcSubscriptionGpsVelocity *)data;
+  geometry_msgs::msg::TwistStamped gps_velocity_msg;
+  gps_velocity_msg.header.stamp = node_->get_clock()->now();
+  // Convert cm/s given by dji topic to m/s
+  gps_velocity_msg.twist.linear.x = gps_velocity->x;
+  gps_velocity_msg.twist.linear.y = gps_velocity->y / 100;
+  gps_velocity_msg.twist.linear.z = gps_velocity->z / 100;
+
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::gps_details_callback(const uint8_t *data, uint16_t dataSize,
+                                  const T_DjiDataTimestamp *timestamp)
+{
+  T_DjiFcSubscriptionGpsDetails *gps_details = (T_DjiFcSubscriptionGpsDetails *)data;
+  umd_psdk_interfaces::msg::GPSDetails gps_details_msg;
+  gps_details_msg.header.stamp = node_->get_clock()->now();
+  // Convert cm/s given by dji topic to m/s
+  gps_details_msg.horizontal_dop = gps_details->hdop;
+  gps_details_msg.position_dop = gps_details->pdop;
+  gps_details_msg.fix_state = gps_details->fixState;
+  gps_details_msg.vertical_accuracy = gps_details->vacc;
+  gps_details_msg.horizontal_accuracy = gps_details->hacc;
+  gps_details_msg.speed_accuracy = gps_details->sacc;
+  gps_details_msg.num_gps_satellites_used = gps_details->gpsSatelliteNumberUsed;
+  gps_details_msg.num_glonass_satellites_used = gps_details->glonassSatelliteNumberUsed;
+  gps_details_msg.num_total_satellites_used = gps_details->totalSatelliteNumberUsed;
+  gps_details_msg.gps_counter = gps_details->gpsCounter;
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::gps_signal_callback(const uint8_t *data, uint16_t dataSize,
+                                 const T_DjiDataTimestamp *timestamp)
+{
+  T_DjiFcSubscriptionGpsSignalLevel *gps_signal_level =
+      (T_DjiFcSubscriptionGpsSignalLevel *)data;
+  std_msgs::msg::UInt8 gps_signal_level_msg;
+  gps_signal_level_msg.data = *gps_signal_level;
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::gps_control_callback(const uint8_t *data, uint16_t dataSize,
+                                  const T_DjiDataTimestamp *timestamp)
+{
+  T_DjiFcSubscriptionGpsControlLevel *gps_control_level =
+      (T_DjiFcSubscriptionGpsControlLevel *)data;
+  std_msgs::msg::UInt8 gps_control_level_msg;
+  gps_control_level_msg.data = *gps_control_level;
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
 void
 PSDKWrapper::subscribe_psdk_topics()
 {
@@ -236,17 +343,74 @@ PSDKWrapper::subscribe_psdk_topics()
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_POSITION_VO, error %ld",
                    return_code);
+    }
+  }
 
-      return_code = DjiFcSubscription_SubscribeTopic(
-          DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED,
-          get_frequency(params_.position_frequency), c_gps_fused_callback);
+  if (params_.gps_data_frequency > 0) {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED,
+        get_frequency(params_.gps_data_frequency), c_gps_fused_callback);
 
-      if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        RCLCPP_ERROR(get_logger(),
-                     "Could not subscribe successfully to topic "
-                     "DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED, error %ld",
-                     return_code);
-      }
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_GPS_POSITION,
+        get_frequency(params_.gps_data_frequency), c_gps_position_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_GPS_POSITION, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_GPS_VELOCITY,
+        get_frequency(params_.gps_data_frequency), c_gps_velocity_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_GPS_VELOCITY, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_GPS_DETAILS,
+        get_frequency(params_.gps_data_frequency), c_gps_details_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_GPS_DETAILS, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_GPS_SIGNAL_LEVEL,
+        get_frequency(params_.gps_data_frequency), c_gps_signal_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_GPS_SIGNAL_LEVEL, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_GPS_CONTROL_LEVEL,
+        get_frequency(params_.gps_data_frequency), c_gps_control_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_GPS_CONTROL_LEVEL, error %ld",
+                   return_code);
     }
   }
 }

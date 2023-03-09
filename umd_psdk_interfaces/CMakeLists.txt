@@ -30,6 +30,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HomePosition.msg"
   "msg/PositionFused.msg"
   "msg/GPSFused.msg"
+  "msg/GPSDetails.msg"
   "msg/RelativeObstacleInfo.msg"
   "msg/SDKCtrlInfo.msg"
   DEPENDENCIES std_msgs geometry_msgs
