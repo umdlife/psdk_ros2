@@ -4,6 +4,7 @@ uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
 
 ---
 #response
+bool success
 float32 x_target # see enum T_DjiCameraPointInScreen in dji_typedef.h # *!< Specifies horizontal zone coordinate. This parameter is between 0 and 1.
                                                                       # The point [0.0, 0.0] represents the top-left angle of the screen.*/
 float32 y_target # see enum T_DjiCameraPointInScreen in dji_typedef.h /*!< Specifies vertical zone coordinate. This parameter is between 0 and 1. */

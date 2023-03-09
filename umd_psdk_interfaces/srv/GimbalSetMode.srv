@@ -4,4 +4,4 @@ uint8 gimbal_mode # see enum E_DjiGimbalMode in dji_typedef.h
 
 ---
 #response
-bool result
+bool success

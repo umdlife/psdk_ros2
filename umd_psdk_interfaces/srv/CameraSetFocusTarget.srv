@@ -6,4 +6,4 @@ float32 y_target # see enum T_DjiCameraPointInScreen in dji_typedef.h /*!< Speci
 
 ---
 #response
-bool result
+bool success

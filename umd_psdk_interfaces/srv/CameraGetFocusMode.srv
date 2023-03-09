@@ -2,4 +2,5 @@
 uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
 ---
 #response
-uint8 result # see enum E_DjiCameraManagerFocusMode in dji_camera_manager.h
+bool success
+uint8 focus_mode # see enum E_DjiCameraManagerFocusMode in dji_camera_manager.h
