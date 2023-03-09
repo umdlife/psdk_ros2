@@ -184,9 +184,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                      const T_DjiDataTimestamp* timestamp);
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
-  void activate_ros_elements();
-  void deactivate_ros_elements();
-  void clean_ros_elements();
+
 
   // Variables
 
@@ -196,8 +194,11 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
  private:
   rclcpp::Node::SharedPtr node_;
 
-  void initialize_ros_publishers();
+  void initialize_ros_elements();
   void subscribe_attitude_topic();
+  void activate_ros_elements();
+  void deactivate_ros_elements();
+  void clean_ros_elements();
 };
 extern std::shared_ptr<PSDKWrapper> global_ptr_;
 }  // namespace umd_psdk
