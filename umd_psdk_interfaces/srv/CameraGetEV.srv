@@ -2,4 +2,5 @@
 uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
 ---
 #response
-uint8 result  # ev_factor see enum E_DjiCameraManagerExposureCompensation in dji_camera_manager.h
+bool success  
+uint8 ev_factor # ev_factor see enum E_DjiCameraManagerExposureCompensation in dji_camera_manager.h

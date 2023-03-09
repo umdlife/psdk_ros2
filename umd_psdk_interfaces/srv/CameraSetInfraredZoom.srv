@@ -4,4 +4,4 @@ float32 zoom_factor
 
 ---
 #response
-bool result
+bool success

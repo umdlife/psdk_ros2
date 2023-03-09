@@ -3,4 +3,5 @@ uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
 
 ---
 #response
-float32 result # Returns zoom_factor
+bool success
+float32 zoom_factor # Returns camera zoom factor
