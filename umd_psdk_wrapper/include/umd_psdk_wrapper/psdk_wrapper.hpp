@@ -55,7 +55,6 @@
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
 // Sensors includes
-#include "std_srvs/srv/empty.hpp"
 #include "umd_psdk_interfaces/srv/camera_get_type.hpp"
 #include "umd_psdk_interfaces/srv/camera_set_ev.hpp"
 #include "umd_psdk_interfaces/srv/camera_get_ev.hpp"
@@ -179,8 +178,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
     gimbal_rotation_action_;
   // ROS services
   // Camera
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr init_camera_manager_service_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr deinit_camera_manager_service_;  
   using CameraGetType = umd_psdk_interfaces::srv::CameraGetType;
   rclcpp::Service<CameraGetType>::SharedPtr camera_get_type_service_;  
   using CameraSetEV = umd_psdk_interfaces::srv::CameraSetEV;
@@ -210,8 +207,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   using CameraSetInfraredZoom = umd_psdk_interfaces::srv::CameraSetInfraredZoom;
   rclcpp::Service<CameraSetInfraredZoom>::SharedPtr camera_set_infrared_zoom_service_;
   // Gimbal
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr init_gimbal_manager_service_;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr deinit_gimbal_manager_service_;
   using GimbalSetMode = umd_psdk_interfaces::srv::GimbalSetMode;
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   using GimbalReset = umd_psdk_interfaces::srv::GimbalReset;
@@ -321,46 +316,38 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void camera_download_file_by_index_callback_();
   void camera_delete_file_by_index_callback_();
   void gimbal_rotation_callback_();
-  // Service callbacks
-  bool init_camera_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);
-  bool deinit_camera_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);                                     
-  bool camera_get_type_callback_(const std::shared_ptr<CameraGetType::Request> request, 
+  // Service callbacks                              
+  void camera_get_type_callback_(const std::shared_ptr<CameraGetType::Request> request, 
                                  const std::shared_ptr<CameraGetType::Response> response); 
-  bool camera_set_ev_callback_(const std::shared_ptr<CameraSetEV::Request> request, 
+  void camera_set_ev_callback_(const std::shared_ptr<CameraSetEV::Request> request, 
                                  const std::shared_ptr<CameraSetEV::Response> response);     
-  bool camera_get_ev_callback_(const std::shared_ptr<CameraGetEV::Request> request, 
+  void camera_get_ev_callback_(const std::shared_ptr<CameraGetEV::Request> request, 
                                  const std::shared_ptr<CameraGetEV::Response> response);  
-  bool camera_set_shutter_speed_callback_(const std::shared_ptr<CameraSetShutterSpeed::Request> request, 
+  void camera_set_shutter_speed_callback_(const std::shared_ptr<CameraSetShutterSpeed::Request> request, 
                                  const std::shared_ptr<CameraSetShutterSpeed::Response> response);   
-  bool camera_get_shutter_speed_callback_(const std::shared_ptr<CameraGetShutterSpeed::Request> request, 
+  void camera_get_shutter_speed_callback_(const std::shared_ptr<CameraGetShutterSpeed::Request> request, 
                                  const std::shared_ptr<CameraGetShutterSpeed::Response> response); 
-  bool camera_set_iso_callback_(const std::shared_ptr<CameraSetISO::Request> request, 
+  void camera_set_iso_callback_(const std::shared_ptr<CameraSetISO::Request> request, 
                                  const std::shared_ptr<CameraSetISO::Response> response);    
-  bool camera_get_iso_callback_(const std::shared_ptr<CameraGetISO::Request> request, 
+  void camera_get_iso_callback_(const std::shared_ptr<CameraGetISO::Request> request, 
                                  const std::shared_ptr<CameraGetISO::Response> response);                                                                                                                                                                                                                 
-  bool camera_set_focus_target_callback_(const std::shared_ptr<CameraSetFocusTarget::Request> request, 
+  void camera_set_focus_target_callback_(const std::shared_ptr<CameraSetFocusTarget::Request> request, 
                                  const std::shared_ptr<CameraSetFocusTarget::Response> response);
-  bool camera_get_focus_target_callback_(const std::shared_ptr<CameraGetFocusTarget::Request> request, 
+  void camera_get_focus_target_callback_(const std::shared_ptr<CameraGetFocusTarget::Request> request, 
                                  const std::shared_ptr<CameraGetFocusTarget::Response> response); 
-  bool camera_set_focus_mode_callback_(const std::shared_ptr<CameraSetFocusMode::Request> request, 
+  void camera_set_focus_mode_callback_(const std::shared_ptr<CameraSetFocusMode::Request> request, 
                                  const std::shared_ptr<CameraSetFocusMode::Response> response); 
-  bool camera_get_focus_mode_callback_(const std::shared_ptr<CameraGetFocusMode::Request> request, 
+  void camera_get_focus_mode_callback_(const std::shared_ptr<CameraGetFocusMode::Request> request, 
                                  const std::shared_ptr<CameraGetFocusMode::Response> response);  
-  bool camera_set_optical_zoom_callback_(const std::shared_ptr<CameraSetOpticalZoom::Request> request, 
+  void camera_set_optical_zoom_callback_(const std::shared_ptr<CameraSetOpticalZoom::Request> request, 
                                  const std::shared_ptr<CameraSetOpticalZoom::Response> response); 
-  bool camera_get_optical_zoom_callback_(const std::shared_ptr<CameraGetOpticalZoom::Request> request, 
+  void camera_get_optical_zoom_callback_(const std::shared_ptr<CameraGetOpticalZoom::Request> request, 
                                  const std::shared_ptr<CameraGetOpticalZoom::Response> response);   
-  bool camera_set_infrared_zoom_callback_(const std::shared_ptr<CameraSetInfraredZoom::Request> request, 
-                                 const std::shared_ptr<CameraSetInfraredZoom::Response> response); 
-  bool init_gimbal_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);
-  bool deinit_gimbal_manager_callback_(const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-                                     const std::shared_ptr<std_srvs::srv::Empty::Response> response);                                                                                                                                                                                 
-  bool gimbal_set_mode_callback_(const std::shared_ptr<GimbalSetMode::Request> request, 
+  void camera_set_infrared_zoom_callback_(const std::shared_ptr<CameraSetInfraredZoom::Request> request, 
+                                 const std::shared_ptr<CameraSetInfraredZoom::Response> response);                                                                                                                                                                               
+  void gimbal_set_mode_callback_(const std::shared_ptr<GimbalSetMode::Request> request, 
                                      const std::shared_ptr<GimbalSetMode::Response> response);  
-  bool gimbal_reset_callback_(const std::shared_ptr<GimbalReset::Request> request, 
+  void gimbal_reset_callback_(const std::shared_ptr<GimbalReset::Request> request, 
                                      const std::shared_ptr<GimbalReset::Response> response);                                                                       
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
@@ -375,6 +362,24 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void initialize_ros_camera_elements(); 
   void initialize_ros_gimbal_elements(); 
   void subscribe_attitude_topic();
+
+  std::map <E_DjiCameraType, std::string> camera_type_str = 
+  {
+    {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
+    {DJI_CAMERA_TYPE_Z30,     "Zenmuse Z30"},
+    {DJI_CAMERA_TYPE_XT2,     "Zenmuse XT2"},
+    {DJI_CAMERA_TYPE_PSDK,    "Payload Camera"},
+    {DJI_CAMERA_TYPE_XTS,     "Zenmuse XTS"},
+    {DJI_CAMERA_TYPE_H20,     "Zenmuse H20"},
+    {DJI_CAMERA_TYPE_H20T,    "Zenmuse H20T"},
+    {DJI_CAMERA_TYPE_P1,      "Zenmuse P1"},
+    {DJI_CAMERA_TYPE_L1,      "Zenmuse L1"},
+    {DJI_CAMERA_TYPE_H20N,    "Zenmuse H20N"},
+    {DJI_CAMERA_TYPE_M30,     "M30 Camera"},
+    {DJI_CAMERA_TYPE_M30T,    "M30T Camera"},
+    {DJI_CAMERA_TYPE_M3E,     "M3E Camera"},
+    {DJI_CAMERA_TYPE_M3T,     "M3T Camera"},
+  };
 
 };
 extern std::shared_ptr<PSDKWrapper> global_ptr_;
