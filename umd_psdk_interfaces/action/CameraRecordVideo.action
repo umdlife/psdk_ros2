@@ -1,6 +1,6 @@
 # Goal definition
 uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
-uint8 start_stop # 0 for stop and 1 for start
+bool start_stop # 0 for stop and 1 for start
 ---
 # Result definition
 bool result
