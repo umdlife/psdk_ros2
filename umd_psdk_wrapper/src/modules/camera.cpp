@@ -64,12 +64,6 @@ camera_delete_file_by_index_action_ =
           shared_from_this(), "camera_delete_file_by_index",
           std::bind(&PSDKWrapper::camera_delete_file_by_index_callback_, this));
 // Services
-init_camera_manager_service_ = create_service<std_srvs::srv::Empty>(
-    "init_camera_manager",
-    std::bind(&PSDKWrapper::init_camera_manager_callback_, this, _1, _2), qos_profile_);
-deinit_camera_manager_service_ = create_service<std_srvs::srv::Empty>(
-    "deinit_camera_manager",
-    std::bind(&PSDKWrapper::deinit_camera_manager_callback_, this, _1, _2), qos_profile_);
 camera_get_type_service_ = create_service<CameraGetType>(
           "camera_get_type",
           std::bind(&PSDKWrapper::camera_get_type_callback_, this, _1, _2), qos_profile_);
@@ -169,7 +163,6 @@ PSDKWrapper::clean_ros_actions()
     camera_start_shoot_interval_photo_action_.reset();
     camera_stop_shoot_photo_action_.reset();
     camera_record_video_action_.reset();
-    init_camera_manager_service_.reset();
     camera_get_type_service_.reset();
     camera_set_ev_service_.reset();
     camera_get_ev_service_.reset();
@@ -190,37 +183,7 @@ PSDKWrapper::clean_ros_actions()
     camera_delete_file_by_index_action_.reset();
 }
 
-bool PSDKWrapper::init_camera_manager_callback_(
-    const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-    const std::shared_ptr<std_srvs::srv::Empty::Response> response)
-{
-    RCLCPP_INFO(get_logger(), "Initiating camera manager...");
-    T_DjiReturnCode return_code;
-    return_code = DjiCameraManager_Init();
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-      RCLCPP_ERROR(get_logger(), "Could not initialize Camera Manager");
-      return false;
-      // TODO(@lidiadltv): Add the exitCameraModule action from the PSDK samples?
-    }
-    return true;
-}
-
-bool PSDKWrapper::deinit_camera_manager_callback_(
-    const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-    const std::shared_ptr<std_srvs::srv::Empty::Response> response)
-{
-    RCLCPP_INFO(get_logger(), "Deinitiating camera manager...");
-    T_DjiReturnCode return_code;
-    return_code = DjiCameraManager_DeInit();
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        RCLCPP_ERROR(get_logger(),"Camera manager deinit failed ,error code :0x%08X", return_code);
-    }
-
-    RCLCPP_ERROR(get_logger(),"Camera manager sample end");
-    return true;
-}
-
-bool PSDKWrapper::camera_get_type_callback_(const std::shared_ptr<CameraGetType::Request> request, 
+void PSDKWrapper::camera_get_type_callback_(const std::shared_ptr<CameraGetType::Request> request, 
                                  const std::shared_ptr<CameraGetType::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Get camera type request");
@@ -229,15 +192,27 @@ bool PSDKWrapper::camera_get_type_callback_(const std::shared_ptr<CameraGetType:
     E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
     return_code = DjiCameraManager_GetCameraType(index, &camera_type);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        RCLCPP_ERROR(get_logger(),"Get mounted position %d camera's type failed, error code: 0x%08X\r\n",
-                       index, return_code);
-        return false;
+      RCLCPP_ERROR(get_logger(),"Get mounted position %d camera's type failed, error code: 0x%08X\r\n",
+                     index, return_code);
+      response->success = false;
+      return;
     }
-    response->result = camera_type;
-    return true;
+    else{
+        for(auto& it : camera_type_str)
+        {
+            if(it.first == camera_type)
+            {
+                response->camera_type = it.second;
+                break;
+            }
+        }
+      response->success = true;
+      return;
+    }
+    
 }     
 
-bool PSDKWrapper::camera_set_ev_callback_(const std::shared_ptr<CameraSetEV::Request> request, 
+void PSDKWrapper::camera_set_ev_callback_(const std::shared_ptr<CameraSetEV::Request> request, 
                                  const std::shared_ptr<CameraSetEV::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Set exposure compensation factor");
@@ -248,23 +223,29 @@ bool PSDKWrapper::camera_set_ev_callback_(const std::shared_ptr<CameraSetEV::Req
         static_cast<E_DjiCameraManagerExposureCompensation>(request->ev_factor);
 
     return_code = DjiCameraManager_SetExposureMode(index, 
-                    DJI_CAMERA_MANAGER_EXPOSURE_MODE_EXPOSURE_MANUAL);
+                    DJI_CAMERA_MANAGER_EXPOSURE_MODE_PROGRAM_AUTO);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's exposure mode failed,"
                        "error code: 0x%08X\r\n", index, return_code);
-        return false;
+        response->success = false;
+        return;
     }
 
     return_code = DjiCameraManager_SetExposureCompensation(index, ev_factor);
         if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
             RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's EV failed,"
                            "error code: 0x%08X\r\n", index, return_code);
-            return false;
+            response->success = false;
+            return;
         }
-    return true;
+    else{
+      response->success = true;
+      return;
+    }
+
 } 
 
-bool PSDKWrapper::camera_get_ev_callback_(const std::shared_ptr<CameraGetEV::Request> request, 
+void PSDKWrapper::camera_get_ev_callback_(const std::shared_ptr<CameraGetEV::Request> request, 
                                  const std::shared_ptr<CameraGetEV::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Get exposure compensation factor");
@@ -275,15 +256,18 @@ bool PSDKWrapper::camera_get_ev_callback_(const std::shared_ptr<CameraGetEV::Req
         if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
             RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's EV failed,"
                            "error code: 0x%08X\r\n", index, return_code);
-            return false;
+            response->success = false;
+            return;
         }
-    response->result = exposure_compensation_temp;
-    return true;
+    else
+    {
+        response->success = true;
+        response->ev_factor = exposure_compensation_temp;
+        return;
+    }
 } 
 
-
-
-bool PSDKWrapper::camera_set_shutter_speed_callback_(const std::shared_ptr<CameraSetShutterSpeed::Request> request, 
+void PSDKWrapper::camera_set_shutter_speed_callback_(const std::shared_ptr<CameraSetShutterSpeed::Request> request, 
                                  const std::shared_ptr<CameraSetShutterSpeed::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Set shutter speed factor");
@@ -292,43 +276,74 @@ bool PSDKWrapper::camera_set_shutter_speed_callback_(const std::shared_ptr<Camer
     E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
     E_DjiCameraManagerShutterSpeed shutter_speed_factor =
         static_cast<E_DjiCameraManagerShutterSpeed>(request->shutter_speed_factor);
-    return_code = DjiCameraManager_SetExposureMode(index, 
-                    DJI_CAMERA_MANAGER_EXPOSURE_MODE_SHUTTER_PRIORITY);
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's exposure mode failed,"
-                       "error code: 0x%08X\r\n", index, return_code);
-        return false;
+    if(!request->work_mode){
+        return_code = DjiCameraManager_SetExposureMode(index, 
+                    DJI_CAMERA_MANAGER_EXPOSURE_MODE_EXPOSURE_MANUAL); 
+        if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+            RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's exposure mode failed,"
+                        "error code: 0x%08X\r\n", index, return_code);
+            response->success = false;
+            return;
+        }
     }
+    else if(request->work_mode)
+    {
+        return_code = DjiCameraManager_SetExposureMode(index, 
+                    DJI_CAMERA_MANAGER_EXPOSURE_MODE_SHUTTER_PRIORITY); 
+        if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+            RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's exposure mode failed,"
+                        "error code: 0x%08X\r\n", index, return_code);
+            response->success = false;
+            return;
+        }
+    }
+    
     return_code = DjiCameraManager_SetShutterSpeed(index, shutter_speed_factor);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
         return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's shutter speed %d failed, "
                        "error code: 0x%08X.", index, shutter_speed_factor, return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    return true;
+    else{
+      response->success = true;
+      return;
+    }
 } 
 
-bool PSDKWrapper::camera_get_shutter_speed_callback_(const std::shared_ptr<CameraGetShutterSpeed::Request> request, 
+void PSDKWrapper::camera_get_shutter_speed_callback_(const std::shared_ptr<CameraGetShutterSpeed::Request> request, 
                                  const std::shared_ptr<CameraGetShutterSpeed::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Get shutter speed factor");
     T_DjiReturnCode return_code;
     E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
     E_DjiCameraManagerShutterSpeed shutter_speed_temp;
+    // TODO(@lidiadltv): Differentiate between camera types!
+    return_code = DjiCameraManager_SetExposureMode(index,
+                                                      DJI_CAMERA_MANAGER_EXPOSURE_MODE_EXPOSURE_UNKNOWN);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+        RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's exposure mode failed,"
+                       "error code: 0x%08X and mode is: %d\r\n", index, return_code, DJI_CAMERA_MANAGER_EXPOSURE_MODE_EXPOSURE_UNKNOWN);
+    }
+
 
     return_code = DjiCameraManager_GetShutterSpeed(index, &shutter_speed_temp);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
         return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
         RCLCPP_ERROR(get_logger(),"Get mounted position %d camera's shutter speed failed, "
                        "error code: 0x%08X.", index, return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    response->result = shutter_speed_temp;
-    return true;
+    else{
+      response->shutter_speed = shutter_speed_temp;
+      response->success = true;
+      return;
+    }
 } 
 
-bool PSDKWrapper::camera_set_iso_callback_(const std::shared_ptr<CameraSetISO::Request> request, 
+void PSDKWrapper::camera_set_iso_callback_(const std::shared_ptr<CameraSetISO::Request> request, 
                                  const std::shared_ptr<CameraSetISO::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Set ISO factor");
@@ -337,12 +352,14 @@ bool PSDKWrapper::camera_set_iso_callback_(const std::shared_ptr<CameraSetISO::R
     E_DjiCameraManagerISO iso_factor =
         static_cast<E_DjiCameraManagerISO>(request->iso_factor);
 
-    return_code = DjiCameraManager_SetExposureMode(index, 
-                    DJI_CAMERA_MANAGER_EXPOSURE_MODE_EXPOSURE_MANUAL);
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    return_code = DjiCameraManager_SetExposureMode(index, DJI_CAMERA_MANAGER_EXPOSURE_MODE_PROGRAM_AUTO);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
+        return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) 
+        {
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's exposure mode failed,"
                        "error code: 0x%08X\r\n", index, return_code);
-        return false;
+        response->success = false;
+        return;
     }
 
     return_code = DjiCameraManager_SetISO(index, iso_factor);
@@ -350,12 +367,16 @@ bool PSDKWrapper::camera_set_iso_callback_(const std::shared_ptr<CameraSetISO::R
         return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's iso %d failed, "
                        "error code: 0x%08X.", index, iso_factor, return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    return true;
+    else{
+      response->success = true;
+      return;
+    }
 } 
 
-bool PSDKWrapper::camera_get_iso_callback_(const std::shared_ptr<CameraGetISO::Request> request, 
+void PSDKWrapper::camera_get_iso_callback_(const std::shared_ptr<CameraGetISO::Request> request, 
                                  const std::shared_ptr<CameraGetISO::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Get ISO factor");
@@ -368,13 +389,17 @@ bool PSDKWrapper::camera_get_iso_callback_(const std::shared_ptr<CameraGetISO::R
         return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
         RCLCPP_ERROR(get_logger(),"Get mounted position %d camera's iso failed, error code: 0x%08X.",
                        index, return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    response->result = iso_factor_temp;
-    return true;
+    else{
+      response->iso_factor = iso_factor_temp;
+      response->success = true;
+      return;
+    }
 } 
 
-bool PSDKWrapper::camera_set_focus_target_callback_(const std::shared_ptr<CameraSetFocusTarget::Request> request, 
+void PSDKWrapper::camera_set_focus_target_callback_(const std::shared_ptr<CameraSetFocusTarget::Request> request, 
                                  const std::shared_ptr<CameraSetFocusTarget::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Set target focus point");
@@ -382,15 +407,16 @@ bool PSDKWrapper::camera_set_focus_target_callback_(const std::shared_ptr<Camera
     T_DjiReturnCode return_code;
     E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
     T_DjiCameraManagerFocusPosData focus_point;
-    focus_point.focusX = static_cast<dji_f32_t>(request->x_target);
-    focus_point.focusY = static_cast<dji_f32_t>(request->y_target);
+    focus_point.focusX = request->x_target; // static_cast<dji_f32_t>(request->x_target);
+    focus_point.focusY = request->y_target; // static_cast<dji_f32_t>(request->y_target);
     return_code = DjiCameraManager_SetFocusMode(index, DJI_CAMERA_MANAGER_FOCUS_MODE_AUTO);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
         return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's focus mode(%d) failed,"
                        " error code :0x%08X.", index, DJI_CAMERA_MANAGER_FOCUS_MODE_AUTO,
                        return_code);
-        return false;
+        response->success = false;
+        return;
     }
     return_code = DjiCameraManager_SetFocusTarget(index, focus_point);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
@@ -398,11 +424,16 @@ bool PSDKWrapper::camera_set_focus_target_callback_(const std::shared_ptr<Camera
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's focus point(%0.1f, %0.1f) failed,"
                        " error code :0x%08X.", index, focus_point.focusX, focus_point.focusY,
                        return_code);
+        response->success = false;
+        return;
     }
-    return true;
+    else{
+      response->success = true;
+      return;
+    }
 }
 
-bool PSDKWrapper::camera_get_focus_target_callback_(const std::shared_ptr<CameraGetFocusTarget::Request> request, 
+void PSDKWrapper::camera_get_focus_target_callback_(const std::shared_ptr<CameraGetFocusTarget::Request> request, 
                                  const std::shared_ptr<CameraGetFocusTarget::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Get target focus point");
@@ -415,14 +446,19 @@ bool PSDKWrapper::camera_get_focus_target_callback_(const std::shared_ptr<Camera
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's focus point(%0.1f, %0.1f) failed,"
                        " error code :0x%08X.", index, focus_point.focusX, focus_point.focusY,
                        return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    response->x_target = focus_point.focusX;
-    response->y_target = focus_point.focusY;
-    return true;
+    else
+    {
+        response->success = false;
+        response->x_target = focus_point.focusX;
+        response->y_target = focus_point.focusY;
+        return;
+    }
 }
 
-bool PSDKWrapper::camera_set_focus_mode_callback_(const std::shared_ptr<CameraSetFocusMode::Request> request, 
+void PSDKWrapper::camera_set_focus_mode_callback_(const std::shared_ptr<CameraSetFocusMode::Request> request, 
                                  const std::shared_ptr<CameraSetFocusMode::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Set target focus mode");
@@ -437,49 +473,61 @@ bool PSDKWrapper::camera_set_focus_mode_callback_(const std::shared_ptr<CameraSe
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's focus mode(%d) failed,"
                        " error code :0x%08X.", index, focus_mode,
                        return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    return true;
+    else{
+      response->success = true;
+      return;
+    }
 }
 
-bool PSDKWrapper::camera_get_focus_mode_callback_(const std::shared_ptr<CameraGetFocusMode::Request> request, 
+void PSDKWrapper::camera_get_focus_mode_callback_(const std::shared_ptr<CameraGetFocusMode::Request> request, 
                                  const std::shared_ptr<CameraGetFocusMode::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Get target focus mode");
     T_DjiReturnCode return_code;
     E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
-    E_DjiCameraManagerFocusMode focus_mode;
-    return_code = DjiCameraManager_GetFocusMode(index, &focus_mode);
+    E_DjiCameraManagerFocusMode focus_mode_temp;
+    return_code = DjiCameraManager_GetFocusMode(index, &focus_mode_temp);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS){
-        RCLCPP_ERROR(get_logger(),"Service failed trying to get focus mode from camera mounted in position %d failed,"
-                       " error code :0x%08X.", index, return_code);
-        return false;
+      RCLCPP_ERROR(get_logger(),"Service failed trying to get focus mode from camera mounted in position %d failed,"
+                     " error code :0x%08X.", index, return_code);
+      response->success = false;
+      return;
     }
-    response->result = focus_mode;
-    return true;
+    else{
+      response->success = true;
+      response->focus_mode = focus_mode_temp;
+      return;
+    }
 }
 
-bool PSDKWrapper::camera_set_optical_zoom_callback_(const std::shared_ptr<CameraSetOpticalZoom::Request> request, 
+void PSDKWrapper::camera_set_optical_zoom_callback_(const std::shared_ptr<CameraSetOpticalZoom::Request> request, 
                                  const std::shared_ptr<CameraSetOpticalZoom::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Set optical zoom factor");
     // TODO(@lidiadltv): Do I need to set the camera mode to any specific mode first?
     T_DjiReturnCode return_code;
     E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
-    E_DjiCameraZoomDirection zoom_direction = 
-            static_cast<E_DjiCameraZoomDirection>(request->zoom_direction);
-
+    // E_DjiCameraZoomDirection zoom_direction = 
+    //         static_cast<E_DjiCameraZoomDirection>(request->zoom_direction);
+    E_DjiCameraZoomDirection zoom_direction = DJI_CAMERA_ZOOM_DIRECTION_OUT;
     return_code = DjiCameraManager_SetOpticalZoomParam(index, zoom_direction, request->zoom_factor);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
         return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's zoom factor(%0.1f) failed, error code :0x%08X",
                       index, request->zoom_factor, return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    return true;
+    else{
+      response->success = true;
+      return;
+    }
 }
 
-bool PSDKWrapper::camera_get_optical_zoom_callback_(const std::shared_ptr<CameraGetOpticalZoom::Request> request, 
+void PSDKWrapper::camera_get_optical_zoom_callback_(const std::shared_ptr<CameraGetOpticalZoom::Request> request, 
                                  const std::shared_ptr<CameraGetOpticalZoom::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Get optical zoom factor");
@@ -491,14 +539,18 @@ bool PSDKWrapper::camera_get_optical_zoom_callback_(const std::shared_ptr<Camera
         return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
         RCLCPP_ERROR(get_logger(),"Get mounted position %d camera's zoom param failed, error code :0x%08X",
                        index, return_code);
-        return return_code;
+        response->success = false;
+        return;
     }
-    // TODO(@lidiadltv): Return also maxOpticalZoomFactor in the service?
-    response->result = zoom_factor.currentOpticalZoomFactor;
-    return true;
+    else{
+      response->success = true;
+      // TODO(@lidiadltv): Return also maxOpticalZoomFactor in the service?
+      response->zoom_factor = zoom_factor.currentOpticalZoomFactor;
+      return;
+    }
 }
 
-bool PSDKWrapper::camera_set_infrared_zoom_callback_(const std::shared_ptr<CameraSetInfraredZoom::Request> request, 
+void PSDKWrapper::camera_set_infrared_zoom_callback_(const std::shared_ptr<CameraSetInfraredZoom::Request> request, 
                                  const std::shared_ptr<CameraSetInfraredZoom::Response> response)
 {
     RCLCPP_ERROR(get_logger(),"Set infrared zoom factor");
@@ -511,9 +563,13 @@ bool PSDKWrapper::camera_set_infrared_zoom_callback_(const std::shared_ptr<Camer
         return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND) {
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's zoom factor(%0.1f) failed, error code :0x%08X",
                       index, request->zoom_factor, return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    return true;
+    else{
+      response->success = true;
+      return;
+    }
 }
 
 void PSDKWrapper::camera_start_shoot_single_photo_callback_()
@@ -789,7 +845,7 @@ void PSDKWrapper::camera_record_video_callback_()
         RCLCPP_INFO(get_logger(),"set mounted position %d camera's work mode as record-video mode failed,"
                        " error code :0x%08X", index, return_code);
         camera_record_video_action_->terminate_current(action_result);
-        // return;
+        return;
     }
 
     if(record_status){
@@ -800,7 +856,7 @@ void PSDKWrapper::camera_record_video_callback_()
             RCLCPP_INFO(get_logger(),"Mounted position %d camera start to record video failed,"
                            " error code:0x%08X.", index, return_code);
             camera_record_video_action_->terminate_current(action_result);
-            // return;
+            return;
             }
         }
     // TODO(@lidiadltv): Should I put this in a service since is not a long task?
@@ -811,15 +867,13 @@ void PSDKWrapper::camera_record_video_callback_()
             RCLCPP_INFO(get_logger(),"Mounted position %d camera stop to record video failed,"
                         " error code:0x%08X.", index, return_code);
             camera_record_video_action_->terminate_current(action_result);
-            // return;
+            return;
         }
     }
     // TODO(@lidiadltv): Test what happens if I leave the start_stop empty on the call. Bug?
-    else
-    {
-        action_result->result = true;
-        camera_record_video_action_->succeeded_current(action_result);
-    }
+    action_result->result = true;
+    camera_record_video_action_->succeeded_current(action_result);
+    
 }
 
 
@@ -901,7 +955,7 @@ void PSDKWrapper::camera_download_file_by_index_callback_()
 
 void PSDKWrapper::camera_delete_file_by_index_callback_()
 {
-    RCLCPP_INFO(get_logger(), "Calling Camera download file list");
+    RCLCPP_INFO(get_logger(), "Calling Camera delete file by index");
     auto current_goal = camera_delete_file_by_index_action_->get_current_goal();
     auto action_result = std::make_shared<CameraDeleteFileByIndex::Result>();
     action_result->result = false;
