@@ -24,12 +24,6 @@ using namespace std::placeholders;
 void PSDKWrapper::initialize_ros_gimbal_elements()
 {
 // Services
-init_gimbal_manager_service_ = create_service<std_srvs::srv::Empty>(
-    "init_gimbal_manager",
-    std::bind(&PSDKWrapper::init_gimbal_manager_callback_, this, _1, _2), qos_profile_);
-deinit_gimbal_manager_service_ = create_service<std_srvs::srv::Empty>(
-    "deinit_gimbal_manager",
-    std::bind(&PSDKWrapper::deinit_gimbal_manager_callback_, this, _1, _2), qos_profile_);
 gimbal_set_mode_service_ = create_service<GimbalSetMode>(
     "gimbal_set_mode",
     std::bind(&PSDKWrapper::gimbal_set_mode_callback_, this, _1, _2), qos_profile_);
@@ -45,6 +39,7 @@ gimbal_rotation_action_ =
 
 bool PSDKWrapper::init_gimbal_manager()
 {
+    RCLCPP_INFO(get_logger(), "Initiating gimbal manager...");
     if (DjiGimbalManager_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
         RCLCPP_ERROR(get_logger(),"Could not initialize gimbal manager");
         return false;
@@ -68,43 +63,12 @@ PSDKWrapper::deactivate_gimbal_ros_elements()
 
 void PSDKWrapper::clean_ros_gimbal_services()
 {
-    init_gimbal_manager_service_.reset();
-    deinit_gimbal_manager_service_.reset();
     gimbal_set_mode_service_.reset();
     gimbal_reset_service_.reset();
     gimbal_rotation_action_.reset();
 }
 
-
-bool PSDKWrapper::init_gimbal_manager_callback_(
-    const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-    const std::shared_ptr<std_srvs::srv::Empty::Response> response)
-{
-    RCLCPP_INFO(get_logger(), "Initiating gimbal manager...");
-    T_DjiReturnCode return_code;
-    return_code = DjiGimbalManager_Init();
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        RCLCPP_INFO(get_logger(),"Init gimbal manager failed, error code: 0x%08X", return_code);
-        return false;
-    }
-    return true;
-}
-
-bool PSDKWrapper::deinit_gimbal_manager_callback_(
-    const std::shared_ptr<std_srvs::srv::Empty::Request> request, 
-    const std::shared_ptr<std_srvs::srv::Empty::Response> response)
-{
-    RCLCPP_INFO(get_logger(), "Deinitiating gimbal manager...");
-    T_DjiReturnCode return_code;
-    return_code = DjiGimbalManager_Deinit();
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        RCLCPP_INFO(get_logger(), "Deinit gimbal manager failed, error code: 0x%08X", return_code);
-        return false;
-    }
-    return true;
-}
-
-bool PSDKWrapper::gimbal_set_mode_callback_(
+void PSDKWrapper::gimbal_set_mode_callback_(
     const std::shared_ptr<GimbalSetMode::Request> request, 
     const std::shared_ptr<GimbalSetMode::Response> response)
 {
@@ -115,12 +79,18 @@ bool PSDKWrapper::gimbal_set_mode_callback_(
     return_code = DjiGimbalManager_SetMode(index, gimbal_mode);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
         RCLCPP_INFO(get_logger(),"Set gimbal mode failed, error code: 0x%08X", return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    return true;
+    else
+    {
+        response->success = true;
+        return;
+    }
+
 }
 
-bool PSDKWrapper::gimbal_reset_callback_(
+void PSDKWrapper::gimbal_reset_callback_(
     const std::shared_ptr<GimbalReset::Request> request, 
     const std::shared_ptr<GimbalReset::Response> response)
 {
@@ -130,9 +100,14 @@ bool PSDKWrapper::gimbal_reset_callback_(
     return_code = DjiGimbalManager_Reset(index);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
         RCLCPP_INFO(get_logger(),"Reset gimbal failed, error code: 0x%08X", return_code);
-        return false;
+        response->success = false;
+        return;
     }
-    return true;
+    else
+    {
+        response->success = true;
+        return;
+    }
 }
 
 void PSDKWrapper::gimbal_rotation_callback_()
