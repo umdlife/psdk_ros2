@@ -1,5 +1,5 @@
 #request
-uint8 payload_index # see enum E_DjiMountPosition in dji_typedef.h
+uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
 bool work_mode # 0 for manual mode
                 # 1 for shutter priority mode
 uint8 shutter_speed_factor # see enum E_DjiCameraManagerShutterSpeed in dji_camera_manager.h 
