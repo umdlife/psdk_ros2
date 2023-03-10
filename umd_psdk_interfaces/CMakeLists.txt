@@ -33,6 +33,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GPSDetails.msg"
   "msg/RelativeObstacleInfo.msg"
   "msg/SDKCtrlInfo.msg"
+  "msg/RTKYaw.msg"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
