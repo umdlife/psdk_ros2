@@ -16,6 +16,10 @@
 #include "umd_psdk_wrapper/psdk_wrapper.hpp"
 
 namespace umd_psdk {
+
+using namespace std::placeholders; 
+
+
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())
 {
@@ -56,10 +60,8 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   if (!set_environment()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
-  initialize_ros_publishers();
-  // Sensors
-  initialize_ros_camera_elements();
-  initialize_ros_gimbal_elements();
+
+  initialize_ros_elements();
   
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -78,10 +80,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   }
 
   activate_ros_elements();
-  // Sensors
-  activate_ros_actions();
-  activate_gimbal_ros_elements();
-  
+
   if (!init_telemetry()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -104,9 +103,7 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
   (void)state;
   deactivate_ros_elements();
-  // Sensors
-  deactivate_ros_actions();
-  deactivate_gimbal_ros_elements();
+
   destroyBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -117,9 +114,7 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
   (void)state;
   clean_ros_elements();
-  // Sensors
-  clean_ros_actions();
-  clean_ros_gimbal_services();
+
   unsubscribe_psdk_topics();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -466,4 +461,283 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
   return true;
 }
 
+
+
+void PSDKWrapper::initialize_ros_elements()
+{
+//// Camera
+
+// Actions
+camera_start_shoot_single_photo_action_ = 
+    std::make_unique<nav2_util::SimpleActionServer<CameraStartShootSinglePhoto>>(
+          shared_from_this(), "camera_start_shoot_single_photo",
+          std::bind(&PSDKWrapper::camera_start_shoot_single_photo_callback_, this));
+camera_start_shoot_burst_photo_action_ = 
+    std::make_unique<nav2_util::SimpleActionServer<CameraStartShootBurstPhoto>>(
+          shared_from_this(), "camera_start_shoot_burst_photo",
+          std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_callback_, this));
+camera_start_shoot_aeb_photo_action_ =
+    std::make_unique<nav2_util::SimpleActionServer<CameraStartShootAEBPhoto>>(
+          shared_from_this(), "camera_start_shoot_aeb_photo",
+          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_callback_, this));
+camera_start_shoot_interval_photo_action_ =
+    std::make_unique<nav2_util::SimpleActionServer<CameraStartShootIntervalPhoto>>(
+          shared_from_this(), "camera_start_shoot_interval_photo",
+          std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_callback_, this));
+camera_stop_shoot_photo_action_ =
+    std::make_unique<nav2_util::SimpleActionServer<CameraStopShootPhoto>>(
+          shared_from_this(), "camera_stop_shoot_photo",
+          std::bind(&PSDKWrapper::camera_stop_shoot_photo_callback_, this));
+camera_record_video_action_ =
+    std::make_unique<nav2_util::SimpleActionServer<CameraRecordVideo>>(
+          shared_from_this(), "camera_record_video",
+          std::bind(&PSDKWrapper::camera_record_video_callback_, this));
+camera_get_laser_ranging_info_action_ = 
+    std::make_unique<nav2_util::SimpleActionServer<CameraGetLaserRangingInfo>>(
+          shared_from_this(), "camera_get_laser_ranging_info",
+          std::bind(&PSDKWrapper::camera_get_laser_ranging_info_callback_, this));
+camera_download_file_list_action_ = 
+    std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
+          shared_from_this(), "camera_download_file_list",
+          std::bind(&PSDKWrapper::camera_download_file_list_callback_, this));
+camera_download_file_by_index_action_ =
+    std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>>(
+          shared_from_this(), "camera_download_file_by_index",
+          std::bind(&PSDKWrapper::camera_download_file_by_index_callback_, this));
+camera_delete_file_by_index_action_ =
+    std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
+          shared_from_this(), "camera_delete_file_by_index",
+          std::bind(&PSDKWrapper::camera_delete_file_by_index_callback_, this));
+// Services
+camera_get_type_service_ = create_service<CameraGetType>(
+          "camera_get_type",
+          std::bind(&PSDKWrapper::camera_get_type_callback_, this, _1, _2), qos_profile_);
+camera_set_ev_service_ = create_service<CameraSetEV>(
+          "camera_set_ev",
+          std::bind(&PSDKWrapper::camera_set_ev_callback_, this, _1, _2), qos_profile_);
+camera_get_ev_service_ = create_service<CameraGetEV>(
+          "camera_get_ev",
+          std::bind(&PSDKWrapper::camera_get_ev_callback_, this, _1, _2), qos_profile_);
+camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
+          "camera_set_shutter_speed",
+          std::bind(&PSDKWrapper::camera_set_shutter_speed_callback_, this, _1, _2), qos_profile_);
+camera_get_shutter_speed_service_ = create_service<CameraGetShutterSpeed>(
+          "camera_get_shutter_speed",
+          std::bind(&PSDKWrapper::camera_get_shutter_speed_callback_, this, _1, _2), qos_profile_);
+camera_set_iso_service_ = create_service<CameraSetISO>(
+          "camera_set_iso",
+          std::bind(&PSDKWrapper::camera_set_iso_callback_, this, _1, _2), qos_profile_);
+camera_get_iso_service_ = create_service<CameraGetISO>(
+          "camera_get_iso",
+          std::bind(&PSDKWrapper::camera_get_iso_callback_, this, _1, _2), qos_profile_);
+camera_set_focus_target_service_ = create_service<CameraSetFocusTarget>(
+          "camera_set_focus_target",
+          std::bind(&PSDKWrapper::camera_set_focus_target_callback_, this, _1, _2), qos_profile_);
+camera_get_focus_target_service_ = create_service<CameraGetFocusTarget>(
+          "camera_get_focus_target",
+          std::bind(&PSDKWrapper::camera_get_focus_target_callback_, this, _1, _2), qos_profile_);
+camera_set_focus_mode_service_ = create_service<CameraSetFocusMode>(
+          "camera_set_focus_mode",
+          std::bind(&PSDKWrapper::camera_set_focus_mode_callback_, this, _1, _2), qos_profile_);
+camera_get_focus_mode_service_ = create_service<CameraGetFocusMode>(
+          "camera_get_focus_mode",
+          std::bind(&PSDKWrapper::camera_get_focus_mode_callback_, this, _1, _2), qos_profile_);
+camera_set_optical_zoom_service_ = create_service<CameraSetOpticalZoom>(
+          "camera_set_optical_zoom",
+          std::bind(&PSDKWrapper::camera_set_optical_zoom_callback_, this, _1, _2), qos_profile_);
+camera_get_optical_zoom_service_ = create_service<CameraGetOpticalZoom>(
+          "camera_get_optical_zoom",
+          std::bind(&PSDKWrapper::camera_get_optical_zoom_callback_, this, _1, _2), qos_profile_);
+camera_set_infrared_zoom_service_= create_service<CameraSetInfraredZoom>(
+          "camera_set_infrared_zoom",
+          std::bind(&PSDKWrapper::camera_set_infrared_zoom_callback_, this, _1, _2), qos_profile_);
+
+//// Gimbal
+// Services
+gimbal_set_mode_service_ = create_service<GimbalSetMode>(
+    "gimbal_set_mode",
+    std::bind(&PSDKWrapper::gimbal_set_mode_callback_, this, _1, _2), qos_profile_);
+gimbal_reset_service_ = create_service<GimbalReset>(
+    "gimbal_reset",
+    std::bind(&PSDKWrapper::gimbal_reset_callback_, this, _1, _2), qos_profile_);
+// Actions
+gimbal_rotation_action_ = 
+    std::make_unique<nav2_util::SimpleActionServer<GimbalRotation>>(
+          shared_from_this(), "gimbal_rotation",
+          std::bind(&PSDKWrapper::gimbal_rotation_callback_, this));
+//// Telemetry
+// Publishers
+  attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
+      "dji_psdk_ros/attitude", 10);
+  acceleration_ground_pub_ = create_publisher<geometry_msgs::msg::AccelStamped>(
+      "dji_psdk_ros/acceleration_ground", 10);
+  acceleration_body_pub_ = create_publisher<geometry_msgs::msg::AccelStamped>(
+      "dji_psdk_ros/acceleration_body", 10);
+  imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("dji_psdk_ros/imu", 10);
+  velocity_ground_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
+      "dji_psdk_ros/velocity_ground", 10);
+  flight_status_pub_ =
+      create_publisher<std_msgs::msg::UInt8>("dji_psdk_ros/fligh_status", 10);
+  altitude_pub_ =
+      create_publisher<umd_psdk_interfaces::msg::Altitude>("dji_psdk_ros/altitude", 10);
+  relative_height_pub_ =
+      create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/relative_height", 10);
+  gps_position_pub_ =
+      create_publisher<sensor_msgs::msg::NavSatFix>("dji_psdk_ros/gps_position", 10);
+  rtk_position_pub_ =
+      create_publisher<sensor_msgs::msg::NavSatFix>("dji_psdk_ros/rtk_position", 10);
+  magnetometer_pub_ = create_publisher<sensor_msgs::msg::MagneticField>(
+      "dji_psdk_ros/magnetometer", 10);
+  rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("dji_psdk_ros/rc", 10);
+  gimbal_angles_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
+      "dji_psdk_ros/gimbal_angles", 10);
+  gimbal_status_pub_ = create_publisher<umd_psdk_interfaces::msg::GimbalStatus>(
+      "dji_psdk_ros/gimbal_status", 10);
+  aircraft_status_pub_ = create_publisher<umd_psdk_interfaces::msg::AircraftStatus>(
+      "dji_psdk_ros/aircraft_status", 10);
+  battery_pub_ =
+      create_publisher<umd_psdk_interfaces::msg::Battery>("dji_psdk_ros/battery", 10);
+  flight_anomaly_pub_ = create_publisher<umd_psdk_interfaces::msg::FlightAnomaly>(
+      "dji_psdk_ros/flight_anomaly", 10);
+  position_fused_pub_ = create_publisher<umd_psdk_interfaces::msg::PositionFused>(
+      "dji_psdk_ros/position_fused", 10);
+  relative_obstacle_info_pub_ =
+      create_publisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>(
+          "dji_psdk_ros/relative_obstacle_info", 10);
+  home_position_pub_ = create_publisher<umd_psdk_interfaces::msg::HomePosition>(
+      "dji_psdk_ros/home_position", 10);
+}
+
+void PSDKWrapper::activate_ros_elements()
+{
+  // Camera
+  camera_start_shoot_single_photo_action_->activate();
+  camera_start_shoot_burst_photo_action_->activate();
+  camera_start_shoot_aeb_photo_action_->activate();
+  camera_start_shoot_interval_photo_action_->activate();
+  camera_stop_shoot_photo_action_->activate();
+  camera_record_video_action_->activate();
+  camera_get_laser_ranging_info_action_->activate();
+  camera_download_file_list_action_->activate();
+  camera_download_file_by_index_action_->activate();
+  camera_delete_file_by_index_action_->activate();
+  // Gimbal
+  gimbal_rotation_action_->activate();
+  // Telemetry
+  attitude_pub_->on_activate();
+  acceleration_ground_pub_->on_activate();
+  acceleration_body_pub_->on_activate();
+  imu_pub_->on_activate();
+  velocity_ground_pub_->on_activate();
+  flight_status_pub_->on_activate();
+  altitude_pub_->on_activate();
+  relative_height_pub_->on_activate();
+  gps_position_pub_->on_activate();
+  rtk_position_pub_->on_activate();
+  magnetometer_pub_->on_activate();
+  rc_pub_->on_activate();
+  gimbal_angles_pub_->on_activate();
+  gimbal_status_pub_->on_activate();
+  aircraft_status_pub_->on_activate();
+  battery_pub_->on_activate();
+  flight_anomaly_pub_->on_activate();
+  position_fused_pub_->on_activate();
+  relative_obstacle_info_pub_->on_activate();
+  home_position_pub_->on_activate();
+
+}
+
+void PSDKWrapper::deactivate_ros_elements()
+{
+  // Camera
+  camera_start_shoot_single_photo_action_->deactivate();
+  camera_start_shoot_burst_photo_action_->deactivate();
+  camera_start_shoot_aeb_photo_action_->deactivate();
+  camera_start_shoot_interval_photo_action_->deactivate();
+  camera_stop_shoot_photo_action_->deactivate();
+  camera_record_video_action_->deactivate();
+  camera_get_laser_ranging_info_action_->deactivate();
+  camera_download_file_list_action_->deactivate();
+  camera_download_file_by_index_action_->deactivate();
+  camera_delete_file_by_index_action_->deactivate();
+  // Gimbal
+  gimbal_rotation_action_->deactivate();
+  // Telemetry
+  attitude_pub_->on_deactivate();
+  acceleration_ground_pub_->on_deactivate();
+  acceleration_body_pub_->on_deactivate();
+  imu_pub_->on_deactivate();
+  velocity_ground_pub_->on_deactivate();
+  flight_status_pub_->on_deactivate();
+  altitude_pub_->on_deactivate();
+  relative_height_pub_->on_deactivate();
+  gps_position_pub_->on_deactivate();
+  rtk_position_pub_->on_deactivate();
+  magnetometer_pub_->on_deactivate();
+  rc_pub_->on_deactivate();
+  gimbal_angles_pub_->on_deactivate();
+  gimbal_status_pub_->on_deactivate();
+  aircraft_status_pub_->on_deactivate();
+  battery_pub_->on_deactivate();
+  flight_anomaly_pub_->on_deactivate();
+  position_fused_pub_->on_deactivate();
+  relative_obstacle_info_pub_->on_deactivate();
+  home_position_pub_->on_deactivate();
+}
+
+void PSDKWrapper::clean_ros_elements()
+{
+  //Camera
+  camera_start_shoot_single_photo_action_.reset();
+  camera_start_shoot_burst_photo_action_.reset();
+  camera_start_shoot_aeb_photo_action_.reset();
+  camera_start_shoot_interval_photo_action_.reset();
+  camera_stop_shoot_photo_action_.reset();
+  camera_record_video_action_.reset();
+  camera_get_type_service_.reset();
+  camera_set_ev_service_.reset();
+  camera_get_ev_service_.reset();
+  camera_set_shutter_speed_service_.reset();
+  camera_get_shutter_speed_service_.reset();
+  camera_set_iso_service_.reset();
+  camera_get_iso_service_.reset();
+  camera_set_focus_target_service_.reset();
+  camera_get_focus_target_service_.reset();
+  camera_set_focus_mode_service_.reset();
+  camera_get_focus_mode_service_.reset();
+  camera_set_optical_zoom_service_.reset();
+  camera_get_optical_zoom_service_.reset();
+  camera_set_infrared_zoom_service_.reset();
+  camera_get_laser_ranging_info_action_.reset();
+  camera_download_file_list_action_.reset();
+  camera_download_file_by_index_action_.reset();
+  camera_delete_file_by_index_action_.reset();
+  // Gimbal
+  gimbal_set_mode_service_.reset();
+  gimbal_reset_service_.reset();
+  gimbal_rotation_action_.reset();
+  // Telemetry
+  attitude_pub_.reset();
+  acceleration_ground_pub_.reset();
+  acceleration_body_pub_.reset();
+  imu_pub_.reset();
+  velocity_ground_pub_.reset();
+  flight_status_pub_.reset();
+  altitude_pub_.reset();
+  relative_height_pub_.reset();
+  gps_position_pub_.reset();
+  rtk_position_pub_.reset();
+  magnetometer_pub_.reset();
+  rc_pub_.reset();
+  gimbal_angles_pub_.reset();
+  gimbal_status_pub_.reset();
+  aircraft_status_pub_.reset();
+  battery_pub_.reset();
+  flight_anomaly_pub_.reset();
+  position_fused_pub_.reset();
+  relative_obstacle_info_pub_.reset();
+  home_position_pub_.reset();
+}
+
+    
 }  // namespace umd_psdk

@@ -19,24 +19,6 @@
 namespace umd_psdk 
 {
 
-using namespace std::placeholders; 
-
-void PSDKWrapper::initialize_ros_gimbal_elements()
-{
-// Services
-gimbal_set_mode_service_ = create_service<GimbalSetMode>(
-    "gimbal_set_mode",
-    std::bind(&PSDKWrapper::gimbal_set_mode_callback_, this, _1, _2), qos_profile_);
-gimbal_reset_service_ = create_service<GimbalReset>(
-    "gimbal_reset",
-    std::bind(&PSDKWrapper::gimbal_reset_callback_, this, _1, _2), qos_profile_);
-// Actions
-gimbal_rotation_action_ = 
-    std::make_unique<nav2_util::SimpleActionServer<GimbalRotation>>(
-          shared_from_this(), "gimbal_rotation",
-          std::bind(&PSDKWrapper::gimbal_rotation_callback_, this));
-}
-
 bool PSDKWrapper::init_gimbal_manager()
 {
     RCLCPP_INFO(get_logger(), "Initiating gimbal manager...");
@@ -45,27 +27,6 @@ bool PSDKWrapper::init_gimbal_manager()
         return false;
     }
     return true;
-}
-
-void
-PSDKWrapper::activate_gimbal_ros_elements()
-{
-   RCLCPP_INFO(get_logger(), "Cleaning ROS actions related to gimbal");
-   gimbal_rotation_action_->activate();
-}
-
-void
-PSDKWrapper::deactivate_gimbal_ros_elements()
-{
-    RCLCPP_INFO(get_logger(), "Cleaning ROS actions related to gimbal");
-    gimbal_rotation_action_->deactivate();
-}
-
-void PSDKWrapper::clean_ros_gimbal_services()
-{
-    gimbal_set_mode_service_.reset();
-    gimbal_reset_service_.reset();
-    gimbal_rotation_action_.reset();
 }
 
 void PSDKWrapper::gimbal_set_mode_callback_(

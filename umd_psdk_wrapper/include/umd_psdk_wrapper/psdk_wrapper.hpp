@@ -283,19 +283,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
   void activate_ros_elements();
-  void activate_gimbal_ros_elements();
   void deactivate_ros_elements();
   void clean_ros_elements();
-  // Sensors
-  // TODO(@lidiadltv): Try putting everything inside 
-  // activate_ros_elements, deactivate_ros_elements and clean_ros_elements
-  // instead of the following methods. If not possible, change names to 
-  // something generic, not actions
-  void activate_ros_actions();
-  void deactivate_ros_actions();
-  void deactivate_gimbal_ros_elements();
-  void clean_ros_actions();
-  void clean_ros_gimbal_services();
 
   // Variables
 
@@ -356,11 +345,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
  private:
   rclcpp::Node::SharedPtr node_;
 
-  void initialize_ros_publishers();
-  // Sensors
-  // TODO(@lidiadltv): Is it a good practice to "share" this methods between modules?
-  void initialize_ros_camera_elements(); 
-  void initialize_ros_gimbal_elements(); 
+  void initialize_ros_elements();
+
   void subscribe_attitude_topic();
 
   std::map <E_DjiCameraType, std::string> camera_type_str = 
