@@ -32,6 +32,7 @@
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <std_msgs/msg/float32.hpp>
+#include <std_msgs/msg/u_int16.hpp>
 #include <std_msgs/msg/u_int8.hpp>
 #include <string>
 
@@ -54,6 +55,7 @@
 #include "umd_psdk_interfaces/msg/home_position.hpp"
 #include "umd_psdk_interfaces/msg/position_fused.hpp"
 #include "umd_psdk_interfaces/msg/relative_obstacle_info.hpp"
+#include "umd_psdk_interfaces/msg/rtk_yaw.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
 namespace umd_psdk {
@@ -70,23 +72,43 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   // ROS Publishers
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::QuaternionStamped>::SharedPtr
       attitude_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
+      velocity_ground_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      umd_psdk_interfaces::msg::PositionFused>::SharedPtr position_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::GPSFused>::SharedPtr
+      gps_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
+      gps_position_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
+      gps_velocity_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::GPSDetails>::SharedPtr
+      gps_details_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr gps_signal_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
+      gps_control_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
+      rtk_position_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
+      rtk_velocity_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RTKYaw>::SharedPtr
+      rtk_yaw_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
+      rtk_position_info_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
+      rtk_yaw_info_pub_;
+
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       flight_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
       acceleration_ground_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
       acceleration_body_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
-      velocity_ground_pub_;
   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Altitude>::SharedPtr
       altitude_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       relative_height_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
-      gps_position_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
-      rtk_position_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>::SharedPtr
       magnetometer_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Joy>::SharedPtr rc_pub_;
@@ -100,8 +122,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       umd_psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::PositionFused>::SharedPtr position_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>::
       SharedPtr relative_obstacle_info_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
@@ -183,6 +203,16 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                                const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_gps_control_callback(const uint8_t* data, uint16_t dataSize,
                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_position_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_yaw_callback(const uint8_t* data, uint16_t dataSize,
+                                            const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_position_info_callback(
+      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_yaw_info_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
                                     const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t dataSize,
@@ -203,6 +233,17 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                       const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode gps_control_callback(const uint8_t* data, uint16_t dataSize,
                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_position_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_yaw_callback(const uint8_t* data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_position_info_callback(const uint8_t* data, uint16_t dataSize,
+                                             const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_yaw_info_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
 
@@ -210,6 +251,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
 
   PSDKParams params_;
   Utils utils_;
+  std::string body_frame_{"base_link"};
+  std::string ground_frame_{"map"};
 
  private:
   rclcpp::Node::SharedPtr node_;

@@ -100,9 +100,42 @@ c_gps_control_callback(const uint8_t *data, uint16_t dataSize,
 }
 
 T_DjiReturnCode
+c_rtk_position_callback(const uint8_t *data, uint16_t dataSize,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rtk_position_callback(data, dataSize, timestamp);
+}
+T_DjiReturnCode
+c_rtk_velocity_callback(const uint8_t *data, uint16_t dataSize,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rtk_velocity_callback(data, dataSize, timestamp);
+}
+T_DjiReturnCode
+c_rtk_yaw_callback(const uint8_t *data, uint16_t dataSize,
+                   const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rtk_yaw_callback(data, dataSize, timestamp);
+}
+T_DjiReturnCode
+c_rtk_position_info_callback(const uint8_t *data, uint16_t dataSize,
+                             const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rtk_position_info_callback(data, dataSize, timestamp);
+}
+T_DjiReturnCode
+c_rtk_yaw_info_callback(const uint8_t *data, uint16_t dataSize,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rtk_yaw_info_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
 PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
                                const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionQuaternion *quaternion = (T_DjiFcSubscriptionQuaternion *)data;
 
   /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt. to a NED
@@ -119,6 +152,7 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
 
   geometry_msgs::msg::QuaternionStamped quaternion_msg;
   quaternion_msg.header.stamp = node_->get_clock()->now();
+  quaternion_msg.header.frame_id = body_frame_;
   quaternion_msg.quaternion.w = current_quat_FLU2ENU.getW();
   quaternion_msg.quaternion.x = current_quat_FLU2ENU.getX();
   quaternion_msg.quaternion.y = current_quat_FLU2ENU.getY();
@@ -131,10 +165,12 @@ T_DjiReturnCode
 PSDKWrapper::velocity_callback(const uint8_t *data, uint16_t dataSize,
                                const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionVelocity *velocity = (T_DjiFcSubscriptionVelocity *)data;
   geometry_msgs::msg::TwistStamped twist_msg;
   twist_msg.header.stamp = node_->get_clock()->now();
-
+  twist_msg.header.frame_id = ground_frame_;
   /* Note: The y and x data is swapped to follow the REP103 convention and use ENU
    * representation. Original DJI twist msg is given as NEU.
    */
@@ -149,10 +185,12 @@ T_DjiReturnCode
 PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
                           const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionHardSync *hard_sync_data = (T_DjiFcSubscriptionHardSync *)data;
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header.stamp = node_->get_clock()->now();
-
+  imu_msg.header.frame_id = body_frame_;
   /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt. to a NED
    * ground coordinate frame. Following REP 103, this quaternion is transformed in FLU
    * in body frame wrt. to a ENU ground coordinate frame
@@ -178,7 +216,7 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
   imu_msg.linear_acceleration.x = hard_sync_data->a.x * utils_.gravity_constant;
   imu_msg.linear_acceleration.y = -hard_sync_data->a.y * utils_.gravity_constant;
   imu_msg.linear_acceleration.z = -hard_sync_data->a.z * utils_.gravity_constant;
-
+  imu_pub_->publish(imu_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -186,6 +224,8 @@ T_DjiReturnCode
 PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
                                   const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionPositionVO *position_vo = (T_DjiFcSubscriptionPositionVO *)data;
   /* Note: The quaternion provided by DJI is in NED
    * ground coordinate frame. Following REP 103, this position is transformed to ENU
@@ -193,14 +233,16 @@ PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
    */
   tf2::Vector3 position_NED{position_vo->x, position_vo->y, position_vo->z};
   tf2::Vector3 position_ENU = utils_.R_NED2ENU * position_NED;
-  umd_psdk_interfaces::msg::PositionFused position;
-  position.header.stamp = node_->get_clock()->now();
-  position.position.x = position_ENU.getX();
-  position.position.y = position_ENU.getY();
-  position.position.z = position_ENU.getZ();
-  position.x_health = position_vo->xHealth;
-  position.y_health = position_vo->yHealth;
-  position.z_health = position_vo->zHealth;
+  umd_psdk_interfaces::msg::PositionFused position_msg;
+  position_msg.header.stamp = node_->get_clock()->now();
+  position_msg.header.frame_id = ground_frame_;
+  position_msg.position.x = position_ENU.getX();
+  position_msg.position.y = position_ENU.getY();
+  position_msg.position.z = position_ENU.getZ();
+  position_msg.x_health = position_vo->xHealth;
+  position_msg.y_health = position_vo->yHealth;
+  position_msg.z_health = position_vo->zHealth;
+  position_fused_pub_->publish(position_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -208,6 +250,8 @@ T_DjiReturnCode
 PSDKWrapper::gps_fused_callback(const uint8_t *data, uint16_t dataSize,
                                 const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionPositionFused *gps_fused =
       (T_DjiFcSubscriptionPositionFused *)data;
   umd_psdk_interfaces::msg::GPSFused gps_fused_msg;
@@ -217,7 +261,7 @@ PSDKWrapper::gps_fused_callback(const uint8_t *data, uint16_t dataSize,
   /*!< Altitude, WGS 84 reference ellipsoid, unit: m. */
   gps_fused_msg.altitude = gps_fused->altitude;
   gps_fused_msg.num_visible_satellites = gps_fused->visibleSatelliteNumber;
-
+  gps_fused_pub_->publish(gps_fused_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -225,13 +269,15 @@ T_DjiReturnCode
 PSDKWrapper::gps_position_callback(const uint8_t *data, uint16_t dataSize,
                                    const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionGpsPosition *gps_position = (T_DjiFcSubscriptionGpsPosition *)data;
   sensor_msgs::msg::NavSatFix gps_position_msg;
   gps_position_msg.header.stamp = node_->get_clock()->now();
   gps_position_msg.longitude = gps_position->x;  // unit: deg*10<SUP>-7</SUP>
   gps_position_msg.latitude = gps_position->y;   // unit: deg*10<SUP>-7</SUP>
   gps_position_msg.altitude = gps_position->z;   // mm
-
+  gps_position_pub_->publish(gps_position_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -239,14 +285,17 @@ T_DjiReturnCode
 PSDKWrapper::gps_velocity_callback(const uint8_t *data, uint16_t dataSize,
                                    const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionGpsVelocity *gps_velocity = (T_DjiFcSubscriptionGpsVelocity *)data;
   geometry_msgs::msg::TwistStamped gps_velocity_msg;
   gps_velocity_msg.header.stamp = node_->get_clock()->now();
+  gps_velocity_msg.header.frame_id = ground_frame_;
   // Convert cm/s given by dji topic to m/s
-  gps_velocity_msg.twist.linear.x = gps_velocity->x;
+  gps_velocity_msg.twist.linear.x = gps_velocity->x / 100;
   gps_velocity_msg.twist.linear.y = gps_velocity->y / 100;
   gps_velocity_msg.twist.linear.z = gps_velocity->z / 100;
-
+  gps_velocity_pub_->publish(gps_velocity_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -254,6 +303,8 @@ T_DjiReturnCode
 PSDKWrapper::gps_details_callback(const uint8_t *data, uint16_t dataSize,
                                   const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionGpsDetails *gps_details = (T_DjiFcSubscriptionGpsDetails *)data;
   umd_psdk_interfaces::msg::GPSDetails gps_details_msg;
   gps_details_msg.header.stamp = node_->get_clock()->now();
@@ -268,6 +319,7 @@ PSDKWrapper::gps_details_callback(const uint8_t *data, uint16_t dataSize,
   gps_details_msg.num_glonass_satellites_used = gps_details->glonassSatelliteNumberUsed;
   gps_details_msg.num_total_satellites_used = gps_details->totalSatelliteNumberUsed;
   gps_details_msg.gps_counter = gps_details->gpsCounter;
+  gps_details_pub_->publish(gps_details_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -275,10 +327,13 @@ T_DjiReturnCode
 PSDKWrapper::gps_signal_callback(const uint8_t *data, uint16_t dataSize,
                                  const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionGpsSignalLevel *gps_signal_level =
       (T_DjiFcSubscriptionGpsSignalLevel *)data;
   std_msgs::msg::UInt8 gps_signal_level_msg;
   gps_signal_level_msg.data = *gps_signal_level;
+  gps_signal_pub_->publish(gps_signal_level_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -286,10 +341,87 @@ T_DjiReturnCode
 PSDKWrapper::gps_control_callback(const uint8_t *data, uint16_t dataSize,
                                   const T_DjiDataTimestamp *timestamp)
 {
+  (void)dataSize;
+  (void)timestamp;
   T_DjiFcSubscriptionGpsControlLevel *gps_control_level =
       (T_DjiFcSubscriptionGpsControlLevel *)data;
   std_msgs::msg::UInt8 gps_control_level_msg;
   gps_control_level_msg.data = *gps_control_level;
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::rtk_position_callback(const uint8_t *data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionRtkPosition *rtk_position = (T_DjiFcSubscriptionRtkPosition *)data;
+  sensor_msgs::msg::NavSatFix rtk_position_msg;
+  rtk_position_msg.header.stamp = node_->get_clock()->now();
+  rtk_position_msg.longitude = rtk_position->longitude;  // Longitude, unit: deg.
+  rtk_position_msg.latitude = rtk_position->latitude;    // Latitude, unit: deg.
+  rtk_position_msg.altitude =
+      rtk_position->hfsl;  // Height above mean sea level, unit: m.
+  rtk_position_pub_->publish(rtk_position_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::rtk_velocity_callback(const uint8_t *data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionRtkVelocity *rtk_velocity = (T_DjiFcSubscriptionRtkVelocity *)data;
+  geometry_msgs::msg::TwistStamped rtk_velocity_msg;
+  rtk_velocity_msg.header.stamp = node_->get_clock()->now();
+  // Convert cm/s given by dji topic to m/s
+  rtk_velocity_msg.twist.linear.x = rtk_velocity->x / 100;
+  rtk_velocity_msg.twist.linear.y = rtk_velocity->y / 100;
+  rtk_velocity_msg.twist.linear.z = rtk_velocity->z / 100;
+  rtk_velocity_pub_->publish(rtk_velocity_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::rtk_yaw_callback(const uint8_t *data, uint16_t dataSize,
+                              const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionRtkYaw *rtk_yaw = (T_DjiFcSubscriptionRtkYaw *)data;
+  umd_psdk_interfaces::msg::RTKYaw rtk_yaw_msg;
+  rtk_yaw_msg.header.stamp = node_->get_clock()->now();
+  rtk_yaw_msg.yaw = *rtk_yaw;
+  rtk_yaw_pub_->publish(rtk_yaw_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::rtk_position_info_callback(const uint8_t *data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionRtkPositionInfo *rtk_position_info =
+      (T_DjiFcSubscriptionRtkPositionInfo *)data;
+  std_msgs::msg::UInt8 rtk_position_info_msg;
+  rtk_position_info_msg.data = *rtk_position_info;
+  rtk_position_info_pub_->publish(rtk_position_info_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::rtk_yaw_info_callback(const uint8_t *data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionRtkYawInfo *rtk_yaw_info = (T_DjiFcSubscriptionRtkYawInfo *)data;
+  std_msgs::msg::UInt8 rtk_yaw_info_msg;
+  rtk_yaw_info_msg.data = *rtk_yaw_info;
+  rtk_yaw_info_pub_->publish(rtk_yaw_info_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -410,6 +542,63 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_GPS_CONTROL_LEVEL, error %ld",
+                   return_code);
+    }
+  }
+
+  if (params_.rtk_data_frequency > 0) {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION,
+        get_frequency(params_.rtk_data_frequency), c_rtk_position_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RTK_VELOCITY,
+        get_frequency(params_.rtk_data_frequency), c_rtk_velocity_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RTK_VELOCITY, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW, get_frequency(params_.rtk_data_frequency),
+        c_rtk_yaw_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION_INFO,
+        get_frequency(params_.rtk_data_frequency), c_rtk_position_info_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION_INFO, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW_INFO,
+        get_frequency(params_.rtk_data_frequency), c_rtk_yaw_info_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW_INFO, error %ld",
                    return_code);
     }
   }
