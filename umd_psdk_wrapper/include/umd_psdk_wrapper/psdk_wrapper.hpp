@@ -49,6 +49,7 @@
 #include "umd_psdk_interfaces/msg/altitude.hpp"
 #include "umd_psdk_interfaces/msg/battery.hpp"
 #include "umd_psdk_interfaces/msg/flight_anomaly.hpp"
+#include "umd_psdk_interfaces/msg/flight_status.hpp"
 #include "umd_psdk_interfaces/msg/gimbal_status.hpp"
 #include "umd_psdk_interfaces/msg/gps_details.hpp"
 #include "umd_psdk_interfaces/msg/gps_fused.hpp"
@@ -98,34 +99,39 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       rtk_position_info_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       rtk_yaw_info_pub_;
-
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
-      flight_status_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
-      acceleration_ground_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
-      acceleration_body_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Altitude>::SharedPtr
-      altitude_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
-      relative_height_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>::SharedPtr
-      magnetometer_pub_;
+      magnetic_field_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Joy>::SharedPtr rc_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr
       gimbal_angles_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       umd_psdk_interfaces::msg::GimbalStatus>::SharedPtr gimbal_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
+      umd_psdk_interfaces::msg::FlightStatus>::SharedPtr flight_status_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
+      landing_gear_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt16>::SharedPtr
+      motor_start_error_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
       umd_psdk_interfaces::msg::AircraftStatus>::SharedPtr aircraft_status_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Battery>::SharedPtr
-      battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       umd_psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>::
-      SharedPtr relative_obstacle_info_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Battery>::SharedPtr
+      battery_pub_;
+
+  //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
+  //       acceleration_ground_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
+  //       acceleration_body_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Altitude>::SharedPtr
+  //       altitude_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
+  //       relative_height_pub_;
+
+  //   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>::
+  //       SharedPtr relative_obstacle_info_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<
+  //       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
 
  protected:
   /*
@@ -213,6 +219,30 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_rtk_yaw_info_callback(const uint8_t* data, uint16_t dataSize,
                                                  const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_magnetometer_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rc_callback(const uint8_t* data, uint16_t dataSize,
+                                       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gimbal_angles_callback(const uint8_t* data,
+                                                  uint16_t dataSize,
+                                                  const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gimbal_status_callback(const uint8_t* data,
+                                                  uint16_t dataSize,
+                                                  const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_flight_status_callback(const uint8_t* data,
+                                                  uint16_t dataSize,
+                                                  const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_display_mode_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_landing_gear_status_callback(
+      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_motor_start_error_callback(
+      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_flight_anomaly_callback(const uint8_t* data,
+                                                   uint16_t dataSize,
+                                                   const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_battery_callback(const uint8_t* data, uint16_t dataSize,
+                                            const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
                                     const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t dataSize,
@@ -243,6 +273,26 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                              const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode rtk_yaw_info_callback(const uint8_t* data, uint16_t dataSize,
                                         const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode magnetometer_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rc_callback(const uint8_t* data, uint16_t dataSize,
+                              const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gimbal_angles_callback(const uint8_t* data, uint16_t dataSize,
+                                         const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gimbal_status_callback(const uint8_t* data, uint16_t dataSize,
+                                         const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode flight_status_callback(const uint8_t* data, uint16_t dataSize,
+                                         const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode display_mode_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode landing_gear_status_callback(const uint8_t* data, uint16_t dataSize,
+                                               const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode motor_start_error_callback(const uint8_t* data, uint16_t dataSize,
+                                             const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode flight_anomaly_callback(const uint8_t* data, uint16_t dataSize,
+                                          const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode battery_callback(const uint8_t* data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp* timestamp);
 
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
