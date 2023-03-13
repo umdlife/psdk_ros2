@@ -131,6 +131,75 @@ c_rtk_yaw_info_callback(const uint8_t *data, uint16_t dataSize,
 }
 
 T_DjiReturnCode
+c_magnetometer_callback(const uint8_t *data, uint16_t dataSize,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->magnetometer_callback(data, dataSize, timestamp);
+}
+T_DjiReturnCode
+c_rc_callback(const uint8_t *data, uint16_t dataSize,
+              const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rc_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_gimbal_angles_callback(const uint8_t *data, uint16_t dataSize,
+                         const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->gimbal_angles_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_gimbal_status_callback(const uint8_t *data, uint16_t dataSize,
+                         const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->gimbal_status_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_flight_status_callback(const uint8_t *data, uint16_t dataSize,
+                         const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->flight_status_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_display_mode_callback(const uint8_t *data, uint16_t dataSize,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->display_mode_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_landing_gear_status_callback(const uint8_t *data, uint16_t dataSize,
+                               const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->landing_gear_status_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_motor_start_error_callback(const uint8_t *data, uint16_t dataSize,
+                             const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->motor_start_error_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_flight_anomaly_callback(const uint8_t *data, uint16_t dataSize,
+                          const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->flight_anomaly_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
+c_battery_callback(const uint8_t *data, uint16_t dataSize,
+                   const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->battery_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
 PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
                                const T_DjiDataTimestamp *timestamp)
 {
@@ -425,6 +494,194 @@ PSDKWrapper::rtk_yaw_info_callback(const uint8_t *data, uint16_t dataSize,
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
+T_DjiReturnCode
+PSDKWrapper::magnetometer_callback(const uint8_t *data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  // This reading is the magnetic field recorded by the magnetometer in x,y,z axis,
+  T_DjiFcSubscriptionCompass *magnetic_field = (T_DjiFcSubscriptionCompass *)data;
+  sensor_msgs::msg::MagneticField magnetic_field_msg;
+  magnetic_field_msg.header.stamp = node_->get_clock()->now();
+  magnetic_field_msg.magnetic_field.x = magnetic_field->x;
+  magnetic_field_msg.magnetic_field.y = magnetic_field->y;
+  magnetic_field_msg.magnetic_field.z = magnetic_field->z;
+  magnetic_field_pub_->publish(magnetic_field_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::rc_callback(const uint8_t *data, uint16_t dataSize,
+                         const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionRC *rc_data = (T_DjiFcSubscriptionRC *)data;
+  sensor_msgs::msg::Joy rc_msg;
+  rc_msg.header.stamp = node_->get_clock()->now();
+  rc_msg.axes[0] = rc_data->roll;      // [-10000,10000]
+  rc_msg.axes[1] = rc_data->pitch;     // [-10000,10000]
+  rc_msg.axes[2] = rc_data->yaw;       // [-10000,10000]
+  rc_msg.axes[3] = rc_data->throttle;  // [-10000,10000]
+  rc_msg.buttons[0] = rc_data->mode;   // [-10000,10000]
+  rc_msg.buttons[1] = rc_data->gear;   // [-10000,10000]
+  rc_pub_->publish(rc_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::gimbal_angles_callback(const uint8_t *data, uint16_t dataSize,
+                                    const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionGimbalAngles *gimbal_angles =
+      (T_DjiFcSubscriptionGimbalAngles *)data;
+  geometry_msgs::msg::Vector3Stamped gimbal_angles_msg;
+  gimbal_angles_msg.header.stamp = node_->get_clock()->now();
+  gimbal_angles_msg.vector.x = gimbal_angles->x;  // Pitch
+  gimbal_angles_msg.vector.y = gimbal_angles->y;  // Roll
+  gimbal_angles_msg.vector.z = gimbal_angles->z;  // Yaw
+  gimbal_angles_pub_->publish(gimbal_angles_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::gimbal_status_callback(const uint8_t *data, uint16_t dataSize,
+                                    const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionGimbalStatus *gimbal_status =
+      (T_DjiFcSubscriptionGimbalStatus *)data;
+  umd_psdk_interfaces::msg::GimbalStatus gimbal_status_msg;
+  gimbal_status_msg.header.stamp = node_->get_clock()->now();
+  gimbal_status_msg.mount_status = gimbal_status->mountStatus;
+  gimbal_status_msg.is_busy = gimbal_status->isBusy;
+  gimbal_status_msg.pitch_limited = gimbal_status->pitchLimited;
+  gimbal_status_msg.roll_limited = gimbal_status->rollLimited;
+  gimbal_status_msg.yaw_limited = gimbal_status->yawLimited;
+  gimbal_status_msg.calibrating = gimbal_status->calibrating;
+  gimbal_status_msg.prev_calibrationg_result = gimbal_status->prevCalibrationgResult;
+  gimbal_status_msg.installed_direction = gimbal_status->installedDirection;
+  gimbal_status_msg.disabled_mvo = gimbal_status->disabled_mvo;
+  gimbal_status_msg.gear_show_unable = gimbal_status->gear_show_unable;
+  gimbal_status_msg.gyro_falut = gimbal_status->gyroFalut;
+  gimbal_status_msg.esc_pitch_status = gimbal_status->escPitchStatus;
+  gimbal_status_msg.esc_roll_status = gimbal_status->escRollStatus;
+  gimbal_status_msg.esc_yaw_status = gimbal_status->escYawStatus;
+  gimbal_status_msg.drone_data_recv = gimbal_status->droneDataRecv;
+  gimbal_status_msg.init_unfinished = gimbal_status->initUnfinished;
+  gimbal_status_msg.fw_updating = gimbal_status->FWUpdating;
+
+  gimbal_status_pub_->publish(gimbal_status_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::flight_status_callback(const uint8_t *data, uint16_t dataSize,
+                                    const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionFlightStatus *flight_status =
+      (T_DjiFcSubscriptionFlightStatus *)data;
+  umd_psdk_interfaces::msg::FlightStatus flight_status_msg;
+  flight_status_msg.header.stamp = node_->get_clock()->now();
+  flight_status_msg.flight_status = *flight_status;
+  flight_status_pub_->publish(flight_status_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::display_mode_callback(const uint8_t *data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionDisplaymode *display_mode = (T_DjiFcSubscriptionDisplaymode *)data;
+  umd_psdk_interfaces::msg::AircraftStatus aircraft_status_msg;
+  aircraft_status_msg.header.stamp = node_->get_clock()->now();
+  aircraft_status_msg.display_mode = *display_mode;
+  aircraft_status_pub_->publish(aircraft_status_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::landing_gear_status_callback(const uint8_t *data, uint16_t dataSize,
+                                          const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionLandinggear *landing_gear = (T_DjiFcSubscriptionLandinggear *)data;
+  std_msgs::msg::UInt8 landing_gear_status_msg;
+  landing_gear_status_msg.data = *landing_gear;
+  landing_gear_pub_->publish(landing_gear_status_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::motor_start_error_callback(const uint8_t *data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionMotorStartError *motor_start_error =
+      (T_DjiFcSubscriptionMotorStartError *)data;
+  std_msgs::msg::UInt16 motor_start_error_msg;
+  motor_start_error_msg.data = *motor_start_error;
+  motor_start_error_pub_->publish(motor_start_error_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::flight_anomaly_callback(const uint8_t *data, uint16_t dataSize,
+                                     const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionFlightAnomaly *flight_anomaly =
+      (T_DjiFcSubscriptionFlightAnomaly *)data;
+  umd_psdk_interfaces::msg::FlightAnomaly flight_anomaly_msg;
+  flight_anomaly_msg.header.stamp = node_->get_clock()->now();
+  flight_anomaly_msg.impact_in_air = flight_anomaly->impactInAir;
+  flight_anomaly_msg.random_fly = flight_anomaly->randomFly;
+  flight_anomaly_msg.height_ctrl_fail = flight_anomaly->heightCtrlFail;
+  flight_anomaly_msg.roll_pitch_ctrl_fail = flight_anomaly->rollPitchCtrlFail;
+  flight_anomaly_msg.yaw_ctrl_fail = flight_anomaly->yawCtrlFail;
+  flight_anomaly_msg.aircraft_is_falling = flight_anomaly->aircraftIsFalling;
+  flight_anomaly_msg.strong_wind_level1 = flight_anomaly->strongWindLevel1;
+  flight_anomaly_msg.strong_wind_level2 = flight_anomaly->strongWindLevel2;
+  flight_anomaly_msg.compass_installation_error =
+      flight_anomaly->compassInstallationError;
+  flight_anomaly_msg.imu_installation_error = flight_anomaly->imuInstallationError;
+  flight_anomaly_msg.esc_temperature_high = flight_anomaly->escTemperatureHigh;
+  flight_anomaly_msg.at_least_one_esc_disconnected =
+      flight_anomaly->atLeastOneEscDisconnected;
+  flight_anomaly_msg.gps_yaw_error = flight_anomaly->gpsYawError;
+  flight_anomaly_pub_->publish(flight_anomaly_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::battery_callback(const uint8_t *data, uint16_t dataSize,
+                              const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  T_DjiFcSubscriptionWholeBatteryInfo *battery_info =
+      (T_DjiFcSubscriptionWholeBatteryInfo *)data;
+  umd_psdk_interfaces::msg::Battery battery_info_msg;
+  battery_info_msg.header.stamp = node_->get_clock()->now();
+  battery_info_msg.capacity = battery_info->capacity;
+  battery_info_msg.current = battery_info->current;
+  battery_info_msg.voltage = battery_info->voltage;
+  battery_info_msg.percentage = battery_info->percentage;
+  battery_pub_->publish(battery_info_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
 void
 PSDKWrapper::subscribe_psdk_topics()
 {
@@ -599,6 +856,118 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW_INFO, error %ld",
+                   return_code);
+    }
+  }
+  if (params_.magnetometer_frequency > 0) {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_COMPASS,
+        get_frequency(params_.magnetometer_frequency), c_magnetometer_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_COMPASS, error %ld",
+                   return_code);
+    }
+  }
+  if (params_.rc_channels_data_frequency > 0) {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RC, get_frequency(params_.rc_channels_data_frequency),
+        c_rc_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RC, error %ld",
+                   return_code);
+    }
+  }
+  if (params_.gimbal_data_frequency > 0) {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_GIMBAL_ANGLES,
+        get_frequency(params_.gimbal_data_frequency), c_gimbal_angles_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_GIMBAL_ANGLES, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_GIMBAL_STATUS,
+        get_frequency(params_.gimbal_data_frequency), c_gimbal_status_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_GIMBAL_STATUS, error %ld",
+                   return_code);
+    }
+  }
+
+  if (params_.flight_status_frequency > 0) {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_STATUS_FLIGHT,
+        get_frequency(params_.flight_status_frequency), c_flight_status_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_FLIGHT, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_STATUS_DISPLAYMODE,
+        get_frequency(params_.flight_status_frequency), c_display_mode_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_DISPLAYMODE, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR,
+        get_frequency(params_.flight_status_frequency), c_landing_gear_status_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_STATUS_MOTOR_START_ERROR,
+        get_frequency(params_.flight_status_frequency), c_motor_start_error_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_MOTOR_START_ERROR, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_FLIGHT_ANOMALY,
+        get_frequency(params_.flight_status_frequency), c_flight_anomaly_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_FLIGHT_ANOMALY, error %ld",
+                   return_code);
+    }
+  }
+  if (params_.battery_level_frequency > 0) {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_INFO,
+        get_frequency(params_.battery_level_frequency), c_battery_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_INFO, error %ld",
                    return_code);
     }
   }

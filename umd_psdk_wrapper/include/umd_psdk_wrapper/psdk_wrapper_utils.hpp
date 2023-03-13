@@ -37,6 +37,12 @@ class Utils {
     GPS_FIX_STATE_TIME_ONLY_FIX
   };
 
+  enum FlightStatus {
+    FLIGHT_STATUS_STOPED = 0,    /*!< Aircraft is on ground and motors are still. */
+    FLIGHT_STATUS_ON_GROUND = 1, /*!< Aircraft is on ground but motors are rotating. */
+    FLIGHT_STATUS_IN_AIR = 2,    /*!< Aircraft is in air. */
+  };
+
   std::vector<DJITopic> topics_to_subscribe{
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC, IMU_TOPIC_MAX_FREQ},
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, ATTITUDE_TOPICS_MAX_FREQ},

@@ -1,7 +1,3 @@
-uint8 FLIGHT_STATUS_STOPED = 0
-uint8 FLIGHT_STATUS_ON_GROUND = 1
-uint8 FLIGHT_STATUS_ON_AIR = 2
-
 uint8 DISPLAY_MODE_MANUAL_CTRL = 0
 uint8 DISPLAY_MODE_ATTITUDE = 1
 uint8 DISPLAY_MODE_RESERVED_2 = 2
@@ -49,6 +45,5 @@ uint8 DISPLAY_MODE_RESERVED_43 = 42
 
 
 
-std_msgs/Header header
-uint8 flight_status     
+std_msgs/Header header  
 uint8 display_mode
