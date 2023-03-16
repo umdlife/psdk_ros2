@@ -30,6 +30,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(umd_psdk_interfaces REQUIRED)
+find_package(std_srvs REQUIRED)
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -69,6 +70,7 @@ set(dependencies
   std_msgs
   nav_msgs
   umd_psdk_interfaces
+  std_srvs
 )
 
 add_executable(psdk_wrapper_node
@@ -78,6 +80,7 @@ add_executable(psdk_wrapper_node
 add_library(psdk_wrapper_libs SHARED
   src/psdk_wrapper.cpp
   src/modules/telemetry.cpp
+  src/modules/flight_control.cpp
   src/common/osal_fs.c
   src/common/osal_socket.c
   src/common/osal.c

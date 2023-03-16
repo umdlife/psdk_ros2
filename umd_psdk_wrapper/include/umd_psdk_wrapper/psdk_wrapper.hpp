@@ -18,6 +18,7 @@
 
 #include <dji_aircraft_info.h>
 #include <dji_core.h>
+#include <dji_flight_controller.h>
 #include <dji_logger.h>
 #include <dji_platform.h>
 
@@ -34,6 +35,7 @@
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/u_int16.hpp>
 #include <std_msgs/msg/u_int8.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <string>
 
 #include "dji_typedef.h"
@@ -57,6 +59,11 @@
 #include "umd_psdk_interfaces/msg/position_fused.hpp"
 #include "umd_psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "umd_psdk_interfaces/msg/rtk_yaw.hpp"
+#include "umd_psdk_interfaces/srv/get_home_altitude.hpp"
+#include "umd_psdk_interfaces/srv/get_obstacle_avoidance.hpp"
+#include "umd_psdk_interfaces/srv/set_home_altitude.hpp"
+#include "umd_psdk_interfaces/srv/set_home_from_gps.hpp"
+#include "umd_psdk_interfaces/srv/set_obstacle_avoidance.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
 namespace umd_psdk {
@@ -118,6 +125,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       umd_psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Battery>::SharedPtr
       battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
+      height_fused_pub_;
 
   //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
   //       acceleration_ground_pub_;
@@ -187,8 +196,10 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void load_parameters();
   bool init(T_DjiUserInfo* user_info);
   bool init_telemetry();
+  bool init_flight_control();
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
 
+  // Subscriptor callbacks
   friend T_DjiReturnCode c_attitude_callback(const uint8_t* data, uint16_t dataSize,
                                              const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_velocity_callback(const uint8_t* data, uint16_t dataSize,
@@ -243,6 +254,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                                    const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_battery_callback(const uint8_t* data, uint16_t dataSize,
                                             const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_height_fused_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
                                     const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t dataSize,
@@ -293,12 +306,109 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                           const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode battery_callback(const uint8_t* data, uint16_t dataSize,
                                    const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode height_fused_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
 
   void subscribe_psdk_topics();
   void unsubscribe_psdk_topics();
 
-  // Variables
+  // Services
+  using SetHomeFromGPS = umd_psdk_interfaces::srv::SetHomeFromGPS;
+  using Trigger = std_srvs::srv::Trigger;
+  using SetHomeAltitude = umd_psdk_interfaces::srv::SetHomeAltitude;
+  using GetHomeAltitude = umd_psdk_interfaces::srv::GetHomeAltitude;
+  using SetObstacleAvoidance = umd_psdk_interfaces::srv::SetObstacleAvoidance;
+  using GetObstacleAvoidance = umd_psdk_interfaces::srv::GetObstacleAvoidance;
 
+  rclcpp::Service<SetHomeFromGPS>::SharedPtr set_home_from_gps_srv_;
+  rclcpp::Service<Trigger>::SharedPtr set_home_from_current_location_srv_;
+  rclcpp::Service<SetHomeAltitude>::SharedPtr set_home_altitude_srv_;
+  rclcpp::Service<GetHomeAltitude>::SharedPtr get_home_altitude_srv_;
+  rclcpp::Service<Trigger>::SharedPtr start_go_home_srv_;
+  rclcpp::Service<Trigger>::SharedPtr cancel_go_home_srv_;
+  rclcpp::Service<Trigger>::SharedPtr obtain_ctrl_authority_srv_;
+  rclcpp::Service<Trigger>::SharedPtr release_ctrl_authority_srv_;
+  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
+      set_horizontal_vo_obstacle_avoidance_srv_;
+  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
+      set_horizontal_radar_obstacle_avoidance_srv_;
+  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
+      get_horizontal_radar_obstacle_avoidance_srv_;
+  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
+      set_upwards_vo_obstacle_avoidance_srv_;
+  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
+      set_upwards_radar_obstacle_avoidance_srv_;
+  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
+      set_downwards_vo_obstacle_avoidance_srv_;
+  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
+      set_downwards_radar_obstacle_avoidance_srv_;
+  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
+      get_horizontal_vo_obstacle_avoidance_srv_;
+  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
+      get_upwards_vo_obstacle_avoidance_srv_;
+  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
+      get_upwards_radar_obstacle_avoidance_srv_;
+  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
+      get_downwards_vo_obstacle_avoidance_srv_;
+  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
+      get_downwards_radar_obstacle_avoidance_srv_;
+
+  // Service callbacks
+  void set_home_from_gps_cb(const std::shared_ptr<SetHomeFromGPS::Request> request,
+                            const std::shared_ptr<SetHomeFromGPS::Response> response);
+  void set_home_from_current_location_cb(
+      const std::shared_ptr<Trigger::Request> request,
+      const std::shared_ptr<Trigger::Response> response);
+  void set_home_altitude_cb(const std::shared_ptr<SetHomeAltitude::Request> request,
+                            const std::shared_ptr<SetHomeAltitude::Response> response);
+  void get_home_altitude_cb(const std::shared_ptr<GetHomeAltitude::Request> request,
+                            const std::shared_ptr<GetHomeAltitude::Response> response);
+  void start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
+                        const std::shared_ptr<Trigger::Response> response);
+  void cancel_go_home_cb(const std::shared_ptr<Trigger::Request> request,
+                         const std::shared_ptr<Trigger::Response> response);
+  void obtain_ctrl_authority_cb(const std::shared_ptr<Trigger::Request> request,
+                                const std::shared_ptr<Trigger::Response> response);
+  void release_ctrl_authority_cb(const std::shared_ptr<Trigger::Request> request,
+                                 const std::shared_ptr<Trigger::Response> response);
+  void set_horizontal_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_horizontal_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_upwards_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_upwards_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_downwards_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_downwards_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void get_horizontal_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_horizontal_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_downwards_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_downwards_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_upwards_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_upwards_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+
+  // Variables
   PSDKParams params_;
   Utils utils_;
   std::string body_frame_{"base_link"};
