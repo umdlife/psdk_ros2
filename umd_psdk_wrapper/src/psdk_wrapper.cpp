@@ -15,6 +15,8 @@
 
 #include "umd_psdk_wrapper/psdk_wrapper.hpp"
 
+using namespace std::placeholders;  // NOLINT
+
 namespace umd_psdk {
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())
@@ -74,7 +76,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   activate_ros_elements();
 
-  if (!init_telemetry()) {
+  if (!init_telemetry() || !init_flight_control()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -105,12 +107,10 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
+  int deinit_result =
+      DjiCore_DeInit() ^ DjiFcSubscription_DeInit() ^ DjiFlightController_Deinit();
 
-  if (DjiCore_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
-  if (DjiFcSubscription_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -586,7 +586,8 @@ PSDKWrapper::initialize_ros_elements()
       "dji_psdk_ros/flight_anomaly", 10);
   battery_pub_ =
       create_publisher<umd_psdk_interfaces::msg::Battery>("dji_psdk_ros/battery", 10);
-
+  height_fused_pub_ =
+      create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/height_fused", 10);
   // acceleration_ground_pub_ = create_publisher<geometry_msgs::msg::AccelStamped>(
   //     "dji_psdk_ros/acceleration_ground", 10);
   // acceleration_body_pub_ = create_publisher<geometry_msgs::msg::AccelStamped>(
@@ -601,6 +602,27 @@ PSDKWrapper::initialize_ros_elements()
   //         "dji_psdk_ros/relative_obstacle_info", 10);
   // home_position_pub_ = create_publisher<umd_psdk_interfaces::msg::HomePosition>(
   //     "dji_psdk_ros/home_position", 10);
+
+  RCLCPP_INFO(get_logger(), "Creating services");
+  set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
+      "set_home_from_gps", std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
+  set_home_from_current_location_srv_ = create_service<Trigger>(
+      "set_home_from_current_location",
+      std::bind(&PSDKWrapper::set_home_from_current_location_cb, this, _1, _2));
+  set_home_altitude_srv_ = create_service<SetHomeAltitude>(
+      "set_home_altitude", std::bind(&PSDKWrapper::set_home_altitude_cb, this, _1, _2));
+  get_home_altitude_srv_ = create_service<GetHomeAltitude>(
+      "get_home_altitude", std::bind(&PSDKWrapper::get_home_altitude_cb, this, _1, _2));
+  start_go_home_srv_ = create_service<Trigger>(
+      "start_go_home", std::bind(&PSDKWrapper::start_go_home_cb, this, _1, _2));
+  cancel_go_home_srv_ = create_service<Trigger>(
+      "cancel_go_home", std::bind(&PSDKWrapper::cancel_go_home_cb, this, _1, _2));
+  obtain_ctrl_authority_srv_ = create_service<Trigger>(
+      "obtain_ctrl_authority",
+      std::bind(&PSDKWrapper::obtain_ctrl_authority_cb, this, _1, _2));
+  release_ctrl_authority_srv_ = create_service<Trigger>(
+      "release_ctrl_authority",
+      std::bind(&PSDKWrapper::release_ctrl_authority_cb, this, _1, _2));
 }
 
 void
@@ -632,7 +654,7 @@ PSDKWrapper::activate_ros_elements()
   motor_start_error_pub_->on_activate();
   flight_anomaly_pub_->on_activate();
   battery_pub_->on_activate();
-
+  height_fused_pub_->on_activate();
   // acceleration_ground_pub_->on_activate();
   // acceleration_body_pub_->on_activate();
   // altitude_pub_->on_activate();
@@ -670,7 +692,7 @@ PSDKWrapper::deactivate_ros_elements()
   landing_gear_pub_->on_deactivate();
   flight_anomaly_pub_->on_deactivate();
   battery_pub_->on_deactivate();
-
+  height_fused_pub_->on_deactivate();
   // acceleration_ground_pub_->on_deactivate();
   // acceleration_body_pub_->on_deactivate();
   // altitude_pub_->on_deactivate();
@@ -708,7 +730,7 @@ PSDKWrapper::clean_ros_elements()
   motor_start_error_pub_.reset();
   flight_anomaly_pub_.reset();
   battery_pub_.reset();
-
+  height_fused_pub_.reset();
   // acceleration_ground_pub_.reset();
   // acceleration_body_pub_.reset();
   // altitude_pub_.reset();

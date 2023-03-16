@@ -35,6 +35,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SDKCtrlInfo.msg"
   "msg/RTKYaw.msg"
   "msg/FlightStatus.msg"
+  "srv/SetHomeFromGPS.srv"
+  "srv/SetHomeAltitude.srv"
+  "srv/GetHomeAltitude.srv"
+  "srv/SetObstacleAvoidance.srv"
+  "srv/GetObstacleAvoidance.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

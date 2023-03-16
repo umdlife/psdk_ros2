@@ -200,6 +200,13 @@ c_battery_callback(const uint8_t *data, uint16_t dataSize,
 }
 
 T_DjiReturnCode
+c_height_fused_callback(const uint8_t *data, uint16_t dataSize,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->height_fused_callback(data, dataSize, timestamp);
+}
+
+T_DjiReturnCode
 PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
                                const T_DjiDataTimestamp *timestamp)
 {
@@ -719,6 +726,21 @@ PSDKWrapper::battery_callback(const uint8_t *data, uint16_t dataSize,
   battery_info_msg.voltage = battery_info->voltage;
   battery_info_msg.percentage = battery_info->percentage;
   battery_pub_->publish(battery_info_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::height_fused_callback(const uint8_t *data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  (void)dataSize;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionHeightFusion> height_fused =
+      std::make_unique<T_DjiFcSubscriptionHeightFusion>(
+          *reinterpret_cast<const T_DjiFcSubscriptionHeightFusion *>(data));
+  std_msgs::msg::Float32 height_fused_msg;
+  height_fused_msg.data = *height_fused;
+  height_fused_pub_->publish(height_fused_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
