@@ -603,6 +603,26 @@ PSDKWrapper::initialize_ros_elements()
   // home_position_pub_ = create_publisher<umd_psdk_interfaces::msg::HomePosition>(
   //     "dji_psdk_ros/home_position", 10);
 
+  RCLCPP_INFO(get_logger(), "Creating subscribers");
+  flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
+      "dji_psdk_ros/flight_control_setpoint_generic", 10,
+      std::bind(&PSDKWrapper::flight_control_generic_cb, this, _1));
+  flight_control_position_yaw_sub_ = create_subscription<sensor_msgs::msg::Joy>(
+      "dji_psdk_ros/flight_control_setpoint_ENUposition_yaw", 10,
+      std::bind(&PSDKWrapper::flight_control_position_yaw_cb, this, _1));
+  flight_control_velocity_yawrate_sub_ = create_subscription<sensor_msgs::msg::Joy>(
+      "dji_psdk_ros/flight_control_setpoint_ENUvelocity_yawrate", 10,
+      std::bind(&PSDKWrapper::fflight_control_velocity_yawrate_cb, this, _1));
+  flight_control_body_velocity_yawrate_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "dji_psdk_ros/flight_control_setpoint_FRUvelocity_yawrate", 10,
+          std::bind(&PSDKWrapper::flight_control_body_velocity_yawrate_cb, this, _1));
+  flight_control_rollpitch_yawrate_vertpos_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "dji_psdk_ros/flight_control_setpoint_rollpitch_yawrate_zposition", 10,
+          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb, this,
+                    _1));
+
   RCLCPP_INFO(get_logger(), "Creating services");
   set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
       "set_home_from_gps", std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
@@ -620,9 +640,54 @@ PSDKWrapper::initialize_ros_elements()
   obtain_ctrl_authority_srv_ = create_service<Trigger>(
       "obtain_ctrl_authority",
       std::bind(&PSDKWrapper::obtain_ctrl_authority_cb, this, _1, _2));
-  release_ctrl_authority_srv_ = create_service<Trigger>(
-      "release_ctrl_authority",
-      std::bind(&PSDKWrapper::release_ctrl_authority_cb, this, _1, _2));
+  turn_on_motors_srv_ = create_service<Trigger>(
+      "turn_on_motors", std::bind(&PSDKWrapper::turn_on_motors_cb, this, _1, _2));
+  turn_off_motors_srv_ = create_service<Trigger>(
+      "turn_off_motors", std::bind(&PSDKWrapper::turn_off_motors_cb, this, _1, _2));
+  start_takeoff_srv_ = create_service<Trigger>(
+      "start_takeoff", std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
+  start_landing_srv_ = create_service<Trigger>(
+      "start_landing", std::bind(&PSDKWrapper::start_landing_cb, this, _1, _2));
+  cancel_landing_srv_ = create_service<Trigger>(
+      "cancel_landing", std::bind(&PSDKWrapper::cancel_landing_cb, this, _1, _2));
+  start_confirm_landing_srv_ = create_service<Trigger>(
+      "start_confirm_landing",
+      std::bind(&PSDKWrapper::start_confirm_landing_cb, this, _1, _2));
+  start_force_landing_srv_ = create_service<Trigger>(
+      "start_force_landing",
+      std::bind(&PSDKWrapper::start_force_landing_cb, this, _1, _2));
+  set_horizontal_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
+      "set_horizontal_vo_obstacle_avoidance",
+      std::bind(&PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb, this, _1, _2));
+  set_horizontal_radar_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
+      "set_horizontal_radar_obstacle_avoidance",
+      std::bind(&PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb, this, _1,
+                _2));
+  set_upwards_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
+      "set_upwards_vo_obstacle_avoidance",
+      std::bind(&PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb, this, _1, _2));
+  set_upwards_radar_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
+      "set_upwards_radar_obstacle_avoidance",
+      std::bind(&PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb, this, _1, _2));
+  set_downwards_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
+      "set_downwards_vo_obstacle_avoidance",
+      std::bind(&PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb, this, _1, _2));
+  get_horizontal_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
+      "get_horizontal_vo_obstacle_avoidance",
+      std::bind(&PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb, this, _1, _2));
+  get_upwards_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
+      "get_upwards_vo_obstacle_avoidance",
+      std::bind(&PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb, this, _1, _2));
+  get_upwards_radar_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
+      "get_upwards_radar_obstacle_avoidance",
+      std::bind(&PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb, this, _1, _2));
+  get_downwards_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
+      "get_downwards_vo_obstacle_avoidance",
+      std::bind(&PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb, this, _1, _2));
+  get_horizontal_radar_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
+      "get_horizontal_radar_obstacle_avoidance",
+      std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb, this, _1,
+                _2));
 }
 
 void
@@ -737,6 +802,13 @@ PSDKWrapper::clean_ros_elements()
   // relative_height_pub_.reset();
   // relative_obstacle_info_pub_.reset();
   // home_position_pub_.reset();
+
+  // Subscribers
+  flight_control_generic_sub_.reset();
+  flight_control_position_yaw_sub_.reset();
+  flight_control_velocity_yawrate_sub_.reset();
+  flight_control_body_velocity_yawrate_sub_.reset();
+  flight_control_rollpitch_yawrate_vertpos_sub_.reset();
 }
 
 }  // namespace umd_psdk
