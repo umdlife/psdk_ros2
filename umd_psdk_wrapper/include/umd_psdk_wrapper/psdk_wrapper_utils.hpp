@@ -21,6 +21,8 @@
 #define BATTERY_STATUS_TOPICS_MAX_FREQ 50
 #define CONTROL_DATA_TOPICS_MAX_FREQ 50
 
+#define GOOD_GPS_SIGNAL_LEVEL 5
+
 namespace umd_psdk {
 class Utils {
  public:
@@ -188,8 +190,7 @@ class Utils {
       DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_HEIGHT_FUSION, CONTROL_DATA_TOPICS_MAX_FREQ},
   };
 
-  // const tf2::Matrix3x3 R_ENU2NED{0, 1, 0, 1, 0, 0, 0, 0, -1};
-  const tf2::Matrix3x3 R_NED2ENU{0, -1, 0, 1, 0, 0, 0, 0, -1};
+  const tf2::Matrix3x3 R_NED2ENU{0, 1, 0, 1, 0, 0, 0, 0, -1};
   const tf2::Matrix3x3 R_FLU2FRD{1, 0, 0, 0, -1, 0, 0, 0, -1};
   const float gravity_constant = 9.8;
   const float PI = 3.141592653589793;
