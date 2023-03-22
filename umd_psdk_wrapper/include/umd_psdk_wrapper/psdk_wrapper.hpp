@@ -323,7 +323,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
 
   void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
   void flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
-  void fflight_control_velocity_yawrate_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
+  void flight_control_velocity_yawrate_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
   void flight_control_body_velocity_yawrate_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
   void flight_control_rollpitch_yawrate_vertpos_cb(
@@ -438,6 +438,23 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       const std::shared_ptr<GetObstacleAvoidance::Request> request,
       const std::shared_ptr<GetObstacleAvoidance::Response> response);
 
+  inline int
+  get_gps_signal_level()
+  {
+    return gps_signal_level_;
+  };
+  inline bool
+  is_local_altitude_reference_set()
+  {
+    return local_altitude_reference_set_;
+  };
+  inline float
+  get_local_altitude_reference()
+  {
+    return local_altitude_reference_;
+  };
+  void set_local_altitude_reference(const float altitude);
+
   // Variables
   PSDKParams params_;
   Utils utils_;
@@ -446,6 +463,10 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
 
  private:
   rclcpp::Node::SharedPtr node_;
+
+  int gps_signal_level_{0};
+  float local_altitude_reference_{0};
+  bool local_altitude_reference_set_{false};
 
   void initialize_ros_elements();
   void subscribe_attitude_topic();

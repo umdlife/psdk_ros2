@@ -32,6 +32,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("uart_dev_1", rclcpp::ParameterValue(""));
   declare_parameter("uart_dev_2", rclcpp::ParameterValue(""));
 
+  declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
   declare_parameter("data_frequency.attitude", 1);
   declare_parameter("data_frequency.acceleration", 1);
@@ -505,8 +506,10 @@ bool
 PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
-  if (DjiCore_Init(user_info) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "DJI core could not be initiated.");
+  auto result = DjiCore_Init(user_info);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "DJI core could not be initiated. Error code is: %ld",
+                 result);
     return false;
   }
 
@@ -612,7 +615,7 @@ PSDKWrapper::initialize_ros_elements()
       std::bind(&PSDKWrapper::flight_control_position_yaw_cb, this, _1));
   flight_control_velocity_yawrate_sub_ = create_subscription<sensor_msgs::msg::Joy>(
       "dji_psdk_ros/flight_control_setpoint_ENUvelocity_yawrate", 10,
-      std::bind(&PSDKWrapper::fflight_control_velocity_yawrate_cb, this, _1));
+      std::bind(&PSDKWrapper::flight_control_velocity_yawrate_cb, this, _1));
   flight_control_body_velocity_yawrate_sub_ =
       create_subscription<sensor_msgs::msg::Joy>(
           "dji_psdk_ros/flight_control_setpoint_FRUvelocity_yawrate", 10,
