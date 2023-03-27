@@ -78,7 +78,7 @@ PSDKWrapper::set_home_altitude_cb(
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Home altitude has been set to: %f", request->altitude);
+  RCLCPP_INFO(get_logger(), "Home altitude has been set to: %d", request->altitude);
   response->success = true;
 }
 
@@ -496,12 +496,11 @@ PSDKWrapper::start_force_landing_cb(const std::shared_ptr<Trigger::Request> requ
 void
 PSDKWrapper::flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
-  float x_setpoint = msg->axes[0];
-  float y_setpoint = msg->axes[1];
-  float z_setpoint = msg->axes[2];
-  float yaw_setpoint = msg->axes[3];
-  uint8_t flag = (uint8_t)(msg->axes[4]);
+  /** @todo implemnent generic control functionality */
+  (void)msg;
+  RCLCPP_WARN(get_logger(), "Generic control setpoint is not currently implemented!");
 }
+
 void
 PSDKWrapper::flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
@@ -518,7 +517,8 @@ PSDKWrapper::flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedP
   float z_setpoint = msg->axes[2];
   float yaw_setpoint = msg->axes[3];
 
-  double x_cmd, y_cmd, z_cmd, yaw_cmd;
+  float x_cmd, y_cmd, z_cmd;
+  float yaw_cmd;
   x_cmd = y_setpoint;
   y_cmd = x_setpoint;
   z_cmd = z_setpoint;
@@ -531,8 +531,9 @@ PSDKWrapper::flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedP
   rotation_FLU2ENU.setRPY(0.0, 0.0, yaw_setpoint);
   tf2::Matrix3x3 rotation_FRD2NED(utils_.R_NED2ENU.transpose() * rotation_FLU2ENU *
                                   utils_.R_FLU2FRD.transpose());
-  double temp1, temp2;
-  rotation_FRD2NED.getRPY(temp1, temp2, yaw_cmd);
+  double temp1, temp2, temp_yaw;
+  rotation_FRD2NED.getRPY(temp1, temp2, temp_yaw);
+  yaw_cmd = static_cast<float>(temp_yaw);
   yaw_cmd = utils_.rad_to_deg(yaw_cmd);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
@@ -544,102 +545,86 @@ void
 PSDKWrapper::flight_control_velocity_yawrate_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
+  T_DjiFlightControllerJoystickMode joystick_mode = {
+      DJI_FLIGHT_CONTROLLER_HORIZONTAL_VELOCITY_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_VERTICAL_VELOCITY_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_YAW_ANGLE_RATE_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_HORIZONTAL_GROUND_COORDINATE,
+      DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE};
+  DjiFlightController_SetJoystickMode(joystick_mode);
+
+  float x_setpoint = msg->axes[0];
+  float y_setpoint = msg->axes[1];
+  float z_setpoint = msg->axes[2];
+  float yaw_setpoint = msg->axes[3];
+
+  float x_cmd, y_cmd, z_cmd, yaw_cmd;
+  x_cmd = y_setpoint;
+  y_cmd = x_setpoint;
+  z_cmd = z_setpoint;
+  yaw_cmd = utils_.rad_to_deg(-yaw_setpoint);
+
+  T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
+                                                           yaw_cmd};
+  DjiFlightController_ExecuteJoystickAction(joystick_command);
 }
 
 void
 PSDKWrapper::flight_control_body_velocity_yawrate_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
+  T_DjiFlightControllerJoystickMode joystick_mode = {
+      DJI_FLIGHT_CONTROLLER_HORIZONTAL_VELOCITY_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_VERTICAL_VELOCITY_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_YAW_ANGLE_RATE_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_HORIZONTAL_BODY_COORDINATE,
+      DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE};
+  DjiFlightController_SetJoystickMode(joystick_mode);
+
+  float x_setpoint = msg->axes[0];
+  float y_setpoint = msg->axes[1];
+  float z_setpoint = msg->axes[2];
+  float yaw_setpoint = msg->axes[3];
+
+  float x_cmd, y_cmd, z_cmd, yaw_cmd;
+  // Transform from F-R to F-L
+  x_cmd = x_setpoint;
+  y_cmd = -y_setpoint;
+  z_cmd = z_setpoint;
+  yaw_cmd = utils_.rad_to_deg(-yaw_setpoint);
+
+  T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
+                                                           yaw_cmd};
+  DjiFlightController_ExecuteJoystickAction(joystick_command);
 }
+
 void
 PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
-}
+  T_DjiFlightControllerJoystickMode joystick_mode = {
+      DJI_FLIGHT_CONTROLLER_HORIZONTAL_ANGLE_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_VERTICAL_THRUST_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_YAW_ANGLE_RATE_CONTROL_MODE,
+      DJI_FLIGHT_CONTROLLER_HORIZONTAL_BODY_COORDINATE,
+      DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE};
+  DjiFlightController_SetJoystickMode(joystick_mode);
 
-void
-PSDKWrapper::send_setpoint(const uint8_t flag, const double x_sp, const double y_sp,
-                           const double z_sp, const double yaw_sp)
-{
-  uint8_t HORIZONTAL = (flag & 0xC0);
-  uint8_t VERTICAL = (flag & 0x30);
-  uint8_t YAW = (flag & 0x08);
-  uint8_t FRAME = (flag & 0x06);
-  uint8_t STABLE = (flag & 0x01);
-  // E_DjiFlightControllerHorizontalControlMode HORIZONTAL = (flag & 0xC0);
-  // E_DjiFlightControllerVerticalControlMode VERTICAL = (flag & 0x30);
-  // T_DjiFlightControllerJoystickMode joystick_mode = {
-  //     HORIZONTAL, VERTICAL, YAW, FRAME, STABLE,
-  // };
-  // DjiFlightController_SetJoystickMode(joystick_mode);
+  float x_setpoint = msg->axes[0];
+  float y_setpoint = msg->axes[1];
+  float z_setpoint = msg->axes[2];
+  float yaw_setpoint = msg->axes[3];
 
-  double x_cmd, y_cmd, z_cmd, yaw_cmd;
-  // if (FRAME == Utils::JoystickControlMode::HORIZONTAL_GROUND) {
-  // }
-  //   if (FRAME == Utils::JoystickControlMode::HORIZONTAL_GROUND) {
-  //     if ((HORIZONTAL == Utils::HorizontalControlMode::POSITION_CONTROL_MODE) ||
-  //         (HORIZONTAL == Utils::HorizontalControlMode::VELOCITY_CONTROL_MODE)) {
-  //       // Assume input is given in ENU. Switch it to NEU as this is what DJI uses
-  //       x_cmd = y_sp;
-  //       y_cmd = x_sp;
-  //     }
-  //     else {
-  //       x_cmd = utils_.rad_to_deg(x_sp);
-  //       y_cmd = utils_.rad_to_deg(-y_sp);
-  //     }
+  float x_cmd, y_cmd, z_cmd, yaw_cmd;
+  // Transform from F-R to F-L
+  x_cmd = utils_.rad_to_deg(x_setpoint);
+  y_cmd = utils_.rad_to_deg(-y_setpoint);
+  z_cmd = z_setpoint;
+  yaw_cmd = utils_.rad_to_deg(-yaw_setpoint);
 
-  //     if ((VERTICAL == Utils::VerticalControlMode::VELOCITY_CONTROL_MODE) ||
-  //         (VERTICAL == Utils::VerticalControlMode::POSITION_CONTROL_MODE)) {
-  //       z_cmd = z_sp;
-  //     }
-  //     else {
-  //       RCLCPP_ERROR(get_logger(),
-  //                    "Coordinate frame is set to GROUND, but z_cmd is THRUST!");
-  //       return;
-  //       // z_cmd = z_sp;
-  //     }
-  //   }
-  //   else if (FRAME == Utils::HorizontalCoordinateMode::BODY_COORDINATE) {
-  //     if ((HORIZONTAL == Control::HORIZONTAL_VELOCITY) ||
-  //         (HORIZONTAL == Control::HORIZONTAL_POSITION)) {
-  //       // Input is assumed to be FLU. Transform it to FRU used by DJI
-  //       x_cmd = x_sp;
-  //       y_cmd = -y_sp;
-  //     }
-  //     else {
-  //       x_cmd = utils_.rad_to_deg(x_sp);
-  //       y_cmd = utils_.rad_to_deg(-y_sp);
-  //     }
-
-  //     z_cmd = z_sp;
-  //   }
-
-  //   if (YAW == Utils::YawControlMode::YAW_ANGLE_CONTROL_MODE) {
-  //     /* Note: The input yaw is assumed to be following REP 103, thus a FLU rotation
-  //     wrt
-  //      * to ENU frame. DJI uses FRD rotation with respect to NED.Thus, the rotation
-  //      needs
-  //      * to be transformed before sending it to the FCU
-  //      */
-  //     tf2::Matrix3x3 rotation_FLU2ENU;
-  //     rotation_FLU2ENU.setRPY(0.0, 0.0, yaw_sp);
-
-  //     tf2::Matrix3x3 rotation_FRD2NED(utils_.R_NED2ENU.transpose() * rotation_FLU2ENU
-  //     *
-  //                                     utils_.R_FLU2FRD.transpose());
-
-  //     double temp1, temp2;
-  //     rotation_FRD2NED.getRPY(temp1, temp2, yaw_cmd);
-
-  //     yaw_cmd = utils_.rad_to_deg(yaw_cmd);
-  //   }
-  //   else if (YAW == Utils::YawControlMode::YAW_ANGLE_RATE_CONTROL_MODE) {
-  //     yaw_cmd = utils_.rad_to_deg(-yaw_sp);
-  //   }
-
-  //   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
-  //                                                            yaw_cmd};
-  //   DjiFlightController_ExecuteJoystickAction(joystick_command);
+  T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
+                                                           yaw_cmd};
+  DjiFlightController_ExecuteJoystickAction(joystick_command);
 }
 
 }  // namespace umd_psdk

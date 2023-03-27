@@ -98,9 +98,10 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
-  clean_ros_elements();
   unsubscribe_psdk_topics();
+  clean_ros_elements();
 
+  global_ptr_.reset();
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -578,7 +579,7 @@ PSDKWrapper::initialize_ros_elements()
   gimbal_status_pub_ = create_publisher<umd_psdk_interfaces::msg::GimbalStatus>(
       "dji_psdk_ros/gimbal_status", 10);
   flight_status_pub_ = create_publisher<umd_psdk_interfaces::msg::FlightStatus>(
-      "dji_psdk_ros/fligh_status", 10);
+      "dji_psdk_ros/flight_status", 10);
   aircraft_status_pub_ = create_publisher<umd_psdk_interfaces::msg::AircraftStatus>(
       "dji_psdk_ros/aircraft_status", 10);
   landing_gear_pub_ =
@@ -591,6 +592,8 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<umd_psdk_interfaces::msg::Battery>("dji_psdk_ros/battery", 10);
   height_fused_pub_ =
       create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/height_fused", 10);
+
+  /** @todo Implement other useful publishers */
   // acceleration_ground_pub_ = create_publisher<geometry_msgs::msg::AccelStamped>(
   //     "dji_psdk_ros/acceleration_ground", 10);
   // acceleration_body_pub_ = create_publisher<geometry_msgs::msg::AccelStamped>(
@@ -643,14 +646,17 @@ PSDKWrapper::initialize_ros_elements()
   obtain_ctrl_authority_srv_ = create_service<Trigger>(
       "obtain_ctrl_authority",
       std::bind(&PSDKWrapper::obtain_ctrl_authority_cb, this, _1, _2));
+  release_ctrl_authority_srv_ = create_service<Trigger>(
+      "release_ctrl_authority",
+      std::bind(&PSDKWrapper::release_ctrl_authority_cb, this, _1, _2));
   turn_on_motors_srv_ = create_service<Trigger>(
       "turn_on_motors", std::bind(&PSDKWrapper::turn_on_motors_cb, this, _1, _2));
   turn_off_motors_srv_ = create_service<Trigger>(
       "turn_off_motors", std::bind(&PSDKWrapper::turn_off_motors_cb, this, _1, _2));
-  start_takeoff_srv_ = create_service<Trigger>(
-      "start_takeoff", std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
-  start_landing_srv_ = create_service<Trigger>(
-      "start_landing", std::bind(&PSDKWrapper::start_landing_cb, this, _1, _2));
+  takeoff_srv_ = create_service<Trigger>(
+      "takeoff", std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
+  land_srv_ = create_service<Trigger>(
+      "land", std::bind(&PSDKWrapper::start_landing_cb, this, _1, _2));
   cancel_landing_srv_ = create_service<Trigger>(
       "cancel_landing", std::bind(&PSDKWrapper::cancel_landing_cb, this, _1, _2));
   start_confirm_landing_srv_ = create_service<Trigger>(
@@ -812,6 +818,33 @@ PSDKWrapper::clean_ros_elements()
   flight_control_velocity_yawrate_sub_.reset();
   flight_control_body_velocity_yawrate_sub_.reset();
   flight_control_rollpitch_yawrate_vertpos_sub_.reset();
+
+  // Services
+  set_home_from_gps_srv_.reset();
+  set_home_from_current_location_srv_.reset();
+  set_home_altitude_srv_.reset();
+  get_home_altitude_srv_.reset();
+  start_go_home_srv_.reset();
+  cancel_go_home_srv_.reset();
+  obtain_ctrl_authority_srv_.reset();
+  release_ctrl_authority_srv_.reset();
+  turn_on_motors_srv_.reset();
+  turn_off_motors_srv_.reset();
+  takeoff_srv_.reset();
+  land_srv_.reset();
+  cancel_landing_srv_.reset();
+  start_confirm_landing_srv_.reset();
+  start_force_landing_srv_.reset();
+  set_horizontal_vo_obstacle_avoidance_srv_.reset();
+  set_horizontal_radar_obstacle_avoidance_srv_.reset();
+  set_upwards_vo_obstacle_avoidance_srv_.reset();
+  set_upwards_radar_obstacle_avoidance_srv_.reset();
+  set_downwards_vo_obstacle_avoidance_srv_.reset();
+  get_horizontal_vo_obstacle_avoidance_srv_.reset();
+  get_upwards_vo_obstacle_avoidance_srv_.reset();
+  get_upwards_radar_obstacle_avoidance_srv_.reset();
+  get_downwards_vo_obstacle_avoidance_srv_.reset();
+  get_horizontal_radar_obstacle_avoidance_srv_.reset();
 }
 
 }  // namespace umd_psdk
