@@ -529,12 +529,12 @@ PSDKWrapper::flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedP
    */
   tf2::Matrix3x3 rotation_FLU2ENU;
   rotation_FLU2ENU.setRPY(0.0, 0.0, yaw_setpoint);
-  tf2::Matrix3x3 rotation_FRD2NED(utils_.R_NED2ENU.transpose() * rotation_FLU2ENU *
-                                  utils_.R_FLU2FRD.transpose());
+  tf2::Matrix3x3 rotation_FRD2NED(umd_psdk::utils::R_NED2ENU.transpose() *
+                                  rotation_FLU2ENU * utils::R_FLU2FRD.transpose());
   double temp1, temp2, temp_yaw;
   rotation_FRD2NED.getRPY(temp1, temp2, temp_yaw);
   yaw_cmd = static_cast<float>(temp_yaw);
-  yaw_cmd = utils_.rad_to_deg(yaw_cmd);
+  yaw_cmd = utils::rad_to_deg(yaw_cmd);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
                                                            yaw_cmd};
@@ -562,7 +562,7 @@ PSDKWrapper::flight_control_velocity_yawrate_cb(
   x_cmd = y_setpoint;
   y_cmd = x_setpoint;
   z_cmd = z_setpoint;
-  yaw_cmd = utils_.rad_to_deg(-yaw_setpoint);
+  yaw_cmd = utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
                                                            yaw_cmd};
@@ -591,7 +591,7 @@ PSDKWrapper::flight_control_body_velocity_yawrate_cb(
   x_cmd = x_setpoint;
   y_cmd = -y_setpoint;
   z_cmd = z_setpoint;
-  yaw_cmd = utils_.rad_to_deg(-yaw_setpoint);
+  yaw_cmd = utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
                                                            yaw_cmd};
@@ -617,10 +617,10 @@ PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb(
 
   float x_cmd, y_cmd, z_cmd, yaw_cmd;
   // Transform from F-R to F-L
-  x_cmd = utils_.rad_to_deg(x_setpoint);
-  y_cmd = utils_.rad_to_deg(-y_setpoint);
+  x_cmd = utils::rad_to_deg(x_setpoint);
+  y_cmd = utils::rad_to_deg(-y_setpoint);
   z_cmd = z_setpoint;
-  yaw_cmd = utils_.rad_to_deg(-yaw_setpoint);
+  yaw_cmd = utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
                                                            yaw_cmd};

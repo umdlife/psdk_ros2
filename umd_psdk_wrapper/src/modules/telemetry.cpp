@@ -234,7 +234,7 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
 
   current_quat_FRD2NED.setRotation(
       tf2::Quaternion(quaternion->q1, quaternion->q2, quaternion->q3, quaternion->q0));
-  tf2::Matrix3x3 R_FLU2ENU = utils_.R_NED2ENU * current_quat_FRD2NED * utils_.R_FLU2FRD;
+  tf2::Matrix3x3 R_FLU2ENU = utils::R_NED2ENU * current_quat_FRD2NED * utils::R_FLU2FRD;
   R_FLU2ENU.getRotation(current_quat_FLU2ENU);
 
   geometry_msgs::msg::QuaternionStamped quaternion_msg;
@@ -288,7 +288,7 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
    */
   tf2::Matrix3x3 R_FRD2NED(tf2::Quaternion(hard_sync_data->q.q1, hard_sync_data->q.q2,
                                            hard_sync_data->q.q3, hard_sync_data->q.q0));
-  tf2::Matrix3x3 R_FLU2ENU = utils_.R_NED2ENU * R_FRD2NED * utils_.R_FLU2FRD;
+  tf2::Matrix3x3 R_FLU2ENU = utils::R_NED2ENU * R_FRD2NED * utils::R_FLU2FRD;
   tf2::Quaternion q_FLU2ENU;
   R_FLU2ENU.getRotation(q_FLU2ENU);
 
@@ -304,9 +304,9 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
   imu_msg.angular_velocity.y = -hard_sync_data->w.y;
   imu_msg.angular_velocity.z = -hard_sync_data->w.z;
 
-  imu_msg.linear_acceleration.x = hard_sync_data->a.x * utils_.gravity_constant;
-  imu_msg.linear_acceleration.y = -hard_sync_data->a.y * utils_.gravity_constant;
-  imu_msg.linear_acceleration.z = -hard_sync_data->a.z * utils_.gravity_constant;
+  imu_msg.linear_acceleration.x = hard_sync_data->a.x * utils::C_GRAVITY_CONSTANT;
+  imu_msg.linear_acceleration.y = -hard_sync_data->a.y * utils::C_GRAVITY_CONSTANT;
+  imu_msg.linear_acceleration.z = -hard_sync_data->a.z * utils::C_GRAVITY_CONSTANT;
   imu_pub_->publish(imu_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -325,7 +325,7 @@ PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
    * ground coordinate frame
    */
   tf2::Vector3 position_NED{position_vo->x, position_vo->y, position_vo->z};
-  tf2::Vector3 position_ENU = utils_.R_NED2ENU * position_NED;
+  tf2::Vector3 position_ENU = utils::R_NED2ENU * position_NED;
   umd_psdk_interfaces::msg::PositionFused position_msg;
   position_msg.header.stamp = this->get_clock()->now();
   position_msg.header.frame_id = ground_frame_;
@@ -357,8 +357,8 @@ PSDKWrapper::gps_fused_callback(const uint8_t *data, uint16_t dataSize,
   umd_psdk_interfaces::msg::GPSFused gps_fused_msg;
   gps_fused_msg.header.stamp = this->get_clock()->now();
   // DJI unit is rad. Transform it to deg
-  gps_fused_msg.longitude = utils_.rad_to_deg(gps_fused->longitude);
-  gps_fused_msg.latitude = utils_.rad_to_deg(gps_fused->latitude);
+  gps_fused_msg.longitude = utils::rad_to_deg(gps_fused->longitude);
+  gps_fused_msg.latitude = utils::rad_to_deg(gps_fused->latitude);
   // Altitude, WGS 84 reference ellipsoid, unit: m.
   gps_fused_msg.altitude = gps_fused->altitude;
   gps_fused_msg.num_visible_satellites = gps_fused->visibleSatelliteNumber;
@@ -1070,7 +1070,7 @@ PSDKWrapper::subscribe_psdk_topics()
 void
 PSDKWrapper::unsubscribe_psdk_topics()
 {
-  for (auto topic : utils_.topics_to_subscribe) {
+  for (auto topic : utils::topics_to_subscribe) {
     T_DjiReturnCode return_code;
     return_code = DjiFcSubscription_UnSubscribeTopic(topic.label);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
