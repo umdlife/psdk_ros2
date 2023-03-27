@@ -79,13 +79,26 @@
 #include "umd_psdk_interfaces/action/camera_download_file_list.hpp"
 #include "umd_psdk_interfaces/action/camera_download_file_by_index.hpp"
 #include "umd_psdk_interfaces/action/camera_delete_file_by_index.hpp"
+#include "umd_psdk_interfaces/action/camera_streaming.hpp"
 #include "umd_psdk_interfaces/srv/gimbal_set_mode.hpp"
 #include "umd_psdk_interfaces/srv/gimbal_reset.hpp"
 #include "umd_psdk_interfaces/action/gimbal_rotation.hpp"
 #include <nav2_util/simple_action_server.hpp>
 #include "dji_camera_manager.h"
+#include "dji_liveview.h"
 #include "dji_gimbal_manager.h"
 #include "dji_platform.h"
+#include "umd_psdk_wrapper/dji_camera_stream_decoder.hpp"
+// #include <umd_rtsp/rtsp_streamer.hpp>
+// #include "test_liveview_entry.hpp"
+#ifdef OPEN_CV_INSTALLED
+
+#include "opencv2/opencv.hpp"
+#include "opencv2/dnn.hpp"
+#include "opencv2/highgui/highgui.hpp"
+using namespace cv;
+#endif
+
 #include <functional>
 
 
@@ -172,6 +185,9 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   using CameraDeleteFileByIndex = umd_psdk_interfaces::action::CameraDeleteFileByIndex;
   std::unique_ptr<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>> 
     camera_delete_file_by_index_action_;
+  using CameraStreaming = umd_psdk_interfaces::action::CameraStreaming;
+  std::unique_ptr<nav2_util::SimpleActionServer<CameraStreaming>> 
+    camera_streaming_action_;
   // Gimbal
   using GimbalRotation = umd_psdk_interfaces::action::GimbalRotation;
   std::unique_ptr<nav2_util::SimpleActionServer<GimbalRotation>> 
@@ -211,8 +227,15 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   using GimbalReset = umd_psdk_interfaces::srv::GimbalReset;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
-
+  
  protected:
+  // Streaming
+  friend void c_DjiUser_ShowRgbImageCallback(CameraRGBImage img, void *userData);
+  friend void c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen);
+  void DjiUser_ShowRgbImageCallback(CameraRGBImage img, void *userData);
+  void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen);
+
+  T_DjiReturnCode StartMainCameraStream(CameraImageCallback callback, void *userData);
   /*
    * @brief Lifecycle configure
    */
@@ -270,6 +293,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   bool init(T_DjiUserInfo* user_info);
   bool init_telemetry();
   bool init_camera_manager();
+  bool init_liveview_manager();
   bool init_gimbal_manager();
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
   void set_topic_frequency(std::vector<Telemetry::DJITopic>* topics,
@@ -304,6 +328,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   void camera_download_file_list_callback_();
   void camera_download_file_by_index_callback_();
   void camera_delete_file_by_index_callback_();
+  void camera_streaming_callback_();
   void gimbal_rotation_callback_();
   // Service callbacks                              
   void camera_get_type_callback_(const std::shared_ptr<CameraGetType::Request> request, 
@@ -340,6 +365,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                      const std::shared_ptr<GimbalReset::Response> response);                                                                       
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
+  
 //////////////////////////////////////// Sensors ////////////////////////////////////////
 
  private:
@@ -366,9 +392,9 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
     {DJI_CAMERA_TYPE_M3E,     "M3E Camera"},
     {DJI_CAMERA_TYPE_M3T,     "M3T Camera"},
   };
-
 };
 extern std::shared_ptr<PSDKWrapper> global_ptr_;
+
 }  // namespace umd_psdk
 
 #endif  // UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_

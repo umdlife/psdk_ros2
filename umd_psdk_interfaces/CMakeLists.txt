@@ -33,6 +33,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/CameraDownloadFileList.action"
   "action/CameraDownloadFileByIndex.action"
   "action/CameraDeleteFileByIndex.action"
+  "action/CameraStreaming.action"
   "action/GimbalRotation.action"
   "msg/AircraftStatus.msg"
   "msg/Altitude.msg"
