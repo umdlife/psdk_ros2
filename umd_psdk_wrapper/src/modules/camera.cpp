@@ -16,8 +16,32 @@
 #include "umd_psdk_wrapper/psdk_wrapper.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk {
+std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder *> streamDecoder;
+char mainName[] = "MAIN_CAM";
+/* Private values -------------------------------------------------------------*/
+const char *classNames[] = {"background", "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck",
+                            "boat", "traffic light",
+                            "fire hydrant", "background", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
+                            "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "background", "backpack",
+                            "umbrella", "background", "background", "handbag", "tie", "suitcase", "frisbee", "skis",
+                            "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard",
+                            "surfboard", "tennis racket",
+                            "bottle", "background", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana",
+                            "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut",
+                            "cake", "chair", "couch", "potted plant", "bed", "background", "dining table", "background",
+                            "background", "toilet", "background", "tv", "laptop", "mouse", "remote", "keyboard",
+                            "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "background", "book",
+                            "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"};
 
+const size_t inWidth = 320;
+const size_t inHeight = 300;
+const float WHRatio = inWidth / (float) inHeight;
+char curFileDirPath[DJI_FILE_PATH_SIZE_MAX];
+char tempFileDirPath[DJI_FILE_PATH_SIZE_MAX];
+char prototxtFileDirPath[DJI_FILE_PATH_SIZE_MAX];
+char weightsFileDirPath[DJI_FILE_PATH_SIZE_MAX];
+
+namespace umd_psdk {
 
 bool PSDKWrapper::init_camera_manager()
 {
@@ -28,6 +52,25 @@ RCLCPP_INFO(get_logger(), "Initiating camera manager...");
   }
   return true;
 }
+
+bool PSDKWrapper::init_liveview_manager()
+{
+RCLCPP_INFO(get_logger(), "Initiating Live view manager...");
+  if (DjiLiveview_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "Could not initialize Live view manager.");
+    return false;
+  }
+
+  streamDecoder = {
+        {DJI_LIVEVIEW_CAMERA_POSITION_FPV,  (new DJICameraStreamDecoder())},
+        {DJI_LIVEVIEW_CAMERA_POSITION_NO_1, (new DJICameraStreamDecoder())},
+        {DJI_LIVEVIEW_CAMERA_POSITION_NO_2, (new DJICameraStreamDecoder())},
+        {DJI_LIVEVIEW_CAMERA_POSITION_NO_3, (new DJICameraStreamDecoder())},
+    };
+    
+  return true;
+}
+
 
 void PSDKWrapper::camera_get_type_callback_(const std::shared_ptr<CameraGetType::Request> request, 
                                  const std::shared_ptr<CameraGetType::Response> response)
@@ -55,7 +98,6 @@ void PSDKWrapper::camera_get_type_callback_(const std::shared_ptr<CameraGetType:
       response->success = true;
       return;
     }
-    
 }     
 
 void PSDKWrapper::camera_set_ev_callback_(const std::shared_ptr<CameraSetEV::Request> request, 
@@ -172,7 +214,6 @@ void PSDKWrapper::camera_get_shutter_speed_callback_(const std::shared_ptr<Camer
         RCLCPP_ERROR(get_logger(),"Set mounted position %d camera's exposure mode failed,"
                        "error code: 0x%08X and mode is: %d\r\n", index, return_code, DJI_CAMERA_MANAGER_EXPOSURE_MODE_EXPOSURE_UNKNOWN);
     }
-
 
     return_code = DjiCameraManager_GetShutterSpeed(index, &shutter_speed_temp);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
@@ -737,6 +778,7 @@ void PSDKWrapper::camera_get_laser_ranging_info_callback_()
         RCLCPP_INFO(get_logger(),"Could not take laser ranging info from camera mounted in position %d,"
                        " error code :0x%08X", index, return_code);
         camera_get_laser_ranging_info_action_->terminate_current(action_result);
+        return;
     }
     else
     {   
@@ -766,13 +808,13 @@ void PSDKWrapper::camera_download_file_list_callback_()
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
         RCLCPP_INFO(get_logger(),"Download file list failed, error code: 0x%08X.", return_code);
         camera_download_file_list_action_->terminate_current(action_result);
-        // return;
+        return;
     }
     else
     {
         action_result->result = media_file_list.totalCount;
         camera_download_file_list_action_->succeeded_current(action_result);
-        // return;
+        return;
     }
 }
 
@@ -789,13 +831,13 @@ void PSDKWrapper::camera_download_file_by_index_callback_()
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
         RCLCPP_INFO(get_logger(),"Download file by index failed, error code: 0x%08X.", return_code);
         camera_download_file_by_index_action_->terminate_current(action_result);
-        // return;
+        return;
     }
     else
     {
         action_result->result = true;
         camera_download_file_by_index_action_->succeeded_current(action_result);
-        // return;
+        return;
     }
 }
 
@@ -813,13 +855,174 @@ void PSDKWrapper::camera_delete_file_by_index_callback_()
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
         RCLCPP_INFO(get_logger(),"Failed to delete file, error code: 0x%08X.", return_code);
         camera_delete_file_by_index_action_->terminate_current(action_result);
-        // return;
+        return;
     }
     else
     {
         action_result->result = true;
         camera_delete_file_by_index_action_->succeeded_current(action_result);
-        // return;
+        return;
     }
 }
+
+void c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen)
+{
+    std::cout << "In c_LiveviewConvertH264ToRgbCallback, gonna call LiveviewConvertH264ToRgbCallback" << std::endl;
+    return global_ptr_->LiveviewConvertH264ToRgbCallback(position, buf, bufLen);
+}
+
+/* Private functions definition-----------------------------------------------*/
+void PSDKWrapper::LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen)
+{
+    std::cout << "20" << std::endl;
+    auto deocder = streamDecoder.find(position);
+    if ((deocder != streamDecoder.end()) && deocder->second) {
+        deocder->second->decodeBuffer(buf, bufLen);
+    }
+}
+
+void c_DjiUser_ShowRgbImageCallback(CameraRGBImage img, void *userData)
+{
+    std::cout << "In c_DjiUser_ShowRgbImageCallback, gonna call DjiUser_ShowRgbImageCallback" << std::endl;
+    return global_ptr_->DjiUser_ShowRgbImageCallback(img, userData);
+}
+
+/* Private functions definition-----------------------------------------------*/
+void PSDKWrapper::DjiUser_ShowRgbImageCallback(CameraRGBImage img, void *userData)
+{
+    std::cout << "DjiUser_ShowRgbImageCallback 0" << std::endl;
+    int32_t s_demoIndex = 0;
+    std::string name = std::string(reinterpret_cast<char *>(userData));
+
+#ifdef OPEN_CV_INSTALLED
+    std::cout << "DjiUser_ShowRgbImageCallback 1" << std::endl;
+    Mat mat(img.height, img.width, CV_8UC3, img.rawData.data(), img.width * 3);
+
+    if (s_demoIndex == 0) {
+        cvtColor(mat, mat, COLOR_RGB2BGR);
+        imshow(name, mat);
+    } else if (s_demoIndex == 1) {
+        cvtColor(mat, mat, COLOR_RGB2GRAY);
+        Mat mask;
+        cv::threshold(mat, mask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+        imshow(name, mask);
+    } else if (s_demoIndex == 2) {
+        cvtColor(mat, mat, COLOR_RGB2BGR);
+        snprintf(tempFileDirPath, DJI_FILE_PATH_SIZE_MAX, "%s/data/haarcascade_frontalface_alt.xml", curFileDirPath);
+        auto faceDetector = cv::CascadeClassifier(tempFileDirPath);
+        std::vector<Rect> faces;
+        faceDetector.detectMultiScale(mat, faces, 1.1, 3, 0, Size(50, 50));
+
+        for (int i = 0; i < faces.size(); ++i) {
+            std::cout << "index: " << i;
+            std::cout << "  x: " << faces[i].x;
+            std::cout << "  y: " << faces[i].y << std::endl;
+
+            cv::rectangle(mat, cv::Point(faces[i].x, faces[i].y),
+                          cv::Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height),
+                          Scalar(0, 0, 255), 2, 1, 0);
+        }
+        imshow(name, mat);
+    } else if (s_demoIndex == 3) {
+        snprintf(prototxtFileDirPath, DJI_FILE_PATH_SIZE_MAX,
+                 "%s/data/tensorflow/ssd_inception_v2_coco_2017_11_17.pbtxt",
+                 curFileDirPath);
+        //Attention: If you want to run the Tensorflow Object detection demo, Please download the tensorflow model.
+        //Download Url: http://download.tensorflow.org/models/object_detection/ssd_inception_v2_coco_2017_11_17.tar.gz
+        snprintf(weightsFileDirPath, DJI_FILE_PATH_SIZE_MAX, "%s/data/tensorflow/frozen_inference_graph.pb",
+                 curFileDirPath);
+
+        dnn::Net net = cv::dnn::readNetFromTensorflow(weightsFileDirPath, prototxtFileDirPath);
+        Size frame_size = mat.size();
+
+        Size cropSize;
+        if (frame_size.width / (float) frame_size.height > WHRatio) {
+            cropSize = Size(static_cast<int>(frame_size.height * WHRatio),
+                            frame_size.height);
+        } else {
+            cropSize = Size(frame_size.width,
+                            static_cast<int>(frame_size.width / WHRatio));
+        }
+
+        Rect crop(Point((frame_size.width - cropSize.width) / 2,
+                        (frame_size.height - cropSize.height) / 2),
+                  cropSize);
+
+        cv::Mat blob = cv::dnn::blobFromImage(mat, 1, Size(300, 300));
+        net.setInput(blob);
+        Mat output = net.forward();
+        Mat detectionMat(output.size[2], output.size[3], CV_32F, output.ptr<float>());
+
+        mat = mat(crop);
+        float confidenceThreshold = 0.50;
+
+        for (int i = 0; i < detectionMat.rows; i++) {
+            float confidence = detectionMat.at<float>(i, 2);
+            if (confidence > confidenceThreshold) {
+                auto objectClass = (size_t) (detectionMat.at<float>(i, 1));
+
+                int xLeftBottom = static_cast<int>(detectionMat.at<float>(i, 3) * mat.cols);
+                int yLeftBottom = static_cast<int>(detectionMat.at<float>(i, 4) * mat.rows);
+                int xRightTop = static_cast<int>(detectionMat.at<float>(i, 5) * mat.cols);
+                int yRightTop = static_cast<int>(detectionMat.at<float>(i, 6) * mat.rows);
+
+                std::ostringstream ss;
+                ss << confidence;
+                String conf(ss.str());
+
+                Rect object((int) xLeftBottom, (int) yLeftBottom,
+                            (int) (xRightTop - xLeftBottom),
+                            (int) (yRightTop - yLeftBottom));
+
+                rectangle(mat, object, Scalar(0, 255, 0), 2);
+                String label = String(classNames[objectClass]) + ": " + conf;
+
+                int baseLine = 0;
+                Size labelSize = getTextSize(label, FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+                rectangle(mat, Rect(Point(xLeftBottom, yLeftBottom - labelSize.height),
+                                    Size(labelSize.width, labelSize.height + baseLine)), Scalar(0, 255, 0), cv::FILLED);
+                putText(mat, label, Point(xLeftBottom, yLeftBottom), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0));
+            }
+        }
+        imshow(name, mat);
+    }
+
+    cv::waitKey(1);
+#endif
+}
+
+T_DjiReturnCode PSDKWrapper::StartMainCameraStream(CameraImageCallback callback, void *userData)
+{
+    std::cout << "StartMainCameraStream 0" << std::endl;
+    auto deocder = streamDecoder.find(DJI_LIVEVIEW_CAMERA_POSITION_NO_1);
+
+    if ((deocder != streamDecoder.end()) && deocder->second) {
+        std::cout << "StartMainCameraStream 1" << std::endl;
+        deocder->second->init();
+        deocder->second->registerCallback(callback, userData);
+
+        T_DjiReturnCode returnCode;
+        returnCode = DjiLiveview_StartH264Stream(DJI_LIVEVIEW_CAMERA_POSITION_NO_1, DJI_LIVEVIEW_CAMERA_SOURCE_H20_ZOOM,
+                                          c_LiveviewConvertH264ToRgbCallback);
+        std::cout << "StartMainCameraStream retunrCode" <<  returnCode << std::endl;
+        return returnCode;
+    } else {
+        std::cout << "StartMainCameraStream error!" << std::endl;
+        return DJI_ERROR_SYSTEM_MODULE_CODE_NOT_FOUND;
+    }
+}
+
+void PSDKWrapper::camera_streaming_callback_()
+{
+    RCLCPP_INFO(get_logger(), "Calling streaming");
+    auto current_goal = camera_streaming_action_->get_current_goal();
+    auto action_result = std::make_shared<CameraStreaming::Result>();
+    std::cout << "Before calling the liveview sample" << std::endl;
+    // StartMainCameraStream(&DjiUser_ShowRgbImageCallback, &mainName);
+    StartMainCameraStream(&c_DjiUser_ShowRgbImageCallback, &mainName);
+    std::cout << "After calling the liveview sample" << std::endl;
+    action_result->result = true;
+    camera_streaming_action_->succeeded_current(action_result);
+}
+
 }

@@ -31,6 +31,19 @@ find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(umd_psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(OpenCV REQUIRED)
+# find_package(umd_rtsp REQUIRED)
+if (OpenCV_FOUND)
+  message( "\n${PROJECT_NAME}...")
+  message( STATUS " - Includes: ${OpenCV_INCLUDE_DIRS}")
+  message( STATUS " - Libraries: ${OpenCV_LIBRARIES}")
+  add_definitions(-DOPEN_CV_INSTALLED)
+else()
+  message( STATUS "OpenCV is required for this sample to do the target tracking")
+endif ()
+
+include_directories(include
+                    ${OpenCV_INCLUDE_DIRS})
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -64,6 +77,7 @@ include_directories(/Tools/Payload-SDK/psdk_lib/include)
 #include_directories(${HAL_PATH})
 include_directories(include)
 include_directories(src/common)
+include_directories(src/streaming)
 
 set(dependencies
   rclcpp
@@ -86,6 +100,8 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/telemetry.cpp
   src/modules/camera.cpp
   src/modules/gimbal.cpp
+  src/modules/dji_camera_image_handler.cpp
+  src/modules/dji_camera_stream_decoder.cpp
   src/common/osal_fs.c
   src/common/osal_socket.c
   src/common/osal.c
@@ -101,6 +117,10 @@ ament_target_dependencies(psdk_wrapper_libs
 target_link_libraries(
   psdk_wrapper_libs
   ${PSDK_LIB}
+  ${OpenCV_LIBRARIES}
+  -lavcodec
+  -lswscale
+  # umd_rtsp::umd_rtsp
 )
 
 target_link_libraries(

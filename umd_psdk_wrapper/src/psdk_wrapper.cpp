@@ -90,6 +90,9 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if(!init_camera_manager()){
     return nav2_util::CallbackReturn::FAILURE;
   }
+  if(!init_liveview_manager()){
+    return nav2_util::CallbackReturn::FAILURE;
+  }
   if(!init_gimbal_manager()){
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -508,6 +511,10 @@ camera_delete_file_by_index_action_ =
     std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
           shared_from_this(), "camera_delete_file_by_index",
           std::bind(&PSDKWrapper::camera_delete_file_by_index_callback_, this));
+camera_streaming_action_ = 
+    std::make_unique<nav2_util::SimpleActionServer<CameraStreaming>>(
+          shared_from_this(), "camera_streaming",
+          std::bind(&PSDKWrapper::camera_streaming_callback_, this));
 // Services
 camera_get_type_service_ = create_service<CameraGetType>(
           "camera_get_type",
@@ -621,6 +628,7 @@ void PSDKWrapper::activate_ros_elements()
   camera_download_file_list_action_->activate();
   camera_download_file_by_index_action_->activate();
   camera_delete_file_by_index_action_->activate();
+  camera_streaming_action_->activate();
   // Gimbal
   gimbal_rotation_action_->activate();
   // Telemetry
@@ -644,6 +652,7 @@ void PSDKWrapper::activate_ros_elements()
   position_fused_pub_->on_activate();
   relative_obstacle_info_pub_->on_activate();
   home_position_pub_->on_activate();
+  
 
 }
 
@@ -660,6 +669,7 @@ void PSDKWrapper::deactivate_ros_elements()
   camera_download_file_list_action_->deactivate();
   camera_download_file_by_index_action_->deactivate();
   camera_delete_file_by_index_action_->deactivate();
+  camera_streaming_action_->deactivate();
   // Gimbal
   gimbal_rotation_action_->deactivate();
   // Telemetry
@@ -712,6 +722,7 @@ void PSDKWrapper::clean_ros_elements()
   camera_download_file_list_action_.reset();
   camera_download_file_by_index_action_.reset();
   camera_delete_file_by_index_action_.reset();
+  camera_streaming_action_.reset();
   // Gimbal
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();
