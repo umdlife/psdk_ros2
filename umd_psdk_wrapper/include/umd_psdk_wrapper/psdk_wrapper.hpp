@@ -328,8 +328,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
       const sensor_msgs::msg::Joy::SharedPtr msg);
   void flight_control_rollpitch_yawrate_vertpos_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
-  void send_setpoint(const uint8_t flag, const double x_sp, const double y_sp,
-                     const double z_sp, const double yaw_sp);
 
   // Services
   using SetHomeFromGPS = umd_psdk_interfaces::srv::SetHomeFromGPS;
@@ -349,8 +347,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   rclcpp::Service<Trigger>::SharedPtr release_ctrl_authority_srv_;
   rclcpp::Service<Trigger>::SharedPtr turn_on_motors_srv_;
   rclcpp::Service<Trigger>::SharedPtr turn_off_motors_srv_;
-  rclcpp::Service<Trigger>::SharedPtr start_takeoff_srv_;
-  rclcpp::Service<Trigger>::SharedPtr start_landing_srv_;
+  rclcpp::Service<Trigger>::SharedPtr takeoff_srv_;
+  rclcpp::Service<Trigger>::SharedPtr land_srv_;
   rclcpp::Service<Trigger>::SharedPtr cancel_landing_srv_;
   rclcpp::Service<Trigger>::SharedPtr start_confirm_landing_srv_;
   rclcpp::Service<Trigger>::SharedPtr start_force_landing_srv_;

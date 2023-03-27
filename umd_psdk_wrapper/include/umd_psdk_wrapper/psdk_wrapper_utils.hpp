@@ -31,6 +31,21 @@ class Utils {
     int max_frequency;
   };
 
+  enum AircraftStatus {
+    DISPLAY_MODE_MANUAL_CTRL = 0,
+    DISPLAY_MODE_ATTITUDE = 1,
+    DISPLAY_MODE_P_GPS = 6,
+    DISPLAY_MODE_HOTPOINT_MODE = 9,
+    DISPLAY_MODE_ASSISTED_TAKEOFF = 10,
+    DISPLAY_MODE_AUTO_TAKEOFF = 11,
+    DISPLAY_MODE_AUTO_LANDING = 12,
+    DISPLAY_MODE_NAVI_GO_HOME = 15,
+    DISPLAY_MODE_NAVI_SDK_CTRL = 17,
+    DISPLAY_MODE_FORCE_AUTO_LANDING = 33,
+    DISPLAY_MODE_SEARCH_MODE = 40,
+    DISPLAY_MODE_ENGINE_START = 41
+  };
+
   enum GPSFixState {
     GPS_FIX_STATE_NO_FIX,
     GPS_FIX_STATE_DEAD_RECKONING_ONLY,
@@ -43,107 +58,7 @@ class Utils {
   enum FlightStatus {
     FLIGHT_STATUS_STOPED = 0,    /*!< Aircraft is on ground and motors are still. */
     FLIGHT_STATUS_ON_GROUND = 1, /*!< Aircraft is on ground but motors are rotating. */
-    FLIGHT_STATUS_IN_AIR = 2,    /*!< Aircraft is in air. */
-  };
-
-  enum class JoystickControlMode {
-    HORIZONTAL_ANGLE = E_DjiFlightControllerHorizontalControlMode::
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_ANGLE_CONTROL_MODE,
-    HORIZONTAL_VELOCITY = E_DjiFlightControllerHorizontalControlMode::
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_VELOCITY_CONTROL_MODE,
-    HORIZONTAL_POSITION = E_DjiFlightControllerHorizontalControlMode::
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_POSITION_CONTROL_MODE,
-    HORIZONTAL_ANGULAR_RATE = E_DjiFlightControllerHorizontalControlMode::
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_ANGULAR_RATE_CONTROL_MODE,
-
-    VERTICAL_VELOCITY = DJI_FLIGHT_CONTROLLER_VERTICAL_VELOCITY_CONTROL_MODE,
-    VERTICAL_POSITION = DJI_FLIGHT_CONTROLLER_VERTICAL_POSITION_CONTROL_MODE,
-    VERTICAL_THRUST = DJI_FLIGHT_CONTROLLER_VERTICAL_THRUST_CONTROL_MODE,
-
-    YAW_ANGLE = DJI_FLIGHT_CONTROLLER_YAW_ANGLE_CONTROL_MODE,
-    YAW_RATE = DJI_FLIGHT_CONTROLLER_YAW_ANGLE_RATE_CONTROL_MODE,
-
-    HORIZONTAL_GROUND = DJI_FLIGHT_CONTROLLER_HORIZONTAL_GROUND_COORDINATE,
-    HORIZONTAL_BODY = DJI_FLIGHT_CONTROLLER_HORIZONTAL_BODY_COORDINATE,
-
-    STABLE_DISABLE = DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_DISABLE,
-    STABLE_ENABLE = DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE
-  };
-
-  enum class HorizontalControlMode {
-    /**
-     * @brief Control pitch & roll & angle of the aircraft.
-     * @note Need to be referenced to either the ground or body frame by
-     * E_DjiFlightControllerHorizontalCoordinate setting. Limit: -35 degree to 35 degree
-     */
-    ANGLE_CONTROL_MODE = 0,
-    /**
-     * @brief Set the control-mode to control horizontal vehicle velocities.
-     * @note Need to be referenced to either the ground or body frame by
-     * E_DjiFlightControllerHorizontalCoordinate setting Limit: -30m/s to 30 m/s
-     */
-    VELOCITY_CONTROL_MODE = 1,
-    /**
-     * @brief Set the control-mode to control position offsets of pitch & roll
-     * directions.
-     * @note Need to be referenced to either the ground or body frame by
-     * E_DjiFlightControllerHorizontalCoordinate setting Limit: N/A
-     */
-    POSITION_CONTROL_MODE = 2,
-    /**
-     * @brief Set the control-mode to control rate of change of the vehicle's attitude.
-     * @note Need to be referenced to either the ground or body frame by
-     * E_DjiFlightControllerHorizontalCoordinate setting Limit: -150deg/s to 150.0 deg/s
-     */
-    ANGULAR_RATE_CONTROL_MODE = 3
-  };
-
-  enum class VerticalControlMode {
-    /**
-     * @brief Set the control-mode to control the vertical speed of UAV, upward is
-     * positive/
-     * @note Limit: -5m/s to 5 m/s
-     */
-    VELOCITY_CONTROL_MODE = 0,
-
-    /**
-     * @brief Set the control-mode to control the height of UAV
-     * @note Limit: 0m to 120 m
-     */
-    POSITION_CONTROL_MODE = 1,
-
-    /**
-     * @brief Set the control-mode to directly control the thrust
-     * @note Range: 0% to 100%
-     */
-    THRUST_CONTROL_MODE = 2,
-  };
-
-  enum class YawControlMode {
-    /**
-     * @brief Set the control-mode to control yaw angle.
-     * @note Yaw angle is referenced to the ground frame.In this control mode, Ground
-     * frame is enforced in Autopilot.
-     */
-    YAW_ANGLE_CONTROL_MODE = 0x00,
-
-    /**
-     * @brief Set the control-mode to control yaw angular velocity
-     * @note Same reference frame as YAW_ANGLE.
-     * Limit: -150deg/s to 150 deg/s
-     */
-    YAW_ANGLE_RATE_CONTROL_MODE = 1
-  };
-
-  enum class HorizontalCoordinateMode {
-    GROUND_COORDINATE =
-        0, /*!< Set the x-y of ground frame as the horizontal frame (NEU) */
-    BODY_COORDINATE = 1 /*!< Set the x-y of body frame as the horizontal frame (FRU) */
-  };
-
-  enum class StableControlMode {
-    DISABLE = 0, /*!< Disable the stable mode */
-    ENABLE = 1   /*!< Enable the stable mode */
+    FLIGHT_STATUS_IN_AIR = 2     /*!< Aircraft is in air. */
   };
 
   std::vector<DJITopic> topics_to_subscribe{
