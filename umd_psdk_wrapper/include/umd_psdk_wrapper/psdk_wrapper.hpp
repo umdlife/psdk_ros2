@@ -77,80 +77,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   PSDKWrapper(const std::string& node_name);
   ~PSDKWrapper();
 
-  // ROS Publishers
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::QuaternionStamped>::SharedPtr
-      attitude_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
-      velocity_ground_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::PositionFused>::SharedPtr position_fused_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::GPSFused>::SharedPtr
-      gps_fused_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
-      gps_position_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
-      gps_velocity_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::GPSDetails>::SharedPtr
-      gps_details_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr gps_signal_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
-      gps_control_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
-      rtk_position_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
-      rtk_velocity_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RTKYaw>::SharedPtr
-      rtk_yaw_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
-      rtk_position_info_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
-      rtk_yaw_info_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>::SharedPtr
-      magnetic_field_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Joy>::SharedPtr rc_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr
-      gimbal_angles_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::GimbalStatus>::SharedPtr gimbal_status_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::FlightStatus>::SharedPtr flight_status_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
-      landing_gear_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt16>::SharedPtr
-      motor_start_error_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::AircraftStatus>::SharedPtr aircraft_status_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Battery>::SharedPtr
-      battery_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
-      height_fused_pub_;
-
-  //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
-  //       acceleration_ground_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
-  //       acceleration_body_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Altitude>::SharedPtr
-  //       altitude_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
-  //       relative_height_pub_;
-
-  //   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>::
-  //       SharedPtr relative_obstacle_info_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<
-  //       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr flight_control_generic_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
-      flight_control_position_yaw_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
-      flight_control_velocity_yawrate_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
-      flight_control_body_velocity_yawrate_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
-      flight_control_rollpitch_yawrate_vertpos_sub_;
-
  protected:
   /*
    * @brief Lifecycle configure
@@ -200,15 +126,127 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
     int control_information_frequency;
   };
 
+  /**
+   * @brief Set the environment handlers
+   * @return true/false
+   */
   bool set_environment();
+
+  /**
+   * @brief Set the user application information.
+   * @param user_info object containing the main information regarding the psdk
+   * application
+   * @return true/false
+   */
   bool set_user_info(T_DjiUserInfo* user_info);
+
+  /**
+   * @brief Load ROS parameters
+   *
+   */
   void load_parameters();
+
+  /**
+   * @brief Initiate the PSDK application
+   * @param user_info object containing the main information regarding the psdk
+   * application
+   * @return true/false
+   */
   bool init(T_DjiUserInfo* user_info);
+
+  /**
+   * @brief Initiate the telemetry module
+   * @return true/false
+   */
   bool init_telemetry();
+
+  /**
+   * @brief Initiate the flight control module
+   * @return true/false
+   */
   bool init_flight_control();
+
+  /**
+   * @brief Get the DJI frequency object associated with a certain frequency
+   * @param frequency
+   * @return E_DjiDataSubscriptionTopicFreq
+   */
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
 
-  // Subscriptor callbacks
+  /* ROS Publishers */
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::QuaternionStamped>::SharedPtr
+      attitude_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
+      velocity_ground_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      umd_psdk_interfaces::msg::PositionFused>::SharedPtr position_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::GPSFused>::SharedPtr
+      gps_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
+      gps_position_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
+      gps_velocity_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::GPSDetails>::SharedPtr
+      gps_details_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr gps_signal_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
+      gps_control_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
+      rtk_position_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::TwistStamped>::SharedPtr
+      rtk_velocity_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RTKYaw>::SharedPtr
+      rtk_yaw_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
+      rtk_position_info_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
+      rtk_yaw_info_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::MagneticField>::SharedPtr
+      magnetic_field_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Joy>::SharedPtr rc_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr
+      gimbal_angles_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      umd_psdk_interfaces::msg::GimbalStatus>::SharedPtr gimbal_status_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      umd_psdk_interfaces::msg::FlightStatus>::SharedPtr flight_status_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
+      landing_gear_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt16>::SharedPtr
+      motor_start_error_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      umd_psdk_interfaces::msg::AircraftStatus>::SharedPtr aircraft_status_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      umd_psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Battery>::SharedPtr
+      battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
+      height_fused_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
+  //       acceleration_ground_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
+  //       acceleration_body_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Altitude>::SharedPtr
+  //       altitude_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
+  //       relative_height_pub_;
+
+  //   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>::
+  //       SharedPtr relative_obstacle_info_pub_;
+  //   rclcpp_lifecycle::LifecyclePublisher<
+  //       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr flight_control_generic_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
+      flight_control_position_yaw_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
+      flight_control_velocity_yawrate_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
+      flight_control_body_velocity_yawrate_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
+      flight_control_rollpitch_yawrate_vertpos_sub_;
+
+  /* C-typed topic callbacks*/
   friend T_DjiReturnCode c_attitude_callback(const uint8_t* data, uint16_t dataSize,
                                              const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_velocity_callback(const uint8_t* data, uint16_t dataSize,
@@ -265,6 +303,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
                                             const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_height_fused_callback(const uint8_t* data, uint16_t dataSize,
                                                  const T_DjiDataTimestamp* timestamp);
+
+  /*C++ type topic callbacks*/
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
                                     const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t dataSize,
@@ -318,16 +358,53 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   T_DjiReturnCode height_fused_callback(const uint8_t* data, uint16_t dataSize,
                                         const T_DjiDataTimestamp* timestamp);
 
+  /**
+   * @brief Subscribe to DJI topics
+   */
   void subscribe_psdk_topics();
+
+  /**
+   * @brief Unsubscribe to DJI topics
+   */
   void unsubscribe_psdk_topics();
 
-  void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
+  /**
+   * @brief Callback function to control aircraft position and yaw. This function uses
+   * the ground reference frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
   void flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
+  /**
+   * @brief Callback function to control aircraft velocity and yaw rate. This function
+   * uses the ground reference frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
   void flight_control_velocity_yawrate_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
+
+  /**
+   * @brief Callback function to control aircraft velocity and yaw. This function uses
+   * the body reference frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
   void flight_control_body_velocity_yawrate_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
+
+  /**
+   * @brief Callback function to control roll, pitch, yawrate and thrust. This function
+   * uses the body reference frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
   void flight_control_rollpitch_yawrate_vertpos_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
+
+  /**
+   * @brief Callback function to exposing a generic control method of the aircraft.The
+   * type of commands as well as the reference frame is specified in a flag within the
+   * msg.
+   * @note This type of control is not implemented at this moment.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
+  void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
 
   // Services
   using SetHomeFromGPS = umd_psdk_interfaces::srv::SetHomeFromGPS;
@@ -466,11 +543,11 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   bool local_altitude_reference_set_{false};
 
   void initialize_ros_elements();
-  void subscribe_attitude_topic();
   void activate_ros_elements();
   void deactivate_ros_elements();
   void clean_ros_elements();
 };
+
 extern std::shared_ptr<PSDKWrapper> global_ptr_;
 }  // namespace umd_psdk
 

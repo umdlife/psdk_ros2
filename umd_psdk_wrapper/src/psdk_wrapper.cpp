@@ -179,14 +179,16 @@ PSDKWrapper::set_environment()
 
   return_code = DjiPlatform_RegOsalHandler(&osal_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register OSAL handler error");
+    RCLCPP_ERROR(get_logger(), "Register OSAL handler error. Error code is: %ld",
+                 return_code);
     return false;
   }
   RCLCPP_INFO(get_logger(), "Registered OSAL handler");
 
   return_code = DjiPlatform_RegHalUartHandler(&uart_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register HAL handler error");
+    RCLCPP_ERROR(get_logger(), "Register HAL handler error. Error code is: %ld",
+                 return_code);
     return false;
   }
   RCLCPP_INFO(get_logger(), "Registered HAL handler");
@@ -199,9 +201,11 @@ PSDKWrapper::set_environment()
   usb_bulk_handler.UsbBulkWriteData = HalUsbBulk_WriteData;
   usb_bulk_handler.UsbBulkReadData = HalUsbBulk_ReadData;
   usb_bulk_handler.UsbBulkGetDeviceInfo = HalUsbBulk_GetDeviceInfo;
-  if (DjiPlatform_RegHalUsbBulkHandler(&usb_bulk_handler) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register HAL USB BULK handler error");
+  return_code = DjiPlatform_RegHalUsbBulkHandler(&usb_bulk_handler);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    RCLCPP_ERROR(get_logger(),
+                 "Register HAL USB BULK handler error. Error code is: %ld",
+                 return_code);
     return false;
   }
 #elif (HARDWARE_CONNECTION == DJI_USE_UART_AND_NETWORK_DEVICE)
@@ -210,9 +214,10 @@ PSDKWrapper::set_environment()
   network_handler.NetworkInit = HalNetWork_Init;
   network_handler.NetworkDeInit = HalNetWork_DeInit;
   network_handler.NetworkGetDeviceInfo = HalNetWork_GetDeviceInfo;
-  if (DjiPlatform_RegHalNetworkHandler(&network_handler) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register HAL Network handler error");
+  return_code = DjiPlatform_RegHalNetworkHandler(&network_handler);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "Register HAL Network handler error. Error code is: %ld",
+                 return_code);
   }
 #elif (HARDWARE_CONNECTION == DJI_USE_ONLY_UART)
   RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
@@ -223,14 +228,16 @@ PSDKWrapper::set_environment()
   // Attention: if you want to use camera stream view function, please uncomment it.
   return_code = DjiPlatform_RegSocketHandler(&socket_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register OSAL SOCKET handler error");
+    RCLCPP_ERROR(get_logger(), "Register OSAL SOCKET handler error. Error code is: %ld",
+                 return_code);
     return false;
   }
 
   return_code = DjiPlatform_RegFileSystemHandler(&file_system_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register OSAL filesystem handler error");
-    throw std::runtime_error("Register osal filesystem handler error.");
+    RCLCPP_ERROR(get_logger(),
+                 "Register OSAL filesystem handler error.Error code is: %ld",
+                 return_code);
     return false;
   }
   RCLCPP_INFO(get_logger(), "Environment has been set!");
