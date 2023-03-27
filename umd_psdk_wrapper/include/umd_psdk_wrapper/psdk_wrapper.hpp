@@ -455,7 +455,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
 
   // Variables
   PSDKParams params_;
-  Utils utils_;
   std::string body_frame_{"base_link"};
   std::string ground_frame_{"map"};
 
