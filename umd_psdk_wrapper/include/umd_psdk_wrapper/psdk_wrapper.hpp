@@ -69,37 +69,69 @@
 namespace umd_psdk {
 /**
  * @class umd_psdk::PSDKWrapper
- * @brief
+ * @brief A ROS wrapper that brings all the DJI PSDK functionalities to ROS
  */
 
 class PSDKWrapper : public nav2_util::LifecycleNode {
  public:
+  using SetHomeFromGPS = umd_psdk_interfaces::srv::SetHomeFromGPS;
+  using Trigger = std_srvs::srv::Trigger;
+  using SetHomeAltitude = umd_psdk_interfaces::srv::SetHomeAltitude;
+  using GetHomeAltitude = umd_psdk_interfaces::srv::GetHomeAltitude;
+  using SetObstacleAvoidance = umd_psdk_interfaces::srv::SetObstacleAvoidance;
+  using GetObstacleAvoidance = umd_psdk_interfaces::srv::GetObstacleAvoidance;
+
+  /**
+   * @brief Construct a new PSDKWrapper object
+   *
+   * @param node_name
+   */
   PSDKWrapper(const std::string& node_name);
+
+  /**
+   * @brief Destroy the PSDKWrapper object
+   *
+   */
   ~PSDKWrapper();
 
  protected:
-  /*
-   * @brief Lifecycle configure
+  /**
+   * @brief Configures member variable and sets the environment
+   * @param state Reference to Lifecycle state
+   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State& state) override;
-  /*
-   * @brief Lifecycle activate
+
+  /**
+   * @brief Initializes main PSDK modules
+   * @param state Reference to Lifecycle state
+   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_activate(const rclcpp_lifecycle::State& state) override;
-  /*
-   * @brief Lifecycle deactivate
+
+  /**
+   * @brief Deactivates main PSDK modules and other member variables
+   * @param state Reference to Lifecycle state
+   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_deactivate(
       const rclcpp_lifecycle::State& state) override;
-  /*
-   * @brief Lifecycle cleanup
+
+  /**
+   * @brief Resets member variables
+   * @param state Reference to Lifecycle state
+   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State& state) override;
-  /*
-   * @brief Lifecycle shutdown
+
+  /**
+   * @brief Initializes main PSDK modules
+   * @param state Reference to Lifecycle state
+   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override;
 
+ private:
   struct PSDKParams {
     std::string app_name;
     std::string app_id;
@@ -173,6 +205,249 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
    */
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
 
+  /**
+   * @brief Initializes all ROS elements (e.g. subscribers, publishers, services)
+   */
+  void initialize_ros_elements();
+
+  /**
+   * @brief Activates all ROS elements
+   */
+  void activate_ros_elements();
+
+  /**
+   * @brief Deactivates all ROS elements
+   */
+  void deactivate_ros_elements();
+
+  /**
+   * @brief Cleans all ROS elements
+   */
+  void clean_ros_elements();
+  /**
+   * @brief Subscribe to DJI topics
+   */
+  void subscribe_psdk_topics();
+
+  /**
+   * @brief Unsubscribe to DJI topics
+   */
+  void unsubscribe_psdk_topics();
+
+  /* C-typed DJI topic subscriber callbacks*/
+  friend T_DjiReturnCode c_attitude_callback(const uint8_t* data, uint16_t dataSize,
+                                             const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                             const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_imu_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_position_vo_callback(const uint8_t* data, uint16_t dataSize,
+                                                const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_fused_callback(const uint8_t* data, uint16_t dataSize,
+                                              const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_position_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_details_callback(const uint8_t* data, uint16_t dataSize,
+                                                const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_signal_callback(const uint8_t* data, uint16_t dataSize,
+                                               const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gps_control_callback(const uint8_t* data, uint16_t dataSize,
+                                                const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_position_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_yaw_callback(const uint8_t* data, uint16_t dataSize,
+                                            const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_position_info_callback(
+      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_yaw_info_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_magnetometer_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rc_callback(const uint8_t* data, uint16_t dataSize,
+                                       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gimbal_angles_callback(const uint8_t* data,
+                                                  uint16_t dataSize,
+                                                  const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gimbal_status_callback(const uint8_t* data,
+                                                  uint16_t dataSize,
+                                                  const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_flight_status_callback(const uint8_t* data,
+                                                  uint16_t dataSize,
+                                                  const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_display_mode_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_landing_gear_status_callback(
+      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_motor_start_error_callback(
+      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_flight_anomaly_callback(const uint8_t* data,
+                                                   uint16_t dataSize,
+                                                   const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_battery_callback(const uint8_t* data, uint16_t dataSize,
+                                            const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_height_fused_callback(const uint8_t* data, uint16_t dataSize,
+                                                 const T_DjiDataTimestamp* timestamp);
+
+  /*C++ type DJI topic subscriber callbacks*/
+  T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
+                                    const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                    const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode imu_callback(const uint8_t* data, uint16_t dataSize,
+                               const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode position_vo_callback(const uint8_t* data, uint16_t dataSize,
+                                       const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_fused_callback(const uint8_t* data, uint16_t dataSize,
+                                     const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_position_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_details_callback(const uint8_t* data, uint16_t dataSize,
+                                       const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_signal_callback(const uint8_t* data, uint16_t dataSize,
+                                      const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gps_control_callback(const uint8_t* data, uint16_t dataSize,
+                                       const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_position_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_velocity_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_yaw_callback(const uint8_t* data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_position_info_callback(const uint8_t* data, uint16_t dataSize,
+                                             const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rtk_yaw_info_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode magnetometer_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode rc_callback(const uint8_t* data, uint16_t dataSize,
+                              const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gimbal_angles_callback(const uint8_t* data, uint16_t dataSize,
+                                         const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode gimbal_status_callback(const uint8_t* data, uint16_t dataSize,
+                                         const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode flight_status_callback(const uint8_t* data, uint16_t dataSize,
+                                         const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode display_mode_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode landing_gear_status_callback(const uint8_t* data, uint16_t dataSize,
+                                               const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode motor_start_error_callback(const uint8_t* data, uint16_t dataSize,
+                                             const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode flight_anomaly_callback(const uint8_t* data, uint16_t dataSize,
+                                          const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode battery_callback(const uint8_t* data, uint16_t dataSize,
+                                   const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode height_fused_callback(const uint8_t* data, uint16_t dataSize,
+                                        const T_DjiDataTimestamp* timestamp);
+
+  /* ROS subscriber callbacks*/
+  /**
+   * @brief Callback function to control aircraft position and yaw. This function uses
+   * the ground reference frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
+  void flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
+  /**
+   * @brief Callback function to control aircraft velocity and yaw rate. This function
+   * uses the ground reference frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
+  void flight_control_velocity_yawrate_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
+
+  /**
+   * @brief Callback function to control aircraft velocity and yaw. This function uses
+   * the body reference frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
+  void flight_control_body_velocity_yawrate_cb(
+      const sensor_msgs::msg::Joy::SharedPtr msg);
+
+  /**
+   * @brief Callback function to control roll, pitch, yawrate and thrust. This function
+   * uses the body reference frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
+  void flight_control_rollpitch_yawrate_vertpos_cb(
+      const sensor_msgs::msg::Joy::SharedPtr msg);
+
+  /**
+   * @brief Callback function to exposing a generic control method of the aircraft.The
+   * type of commands as well as the reference frame is specified in a flag within the
+   * msg.
+   * @note This type of control is not implemented at this moment.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
+   */
+  void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
+
+  /* ROS Service callbacks*/
+  void set_home_from_gps_cb(const std::shared_ptr<SetHomeFromGPS::Request> request,
+                            const std::shared_ptr<SetHomeFromGPS::Response> response);
+  void set_home_from_current_location_cb(
+      const std::shared_ptr<Trigger::Request> request,
+      const std::shared_ptr<Trigger::Response> response);
+  void set_home_altitude_cb(const std::shared_ptr<SetHomeAltitude::Request> request,
+                            const std::shared_ptr<SetHomeAltitude::Response> response);
+  void get_home_altitude_cb(const std::shared_ptr<GetHomeAltitude::Request> request,
+                            const std::shared_ptr<GetHomeAltitude::Response> response);
+  void start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
+                        const std::shared_ptr<Trigger::Response> response);
+  void cancel_go_home_cb(const std::shared_ptr<Trigger::Request> request,
+                         const std::shared_ptr<Trigger::Response> response);
+  void obtain_ctrl_authority_cb(const std::shared_ptr<Trigger::Request> request,
+                                const std::shared_ptr<Trigger::Response> response);
+  void release_ctrl_authority_cb(const std::shared_ptr<Trigger::Request> request,
+                                 const std::shared_ptr<Trigger::Response> response);
+  void turn_on_motors_cb(const std::shared_ptr<Trigger::Request> request,
+                         const std::shared_ptr<Trigger::Response> response);
+  void turn_off_motors_cb(const std::shared_ptr<Trigger::Request> request,
+                          const std::shared_ptr<Trigger::Response> response);
+  void start_takeoff_cb(const std::shared_ptr<Trigger::Request> request,
+                        const std::shared_ptr<Trigger::Response> response);
+  void start_landing_cb(const std::shared_ptr<Trigger::Request> request,
+                        const std::shared_ptr<Trigger::Response> response);
+  void cancel_landing_cb(const std::shared_ptr<Trigger::Request> request,
+                         const std::shared_ptr<Trigger::Response> response);
+  void start_confirm_landing_cb(const std::shared_ptr<Trigger::Request> request,
+                                const std::shared_ptr<Trigger::Response> response);
+  void start_force_landing_cb(const std::shared_ptr<Trigger::Request> request,
+                              const std::shared_ptr<Trigger::Response> response);
+  void set_horizontal_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_horizontal_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_upwards_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_upwards_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void set_downwards_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<SetObstacleAvoidance::Request> request,
+      const std::shared_ptr<SetObstacleAvoidance::Response> response);
+  void get_horizontal_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_horizontal_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_downwards_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_upwards_vo_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  void get_upwards_radar_obstacle_avoidance_cb(
+      const std::shared_ptr<GetObstacleAvoidance::Request> request,
+      const std::shared_ptr<GetObstacleAvoidance::Response> response);
+
   /* ROS Publishers */
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::QuaternionStamped>::SharedPtr
       attitude_pub_;
@@ -236,6 +511,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   //       SharedPtr relative_obstacle_info_pub_;
   //   rclcpp_lifecycle::LifecyclePublisher<
   //       umd_psdk_interfaces::msg::HomePosition>::SharedPtr home_position_pub_;
+
+  /* ROS subscribers*/
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr flight_control_generic_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
       flight_control_position_yaw_sub_;
@@ -246,174 +523,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
       flight_control_rollpitch_yawrate_vertpos_sub_;
 
-  /* C-typed topic callbacks*/
-  friend T_DjiReturnCode c_attitude_callback(const uint8_t* data, uint16_t dataSize,
-                                             const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_velocity_callback(const uint8_t* data, uint16_t dataSize,
-                                             const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_imu_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_position_vo_callback(const uint8_t* data, uint16_t dataSize,
-                                                const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gps_fused_callback(const uint8_t* data, uint16_t dataSize,
-                                              const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gps_position_callback(const uint8_t* data, uint16_t dataSize,
-                                                 const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gps_velocity_callback(const uint8_t* data, uint16_t dataSize,
-                                                 const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gps_details_callback(const uint8_t* data, uint16_t dataSize,
-                                                const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gps_signal_callback(const uint8_t* data, uint16_t dataSize,
-                                               const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gps_control_callback(const uint8_t* data, uint16_t dataSize,
-                                                const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_rtk_position_callback(const uint8_t* data, uint16_t dataSize,
-                                                 const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_rtk_velocity_callback(const uint8_t* data, uint16_t dataSize,
-                                                 const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_rtk_yaw_callback(const uint8_t* data, uint16_t dataSize,
-                                            const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_rtk_position_info_callback(
-      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_rtk_yaw_info_callback(const uint8_t* data, uint16_t dataSize,
-                                                 const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_magnetometer_callback(const uint8_t* data, uint16_t dataSize,
-                                                 const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_rc_callback(const uint8_t* data, uint16_t dataSize,
-                                       const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gimbal_angles_callback(const uint8_t* data,
-                                                  uint16_t dataSize,
-                                                  const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gimbal_status_callback(const uint8_t* data,
-                                                  uint16_t dataSize,
-                                                  const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_flight_status_callback(const uint8_t* data,
-                                                  uint16_t dataSize,
-                                                  const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_display_mode_callback(const uint8_t* data, uint16_t dataSize,
-                                                 const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_landing_gear_status_callback(
-      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_motor_start_error_callback(
-      const uint8_t* data, uint16_t dataSize, const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_flight_anomaly_callback(const uint8_t* data,
-                                                   uint16_t dataSize,
-                                                   const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_battery_callback(const uint8_t* data, uint16_t dataSize,
-                                            const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_height_fused_callback(const uint8_t* data, uint16_t dataSize,
-                                                 const T_DjiDataTimestamp* timestamp);
-
-  /*C++ type topic callbacks*/
-  T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
-                                    const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t dataSize,
-                                    const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode imu_callback(const uint8_t* data, uint16_t dataSize,
-                               const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode position_vo_callback(const uint8_t* data, uint16_t dataSize,
-                                       const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode gps_fused_callback(const uint8_t* data, uint16_t dataSize,
-                                     const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode gps_position_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode gps_velocity_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode gps_details_callback(const uint8_t* data, uint16_t dataSize,
-                                       const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode gps_signal_callback(const uint8_t* data, uint16_t dataSize,
-                                      const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode gps_control_callback(const uint8_t* data, uint16_t dataSize,
-                                       const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode rtk_position_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode rtk_velocity_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode rtk_yaw_callback(const uint8_t* data, uint16_t dataSize,
-                                   const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode rtk_position_info_callback(const uint8_t* data, uint16_t dataSize,
-                                             const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode rtk_yaw_info_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode magnetometer_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode rc_callback(const uint8_t* data, uint16_t dataSize,
-                              const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode gimbal_angles_callback(const uint8_t* data, uint16_t dataSize,
-                                         const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode gimbal_status_callback(const uint8_t* data, uint16_t dataSize,
-                                         const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode flight_status_callback(const uint8_t* data, uint16_t dataSize,
-                                         const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode display_mode_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode landing_gear_status_callback(const uint8_t* data, uint16_t dataSize,
-                                               const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode motor_start_error_callback(const uint8_t* data, uint16_t dataSize,
-                                             const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode flight_anomaly_callback(const uint8_t* data, uint16_t dataSize,
-                                          const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode battery_callback(const uint8_t* data, uint16_t dataSize,
-                                   const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode height_fused_callback(const uint8_t* data, uint16_t dataSize,
-                                        const T_DjiDataTimestamp* timestamp);
-
-  /**
-   * @brief Subscribe to DJI topics
-   */
-  void subscribe_psdk_topics();
-
-  /**
-   * @brief Unsubscribe to DJI topics
-   */
-  void unsubscribe_psdk_topics();
-
-  /**
-   * @brief Callback function to control aircraft position and yaw. This function uses
-   * the ground reference frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
-   */
-  void flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
-  /**
-   * @brief Callback function to control aircraft velocity and yaw rate. This function
-   * uses the ground reference frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
-   */
-  void flight_control_velocity_yawrate_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
-
-  /**
-   * @brief Callback function to control aircraft velocity and yaw. This function uses
-   * the body reference frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
-   */
-  void flight_control_body_velocity_yawrate_cb(
-      const sensor_msgs::msg::Joy::SharedPtr msg);
-
-  /**
-   * @brief Callback function to control roll, pitch, yawrate and thrust. This function
-   * uses the body reference frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
-   */
-  void flight_control_rollpitch_yawrate_vertpos_cb(
-      const sensor_msgs::msg::Joy::SharedPtr msg);
-
-  /**
-   * @brief Callback function to exposing a generic control method of the aircraft.The
-   * type of commands as well as the reference frame is specified in a flag within the
-   * msg.
-   * @note This type of control is not implemented at this moment.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw command.
-   */
-  void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
-
-  // Services
-  using SetHomeFromGPS = umd_psdk_interfaces::srv::SetHomeFromGPS;
-  using Trigger = std_srvs::srv::Trigger;
-  using SetHomeAltitude = umd_psdk_interfaces::srv::SetHomeAltitude;
-  using GetHomeAltitude = umd_psdk_interfaces::srv::GetHomeAltitude;
-  using SetObstacleAvoidance = umd_psdk_interfaces::srv::SetObstacleAvoidance;
-  using GetObstacleAvoidance = umd_psdk_interfaces::srv::GetObstacleAvoidance;
-
+  /* ROS Services */
   rclcpp::Service<SetHomeFromGPS>::SharedPtr set_home_from_gps_srv_;
   rclcpp::Service<Trigger>::SharedPtr set_home_from_current_location_srv_;
   rclcpp::Service<SetHomeAltitude>::SharedPtr set_home_altitude_srv_;
@@ -450,104 +560,57 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   rclcpp::Service<GetObstacleAvoidance>::SharedPtr
       get_horizontal_radar_obstacle_avoidance_srv_;
 
-  // Service callbacks
-  void set_home_from_gps_cb(const std::shared_ptr<SetHomeFromGPS::Request> request,
-                            const std::shared_ptr<SetHomeFromGPS::Response> response);
-  void set_home_from_current_location_cb(
-      const std::shared_ptr<Trigger::Request> request,
-      const std::shared_ptr<Trigger::Response> response);
-  void set_home_altitude_cb(const std::shared_ptr<SetHomeAltitude::Request> request,
-                            const std::shared_ptr<SetHomeAltitude::Response> response);
-  void get_home_altitude_cb(const std::shared_ptr<GetHomeAltitude::Request> request,
-                            const std::shared_ptr<GetHomeAltitude::Response> response);
-  void start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
-                        const std::shared_ptr<Trigger::Response> response);
-  void cancel_go_home_cb(const std::shared_ptr<Trigger::Request> request,
-                         const std::shared_ptr<Trigger::Response> response);
-  void obtain_ctrl_authority_cb(const std::shared_ptr<Trigger::Request> request,
-                                const std::shared_ptr<Trigger::Response> response);
-  void release_ctrl_authority_cb(const std::shared_ptr<Trigger::Request> request,
-                                 const std::shared_ptr<Trigger::Response> response);
-  void turn_on_motors_cb(const std::shared_ptr<Trigger::Request> request,
-                         const std::shared_ptr<Trigger::Response> response);
-  void turn_off_motors_cb(const std::shared_ptr<Trigger::Request> request,
-                          const std::shared_ptr<Trigger::Response> response);
-  void start_takeoff_cb(const std::shared_ptr<Trigger::Request> request,
-                        const std::shared_ptr<Trigger::Response> response);
-  void start_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                        const std::shared_ptr<Trigger::Response> response);
-  void cancel_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                         const std::shared_ptr<Trigger::Response> response);
-  void start_confirm_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                                const std::shared_ptr<Trigger::Response> response);
-  void start_force_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                              const std::shared_ptr<Trigger::Response> response);
-  void set_horizontal_vo_obstacle_avoidance_cb(
-      const std::shared_ptr<SetObstacleAvoidance::Request> request,
-      const std::shared_ptr<SetObstacleAvoidance::Response> response);
-  void set_horizontal_radar_obstacle_avoidance_cb(
-      const std::shared_ptr<SetObstacleAvoidance::Request> request,
-      const std::shared_ptr<SetObstacleAvoidance::Response> response);
-  void set_upwards_vo_obstacle_avoidance_cb(
-      const std::shared_ptr<SetObstacleAvoidance::Request> request,
-      const std::shared_ptr<SetObstacleAvoidance::Response> response);
-  void set_upwards_radar_obstacle_avoidance_cb(
-      const std::shared_ptr<SetObstacleAvoidance::Request> request,
-      const std::shared_ptr<SetObstacleAvoidance::Response> response);
-  void set_downwards_vo_obstacle_avoidance_cb(
-      const std::shared_ptr<SetObstacleAvoidance::Request> request,
-      const std::shared_ptr<SetObstacleAvoidance::Response> response);
-  void get_horizontal_vo_obstacle_avoidance_cb(
-      const std::shared_ptr<GetObstacleAvoidance::Request> request,
-      const std::shared_ptr<GetObstacleAvoidance::Response> response);
-  void get_horizontal_radar_obstacle_avoidance_cb(
-      const std::shared_ptr<GetObstacleAvoidance::Request> request,
-      const std::shared_ptr<GetObstacleAvoidance::Response> response);
-  void get_downwards_vo_obstacle_avoidance_cb(
-      const std::shared_ptr<GetObstacleAvoidance::Request> request,
-      const std::shared_ptr<GetObstacleAvoidance::Response> response);
-  void get_upwards_vo_obstacle_avoidance_cb(
-      const std::shared_ptr<GetObstacleAvoidance::Request> request,
-      const std::shared_ptr<GetObstacleAvoidance::Response> response);
-  void get_upwards_radar_obstacle_avoidance_cb(
-      const std::shared_ptr<GetObstacleAvoidance::Request> request,
-      const std::shared_ptr<GetObstacleAvoidance::Response> response);
-
+  /**
+   * @brief Get the gps signal level
+   * @return int gps signal level
+   */
   inline int
   get_gps_signal_level()
   {
     return gps_signal_level_;
   };
+
+  /**
+   * @brief Checks if local altitude reference is set or not
+   * @return true if set, false otherwise
+   */
   inline bool
   is_local_altitude_reference_set()
   {
     return local_altitude_reference_set_;
   };
+  /**
+   * @brief Get the local altitude reference value. If it is not set, default value is 0
+   * @return float local_altitude_reference
+   */
   inline float
   get_local_altitude_reference()
   {
     return local_altitude_reference_;
   };
+
+  /**
+   * @brief Sets the local altitude reference object
+   * @param altitude  value to which to set the local altitude reference
+   */
   void set_local_altitude_reference(const float altitude);
 
-  // Variables
+  /* Global variables*/
   PSDKParams params_;
   std::string body_frame_{"base_link"};
   std::string ground_frame_{"map"};
-
- private:
   rclcpp::Node::SharedPtr node_;
 
   int gps_signal_level_{0};
   float local_altitude_reference_{0};
   bool local_altitude_reference_set_{false};
-
-  void initialize_ros_elements();
-  void activate_ros_elements();
-  void deactivate_ros_elements();
-  void clean_ros_elements();
 };
 
+/**
+ * @brief Global pointer to the class object. It is initialized in the main.cpp file.
+ * This pointer is needed to access member functions from non-member functions, such as
+ * the C-type callbacks
+ */
 extern std::shared_ptr<PSDKWrapper> global_ptr_;
 }  // namespace umd_psdk
 

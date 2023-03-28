@@ -53,6 +53,7 @@ PSDKWrapper::~PSDKWrapper() {}
 nav2_util::CallbackReturn
 PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
+  (void)state;
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
   load_parameters();
   if (!set_environment()) {
@@ -66,6 +67,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 nav2_util::CallbackReturn
 PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 {
+  (void)state;
   RCLCPP_INFO(get_logger(), "Activating PSDKWrapper");
 
   T_DjiUserInfo user_info;
@@ -89,7 +91,14 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 nav2_util::CallbackReturn
 PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
+  (void)state;
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
+  int deinit_result =
+      DjiCore_DeInit() ^ DjiFcSubscription_DeInit() ^ DjiFlightController_Deinit();
+
+  if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
   deactivate_ros_elements();
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -97,6 +106,7 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 nav2_util::CallbackReturn
 PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
+  (void)state;
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
   unsubscribe_psdk_topics();
   clean_ros_elements();
@@ -108,14 +118,8 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 nav2_util::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
+  (void)state;
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
-  int deinit_result =
-      DjiCore_DeInit() ^ DjiFcSubscription_DeInit() ^ DjiFlightController_Deinit();
-
-  if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
