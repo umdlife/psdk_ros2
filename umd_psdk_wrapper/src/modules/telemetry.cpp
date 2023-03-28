@@ -34,6 +34,7 @@ PSDKWrapper::init_telemetry()
 void
 PSDKWrapper::set_local_altitude_reference(const float altitude)
 {
+  RCLCPP_INFO(get_logger(), "Setting local altitude reference to: %f", altitude);
   local_altitude_reference_ = altitude;
   local_altitude_reference_set_ = true;
 }
