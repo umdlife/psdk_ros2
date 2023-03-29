@@ -571,6 +571,17 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   };
 
   /**
+   * @brief Set the gps signal level object
+   *
+   * @param gps_signal
+   */
+  inline void
+  set_gps_signal_level(const int gps_signal)
+  {
+    gps_signal_level_ = gps_signal;
+  };
+
+  /**
    * @brief Checks if local altitude reference is set or not
    * @return true if set, false otherwise
    */

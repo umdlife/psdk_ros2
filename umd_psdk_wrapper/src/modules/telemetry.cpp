@@ -450,6 +450,7 @@ PSDKWrapper::gps_signal_callback(const uint8_t *data, uint16_t dataSize,
   std_msgs::msg::UInt8 gps_signal_level_msg;
   gps_signal_level_msg.data = *gps_signal_level;
   gps_signal_pub_->publish(gps_signal_level_msg);
+  set_gps_signal_level(gps_signal_level_msg.data);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
