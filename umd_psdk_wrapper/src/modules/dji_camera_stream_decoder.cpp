@@ -158,7 +158,6 @@ void DJICameraStreamDecoder::cleanup()
 
 void *DJICameraStreamDecoder::callbackThreadEntry(void *p)
 {
-    // std::cout << "16" << std::endl;
     //DSTATUS_PRIVATE("****** Decoder Callback Thread Start ******\n");
     usleep(50 * 1000);
     static_cast<DJICameraStreamDecoder *>(p)->callbackThreadFunc();
@@ -167,7 +166,6 @@ void *DJICameraStreamDecoder::callbackThreadEntry(void *p)
 
 void DJICameraStreamDecoder::callbackThreadFunc()
 {
-    // std::cout << "15" << std::endl;
     while (cbThreadIsRunning) {
         CameraRGBImage copyOfImage;
         if (!decodedImageHandler.getNewImageWithLock(copyOfImage, 1000)) {
@@ -176,7 +174,6 @@ void DJICameraStreamDecoder::callbackThreadFunc()
         }
 
         if (cb) {
-            // std::cout << "If cb in callbackThreadFunc" << std::endl;
             (*cb)(copyOfImage, cbUserParam);
         }
     }
@@ -184,7 +181,6 @@ void DJICameraStreamDecoder::callbackThreadFunc()
 
 void DJICameraStreamDecoder::decodeBuffer(const uint8_t *buf, int bufLen)
 {
-    // std::cout << "14" << std::endl;
     const uint8_t *pData = buf;
     int remainingLen = bufLen;
     int processedLen = 0;
@@ -220,25 +216,21 @@ void DJICameraStreamDecoder::decodeBuffer(const uint8_t *buf, int bufLen)
                     pSwsCtx = sws_getContext(w, h, pCodecCtx->pix_fmt,
                                              w, h, AV_PIX_FMT_RGB24,
                                              4, nullptr, nullptr, nullptr);
-                    // std::cout << "Filling pSwsCtx for entering writeNewImageWithLock" << std::endl;
                 }
 
                 if (nullptr == rgbBuf) {
                     bufSize = avpicture_get_size(AV_PIX_FMT_RGB24, w, h);
                     rgbBuf = (uint8_t *) av_malloc(bufSize);
                     avpicture_fill((AVPicture *) pFrameRGB, rgbBuf, AV_PIX_FMT_RGB24, w, h);
-                    // std::cout << "Filling rgbBuf for entering writeNewImageWithLock" << std::endl;
                 }
 
                 if (nullptr != pSwsCtx && nullptr != rgbBuf) {
-                    // std::cout << "pSwsCtx and rgbBuf != nullptr" << std::endl;
                     sws_scale(pSwsCtx,
                               (uint8_t const *const *) pFrameYUV->data, pFrameYUV->linesize, 0, pFrameYUV->height,
                               pFrameRGB->data, pFrameRGB->linesize);
 
                     pFrameRGB->height = h;
                     pFrameRGB->width = w;
-                    // std::cout << "Gonna call writeNewImageWithLock" << std::endl;
                     decodedImageHandler.writeNewImageWithLock(pFrameRGB->data[0], bufSize, w, h);
                 }
             }
