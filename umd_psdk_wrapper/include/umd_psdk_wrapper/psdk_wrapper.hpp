@@ -229,14 +229,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
   
  protected:
-  // Streaming
-  friend void c_DjiUser_ShowRgbImageCallback(CameraRGBImage img, void *userData);
-  friend void c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen);
-  void DjiUser_ShowRgbImageCallback(CameraRGBImage img, void *userData);
-  void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen);
-  umd_rtsp::RTSPStreamer rtsp_streamer_;
-
-  T_DjiReturnCode StartMainCameraStream(CameraImageCallback callback, void *userData);
+  T_DjiReturnCode start_camera_stream(CameraImageCallback callback, void *userData, E_DjiLiveViewCameraPosition index, E_DjiLiveViewCameraSource camera_source);
   /*
    * @brief Lifecycle configure
    */
@@ -369,6 +362,15 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   
 //////////////////////////////////////// Sensors ////////////////////////////////////////
 
+// Streaming
+  friend void c_publish_streaming_callback(CameraRGBImage img, void *userData);
+  friend void c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen);
+  void publish_streaming_callback(CameraRGBImage img, void *userData);
+  void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen);
+  void create_streaming_pipeline();
+  umd_rtsp::RTSPStreamer rtsp_streamer_;
+  bool streaming_pipeline_configured = false;
+  
  private:
   rclcpp::Node::SharedPtr node_;
 
