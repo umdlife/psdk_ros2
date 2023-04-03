@@ -96,9 +96,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if(!init_gimbal_manager()){
     return nav2_util::CallbackReturn::FAILURE;
   }
-  std::string url_writer = "rtsp://127.0.0.1:8554/psdk_streaming";
-  rtsp_streamer_.on_configure_writer(1920, 1080, 30, 9000,
-                                       url_writer);
   createBond();
   return nav2_util::CallbackReturn::SUCCESS;
 }
