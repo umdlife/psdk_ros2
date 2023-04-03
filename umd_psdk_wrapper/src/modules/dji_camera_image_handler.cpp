@@ -55,10 +55,8 @@ bool DJICameraImageHandler::getNewImageWithLock(CameraRGBImage &copyOfImage, int
      * Here result == 0 means successful.
      * Because this is the behavior of pthread_cond_timedwait.
      */
-    // std::cout << "getNewImageWithLock 8" << std::endl;
     pthread_mutex_lock(&m_mutex);
     if (m_newImageFlag) {
-        // std::cout << "getNewImageWithLock 9" << std::endl;
         /* At this point, a copy of m_img is made, so it is safe to
          * do any modifications to copyOfImage in user code.
          */
@@ -66,21 +64,17 @@ bool DJICameraImageHandler::getNewImageWithLock(CameraRGBImage &copyOfImage, int
         m_newImageFlag = false;
         result = 0;
     } else {
-        // std::cout << "getNewImageWithLock 10" << std::endl;
         struct timespec absTimeout;
         clock_gettime(CLOCK_REALTIME, &absTimeout);
         absTimeout.tv_nsec += timeoutMilliSec * 1e6;
         result = pthread_cond_timedwait(&m_condv, &m_mutex, &absTimeout);
 
         if (result == 0) {
-            // std::cout << "getNewImageWithLock 11" << std::endl;
             copyOfImage = m_img;
             m_newImageFlag = false;
         }
     }
-    // std::cout << "getNewImageWithLock 12" << std::endl;
     pthread_mutex_unlock(&m_mutex);
-    // std::cout << "getNewImageWithLock 13" << std::endl;
     return (result == 0) ? true : false;
 }
 
@@ -91,7 +85,6 @@ void DJICameraImageHandler::writeNewImageWithLock(uint8_t *buf, int bufSize, int
     m_img.rawData.assign(buf, buf + bufSize);
     m_img.height = height;
     m_img.width = width;
-    // std::cout << "Gonna change m_newImageFlag to true" << std::endl;
     m_newImageFlag = true;
 
     pthread_cond_signal(&m_condv);
