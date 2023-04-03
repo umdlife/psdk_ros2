@@ -35,7 +35,7 @@ find_package(nav_msgs REQUIRED)
 find_package(umd_psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(OpenCV REQUIRED)
-# find_package(umd_rtsp REQUIRED)
+find_package(umd_rtsp REQUIRED)
 
 # Samples
 # include_directories(/Tools/Payload-SDK/samples/sample_c++/module_sample)
@@ -220,7 +220,7 @@ target_link_libraries(
   -lusb-1.0
   -lavcodec
   -lswscale
-  # umd_rtsp::umd_rtsp
+  umd_rtsp::umd_rtsp
 )
 
 target_link_libraries(

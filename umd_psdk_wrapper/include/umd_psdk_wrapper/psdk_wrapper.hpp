@@ -89,7 +89,7 @@
 #include "dji_gimbal_manager.h"
 #include "dji_platform.h"
 #include "umd_psdk_wrapper/dji_camera_stream_decoder.hpp"
-// #include <umd_rtsp/rtsp_streamer.hpp>
+#include <umd_rtsp/rtsp_streamer.hpp>
 // #include "test_liveview_entry.hpp"
 #ifdef OPEN_CV_INSTALLED
 
@@ -234,6 +234,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode {
   friend void c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen);
   void DjiUser_ShowRgbImageCallback(CameraRGBImage img, void *userData);
   void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen);
+  umd_rtsp::RTSPStreamer rtsp_streamer_;
 
   T_DjiReturnCode StartMainCameraStream(CameraImageCallback callback, void *userData);
   /*
