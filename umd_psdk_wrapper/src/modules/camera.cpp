@@ -740,7 +740,6 @@ void PSDKWrapper::camera_record_video_callback_()
     
 }
 
-
 void PSDKWrapper::camera_get_laser_ranging_info_callback_()
 {
     RCLCPP_INFO(get_logger(), "Calling Camera get laser ranging info");
@@ -771,6 +770,7 @@ void PSDKWrapper::camera_get_laser_ranging_info_callback_()
     }
 }
 
+// TODO(@lidiadltv): Not working. Debug potential issue
 void PSDKWrapper::camera_download_file_list_callback_()
 {
     RCLCPP_INFO(get_logger(), "Calling Camera download file list");
@@ -794,6 +794,7 @@ void PSDKWrapper::camera_download_file_list_callback_()
     }
 }
 
+// TODO(@lidiadltv): Not working. Debug potential issue
 void PSDKWrapper::camera_download_file_by_index_callback_()
 {
     RCLCPP_INFO(get_logger(), "Calling Camera download file by index");
@@ -817,6 +818,7 @@ void PSDKWrapper::camera_download_file_by_index_callback_()
     }
 }
 
+// TODO(@lidiadltv): Not working. Debug potential issue
 void PSDKWrapper::camera_delete_file_by_index_callback_()
 {
     RCLCPP_INFO(get_logger(), "Calling Camera delete file by index");
