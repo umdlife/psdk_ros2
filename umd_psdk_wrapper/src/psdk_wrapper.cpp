@@ -499,18 +499,19 @@ camera_get_laser_ranging_info_action_ =
     std::make_unique<nav2_util::SimpleActionServer<CameraGetLaserRangingInfo>>(
           shared_from_this(), "camera_get_laser_ranging_info",
           std::bind(&PSDKWrapper::camera_get_laser_ranging_info_callback_, this));
-camera_download_file_list_action_ = 
-    std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
-          shared_from_this(), "camera_download_file_list",
-          std::bind(&PSDKWrapper::camera_download_file_list_callback_, this));
-camera_download_file_by_index_action_ =
-    std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>>(
-          shared_from_this(), "camera_download_file_by_index",
-          std::bind(&PSDKWrapper::camera_download_file_by_index_callback_, this));
-camera_delete_file_by_index_action_ =
-    std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
-          shared_from_this(), "camera_delete_file_by_index",
-          std::bind(&PSDKWrapper::camera_delete_file_by_index_callback_, this));
+// TODO(@lidiadltv): Enable these actions once are working properly
+// camera_download_file_list_action_ = 
+//     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
+//           shared_from_this(), "camera_download_file_list",
+//           std::bind(&PSDKWrapper::camera_download_file_list_callback_, this));
+// camera_download_file_by_index_action_ =
+//     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>>(
+//           shared_from_this(), "camera_download_file_by_index",
+//           std::bind(&PSDKWrapper::camera_download_file_by_index_callback_, this));
+// camera_delete_file_by_index_action_ =
+//     std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
+//           shared_from_this(), "camera_delete_file_by_index",
+//           std::bind(&PSDKWrapper::camera_delete_file_by_index_callback_, this));
 camera_streaming_action_ = 
     std::make_unique<nav2_util::SimpleActionServer<CameraStreaming>>(
           shared_from_this(), "camera_streaming",
