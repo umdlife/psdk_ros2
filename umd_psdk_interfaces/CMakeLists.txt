@@ -42,6 +42,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GimbalStatus.msg"
   "msg/HomePosition.msg"
   "msg/PositionFused.msg"
+  "msg/GPSFused.msg"
+  "msg/GPSDetails.msg"
   "msg/RelativeObstacleInfo.msg"
   "msg/SDKCtrlInfo.msg"
   "srv/CameraGetType.srv"
@@ -60,6 +62,13 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraSetInfraredZoom.srv"
   "srv/GimbalSetMode.srv"
   "srv/GimbalReset.srv"
+  "msg/RTKYaw.msg"
+  "msg/FlightStatus.msg"
+  "srv/SetHomeFromGPS.srv"
+  "srv/SetHomeAltitude.srv"
+  "srv/GetHomeAltitude.srv"
+  "srv/SetObstacleAvoidance.srv"
+  "srv/GetObstacleAvoidance.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 

@@ -22,8 +22,6 @@
   <depend>umd_psdk_interfaces</depend>
   <depend>std_srvs</depend>
 
-
-
   <export>
     <build_type>ament_cmake</build_type>
   </export>
