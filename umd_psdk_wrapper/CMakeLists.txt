@@ -99,6 +99,7 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/gimbal.cpp
   src/modules/dji_camera_image_handler.cpp
   src/modules/dji_camera_stream_decoder.cpp
+  src/modules/flight_control.cpp
   src/common/osal_fs.c
   src/common/osal_socket.c
   src/common/osal.c
