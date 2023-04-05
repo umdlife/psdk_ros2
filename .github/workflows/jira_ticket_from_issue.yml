@@ -1,0 +1,38 @@
+# Create a Jira ticket in UML Jira every time a Github issue is opened
+name: Create Jira Ticket from Github Issue
+on:
+  issues:
+    types: opened
+
+jobs:
+  create_jira_ticket:
+    runs-on: ubuntu-latest
+    name: Create Jira Ticket from Issue
+    steps:
+
+    # Login to Jira
+    - name: Login
+      uses: atlassian/gajira-login@master
+      env:
+        JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+        JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+    # Create ticket
+    - name: Create
+      id: create
+      uses: atlassian/gajira-create@master
+      with:
+        project: UP   # UL-Platform
+        issuetype: Story
+        summary: |
+          Github Issue #${{ github.event.issue.number }} in ${{ github.repository }}: ${{ github.event.issue.title }}
+        description: |
+          Issue #${{ github.event.issue.number }} in ${{ github.repository }} (${{ github.event.issue.html_url }})
+          
+          ${{ github.event.issue.title }}:
+          ${{ github.event.issue.body }}
+        fields: '{"customfield_10028": 0}'  # Initializing Story points. Custom field can vary depending on the project/platform
+
+    - name: Log created issue
+      run: echo "Issue ${{ steps.create.outputs.issue }} was created"
