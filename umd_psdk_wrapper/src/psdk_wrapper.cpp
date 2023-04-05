@@ -1,7 +1,8 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is subject to
- * the terms and conditions defined in the file LICENSE.txt contained therein.
+ * This file is part of the `umd_psdk_wrapper` source code package and is
+ * subject to the terms and conditions defined in the file LICENSE.txt contained
+ * therein.
  */
 /**
  * @file psdk_wrapper.cpp
@@ -17,7 +18,8 @@
 
 using namespace std::placeholders;  // NOLINT
 
-namespace umd_psdk {
+namespace umd_psdk
+{
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())
 {
@@ -56,7 +58,8 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   (void)state;
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
   load_parameters();
-  if (!set_environment()) {
+  if (!set_environment())
+  {
     return nav2_util::CallbackReturn::FAILURE;
   }
   initialize_ros_elements();
@@ -73,13 +76,15 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   T_DjiUserInfo user_info;
   set_user_info(&user_info);
 
-  if (!init(&user_info)) {
+  if (!init(&user_info))
+  {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
   activate_ros_elements();
 
-  if (!init_telemetry() || !init_flight_control()) {
+  if (!init_telemetry() || !init_flight_control())
+  {
     return nav2_util::CallbackReturn::FAILURE;
   }
 
@@ -111,9 +116,10 @@ nav2_util::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  int deinit_result =
-      DjiFlightController_Deinit() ^ DjiFcSubscription_DeInit() ^ DjiCore_DeInit();
-  if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  int deinit_result = DjiFlightController_Deinit() ^
+                      DjiFcSubscription_DeInit() ^ DjiCore_DeInit();
+  if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     return nav2_util::CallbackReturn::FAILURE;
   }
   global_ptr_.reset();
@@ -180,15 +186,18 @@ PSDKWrapper::set_environment()
   file_system_handler.Stat = Osal_Stat;
 
   return_code = DjiPlatform_RegOsalHandler(&osal_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register OSAL handler error. Error code is: %ld",
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Register OSAL handler error. Error code is: %ld",
                  return_code);
     return false;
   }
   RCLCPP_INFO(get_logger(), "Registered OSAL handler");
 
   return_code = DjiPlatform_RegHalUartHandler(&uart_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Register HAL handler error. Error code is: %ld",
                  return_code);
     return false;
@@ -204,7 +213,8 @@ PSDKWrapper::set_environment()
   usb_bulk_handler.UsbBulkReadData = HalUsbBulk_ReadData;
   usb_bulk_handler.UsbBulkGetDeviceInfo = HalUsbBulk_GetDeviceInfo;
   return_code = DjiPlatform_RegHalUsbBulkHandler(&usb_bulk_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(),
                  "Register HAL USB BULK handler error. Error code is: %ld",
                  return_code);
@@ -217,8 +227,10 @@ PSDKWrapper::set_environment()
   network_handler.NetworkDeInit = HalNetWork_DeInit;
   network_handler.NetworkGetDeviceInfo = HalNetWork_GetDeviceInfo;
   return_code = DjiPlatform_RegHalNetworkHandler(&network_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register HAL Network handler error. Error code is: %ld",
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Register HAL Network handler error. Error code is: %ld",
                  return_code);
   }
 #elif (HARDWARE_CONNECTION == DJI_USE_ONLY_UART)
@@ -227,16 +239,20 @@ PSDKWrapper::set_environment()
    */
 #endif
 
-  // Attention: if you want to use camera stream view function, please uncomment it.
+  // Attention: if you want to use camera stream view function, please uncomment
+  // it.
   return_code = DjiPlatform_RegSocketHandler(&socket_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Register OSAL SOCKET handler error. Error code is: %ld",
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Register OSAL SOCKET handler error. Error code is: %ld",
                  return_code);
     return false;
   }
 
   return_code = DjiPlatform_RegFileSystemHandler(&file_system_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(),
                  "Register OSAL filesystem handler error.Error code is: %ld",
                  return_code);
@@ -250,32 +266,39 @@ void
 PSDKWrapper::load_parameters()
 {
   RCLCPP_INFO(get_logger(), "Loading parameters");
-  if (!get_parameter("app_name", params_.app_name)) {
+  if (!get_parameter("app_name", params_.app_name))
+  {
     RCLCPP_ERROR(get_logger(), "app_name param not defined");
     exit(-1);
   }
-  if (!get_parameter("app_id", params_.app_id)) {
+  if (!get_parameter("app_id", params_.app_id))
+  {
     RCLCPP_ERROR(get_logger(), "app_id param not defined");
     exit(-1);
   }
-  if (!get_parameter("app_key", params_.app_key)) {
+  if (!get_parameter("app_key", params_.app_key))
+  {
     RCLCPP_ERROR(get_logger(), "app_key param not defined");
     exit(-1);
   }
-  if (!get_parameter("app_license", params_.app_license)) {
+  if (!get_parameter("app_license", params_.app_license))
+  {
     RCLCPP_ERROR(get_logger(), "app_license param not defined");
     exit(-1);
   }
-  if (!get_parameter("developer_account", params_.developer_account)) {
+  if (!get_parameter("developer_account", params_.developer_account))
+  {
     RCLCPP_ERROR(get_logger(), "developer_account param not defined");
     exit(-1);
   }
-  if (!get_parameter("baudrate", params_.baudrate)) {
+  if (!get_parameter("baudrate", params_.baudrate))
+  {
     RCLCPP_ERROR(get_logger(), "baudrate param not defined");
     exit(-1);
   }
   RCLCPP_INFO(get_logger(), "Baudrate: %s", params_.baudrate.c_str());
-  if (!get_parameter("hardware_connection", params_.hardware_connection)) {
+  if (!get_parameter("hardware_connection", params_.hardware_connection))
+  {
     RCLCPP_ERROR(get_logger(), "hardware_connection param not defined");
     exit(-1);
   }
@@ -283,7 +306,8 @@ PSDKWrapper::load_parameters()
   RCLCPP_INFO(get_logger(), "Hardware connection: %s",
               params_.hardware_connection.c_str());
 
-  if (!get_parameter("uart_dev_1", params_.uart_dev_1)) {
+  if (!get_parameter("uart_dev_1", params_.uart_dev_1))
+  {
     RCLCPP_ERROR(get_logger(), "uart_dev_1 param not defined");
     exit(-1);
   }
@@ -291,7 +315,8 @@ PSDKWrapper::load_parameters()
   setenv(name, params_.uart_dev_1.c_str(), 1);
   RCLCPP_INFO(get_logger(), "Uart dev 1: %s", params_.uart_dev_1.c_str());
 
-  if (!get_parameter("uart_dev_2", params_.uart_dev_2)) {
+  if (!get_parameter("uart_dev_2", params_.uart_dev_2))
+  {
     RCLCPP_ERROR(get_logger(), "uart_dev_2 param not defined");
     exit(-1);
   }
@@ -300,180 +325,221 @@ PSDKWrapper::load_parameters()
   RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
 
   // Get data frequency
-  if (!get_parameter("data_frequency.imu", params_.imu_frequency)) {
+  if (!get_parameter("data_frequency.imu", params_.imu_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "imu frequency param not defined");
     exit(-1);
   }
-  if (params_.imu_frequency > IMU_TOPIC_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the imu topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                IMU_TOPIC_MAX_FREQ);
+  if (params_.imu_frequency > IMU_TOPIC_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the imu topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        IMU_TOPIC_MAX_FREQ);
     params_.imu_frequency = IMU_TOPIC_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.attitude", params_.attitude_frequency)) {
+  if (!get_parameter("data_frequency.attitude", params_.attitude_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "attitude param not defined");
     exit(-1);
   }
-  if (params_.attitude_frequency > ATTITUDE_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the attitude topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                ATTITUDE_TOPICS_MAX_FREQ);
+  if (params_.attitude_frequency > ATTITUDE_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the attitude topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        ATTITUDE_TOPICS_MAX_FREQ);
     params_.attitude_frequency = ATTITUDE_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.acceleration", params_.acceleration_frequency)) {
+  if (!get_parameter("data_frequency.acceleration",
+                     params_.acceleration_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "acceleration param not defined");
     exit(-1);
   }
-  if (params_.acceleration_frequency > ACCELERATION_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the acceleration topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        ACCELERATION_TOPICS_MAX_FREQ);
+  if (params_.acceleration_frequency > ACCELERATION_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the acceleration topics is higher than "
+                "the maximum "
+                "allowed %d. Tha maximum value is set",
+                ACCELERATION_TOPICS_MAX_FREQ);
     params_.acceleration_frequency = ACCELERATION_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.velocity", params_.velocity_frequency)) {
+  if (!get_parameter("data_frequency.velocity", params_.velocity_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "velocity param not defined");
     exit(-1);
   }
-  if (params_.velocity_frequency > VELOCITY_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the velocity topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                VELOCITY_TOPICS_MAX_FREQ);
+  if (params_.velocity_frequency > VELOCITY_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the velocity topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        VELOCITY_TOPICS_MAX_FREQ);
     params_.velocity_frequency = VELOCITY_TOPICS_MAX_FREQ;
   }
 
   if (!get_parameter("data_frequency.angular_velocity",
-                     params_.angular_velocity_frequency)) {
+                     params_.angular_velocity_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
     exit(-1);
   }
-  if (params_.angular_velocity_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the angular velocity topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
+  if (params_.angular_velocity_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the angular velocity topics is higher "
+                "than the maximum "
+                "allowed %d. Tha maximum value is set",
+                ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
     params_.angular_velocity_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.position", params_.position_frequency)) {
+  if (!get_parameter("data_frequency.position", params_.position_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "position param not defined");
     exit(-1);
   }
-  if (params_.position_frequency > POSITION_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the position topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                POSITION_TOPICS_MAX_FREQ);
+  if (params_.position_frequency > POSITION_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the position topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        POSITION_TOPICS_MAX_FREQ);
     params_.position_frequency = POSITION_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.gps_data", params_.gps_data_frequency)) {
+  if (!get_parameter("data_frequency.gps_data", params_.gps_data_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "gps_data param not defined");
     exit(-1);
   }
-  if (params_.gps_data_frequency > GPS_DATA_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the GPS topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                GPS_DATA_TOPICS_MAX_FREQ);
+  if (params_.gps_data_frequency > GPS_DATA_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the GPS topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        GPS_DATA_TOPICS_MAX_FREQ);
     params_.gps_data_frequency = GPS_DATA_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.rtk_data", params_.rtk_data_frequency)) {
+  if (!get_parameter("data_frequency.rtk_data", params_.rtk_data_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "rtk_data param not defined");
     exit(-1);
   }
-  if (params_.rtk_data_frequency > RTK_DATA_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the RTK topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                RTK_DATA_TOPICS_MAX_FREQ);
+  if (params_.rtk_data_frequency > RTK_DATA_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the RTK topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        RTK_DATA_TOPICS_MAX_FREQ);
     params_.rtk_data_frequency = RTK_DATA_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.magnetometer", params_.magnetometer_frequency)) {
+  if (!get_parameter("data_frequency.magnetometer",
+                     params_.magnetometer_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "magnetometer param not defined");
     exit(-1);
   }
-  if (params_.magnetometer_frequency > MAGNETOMETER_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the magnetometer topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        MAGNETOMETER_TOPICS_MAX_FREQ);
+  if (params_.magnetometer_frequency > MAGNETOMETER_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the magnetometer topics is higher than "
+                "the maximum "
+                "allowed %d. Tha maximum value is set",
+                MAGNETOMETER_TOPICS_MAX_FREQ);
     params_.magnetometer_frequency = MAGNETOMETER_TOPICS_MAX_FREQ;
   }
 
   if (!get_parameter("data_frequency.rc_channels_data",
-                     params_.rc_channels_data_frequency)) {
+                     params_.rc_channels_data_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "rc_channels_data param not defined");
     exit(-1);
   }
-  if (params_.rc_channels_data_frequency > RC_CHANNELS_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the RC channel topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        RC_CHANNELS_TOPICS_MAX_FREQ);
+  if (params_.rc_channels_data_frequency > RC_CHANNELS_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the RC channel topics is higher than "
+                "the maximum "
+                "allowed %d. Tha maximum value is set",
+                RC_CHANNELS_TOPICS_MAX_FREQ);
     params_.rc_channels_data_frequency = RC_CHANNELS_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.gimbal_data", params_.gimbal_data_frequency)) {
+  if (!get_parameter("data_frequency.gimbal_data",
+                     params_.gimbal_data_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "gimbal_data param not defined");
     exit(-1);
   }
-  if (params_.gimbal_data_frequency > GIMBAL_DATA_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the gimbal topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                GIMBAL_DATA_TOPICS_MAX_FREQ);
+  if (params_.gimbal_data_frequency > GIMBAL_DATA_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the gimbal topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        GIMBAL_DATA_TOPICS_MAX_FREQ);
     params_.gimbal_data_frequency = GIMBAL_DATA_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.flight_status", params_.flight_status_frequency)) {
+  if (!get_parameter("data_frequency.flight_status",
+                     params_.flight_status_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "flight_status param not defined");
     exit(-1);
   }
-  if (params_.flight_status_frequency > FLIGHT_STATUS_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the flight status topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        FLIGHT_STATUS_TOPICS_MAX_FREQ);
+  if (params_.flight_status_frequency > FLIGHT_STATUS_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the flight status topics is higher than "
+                "the maximum "
+                "allowed %d. Tha maximum value is set",
+                FLIGHT_STATUS_TOPICS_MAX_FREQ);
     params_.flight_status_frequency = FLIGHT_STATUS_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.battery_level", params_.battery_level_frequency)) {
+  if (!get_parameter("data_frequency.battery_level",
+                     params_.battery_level_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "battery_level param not defined");
     exit(-1);
   }
-  if (params_.battery_level_frequency > BATTERY_STATUS_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the battery status topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        BATTERY_STATUS_TOPICS_MAX_FREQ);
+  if (params_.battery_level_frequency > BATTERY_STATUS_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the battery status topics is higher "
+                "than the maximum "
+                "allowed %d. Tha maximum value is set",
+                BATTERY_STATUS_TOPICS_MAX_FREQ);
     params_.battery_level_frequency = BATTERY_STATUS_TOPICS_MAX_FREQ;
   }
 
   if (!get_parameter("data_frequency.control_information",
-                     params_.control_information_frequency)) {
+                     params_.control_information_frequency))
+  {
     RCLCPP_ERROR(get_logger(), "control_information param not defined");
     exit(-1);
   }
-  if (params_.control_information_frequency > CONTROL_DATA_TOPICS_MAX_FREQ) {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the control topics is higher than the maximum "
-                "allowed %d. Tha maximum value is set",
-                CONTROL_DATA_TOPICS_MAX_FREQ);
+  if (params_.control_information_frequency > CONTROL_DATA_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the control topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        CONTROL_DATA_TOPICS_MAX_FREQ);
     params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
   }
 }
@@ -494,14 +560,18 @@ PSDKWrapper::set_user_info(T_DjiUserInfo *user_info)
       strlen(params_.app_license.c_str()) > sizeof(user_info->appLicense) ||
       strlen(params_.developer_account.c_str()) >=
           sizeof(user_info->developerAccount) ||
-      strlen(params_.baudrate.c_str()) > sizeof(user_info->baudRate)) {
+      strlen(params_.baudrate.c_str()) > sizeof(user_info->baudRate))
+  {
     RCLCPP_ERROR(get_logger(), "User information set is out of bounds");
     return false;
   }
 
-  strncpy(user_info->appName, params_.app_name.c_str(), sizeof(user_info->appName) - 1);
-  memcpy(user_info->appId, params_.app_id.c_str(), strlen(params_.app_id.c_str()));
-  memcpy(user_info->appKey, params_.app_key.c_str(), strlen(params_.app_key.c_str()));
+  strncpy(user_info->appName, params_.app_name.c_str(),
+          sizeof(user_info->appName) - 1);
+  memcpy(user_info->appId, params_.app_id.c_str(),
+         strlen(params_.app_id.c_str()));
+  memcpy(user_info->appKey, params_.app_key.c_str(),
+         strlen(params_.app_key.c_str()));
   memcpy(user_info->appLicense, params_.app_license.c_str(),
          strlen(params_.app_license.c_str()));
   strncpy(user_info->developerAccount, params_.developer_account.c_str(),
@@ -517,30 +587,35 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
   auto result = DjiCore_Init(user_info);
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "DJI core could not be initiated. Error code is: %ld",
-                 result);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "DJI core could not be initiated. Error code is: %ld", result);
     return false;
   }
 
   T_DjiAircraftInfoBaseInfo aircraft_base_info;
   if (DjiAircraftInfo_GetBaseInfo(&aircraft_base_info) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not get aircraft information.");
     return false;
   }
 
-  if (aircraft_base_info.mountPosition != DJI_MOUNT_POSITION_EXTENSION_PORT) {
+  if (aircraft_base_info.mountPosition != DJI_MOUNT_POSITION_EXTENSION_PORT)
+  {
     RCLCPP_ERROR(get_logger(), "Please use the extension port");
     return false;
   }
 
-  if (DjiCore_SetAlias("PSDK_UMD") != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiCore_SetAlias("PSDK_UMD") != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not set alias.");
     return false;
   }
 
-  if (DjiCore_ApplicationStart() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiCore_ApplicationStart() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not start application.");
     return false;
   }
@@ -556,30 +631,31 @@ PSDKWrapper::initialize_ros_elements()
   imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("dji_psdk_ros/imu", 10);
   velocity_ground_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
       "dji_psdk_ros/velocity_ground_ENU", 10);
-  position_fused_pub_ = create_publisher<umd_psdk_interfaces::msg::PositionFused>(
-      "dji_psdk_ros/position_fused", 10);
+  position_fused_pub_ =
+      create_publisher<umd_psdk_interfaces::msg::PositionFused>(
+          "dji_psdk_ros/position_fused", 10);
   gps_fused_pub_ = create_publisher<umd_psdk_interfaces::msg::GPSFused>(
       "dji_psdk_ros/gps_fused", 10);
-  gps_position_pub_ =
-      create_publisher<sensor_msgs::msg::NavSatFix>("dji_psdk_ros/gps_position", 10);
+  gps_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
+      "dji_psdk_ros/gps_position", 10);
   gps_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
       "dji_psdk_ros/gps_velocity", 10);
   gps_details_pub_ = create_publisher<umd_psdk_interfaces::msg::GPSDetails>(
       "dji_psdk_ros/gps_details", 10);
-  gps_signal_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("dji_psdk_ros/gps_signal_level", 10);
-  gps_control_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("dji_psdk_ros/gps_control_level", 10);
-  rtk_position_pub_ =
-      create_publisher<sensor_msgs::msg::NavSatFix>("dji_psdk_ros/rtk_position", 10);
+  gps_signal_pub_ = create_publisher<std_msgs::msg::UInt8>(
+      "dji_psdk_ros/gps_signal_level", 10);
+  gps_control_pub_ = create_publisher<std_msgs::msg::UInt8>(
+      "dji_psdk_ros/gps_control_level", 10);
+  rtk_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
+      "dji_psdk_ros/rtk_position", 10);
   rtk_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
       "dji_psdk_ros/rtk_velocity", 10);
-  rtk_yaw_pub_ =
-      create_publisher<umd_psdk_interfaces::msg::RTKYaw>("dji_psdk_ros/rtk_yaw", 10);
-  rtk_position_info_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("dji_psdk_ros/rtk_position_info", 10);
-  rtk_yaw_info_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("dji_psdk_ros/rtk_position_info", 10);
+  rtk_yaw_pub_ = create_publisher<umd_psdk_interfaces::msg::RTKYaw>(
+      "dji_psdk_ros/rtk_yaw", 10);
+  rtk_position_info_pub_ = create_publisher<std_msgs::msg::UInt8>(
+      "dji_psdk_ros/rtk_position_info", 10);
+  rtk_yaw_info_pub_ = create_publisher<std_msgs::msg::UInt8>(
+      "dji_psdk_ros/rtk_position_info", 10);
   magnetic_field_pub_ = create_publisher<sensor_msgs::msg::MagneticField>(
       "dji_psdk_ros/magnetic_field", 10);
   rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("dji_psdk_ros/rc", 10);
@@ -589,33 +665,39 @@ PSDKWrapper::initialize_ros_elements()
       "dji_psdk_ros/gimbal_status", 10);
   flight_status_pub_ = create_publisher<umd_psdk_interfaces::msg::FlightStatus>(
       "dji_psdk_ros/flight_status", 10);
-  aircraft_status_pub_ = create_publisher<umd_psdk_interfaces::msg::AircraftStatus>(
-      "dji_psdk_ros/aircraft_status", 10);
-  landing_gear_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("dji_psdk_ros/landing_gear_status", 10);
-  motor_start_error_pub_ =
-      create_publisher<std_msgs::msg::UInt16>("dji_psdk_ros/motor_start_error", 10);
-  flight_anomaly_pub_ = create_publisher<umd_psdk_interfaces::msg::FlightAnomaly>(
-      "dji_psdk_ros/flight_anomaly", 10);
-  battery_pub_ =
-      create_publisher<umd_psdk_interfaces::msg::Battery>("dji_psdk_ros/battery", 10);
+  aircraft_status_pub_ =
+      create_publisher<umd_psdk_interfaces::msg::AircraftStatus>(
+          "dji_psdk_ros/aircraft_status", 10);
+  landing_gear_pub_ = create_publisher<std_msgs::msg::UInt8>(
+      "dji_psdk_ros/landing_gear_status", 10);
+  motor_start_error_pub_ = create_publisher<std_msgs::msg::UInt16>(
+      "dji_psdk_ros/motor_start_error", 10);
+  flight_anomaly_pub_ =
+      create_publisher<umd_psdk_interfaces::msg::FlightAnomaly>(
+          "dji_psdk_ros/flight_anomaly", 10);
+  battery_pub_ = create_publisher<umd_psdk_interfaces::msg::Battery>(
+      "dji_psdk_ros/battery", 10);
   height_fused_pub_ =
       create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/height_fused", 10);
 
   /** @todo Implement other useful publishers */
-  // acceleration_ground_pub_ = create_publisher<geometry_msgs::msg::AccelStamped>(
+  // acceleration_ground_pub_ =
+  // create_publisher<geometry_msgs::msg::AccelStamped>(
   //     "dji_psdk_ros/acceleration_ground", 10);
-  // acceleration_body_pub_ = create_publisher<geometry_msgs::msg::AccelStamped>(
+  // acceleration_body_pub_ =
+  // create_publisher<geometry_msgs::msg::AccelStamped>(
   //     "dji_psdk_ros/acceleration_body", 10);
   // altitude_pub_ =
   //     create_publisher<umd_psdk_interfaces::msg::Altitude>("dji_psdk_ros/altitude",
   //     10);
   // relative_height_pub_ =
-  //     create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/relative_height", 10);
+  //     create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/relative_height",
+  //     10);
   // relative_obstacle_info_pub_ =
   //     create_publisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>(
   //         "dji_psdk_ros/relative_obstacle_info", 10);
-  // home_position_pub_ = create_publisher<umd_psdk_interfaces::msg::HomePosition>(
+  // home_position_pub_ =
+  // create_publisher<umd_psdk_interfaces::msg::HomePosition>(
   //     "dji_psdk_ros/home_position", 10);
 
   RCLCPP_INFO(get_logger(), "Creating subscribers");
@@ -625,33 +707,41 @@ PSDKWrapper::initialize_ros_elements()
   flight_control_position_yaw_sub_ = create_subscription<sensor_msgs::msg::Joy>(
       "dji_psdk_ros/flight_control_setpoint_ENUposition_yaw", 10,
       std::bind(&PSDKWrapper::flight_control_position_yaw_cb, this, _1));
-  flight_control_velocity_yawrate_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "dji_psdk_ros/flight_control_setpoint_ENUvelocity_yawrate", 10,
-      std::bind(&PSDKWrapper::flight_control_velocity_yawrate_cb, this, _1));
+  flight_control_velocity_yawrate_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "dji_psdk_ros/flight_control_setpoint_ENUvelocity_yawrate", 10,
+          std::bind(&PSDKWrapper::flight_control_velocity_yawrate_cb, this,
+                    _1));
   flight_control_body_velocity_yawrate_sub_ =
       create_subscription<sensor_msgs::msg::Joy>(
           "dji_psdk_ros/flight_control_setpoint_FRUvelocity_yawrate", 10,
-          std::bind(&PSDKWrapper::flight_control_body_velocity_yawrate_cb, this, _1));
+          std::bind(&PSDKWrapper::flight_control_body_velocity_yawrate_cb, this,
+                    _1));
   flight_control_rollpitch_yawrate_vertpos_sub_ =
       create_subscription<sensor_msgs::msg::Joy>(
-          "dji_psdk_ros/flight_control_setpoint_rollpitch_yawrate_zposition", 10,
-          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb, this,
-                    _1));
+          "dji_psdk_ros/flight_control_setpoint_rollpitch_yawrate_zposition",
+          10,
+          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb,
+                    this, _1));
 
   RCLCPP_INFO(get_logger(), "Creating services");
   set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
-      "set_home_from_gps", std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
+      "set_home_from_gps",
+      std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
   set_home_from_current_location_srv_ = create_service<Trigger>(
       "set_home_from_current_location",
       std::bind(&PSDKWrapper::set_home_from_current_location_cb, this, _1, _2));
   set_home_altitude_srv_ = create_service<SetHomeAltitude>(
-      "set_home_altitude", std::bind(&PSDKWrapper::set_home_altitude_cb, this, _1, _2));
+      "set_home_altitude",
+      std::bind(&PSDKWrapper::set_home_altitude_cb, this, _1, _2));
   get_home_altitude_srv_ = create_service<GetHomeAltitude>(
-      "get_home_altitude", std::bind(&PSDKWrapper::get_home_altitude_cb, this, _1, _2));
+      "get_home_altitude",
+      std::bind(&PSDKWrapper::get_home_altitude_cb, this, _1, _2));
   start_go_home_srv_ = create_service<Trigger>(
       "start_go_home", std::bind(&PSDKWrapper::start_go_home_cb, this, _1, _2));
   cancel_go_home_srv_ = create_service<Trigger>(
-      "cancel_go_home", std::bind(&PSDKWrapper::cancel_go_home_cb, this, _1, _2));
+      "cancel_go_home",
+      std::bind(&PSDKWrapper::cancel_go_home_cb, this, _1, _2));
   obtain_ctrl_authority_srv_ = create_service<Trigger>(
       "obtain_ctrl_authority",
       std::bind(&PSDKWrapper::obtain_ctrl_authority_cb, this, _1, _2));
@@ -659,53 +749,72 @@ PSDKWrapper::initialize_ros_elements()
       "release_ctrl_authority",
       std::bind(&PSDKWrapper::release_ctrl_authority_cb, this, _1, _2));
   turn_on_motors_srv_ = create_service<Trigger>(
-      "turn_on_motors", std::bind(&PSDKWrapper::turn_on_motors_cb, this, _1, _2));
+      "turn_on_motors",
+      std::bind(&PSDKWrapper::turn_on_motors_cb, this, _1, _2));
   turn_off_motors_srv_ = create_service<Trigger>(
-      "turn_off_motors", std::bind(&PSDKWrapper::turn_off_motors_cb, this, _1, _2));
+      "turn_off_motors",
+      std::bind(&PSDKWrapper::turn_off_motors_cb, this, _1, _2));
   takeoff_srv_ = create_service<Trigger>(
       "takeoff", std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
   land_srv_ = create_service<Trigger>(
       "land", std::bind(&PSDKWrapper::start_landing_cb, this, _1, _2));
   cancel_landing_srv_ = create_service<Trigger>(
-      "cancel_landing", std::bind(&PSDKWrapper::cancel_landing_cb, this, _1, _2));
+      "cancel_landing",
+      std::bind(&PSDKWrapper::cancel_landing_cb, this, _1, _2));
   start_confirm_landing_srv_ = create_service<Trigger>(
       "start_confirm_landing",
       std::bind(&PSDKWrapper::start_confirm_landing_cb, this, _1, _2));
   start_force_landing_srv_ = create_service<Trigger>(
       "start_force_landing",
       std::bind(&PSDKWrapper::start_force_landing_cb, this, _1, _2));
-  set_horizontal_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
-      "set_horizontal_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb, this, _1, _2));
-  set_horizontal_radar_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
-      "set_horizontal_radar_obstacle_avoidance",
-      std::bind(&PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb, this, _1,
-                _2));
+  set_horizontal_vo_obstacle_avoidance_srv_ =
+      create_service<SetObstacleAvoidance>(
+          "set_horizontal_vo_obstacle_avoidance",
+          std::bind(&PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb, this,
+                    _1, _2));
+  set_horizontal_radar_obstacle_avoidance_srv_ =
+      create_service<SetObstacleAvoidance>(
+          "set_horizontal_radar_obstacle_avoidance",
+          std::bind(&PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb,
+                    this, _1, _2));
   set_upwards_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
       "set_upwards_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb, this, _1, _2));
-  set_upwards_radar_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
-      "set_upwards_radar_obstacle_avoidance",
-      std::bind(&PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb, this, _1, _2));
-  set_downwards_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
-      "set_downwards_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb, this, _1, _2));
-  get_horizontal_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
-      "get_horizontal_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb, this, _1, _2));
+      std::bind(&PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb, this, _1,
+                _2));
+  set_upwards_radar_obstacle_avoidance_srv_ =
+      create_service<SetObstacleAvoidance>(
+          "set_upwards_radar_obstacle_avoidance",
+          std::bind(&PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb, this,
+                    _1, _2));
+  set_downwards_vo_obstacle_avoidance_srv_ =
+      create_service<SetObstacleAvoidance>(
+          "set_downwards_vo_obstacle_avoidance",
+          std::bind(&PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb, this,
+                    _1, _2));
+  get_horizontal_vo_obstacle_avoidance_srv_ =
+      create_service<GetObstacleAvoidance>(
+          "get_horizontal_vo_obstacle_avoidance",
+          std::bind(&PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb, this,
+                    _1, _2));
   get_upwards_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
       "get_upwards_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb, this, _1, _2));
-  get_upwards_radar_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
-      "get_upwards_radar_obstacle_avoidance",
-      std::bind(&PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb, this, _1, _2));
-  get_downwards_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
-      "get_downwards_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb, this, _1, _2));
-  get_horizontal_radar_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
-      "get_horizontal_radar_obstacle_avoidance",
-      std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb, this, _1,
+      std::bind(&PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb, this, _1,
                 _2));
+  get_upwards_radar_obstacle_avoidance_srv_ =
+      create_service<GetObstacleAvoidance>(
+          "get_upwards_radar_obstacle_avoidance",
+          std::bind(&PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb, this,
+                    _1, _2));
+  get_downwards_vo_obstacle_avoidance_srv_ =
+      create_service<GetObstacleAvoidance>(
+          "get_downwards_vo_obstacle_avoidance",
+          std::bind(&PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb, this,
+                    _1, _2));
+  get_horizontal_radar_obstacle_avoidance_srv_ =
+      create_service<GetObstacleAvoidance>(
+          "get_horizontal_radar_obstacle_avoidance",
+          std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb,
+                    this, _1, _2));
 }
 
 void

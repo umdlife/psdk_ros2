@@ -1,7 +1,8 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is subject to
- * the terms and conditions defined in the file LICENSE.txt contained therein.
+ * This file is part of the `umd_psdk_wrapper` source code package and is
+ * subject to the terms and conditions defined in the file LICENSE.txt contained
+ * therein.
  */
 /**
  * @file main.cpp
