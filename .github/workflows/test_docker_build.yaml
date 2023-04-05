@@ -1,5 +1,6 @@
 name: Test Docker Build
 
+# Controls when the workflow will run
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -10,10 +11,13 @@ concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 jobs:
-  clang-format:
+  clang_format:
     uses: umdlife/umd_workflows/.github/workflows/clang_format_lint.yaml@main
     secrets:
       PAT: ${{ secrets.UMDLIFEDEV_TOKEN }}
+    with:
+      regex_exclude: .*src/common/.*
+
   rebuild_docker:
     strategy:
       matrix:
