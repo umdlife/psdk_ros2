@@ -31,7 +31,8 @@
 
 /* Private types -------------------------------------------------------------*/
 
-/* Private values -------------------------------------------------------------*/
+/* Private values
+ * -------------------------------------------------------------*/
 static uint32_t s_localTimeMsOffset = 0;
 static uint64_t s_localTimeUsOffset = 0;
 
@@ -53,18 +54,21 @@ Osal_TaskCreate(const char *name, void *(*taskFunc)(void *), uint32_t stackSize,
   char nameDealed[16] = {0};
 
   *task = malloc(sizeof(pthread_t));
-  if (*task == NULL) {
+  if (*task == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_MEMORY_ALLOC_FAILED;
   }
 
   result = pthread_create(*task, NULL, taskFunc, arg);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
   if (name != NULL) strncpy(nameDealed, name, sizeof(nameDealed) - 1);
   result = pthread_setname_np(*(pthread_t *)*task, nameDealed);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -103,12 +107,14 @@ Osal_MutexCreate(T_DjiMutexHandle *mutex)
   int result;
 
   *mutex = malloc(sizeof(pthread_mutex_t));
-  if (*mutex == NULL) {
+  if (*mutex == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_MEMORY_ALLOC_FAILED;
   }
 
   result = pthread_mutex_init(*mutex, NULL);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -126,7 +132,8 @@ Osal_MutexDestroy(T_DjiMutexHandle mutex)
   int result;
 
   result = pthread_mutex_destroy(mutex);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
   free(mutex);
@@ -144,7 +151,8 @@ Osal_MutexLock(T_DjiMutexHandle mutex)
 {
   int result = pthread_mutex_lock(mutex);
 
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -161,7 +169,8 @@ Osal_MutexUnlock(T_DjiMutexHandle mutex)
 {
   int result = pthread_mutex_unlock(mutex);
 
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -181,12 +190,14 @@ Osal_SemaphoreCreate(uint32_t initValue, T_DjiSemaHandle *semaphore)
   int result;
 
   *semaphore = malloc(sizeof(sem_t));
-  if (*semaphore == NULL) {
+  if (*semaphore == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_MEMORY_ALLOC_FAILED;
   }
 
   result = sem_init(*semaphore, 0, (unsigned int)initValue);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -204,7 +215,8 @@ Osal_SemaphoreDestroy(T_DjiSemaHandle semaphore)
   int result;
 
   result = sem_destroy((sem_t *)semaphore);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -224,7 +236,8 @@ Osal_SemaphoreWait(T_DjiSemaHandle semaphore)
   int result;
 
   result = sem_wait(semaphore);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -247,7 +260,8 @@ Osal_SemaphoreTimedWait(T_DjiSemaHandle semaphore, uint32_t waitTime)
   gettimeofday(&systemTime, NULL);
 
   systemTime.tv_usec += waitTime * 1000;
-  if (systemTime.tv_usec >= 1000000) {
+  if (systemTime.tv_usec >= 1000000)
+  {
     systemTime.tv_sec += systemTime.tv_usec / 1000000;
     systemTime.tv_usec %= 1000000;
   }
@@ -256,7 +270,8 @@ Osal_SemaphoreTimedWait(T_DjiSemaHandle semaphore, uint32_t waitTime)
   semaphoreWaitTime.tv_nsec = systemTime.tv_usec * 1000;
 
   result = sem_timedwait(semaphore, &semaphoreWaitTime);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -274,7 +289,8 @@ Osal_SemaphorePost(T_DjiSemaHandle semaphore)
   int result;
 
   result = sem_post(semaphore);
-  if (result != 0) {
+  if (result != 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -293,10 +309,12 @@ Osal_GetTimeMs(uint32_t *ms)
   gettimeofday(&time, NULL);
   *ms = (time.tv_sec * 1000 + time.tv_usec / 1000);
 
-  if (s_localTimeMsOffset == 0) {
+  if (s_localTimeMsOffset == 0)
+  {
     s_localTimeMsOffset = *ms;
   }
-  else {
+  else
+  {
     *ms = *ms - s_localTimeMsOffset;
   }
 
@@ -311,10 +329,12 @@ Osal_GetTimeUs(uint64_t *us)
   gettimeofday(&time, NULL);
   *us = (time.tv_sec * 1000000 + time.tv_usec);
 
-  if (s_localTimeUsOffset == 0) {
+  if (s_localTimeUsOffset == 0)
+  {
     s_localTimeUsOffset = *us;
   }
-  else {
+  else
+  {
     *us = *us - s_localTimeMsOffset;
   }
 

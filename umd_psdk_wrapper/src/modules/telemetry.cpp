@@ -1,7 +1,8 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is subject to
- * the terms and conditions defined in the file LICENSE.txt contained therein.
+ * This file is part of the `umd_psdk_wrapper` source code package and is
+ * subject to the terms and conditions defined in the file LICENSE.txt contained
+ * therein.
  */
 /**
  * @file telemetry.cpp
@@ -18,14 +19,17 @@
 #include "umd_psdk_wrapper/psdk_wrapper.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk {
+namespace umd_psdk
+{
 
 bool
 PSDKWrapper::init_telemetry()
 {
   RCLCPP_INFO(get_logger(), "Initiating telemetry...");
-  if (DjiFcSubscription_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not initialize data subscription module.");
+  if (DjiFcSubscription_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not initialize data subscription module.");
     return false;
   }
   return true;
@@ -34,7 +38,8 @@ PSDKWrapper::init_telemetry()
 void
 PSDKWrapper::set_local_altitude_reference(const float altitude)
 {
-  RCLCPP_INFO(get_logger(), "Setting local altitude reference to: %f", altitude);
+  RCLCPP_INFO(get_logger(), "Setting local altitude reference to: %f",
+              altitude);
   local_altitude_reference_ = altitude;
   local_altitude_reference_set_ = true;
 }
@@ -226,17 +231,17 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
       std::make_unique<T_DjiFcSubscriptionQuaternion>(
           *reinterpret_cast<const T_DjiFcSubscriptionQuaternion *>(data));
 
-  /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt. to a NED
-   * ground coordinate frame. Following REP 103, this quaternion is transformed in FLU
-   * in body frame wrt. to a ENU ground coordinate frame
+  /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt.
+   * to a NED ground coordinate frame. Following REP 103, this quaternion is
+   * transformed in FLU in body frame wrt. to a ENU ground coordinate frame
    */
   tf2::Matrix3x3 current_quat_FRD2NED;
   tf2::Quaternion current_quat_FLU2ENU;
 
-  current_quat_FRD2NED.setRotation(
-      tf2::Quaternion(quaternion->q1, quaternion->q2, quaternion->q3, quaternion->q0));
-  tf2::Matrix3x3 R_FLU2ENU =
-      umd_psdk::utils::R_NED2ENU * current_quat_FRD2NED * umd_psdk::utils::R_FLU2FRD;
+  current_quat_FRD2NED.setRotation(tf2::Quaternion(
+      quaternion->q1, quaternion->q2, quaternion->q3, quaternion->q0));
+  tf2::Matrix3x3 R_FLU2ENU = umd_psdk::utils::R_NED2ENU * current_quat_FRD2NED *
+                             umd_psdk::utils::R_FLU2FRD;
   R_FLU2ENU.getRotation(current_quat_FLU2ENU);
 
   geometry_msgs::msg::QuaternionStamped quaternion_msg;
@@ -262,8 +267,8 @@ PSDKWrapper::velocity_callback(const uint8_t *data, uint16_t dataSize,
   geometry_msgs::msg::TwistStamped twist_msg;
   twist_msg.header.stamp = this->get_clock()->now();
   twist_msg.header.frame_id = ground_frame_;
-  /* Note: The y and x data is swapped to follow the REP103 convention and use ENU
-   * representation. Original DJI twist msg is given as NEU.
+  /* Note: The y and x data is swapped to follow the REP103 convention and use
+   * ENU representation. Original DJI twist msg is given as NEU.
    */
   twist_msg.twist.linear.x = velocity->data.y;
   twist_msg.twist.linear.y = velocity->data.x;
@@ -284,12 +289,13 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header.stamp = this->get_clock()->now();
   imu_msg.header.frame_id = body_frame_;
-  /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt. to a NED
-   * ground coordinate frame. Following REP 103, this quaternion is transformed in FLU
-   * in body frame wrt. to a ENU ground coordinate frame
+  /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt.
+   * to a NED ground coordinate frame. Following REP 103, this quaternion is
+   * transformed in FLU in body frame wrt. to a ENU ground coordinate frame
    */
-  tf2::Matrix3x3 R_FRD2NED(tf2::Quaternion(hard_sync_data->q.q1, hard_sync_data->q.q2,
-                                           hard_sync_data->q.q3, hard_sync_data->q.q0));
+  tf2::Matrix3x3 R_FRD2NED(
+      tf2::Quaternion(hard_sync_data->q.q1, hard_sync_data->q.q2,
+                      hard_sync_data->q.q3, hard_sync_data->q.q0));
   tf2::Matrix3x3 R_FLU2ENU =
       umd_psdk::utils::R_NED2ENU * R_FRD2NED * umd_psdk::utils::R_FLU2FRD;
   tf2::Quaternion q_FLU2ENU;
@@ -300,8 +306,8 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
   imu_msg.orientation.y = q_FLU2ENU.getY();
   imu_msg.orientation.z = q_FLU2ENU.getZ();
 
-  /* Note: The y and z have their sign flipped to account for the transformation from
-   * FRD to FLU.
+  /* Note: The y and z have their sign flipped to account for the transformation
+   * from FRD to FLU.
    */
   imu_msg.angular_velocity.x = hard_sync_data->w.x;
   imu_msg.angular_velocity.y = -hard_sync_data->w.y;
@@ -327,8 +333,8 @@ PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
       std::make_unique<T_DjiFcSubscriptionPositionVO>(
           *reinterpret_cast<const T_DjiFcSubscriptionPositionVO *>(data));
   /* Note: The quaternion provided by DJI is in NED
-   * ground coordinate frame. Following REP 103, this position is transformed to ENU
-   * ground coordinate frame
+   * ground coordinate frame. Following REP 103, this position is transformed to
+   * ENU ground coordinate frame
    */
   tf2::Vector3 position_NED{position_vo->x, position_vo->y, position_vo->z};
   tf2::Vector3 position_ENU = umd_psdk::utils::R_NED2ENU * position_NED;
@@ -343,10 +349,12 @@ PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
   position_msg.z_health = position_vo->zHealth;
 
   if (get_gps_signal_level() == GOOD_GPS_SIGNAL_LEVEL &&
-      !is_local_altitude_reference_set()) {
+      !is_local_altitude_reference_set())
+  {
     set_local_altitude_reference(position_msg.position.z);
   }
-  position_msg.position.z = position_msg.position.z - get_local_altitude_reference();
+  position_msg.position.z =
+      position_msg.position.z - get_local_altitude_reference();
   position_fused_pub_->publish(position_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -431,8 +439,10 @@ PSDKWrapper::gps_details_callback(const uint8_t *data, uint16_t dataSize,
   gps_details_msg.horizontal_accuracy = gps_details->hacc;
   gps_details_msg.speed_accuracy = gps_details->sacc;
   gps_details_msg.num_gps_satellites_used = gps_details->gpsSatelliteNumberUsed;
-  gps_details_msg.num_glonass_satellites_used = gps_details->glonassSatelliteNumberUsed;
-  gps_details_msg.num_total_satellites_used = gps_details->totalSatelliteNumberUsed;
+  gps_details_msg.num_glonass_satellites_used =
+      gps_details->glonassSatelliteNumberUsed;
+  gps_details_msg.num_total_satellites_used =
+      gps_details->totalSatelliteNumberUsed;
   gps_details_msg.gps_counter = gps_details->gpsCounter;
   gps_details_pub_->publish(gps_details_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
@@ -479,8 +489,9 @@ PSDKWrapper::rtk_position_callback(const uint8_t *data, uint16_t dataSize,
           *reinterpret_cast<const T_DjiFcSubscriptionRtkPosition *>(data));
   sensor_msgs::msg::NavSatFix rtk_position_msg;
   rtk_position_msg.header.stamp = this->get_clock()->now();
-  rtk_position_msg.longitude = rtk_position->longitude;  // Longitude, unit: deg.
-  rtk_position_msg.latitude = rtk_position->latitude;    // Latitude, unit: deg.
+  rtk_position_msg.longitude =
+      rtk_position->longitude;                         // Longitude, unit: deg.
+  rtk_position_msg.latitude = rtk_position->latitude;  // Latitude, unit: deg.
   rtk_position_msg.altitude =
       rtk_position->hfsl;  // Height above mean sea level, unit: m.
   rtk_position_pub_->publish(rtk_position_msg);
@@ -558,7 +569,8 @@ PSDKWrapper::magnetometer_callback(const uint8_t *data, uint16_t dataSize,
 {
   (void)dataSize;
   (void)timestamp;
-  // This reading is the magnetic field recorded by the magnetometer in x,y,z axis,
+  // This reading is the magnetic field recorded by the magnetometer in x,y,z
+  // axis,
   std::unique_ptr<T_DjiFcSubscriptionCompass> magnetic_field =
       std::make_unique<T_DjiFcSubscriptionCompass>(
           *reinterpret_cast<const T_DjiFcSubscriptionCompass *>(data));
@@ -629,7 +641,8 @@ PSDKWrapper::gimbal_status_callback(const uint8_t *data, uint16_t dataSize,
   gimbal_status_msg.roll_limited = gimbal_status->rollLimited;
   gimbal_status_msg.yaw_limited = gimbal_status->yawLimited;
   gimbal_status_msg.calibrating = gimbal_status->calibrating;
-  gimbal_status_msg.prev_calibrationg_result = gimbal_status->prevCalibrationgResult;
+  gimbal_status_msg.prev_calibrationg_result =
+      gimbal_status->prevCalibrationgResult;
   gimbal_status_msg.installed_direction = gimbal_status->installedDirection;
   gimbal_status_msg.disabled_mvo = gimbal_status->disabled_mvo;
   gimbal_status_msg.gear_show_unable = gimbal_status->gear_show_unable;
@@ -678,7 +691,8 @@ PSDKWrapper::display_mode_callback(const uint8_t *data, uint16_t dataSize,
 }
 
 T_DjiReturnCode
-PSDKWrapper::landing_gear_status_callback(const uint8_t *data, uint16_t dataSize,
+PSDKWrapper::landing_gear_status_callback(const uint8_t *data,
+                                          uint16_t dataSize,
                                           const T_DjiDataTimestamp *timestamp)
 {
   (void)dataSize;
@@ -728,7 +742,8 @@ PSDKWrapper::flight_anomaly_callback(const uint8_t *data, uint16_t dataSize,
   flight_anomaly_msg.strong_wind_level2 = flight_anomaly->strongWindLevel2;
   flight_anomaly_msg.compass_installation_error =
       flight_anomaly->compassInstallationError;
-  flight_anomaly_msg.imu_installation_error = flight_anomaly->imuInstallationError;
+  flight_anomaly_msg.imu_installation_error =
+      flight_anomaly->imuInstallationError;
   flight_anomaly_msg.esc_temperature_high = flight_anomaly->escTemperatureHigh;
   flight_anomaly_msg.at_least_one_esc_disconnected =
       flight_anomaly->atLeastOneEscDisconnected;
@@ -775,12 +790,14 @@ void
 PSDKWrapper::subscribe_psdk_topics()
 {
   T_DjiReturnCode return_code;
-  if (params_.imu_frequency > 0) {
-    return_code = DjiFcSubscription_SubscribeTopic(DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC,
-                                                   get_frequency(params_.imu_frequency),
-                                                   c_imu_callback);
+  if (params_.imu_frequency > 0)
+  {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC,
+        get_frequency(params_.imu_frequency), c_imu_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC, error %ld",
@@ -788,35 +805,41 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
-  if (params_.attitude_frequency > 0) {
+  if (params_.attitude_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
-        DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, get_frequency(params_.attitude_frequency),
-        c_attitude_callback);
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+        DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION,
+        get_frequency(params_.attitude_frequency), c_attitude_callback);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, error %ld",
                    return_code);
     }
   }
-  if (params_.velocity_frequency > 0) {
+  if (params_.velocity_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
-        DJI_FC_SUBSCRIPTION_TOPIC_VELOCITY, get_frequency(params_.velocity_frequency),
-        c_velocity_callback);
+        DJI_FC_SUBSCRIPTION_TOPIC_VELOCITY,
+        get_frequency(params_.velocity_frequency), c_velocity_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_VELOCITY, error %ld",
                    return_code);
     }
   }
-  if (params_.position_frequency > 0) {
+  if (params_.position_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_POSITION_VO,
         get_frequency(params_.position_frequency), c_position_vo_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_POSITION_VO, error %ld",
@@ -824,12 +847,14 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
-  if (params_.gps_data_frequency > 0) {
+  if (params_.gps_data_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED,
         get_frequency(params_.gps_data_frequency), c_gps_fused_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED, error %ld",
@@ -840,7 +865,8 @@ PSDKWrapper::subscribe_psdk_topics()
         DJI_FC_SUBSCRIPTION_TOPIC_GPS_POSITION,
         get_frequency(params_.gps_data_frequency), c_gps_position_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_GPS_POSITION, error %ld",
@@ -851,7 +877,8 @@ PSDKWrapper::subscribe_psdk_topics()
         DJI_FC_SUBSCRIPTION_TOPIC_GPS_VELOCITY,
         get_frequency(params_.gps_data_frequency), c_gps_velocity_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_GPS_VELOCITY, error %ld",
@@ -862,7 +889,8 @@ PSDKWrapper::subscribe_psdk_topics()
         DJI_FC_SUBSCRIPTION_TOPIC_GPS_DETAILS,
         get_frequency(params_.gps_data_frequency), c_gps_details_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_GPS_DETAILS, error %ld",
@@ -873,7 +901,8 @@ PSDKWrapper::subscribe_psdk_topics()
         DJI_FC_SUBSCRIPTION_TOPIC_GPS_SIGNAL_LEVEL,
         get_frequency(params_.gps_data_frequency), c_gps_signal_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_GPS_SIGNAL_LEVEL, error %ld",
@@ -884,7 +913,8 @@ PSDKWrapper::subscribe_psdk_topics()
         DJI_FC_SUBSCRIPTION_TOPIC_GPS_CONTROL_LEVEL,
         get_frequency(params_.gps_data_frequency), c_gps_control_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_GPS_CONTROL_LEVEL, error %ld",
@@ -892,12 +922,14 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
-  if (params_.rtk_data_frequency > 0) {
+  if (params_.rtk_data_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION,
         get_frequency(params_.rtk_data_frequency), c_rtk_position_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION, error %ld",
@@ -908,7 +940,8 @@ PSDKWrapper::subscribe_psdk_topics()
         DJI_FC_SUBSCRIPTION_TOPIC_RTK_VELOCITY,
         get_frequency(params_.rtk_data_frequency), c_rtk_velocity_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RTK_VELOCITY, error %ld",
@@ -916,10 +949,11 @@ PSDKWrapper::subscribe_psdk_topics()
     }
 
     return_code = DjiFcSubscription_SubscribeTopic(
-        DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW, get_frequency(params_.rtk_data_frequency),
-        c_rtk_yaw_callback);
+        DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW,
+        get_frequency(params_.rtk_data_frequency), c_rtk_yaw_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW, error %ld",
@@ -928,9 +962,11 @@ PSDKWrapper::subscribe_psdk_topics()
 
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION_INFO,
-        get_frequency(params_.rtk_data_frequency), c_rtk_position_info_callback);
+        get_frequency(params_.rtk_data_frequency),
+        c_rtk_position_info_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION_INFO, error %ld",
@@ -941,43 +977,50 @@ PSDKWrapper::subscribe_psdk_topics()
         DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW_INFO,
         get_frequency(params_.rtk_data_frequency), c_rtk_yaw_info_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW_INFO, error %ld",
                    return_code);
     }
   }
-  if (params_.magnetometer_frequency > 0) {
+  if (params_.magnetometer_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_COMPASS,
         get_frequency(params_.magnetometer_frequency), c_magnetometer_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_COMPASS, error %ld",
                    return_code);
     }
   }
-  if (params_.rc_channels_data_frequency > 0) {
+  if (params_.rc_channels_data_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
-        DJI_FC_SUBSCRIPTION_TOPIC_RC, get_frequency(params_.rc_channels_data_frequency),
-        c_rc_callback);
+        DJI_FC_SUBSCRIPTION_TOPIC_RC,
+        get_frequency(params_.rc_channels_data_frequency), c_rc_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RC, error %ld",
                    return_code);
     }
   }
-  if (params_.gimbal_data_frequency > 0) {
+  if (params_.gimbal_data_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_GIMBAL_ANGLES,
         get_frequency(params_.gimbal_data_frequency), c_gimbal_angles_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_GIMBAL_ANGLES, error %ld",
@@ -987,7 +1030,8 @@ PSDKWrapper::subscribe_psdk_topics()
         DJI_FC_SUBSCRIPTION_TOPIC_GIMBAL_STATUS,
         get_frequency(params_.gimbal_data_frequency), c_gimbal_status_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_GIMBAL_STATUS, error %ld",
@@ -995,12 +1039,15 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
-  if (params_.flight_status_frequency > 0) {
+  if (params_.flight_status_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_STATUS_FLIGHT,
-        get_frequency(params_.flight_status_frequency), c_flight_status_callback);
+        get_frequency(params_.flight_status_frequency),
+        c_flight_status_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_FLIGHT, error %ld",
@@ -1008,9 +1055,11 @@ PSDKWrapper::subscribe_psdk_topics()
     }
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_STATUS_DISPLAYMODE,
-        get_frequency(params_.flight_status_frequency), c_display_mode_callback);
+        get_frequency(params_.flight_status_frequency),
+        c_display_mode_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_DISPLAYMODE, error %ld",
@@ -1018,9 +1067,11 @@ PSDKWrapper::subscribe_psdk_topics()
     }
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR,
-        get_frequency(params_.flight_status_frequency), c_landing_gear_status_callback);
+        get_frequency(params_.flight_status_frequency),
+        c_landing_gear_status_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR, error %ld",
@@ -1029,43 +1080,53 @@ PSDKWrapper::subscribe_psdk_topics()
 
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_STATUS_MOTOR_START_ERROR,
-        get_frequency(params_.flight_status_frequency), c_motor_start_error_callback);
+        get_frequency(params_.flight_status_frequency),
+        c_motor_start_error_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-      RCLCPP_ERROR(get_logger(),
-                   "Could not subscribe successfully to topic "
-                   "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_MOTOR_START_ERROR, error %ld",
-                   return_code);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(
+          get_logger(),
+          "Could not subscribe successfully to topic "
+          "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_MOTOR_START_ERROR, error %ld",
+          return_code);
     }
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_FLIGHT_ANOMALY,
-        get_frequency(params_.flight_status_frequency), c_flight_anomaly_callback);
+        get_frequency(params_.flight_status_frequency),
+        c_flight_anomaly_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_FLIGHT_ANOMALY, error %ld",
                    return_code);
     }
   }
-  if (params_.battery_level_frequency > 0) {
+  if (params_.battery_level_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_INFO,
         get_frequency(params_.battery_level_frequency), c_battery_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_INFO, error %ld",
                    return_code);
     }
   }
-  if (params_.control_information_frequency > 0) {
+  if (params_.control_information_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_HEIGHT_FUSION,
-        get_frequency(params_.control_information_frequency), c_height_fused_callback);
+        get_frequency(params_.control_information_frequency),
+        c_height_fused_callback);
 
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_HEIGHT_FUSION, error %ld",
@@ -1077,11 +1138,14 @@ PSDKWrapper::subscribe_psdk_topics()
 void
 PSDKWrapper::unsubscribe_psdk_topics()
 {
-  for (auto topic : utils::topics_to_subscribe) {
+  for (auto topic : utils::topics_to_subscribe)
+  {
     T_DjiReturnCode return_code;
     return_code = DjiFcSubscription_UnSubscribeTopic(topic.label);
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-      RCLCPP_ERROR(get_logger(), "Could not unsubscribe successfully from topic %d",
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not unsubscribe successfully from topic %d",
                    topic.label);
     }
   }
@@ -1090,36 +1154,45 @@ PSDKWrapper::unsubscribe_psdk_topics()
 E_DjiDataSubscriptionTopicFreq
 PSDKWrapper::get_frequency(const int frequency)
 {
-  switch (frequency) {
-    case 1: {
+  switch (frequency)
+  {
+    case 1:
+    {
       return DJI_DATA_SUBSCRIPTION_TOPIC_1_HZ;
       break;
     }
-    case 5: {
+    case 5:
+    {
       return DJI_DATA_SUBSCRIPTION_TOPIC_5_HZ;
       break;
     }
-    case 10: {
+    case 10:
+    {
       return DJI_DATA_SUBSCRIPTION_TOPIC_10_HZ;
       break;
     }
-    case 50: {
+    case 50:
+    {
       return DJI_DATA_SUBSCRIPTION_TOPIC_50_HZ;
       break;
     }
-    case 100: {
+    case 100:
+    {
       return DJI_DATA_SUBSCRIPTION_TOPIC_100_HZ;
       break;
     }
-    case 200: {
+    case 200:
+    {
       return DJI_DATA_SUBSCRIPTION_TOPIC_200_HZ;
       break;
     }
-    case 400: {
+    case 400:
+    {
       return DJI_DATA_SUBSCRIPTION_TOPIC_400_HZ;
       break;
     }
-    default: {
+    default:
+    {
       RCLCPP_ERROR(get_logger(),
                    "The frequency set does not correspond to any of "
                    "the possible values (1,5,10,50,100,200,or 400 Hz).");

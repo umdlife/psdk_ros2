@@ -37,25 +37,30 @@
 
 /* Private types -------------------------------------------------------------*/
 
-/* Private values -------------------------------------------------------------*/
+/* Private values
+ * -------------------------------------------------------------*/
 
 /* Private functions declaration ---------------------------------------------*/
 
 /* Exported functions definition ---------------------------------------------*/
 T_DjiReturnCode
-Osal_FileOpen(const char *fileName, const char *fileMode, T_DjiFileHandle *fileObj)
+Osal_FileOpen(const char *fileName, const char *fileMode,
+              T_DjiFileHandle *fileObj)
 {
-  if (fileName == NULL || fileMode == NULL) {
+  if (fileName == NULL || fileMode == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   *fileObj = malloc(sizeof(FILE));
-  if (*fileObj == NULL) {
+  if (*fileObj == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_MEMORY_ALLOC_FAILED;
   }
 
   *fileObj = fopen(fileName, fileMode);
-  if (*fileObj == NULL) {
+  if (*fileObj == NULL)
+  {
     goto out;
   }
 
@@ -72,12 +77,14 @@ Osal_FileClose(T_DjiFileHandle fileObj)
 {
   int32_t ret;
 
-  if (fileObj == NULL) {
+  if (fileObj == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = fclose(fileObj);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -90,15 +97,18 @@ Osal_FileWrite(T_DjiFileHandle fileObj, const uint8_t *buf, uint32_t len,
 {
   int32_t ret;
 
-  if (fileObj == NULL || buf == NULL || len == 0 || realLen == NULL) {
+  if (fileObj == NULL || buf == NULL || len == 0 || realLen == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = fwrite(buf, 1, len, fileObj);
-  if (ret >= 0) {
+  if (ret >= 0)
+  {
     *realLen = ret;
   }
-  else {
+  else
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -106,19 +116,23 @@ Osal_FileWrite(T_DjiFileHandle fileObj, const uint8_t *buf, uint32_t len,
 }
 
 T_DjiReturnCode
-Osal_FileRead(T_DjiFileHandle fileObj, uint8_t *buf, uint32_t len, uint32_t *realLen)
+Osal_FileRead(T_DjiFileHandle fileObj, uint8_t *buf, uint32_t len,
+              uint32_t *realLen)
 {
   int32_t ret;
 
-  if (fileObj == NULL || buf == NULL || len == 0 || realLen == NULL) {
+  if (fileObj == NULL || buf == NULL || len == 0 || realLen == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = fread(buf, 1, len, fileObj);
-  if (ret >= 0) {
+  if (ret >= 0)
+  {
     *realLen = ret;
   }
-  else {
+  else
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -130,12 +144,14 @@ Osal_FileSeek(T_DjiFileHandle fileObj, uint32_t offset)
 {
   int32_t ret;
 
-  if (fileObj == NULL) {
+  if (fileObj == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = fseek(fileObj, offset, SEEK_SET);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -147,12 +163,14 @@ Osal_FileSync(T_DjiFileHandle fileObj)
 {
   int32_t ret;
 
-  if (fileObj == NULL) {
+  if (fileObj == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = fflush(fileObj);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -162,12 +180,14 @@ Osal_FileSync(T_DjiFileHandle fileObj)
 T_DjiReturnCode
 Osal_DirOpen(const char *filePath, T_DjiDirHandle *dirObj)
 {
-  if (filePath == NULL) {
+  if (filePath == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   *dirObj = opendir(filePath);
-  if (*dirObj == NULL) {
+  if (*dirObj == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -179,12 +199,14 @@ Osal_DirClose(T_DjiDirHandle dirObj)
 {
   int32_t ret;
 
-  if (dirObj == NULL) {
+  if (dirObj == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = closedir((DIR *)dirObj);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -196,19 +218,23 @@ Osal_DirRead(T_DjiDirHandle dirObj, T_DjiFileInfo *fileInfo)
 {
   struct dirent *dirent;
 
-  if (dirObj == NULL || fileInfo == NULL) {
+  if (dirObj == NULL || fileInfo == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   dirent = readdir((DIR *)dirObj);
-  if (!dirent) {
+  if (!dirent)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
-  if (dirent->d_type == DT_DIR) {
+  if (dirent->d_type == DT_DIR)
+  {
     fileInfo->isDir = true;
   }
-  else {
+  else
+  {
     fileInfo->isDir = false;
   }
   strcpy(fileInfo->path, dirent->d_name);
@@ -221,12 +247,14 @@ Osal_Mkdir(const char *filePath)
 {
   int32_t ret;
 
-  if (filePath == NULL) {
+  if (filePath == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = mkdir(filePath, S_IRWXU);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -238,19 +266,24 @@ Osal_Unlink(const char *filePath)
 {
   int32_t ret;
 
-  if (filePath == NULL) {
+  if (filePath == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
-  if (filePath[strlen(filePath) - 1] == '/') {
+  if (filePath[strlen(filePath) - 1] == '/')
+  {
     ret = rmdir(filePath);
-    if (ret < 0) {
+    if (ret < 0)
+    {
       return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
     }
   }
-  else {
+  else
+  {
     ret = unlink(filePath);
-    if (ret < 0) {
+    if (ret < 0)
+    {
       return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
     }
   }
@@ -263,12 +296,14 @@ Osal_Rename(const char *oldFilePath, const char *newFilePath)
 {
   int32_t ret;
 
-  if (oldFilePath == NULL || newFilePath == NULL) {
+  if (oldFilePath == NULL || newFilePath == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = rename(oldFilePath, newFilePath);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -282,17 +317,20 @@ Osal_Stat(const char *filePath, T_DjiFileInfo *fileInfo)
   int32_t ret;
   struct tm *fileTm;
 
-  if (filePath == NULL || fileInfo == NULL) {
+  if (filePath == NULL || fileInfo == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = stat(filePath, &st);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
   fileTm = localtime(&(st.st_ctime));
-  if (fileTm == NULL) {
+  if (fileTm == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
