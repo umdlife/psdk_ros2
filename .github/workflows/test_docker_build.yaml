@@ -1,0 +1,33 @@
+name: Test Docker Build
+
+# Controls when the workflow will run
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: write
+  statuses: write
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+jobs:
+  clang_format:
+    uses: umdlife/umd_workflows/.github/workflows/clang_format_lint.yaml@main
+    secrets:
+      PAT: ${{ secrets.UMDLIFEDEV_TOKEN }}
+
+  rebuild_docker:
+    strategy:
+      matrix:
+        parent_repo: [umd_robot_essentials]
+        stage: [dev_stage, prod_stage]
+    uses: umdlife/umd_workflows/.github/workflows/rebuild_docker_dep.yaml@main
+    with:
+      repository: ${{ matrix.parent_repo }}
+      arch: linux/amd64
+      stage: ${{ matrix.stage }}
+      push: true
+    secrets:
+      PAT: ${{ secrets.UMDLIFEDEV_TOKEN }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
