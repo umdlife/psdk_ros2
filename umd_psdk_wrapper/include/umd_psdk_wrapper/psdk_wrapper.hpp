@@ -21,11 +21,13 @@
 #include <dji_flight_controller.h>
 #include <dji_logger.h>
 #include <dji_platform.h>
+#include <dji_typedef.h>
 
 #include <geometry_msgs/msg/accel_stamped.hpp>
 #include <geometry_msgs/msg/quaternion_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <memory>
 #include <nav2_util/lifecycle_node.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -38,13 +40,12 @@
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
 
-#include "dji_typedef.h"
-#include "hal_network.h"
-#include "hal_uart.h"
-#include "hal_usb_bulk.h"
-#include "osal.h"
-#include "osal_fs.h"
-#include "osal_socket.h"
+#include "hal_network.h"   //NOLINT
+#include "hal_uart.h"      //NOLINT
+#include "hal_usb_bulk.h"  //NOLINT
+#include "osal.h"          //NOLINT
+#include "osal_fs.h"       //NOLINT
+#include "osal_socket.h"   //NOLINT
 
 // PSDK wrapper interfaces
 #include "umd_psdk_interfaces/msg/aircraft_status.hpp"
@@ -88,7 +89,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode
    *
    * @param node_name
    */
-  PSDKWrapper(const std::string& node_name);
+  explicit PSDKWrapper(const std::string& node_name);
 
   /**
    * @brief Destroy the PSDKWrapper object

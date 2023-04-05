@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   clang_format:
-    uses: umdlife/umd_workflows/.github/workflows/clang_format_lint.yaml@feat/exclude_folders_from_clint
+    uses: umdlife/umd_workflows/.github/workflows/clang_format_lint.yaml@main
     secrets:
       PAT: ${{ secrets.UMDLIFEDEV_TOKEN }}
     with:
