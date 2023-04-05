@@ -31,7 +31,8 @@
 
 /* Private types -------------------------------------------------------------*/
 
-/* Private values -------------------------------------------------------------*/
+/* Private values
+ * -------------------------------------------------------------*/
 
 /* Private functions declaration ---------------------------------------------*/
 
@@ -59,7 +60,8 @@ DJICameraImageHandler::getNewImageWithLock(CameraRGBImage &copyOfImage,
    * Because this is the behavior of pthread_cond_timedwait.
    */
   pthread_mutex_lock(&m_mutex);
-  if (m_newImageFlag) {
+  if (m_newImageFlag)
+  {
     /* At this point, a copy of m_img is made, so it is safe to
      * do any modifications to copyOfImage in user code.
      */
@@ -67,13 +69,15 @@ DJICameraImageHandler::getNewImageWithLock(CameraRGBImage &copyOfImage,
     m_newImageFlag = false;
     result = 0;
   }
-  else {
+  else
+  {
     struct timespec absTimeout;
     clock_gettime(CLOCK_REALTIME, &absTimeout);
     absTimeout.tv_nsec += timeoutMilliSec * 1e6;
     result = pthread_cond_timedwait(&m_condv, &m_mutex, &absTimeout);
 
-    if (result == 0) {
+    if (result == 0)
+    {
       copyOfImage = m_img;
       m_newImageFlag = false;
     }
@@ -83,8 +87,8 @@ DJICameraImageHandler::getNewImageWithLock(CameraRGBImage &copyOfImage,
 }
 
 void
-DJICameraImageHandler::writeNewImageWithLock(uint8_t *buf, int bufSize, int width,
-                                             int height)
+DJICameraImageHandler::writeNewImageWithLock(uint8_t *buf, int bufSize,
+                                             int width, int height)
 {
   pthread_mutex_lock(&m_mutex);
 
