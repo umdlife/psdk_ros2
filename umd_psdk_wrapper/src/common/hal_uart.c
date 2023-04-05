@@ -33,17 +33,20 @@
 #define DJI_SYSTEM_RESULT_STR_MAX_SIZE (128)
 
 /* Private types -------------------------------------------------------------*/
-typedef struct {
+typedef struct
+{
   int uartFd;
 } T_UartHandleStruct;
 
-/* Private values -------------------------------------------------------------*/
+/* Private values
+ * -------------------------------------------------------------*/
 
 /* Private functions declaration ---------------------------------------------*/
 
 /* Exported functions definition ---------------------------------------------*/
 T_DjiReturnCode
-HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate, T_DjiUartHandle *uartHandle)
+HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate,
+             T_DjiUartHandle *uartHandle)
 {
   T_UartHandleStruct *uartHandleStruct;
   struct termios options;
@@ -56,35 +59,42 @@ HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate, T_DjiUartHandle *uartHa
   FILE *fp;
 
   uartHandleStruct = malloc(sizeof(T_UartHandleStruct));
-  if (uartHandleStruct == NULL) {
+  if (uartHandleStruct == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_MEMORY_ALLOC_FAILED;
   }
 
   char *linux_uart_dev1 = "UART_DEV_1";
   char *linux_uart_dev2 = "UART_DEV_2";
-  if (uartNum == DJI_HAL_UART_NUM_0) {
+  if (uartNum == DJI_HAL_UART_NUM_0)
+  {
     strcpy(uartName, getenv(linux_uart_dev1));
   }
-  else if (uartNum == DJI_HAL_UART_NUM_1) {
+  else if (uartNum == DJI_HAL_UART_NUM_1)
+  {
     strcpy(uartName, getenv(linux_uart_dev2));
   }
-  else {
+  else
+  {
     goto free_uart_handle;
   }
 
 #ifdef USE_CLION_DEBUG
   sprintf(systemCmd, "ls -l %s", uartName);
   fp = popen(systemCmd, "r");
-  if (fp == NULL) {
+  if (fp == NULL)
+  {
     goto free_uart_handle;
   }
 
   ret = fgets(lineBuf, sizeof(lineBuf), fp);
-  if (ret == NULL) {
+  if (ret == NULL)
+  {
     goto close_fp;
   }
 
-  if (strstr(lineBuf, "crwxrwxrwx") == NULL) {
+  if (strstr(lineBuf, "crwxrwxrwx") == NULL)
+  {
     USER_LOG_ERROR(
         "Can't operation the device. "
         "Probably the device has not operation permission. "
@@ -95,14 +105,16 @@ HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate, T_DjiUartHandle *uartHa
 #else
   sprintf(systemCmd, "chmod 777 %s", uartName);
   fp = popen(systemCmd, "r");
-  if (fp == NULL) {
+  if (fp == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 #endif
 
-  uartHandleStruct->uartFd =
-      open(uartName, (unsigned)O_RDWR | (unsigned)O_NOCTTY | (unsigned)O_NDELAY);
-  if (uartHandleStruct->uartFd == -1) {
+  uartHandleStruct->uartFd = open(
+      uartName, (unsigned)O_RDWR | (unsigned)O_NOCTTY | (unsigned)O_NDELAY);
+  if (uartHandleStruct->uartFd == -1)
+  {
     goto close_fp;
   }
 
@@ -113,10 +125,12 @@ HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate, T_DjiUartHandle *uartHa
   lock.l_start = 0;
   lock.l_len = 0;
 
-  if (fcntl(uartHandleStruct->uartFd, F_GETLK, &lock) < 0) {
+  if (fcntl(uartHandleStruct->uartFd, F_GETLK, &lock) < 0)
+  {
     goto close_uart_fd;
   }
-  if (lock.l_type != F_UNLCK) {
+  if (lock.l_type != F_UNLCK)
+  {
     goto close_uart_fd;
   }
   lock.l_type = F_WRLCK;
@@ -124,15 +138,18 @@ HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate, T_DjiUartHandle *uartHa
   lock.l_whence = SEEK_SET;
   lock.l_start = 0;
   lock.l_len = 0;
-  if (fcntl(uartHandleStruct->uartFd, F_SETLKW, &lock) < 0) {
+  if (fcntl(uartHandleStruct->uartFd, F_SETLKW, &lock) < 0)
+  {
     goto close_uart_fd;
   }
 
-  if (tcgetattr(uartHandleStruct->uartFd, &options) != 0) {
+  if (tcgetattr(uartHandleStruct->uartFd, &options) != 0)
+  {
     goto close_uart_fd;
   }
 
-  switch (baudRate) {
+  switch (baudRate)
+  {
     case 115200:
       cfsetispeed(&options, B115200);
       cfsetospeed(&options, B115200);
@@ -175,7 +192,8 @@ HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate, T_DjiUartHandle *uartHa
 
   tcflush(uartHandleStruct->uartFd, TCIFLUSH);
 
-  if (tcsetattr(uartHandleStruct->uartFd, TCSANOW, &options) != 0) {
+  if (tcsetattr(uartHandleStruct->uartFd, TCSANOW, &options) != 0)
+  {
     goto close_uart_fd;
   }
 
@@ -202,12 +220,14 @@ HalUart_DeInit(T_DjiUartHandle uartHandle)
   int32_t ret;
   T_UartHandleStruct *uartHandleStruct = (T_UartHandleStruct *)uartHandle;
 
-  if (uartHandle == NULL) {
+  if (uartHandle == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_UNKNOWN;
   }
 
   ret = close(uartHandleStruct->uartFd);
-  if (ret < 0) {
+  if (ret < 0)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -223,15 +243,18 @@ HalUart_WriteData(T_DjiUartHandle uartHandle, const uint8_t *buf, uint32_t len,
   int32_t ret;
   T_UartHandleStruct *uartHandleStruct = (T_UartHandleStruct *)uartHandle;
 
-  if (uartHandle == NULL || buf == NULL || len == 0 || realLen == NULL) {
+  if (uartHandle == NULL || buf == NULL || len == 0 || realLen == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = write(uartHandleStruct->uartFd, buf, len);
-  if (ret >= 0) {
+  if (ret >= 0)
+  {
     *realLen = ret;
   }
-  else {
+  else
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -245,15 +268,18 @@ HalUart_ReadData(T_DjiUartHandle uartHandle, uint8_t *buf, uint32_t len,
   int32_t ret;
   T_UartHandleStruct *uartHandleStruct = (T_UartHandleStruct *)uartHandle;
 
-  if (uartHandle == NULL || buf == NULL || len == 0 || realLen == NULL) {
+  if (uartHandle == NULL || buf == NULL || len == 0 || realLen == NULL)
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 
   ret = read(uartHandleStruct->uartFd, buf, len);
-  if (ret >= 0) {
+  if (ret >= 0)
+  {
     *realLen = ret;
   }
-  else {
+  else
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
@@ -263,13 +289,16 @@ HalUart_ReadData(T_DjiUartHandle uartHandle, uint8_t *buf, uint32_t len,
 T_DjiReturnCode
 HalUart_GetStatus(E_DjiHalUartNum uartNum, T_DjiUartStatus *status)
 {
-  if (uartNum == DJI_HAL_UART_NUM_0) {
+  if (uartNum == DJI_HAL_UART_NUM_0)
+  {
     status->isConnect = true;
   }
-  else if (uartNum == DJI_HAL_UART_NUM_1) {
+  else if (uartNum == DJI_HAL_UART_NUM_1)
+  {
     status->isConnect = true;
   }
-  else {
+  else
+  {
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
 

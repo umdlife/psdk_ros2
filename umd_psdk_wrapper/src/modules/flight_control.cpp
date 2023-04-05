@@ -1,7 +1,8 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is subject to
- * the terms and conditions defined in the file LICENSE.txt contained therein.
+ * This file is part of the `umd_psdk_wrapper` source code package and is
+ * subject to the terms and conditions defined in the file LICENSE.txt contained
+ * therein.
  */
 /**
  * @file flight_control.cpp
@@ -16,13 +17,15 @@
 #include "umd_psdk_wrapper/psdk_wrapper.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk {
+namespace umd_psdk
+{
 
 bool
 PSDKWrapper::init_flight_control()
 {
   RCLCPP_INFO(get_logger(), "Initiating flight control module...");
-  if (DjiFlightController_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiFlightController_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not initialize flight control module.");
     return false;
   }
@@ -38,13 +41,16 @@ PSDKWrapper::set_home_from_gps_cb(
   home_location.latitude = request->latitude;
   home_location.longitude = request->longitude;
   if (DjiFlightController_SetHomeLocationUsingGPSCoordinates(home_location) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(),
-                 "Could not set the home location using the given gps coordinates");
+      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not set the home location using the given gps coordinates");
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Home position set to coordinates lat: %f, long: %f",
+  RCLCPP_INFO(get_logger(),
+              "Home position set to coordinates lat: %f, long: %f",
               request->latitude, request->longitude);
   response->success = true;
 }
@@ -55,9 +61,11 @@ PSDKWrapper::set_home_from_current_location_cb(
 {
   (void)request;
   if (DjiFlightController_SetHomeLocationUsingCurrentAircraftLocation() !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(),
-                 "Could not set the home location using current aicraft location");
+      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not set the home location using current aicraft location");
     response->success = false;
     return;
   }
@@ -72,13 +80,16 @@ PSDKWrapper::set_home_altitude_cb(
 {
   E_DjiFlightControllerGoHomeAltitude home_altitude = request->altitude;
   if (DjiFlightController_SetGoHomeAltitude(home_altitude) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(),
-                 "Could not set the home location using current aicraft location");
+      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not set the home location using current aicraft location");
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Home altitude has been set to: %d", request->altitude);
+  RCLCPP_INFO(get_logger(), "Home altitude has been set to: %d",
+              request->altitude);
   response->success = true;
 }
 
@@ -89,9 +100,11 @@ PSDKWrapper::get_home_altitude_cb(
 {
   (void)request;
   if (DjiFlightController_SetHomeLocationUsingCurrentAircraftLocation() !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(),
-                 "Could not set the home location using current aicraft location");
+      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not set the home location using current aicraft location");
     response->success = false;
     return;
   }
@@ -103,7 +116,8 @@ PSDKWrapper::start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
                               const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
-  if (DjiFlightController_StartGoHome() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiFlightController_StartGoHome() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not start go to home action");
     response->success = false;
     return;
@@ -113,11 +127,14 @@ PSDKWrapper::start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::cancel_go_home_cb(const std::shared_ptr<Trigger::Request> request,
-                               const std::shared_ptr<Trigger::Response> response)
+PSDKWrapper::cancel_go_home_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
-  if (DjiFlightController_CancelGoHome() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiFlightController_CancelGoHome() !=
+      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not cancel go to home action");
     response->success = false;
     return;
@@ -127,12 +144,14 @@ PSDKWrapper::cancel_go_home_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::obtain_ctrl_authority_cb(const std::shared_ptr<Trigger::Request> request,
-                                      const std::shared_ptr<Trigger::Response> response)
+PSDKWrapper::obtain_ctrl_authority_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   if (DjiFlightController_ObtainJoystickCtrlAuthority() !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not obtain control authority");
     response->success = false;
     return;
@@ -148,7 +167,8 @@ PSDKWrapper::release_ctrl_authority_cb(
 {
   (void)request;
   if (DjiFlightController_ReleaseJoystickCtrlAuthority() !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not release control authority");
     response->success = false;
     return;
@@ -163,15 +183,19 @@ PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (request->obstacle_avoidance_on) {
+  if (request->obstacle_avoidance_on)
+  {
     status = DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE;
   }
-  else {
+  else
+  {
     status = DJI_FLIGHT_CONTROLLER_DISABLE_OBSTACLE_AVOIDANCE;
   }
-  if (DjiFlightController_SetHorizontalVisualObstacleAvoidanceEnableStatus(status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not set horizontal vo obstacle avoidance status");
+  if (DjiFlightController_SetHorizontalVisualObstacleAvoidanceEnableStatus(
+          status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not set horizontal vo obstacle avoidance status");
     response->success = false;
     return;
   }
@@ -186,14 +210,17 @@ PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (request->obstacle_avoidance_on) {
+  if (request->obstacle_avoidance_on)
+  {
     status = DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE;
   }
-  else {
+  else
+  {
     status = DJI_FLIGHT_CONTROLLER_DISABLE_OBSTACLE_AVOIDANCE;
   }
-  if (DjiFlightController_SetHorizontalRadarObstacleAvoidanceEnableStatus(status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiFlightController_SetHorizontalRadarObstacleAvoidanceEnableStatus(
+          status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(),
                  "Could not set horizontal radar obstacle avoidance status");
     response->success = false;
@@ -210,14 +237,17 @@ PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (request->obstacle_avoidance_on) {
+  if (request->obstacle_avoidance_on)
+  {
     status = DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE;
   }
-  else {
+  else
+  {
     status = DJI_FLIGHT_CONTROLLER_DISABLE_OBSTACLE_AVOIDANCE;
   }
-  if (DjiFlightController_SetDownwardsVisualObstacleAvoidanceEnableStatus(status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiFlightController_SetDownwardsVisualObstacleAvoidanceEnableStatus(
+          status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(),
                  "Could not set downwards visual obstacle avoidance status");
     response->success = false;
@@ -234,14 +264,17 @@ PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (request->obstacle_avoidance_on) {
+  if (request->obstacle_avoidance_on)
+  {
     status = DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE;
   }
-  else {
+  else
+  {
     status = DJI_FLIGHT_CONTROLLER_DISABLE_OBSTACLE_AVOIDANCE;
   }
-  if (DjiFlightController_SetUpwardsVisualObstacleAvoidanceEnableStatus(status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiFlightController_SetUpwardsVisualObstacleAvoidanceEnableStatus(
+          status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(),
                  "Could not set upwards visual obstacle avoidance status");
     response->success = false;
@@ -258,15 +291,19 @@ PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (request->obstacle_avoidance_on) {
+  if (request->obstacle_avoidance_on)
+  {
     status = DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE;
   }
-  else {
+  else
+  {
     status = DJI_FLIGHT_CONTROLLER_DISABLE_OBSTACLE_AVOIDANCE;
   }
-  if (DjiFlightController_SetUpwardsRadarObstacleAvoidanceEnableStatus(status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not set upwards radar obstacle avoidance status");
+  if (DjiFlightController_SetUpwardsRadarObstacleAvoidanceEnableStatus(
+          status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not set upwards radar obstacle avoidance status");
     response->success = false;
     return;
   }
@@ -282,16 +319,20 @@ PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb(
 {
   (void)request;
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (DjiFlightController_GetHorizontalVisualObstacleAvoidanceEnableStatus(&status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not get horizontal vo obstacle avoidance status");
+  if (DjiFlightController_GetHorizontalVisualObstacleAvoidanceEnableStatus(
+          &status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not get horizontal vo obstacle avoidance status");
     response->success = false;
     return;
   }
-  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE) {
+  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE)
+  {
     response->obstacle_avoidance_on = true;
   }
-  else {
+  else
+  {
     response->obstacle_avoidance_on = false;
   }
   response->success = true;
@@ -304,17 +345,20 @@ PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb(
 {
   (void)request;
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (DjiFlightController_GetHorizontalRadarObstacleAvoidanceEnableStatus(&status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiFlightController_GetHorizontalRadarObstacleAvoidanceEnableStatus(
+          &status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(),
                  "Could not get horizontal radar obstacle avoidance status");
     response->success = false;
     return;
   }
-  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE) {
+  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE)
+  {
     response->obstacle_avoidance_on = true;
   }
-  else {
+  else
+  {
     response->obstacle_avoidance_on = false;
   }
   response->success = true;
@@ -327,16 +371,20 @@ PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb(
 {
   (void)request;
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (DjiFlightController_GetDownwardsVisualObstacleAvoidanceEnableStatus(&status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not get downwards vo obstacle avoidance status");
+  if (DjiFlightController_GetDownwardsVisualObstacleAvoidanceEnableStatus(
+          &status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not get downwards vo obstacle avoidance status");
     response->success = false;
     return;
   }
-  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE) {
+  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE)
+  {
     response->obstacle_avoidance_on = true;
   }
-  else {
+  else
+  {
     response->obstacle_avoidance_on = false;
   }
   response->success = true;
@@ -349,16 +397,20 @@ PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb(
 {
   (void)request;
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (DjiFlightController_GetUpwardsVisualObstacleAvoidanceEnableStatus(&status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not get upwards vo obstacle avoidance status");
+  if (DjiFlightController_GetUpwardsVisualObstacleAvoidanceEnableStatus(
+          &status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not get upwards vo obstacle avoidance status");
     response->success = false;
     return;
   }
-  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE) {
+  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE)
+  {
     response->obstacle_avoidance_on = true;
   }
-  else {
+  else
+  {
     response->obstacle_avoidance_on = false;
   }
   response->success = true;
@@ -371,30 +423,36 @@ PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb(
 {
   (void)request;
   E_DjiFlightControllerObstacleAvoidanceEnableStatus status;
-  if (DjiFlightController_GetUpwardsRadarObstacleAvoidanceEnableStatus(&status) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not get upwards radar obstacle avoidance status");
+  if (DjiFlightController_GetUpwardsRadarObstacleAvoidanceEnableStatus(
+          &status) != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not get upwards radar obstacle avoidance status");
     response->success = false;
     return;
   }
-  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE) {
+  if (status == DJI_FLIGHT_CONTROLLER_ENABLE_OBSTACLE_AVOIDANCE)
+  {
     response->obstacle_avoidance_on = true;
   }
-  else {
+  else
+  {
     response->obstacle_avoidance_on = false;
   }
   response->success = true;
 }
 
 void
-PSDKWrapper::turn_on_motors_cb(const std::shared_ptr<Trigger::Request> request,
-                               const std::shared_ptr<Trigger::Response> response)
+PSDKWrapper::turn_on_motors_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_TurnOnMotors();
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not get turn ON motors. Error code is: %ld",
-                 result);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not get turn ON motors. Error code is: %ld", result);
     response->success = false;
     return;
   }
@@ -403,14 +461,16 @@ PSDKWrapper::turn_on_motors_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::turn_off_motors_cb(const std::shared_ptr<Trigger::Request> request,
-                                const std::shared_ptr<Trigger::Response> response)
+PSDKWrapper::turn_off_motors_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_TurnOffMotors();
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not get turn OFF motors. Error code is: %ld",
-                 result);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not get turn OFF motors. Error code is: %ld", result);
     response->success = false;
     return;
   }
@@ -424,8 +484,10 @@ PSDKWrapper::start_takeoff_cb(const std::shared_ptr<Trigger::Request> request,
 {
   (void)request;
   auto result = DjiFlightController_StartTakeoff();
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not start takeoff! Error code is: %ld", result);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not start takeoff! Error code is: %ld",
+                 result);
     response->success = false;
     return;
   }
@@ -439,8 +501,10 @@ PSDKWrapper::start_landing_cb(const std::shared_ptr<Trigger::Request> request,
 {
   (void)request;
   auto result = DjiFlightController_StartLanding();
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not start landing! Error code is: %ld", result);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not start landing! Error code is: %ld",
+                 result);
     response->success = false;
     return;
   }
@@ -449,13 +513,16 @@ PSDKWrapper::start_landing_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::cancel_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                               const std::shared_ptr<Trigger::Response> response)
+PSDKWrapper::cancel_landing_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_CancelLanding();
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not cancel landing! Error code is: %ld", result);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not cancel landing! Error code is: %ld",
+                 result);
     response->success = false;
     return;
   }
@@ -464,13 +531,16 @@ PSDKWrapper::cancel_landing_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::start_confirm_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                                      const std::shared_ptr<Trigger::Response> response)
+PSDKWrapper::start_confirm_landing_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_StartConfirmLanding();
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not confirm landing! Error code is: %ld", result);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not confirm landing! Error code is: %ld",
+                 result);
     response->success = false;
     return;
   }
@@ -479,13 +549,16 @@ PSDKWrapper::start_confirm_landing_cb(const std::shared_ptr<Trigger::Request> re
 }
 
 void
-PSDKWrapper::start_force_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                                    const std::shared_ptr<Trigger::Response> response)
+PSDKWrapper::start_force_landing_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_StartForceLanding();
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Could not force landing! Error code is: %ld", result);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not force landing! Error code is: %ld",
+                 result);
     response->success = false;
     return;
   }
@@ -494,15 +567,18 @@ PSDKWrapper::start_force_landing_cb(const std::shared_ptr<Trigger::Request> requ
 }
 
 void
-PSDKWrapper::flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg)
+PSDKWrapper::flight_control_generic_cb(
+    const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   /** @todo implemnent generic control functionality */
   (void)msg;
-  RCLCPP_WARN(get_logger(), "Generic control setpoint is not currently implemented!");
+  RCLCPP_WARN(get_logger(),
+              "Generic control setpoint is not currently implemented!");
 }
 
 void
-PSDKWrapper::flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedPtr msg)
+PSDKWrapper::flight_control_position_yaw_cb(
+    const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
       DJI_FLIGHT_CONTROLLER_HORIZONTAL_POSITION_CONTROL_MODE,
@@ -524,13 +600,14 @@ PSDKWrapper::flight_control_position_yaw_cb(const sensor_msgs::msg::Joy::SharedP
   z_cmd = z_setpoint;
 
   /* Note: The input yaw is assumed to be following REP 103, thus a FLU rotation
-   wrt to ENU frame. DJI uses FRD rotation with respect to NED.Thus, the rotation
-   needs to be transformed before sending it to the FCU
+   wrt to ENU frame. DJI uses FRD rotation with respect to NED.Thus, the
+   rotation needs to be transformed before sending it to the FCU
    */
   tf2::Matrix3x3 rotation_FLU2ENU;
   rotation_FLU2ENU.setRPY(0.0, 0.0, yaw_setpoint);
   tf2::Matrix3x3 rotation_FRD2NED(umd_psdk::utils::R_NED2ENU.transpose() *
-                                  rotation_FLU2ENU * utils::R_FLU2FRD.transpose());
+                                  rotation_FLU2ENU *
+                                  utils::R_FLU2FRD.transpose());
   double temp1, temp2, temp_yaw;
   rotation_FRD2NED.getRPY(temp1, temp2, temp_yaw);
   yaw_cmd = static_cast<float>(temp_yaw);
