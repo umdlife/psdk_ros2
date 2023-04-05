@@ -36,18 +36,21 @@
 
 /* Private types -------------------------------------------------------------*/
 
-/* Private values -------------------------------------------------------------*/
+/* Private values
+ * -------------------------------------------------------------*/
 
 /* Private functions declaration ---------------------------------------------*/
 
 /* Exported functions definition ---------------------------------------------*/
 T_DjiReturnCode
-HalNetWork_Init(const char *ipAddr, const char *netMask, T_DjiNetworkHandle *halObj)
+HalNetWork_Init(const char *ipAddr, const char *netMask,
+                T_DjiNetworkHandle *halObj)
 {
   int32_t ret;
   char cmdStr[LINUX_CMD_STR_MAX_SIZE];
 
-  if (ipAddr == NULL || netMask == NULL) {
+  if (ipAddr == NULL || netMask == NULL)
+  {
     USER_LOG_ERROR("hal network config param error");
     return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
   }
@@ -57,7 +60,8 @@ HalNetWork_Init(const char *ipAddr, const char *netMask, T_DjiNetworkHandle *hal
 
   snprintf(cmdStr, sizeof(cmdStr), "ifconfig %s up", LINUX_NETWORK_DEV);
   ret = system(cmdStr);
-  if (ret != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (ret != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     USER_LOG_ERROR(
         "Can't open the network."
         "Probably the program not execute with root permission."
@@ -65,10 +69,11 @@ HalNetWork_Init(const char *ipAddr, const char *netMask, T_DjiNetworkHandle *hal
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
-  snprintf(cmdStr, sizeof(cmdStr), "ifconfig %s %s netmask %s", LINUX_NETWORK_DEV,
-           ipAddr, netMask);
+  snprintf(cmdStr, sizeof(cmdStr), "ifconfig %s %s netmask %s",
+           LINUX_NETWORK_DEV, ipAddr, netMask);
   ret = system(cmdStr);
-  if (ret != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (ret != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     USER_LOG_ERROR(
         "Can't config the ip address of network."
         "Probably the program not execute with root permission."

@@ -1,7 +1,8 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is subject to
- * the terms and conditions defined in the file LICENSE.txt contained therein.
+ * This file is part of the `umd_psdk_wrapper` source code package and is
+ * subject to the terms and conditions defined in the file LICENSE.txt contained
+ * therein.
  */
 /**
  * @file gimbal.cpp
@@ -16,13 +17,15 @@
 #include "umd_psdk_wrapper/psdk_wrapper.hpp"
 #include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk {
+namespace umd_psdk
+{
 
 bool
 PSDKWrapper::init_gimbal_manager()
 {
   RCLCPP_INFO(get_logger(), "Initiating gimbal manager...");
-  if (DjiGimbalManager_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (DjiGimbalManager_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_ERROR(get_logger(), "Could not initialize gimbal manager");
     return false;
   }
@@ -36,16 +39,20 @@ PSDKWrapper::gimbal_set_mode_callback_(
 {
   RCLCPP_INFO(get_logger(), "Set gimbal mode");
   T_DjiReturnCode return_code;
-  E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
-  E_DjiGimbalMode gimbal_mode = static_cast<E_DjiGimbalMode>(request->gimbal_mode);
+  E_DjiMountPosition index =
+      static_cast<E_DjiMountPosition>(request->payload_index);
+  E_DjiGimbalMode gimbal_mode =
+      static_cast<E_DjiGimbalMode>(request->gimbal_mode);
   return_code = DjiGimbalManager_SetMode(index, gimbal_mode);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: 0x%08X",
                 return_code);
     response->success = false;
     return;
   }
-  else {
+  else
+  {
     response->success = true;
     return;
   }
@@ -58,14 +65,18 @@ PSDKWrapper::gimbal_reset_callback_(
 {
   RCLCPP_INFO(get_logger(), "Set gimbal mode");
   T_DjiReturnCode return_code;
-  E_DjiMountPosition index = static_cast<E_DjiMountPosition>(request->payload_index);
+  E_DjiMountPosition index =
+      static_cast<E_DjiMountPosition>(request->payload_index);
   return_code = DjiGimbalManager_Reset(index);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_INFO(get_logger(), "Reset gimbal failed, error code: 0x%08X", return_code);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_INFO(get_logger(), "Reset gimbal failed, error code: 0x%08X",
+                return_code);
     response->success = false;
     return;
   }
-  else {
+  else
+  {
     response->success = true;
     return;
   }
@@ -89,22 +100,27 @@ PSDKWrapper::gimbal_rotation_callback_()
   rotation.yaw = current_goal->yaw;
   rotation.time = current_goal->time;
 
-  // TODO(@lidiadltv): Test if DJI_GIMBAL_MODE_FREE is the mode I want to set by default
+  // TODO(@lidiadltv): Test if DJI_GIMBAL_MODE_FREE is the mode I want to set by
+  // default
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: 0x%08X",
                 return_code);
     gimbal_rotation_action_->terminate_current(action_result);
   }
 
   return_code = DjiGimbalManager_Rotate(index, rotation);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-    RCLCPP_INFO(get_logger(),
-                "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: 0x%08X",
-                rotation.pitch, rotation.roll, rotation.yaw, return_code);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_INFO(
+        get_logger(),
+        "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: 0x%08X",
+        rotation.pitch, rotation.roll, rotation.yaw, return_code);
     gimbal_rotation_action_->terminate_current(action_result);
   }
-  else {
+  else
+  {
     action_result->result = true;
     gimbal_rotation_action_->succeeded_current(action_result);
   }
