@@ -1,8 +1,8 @@
 /**
  ********************************************************************
  * @file    hal_usb_bulk.h
- * @brief   This is the header file for "hal_usb_bulk.c", defining the structure and
- * (exported) function prototypes.
+ * @brief   This is the header file for "hal_usb_bulk.c", defining the structure
+ *and (exported) function prototypes.
  *
  * @copyright (c) 2021 DJI. All rights reserved.
  *
@@ -28,16 +28,16 @@
 #define HAL_USB_BULK_H
 
 /* Includes ------------------------------------------------------------------*/
-#include "stdint.h"
-#include <stdio.h>
-#include <unistd.h>
+#include <arpa/inet.h>
 #include <fcntl.h>
-#include <termios.h>
-#include <unistd.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <termios.h>
+#include <unistd.h>
+
+#include "stdint.h"
 #ifdef LIBUSB_INSTALLED
 
 #include <libusb-1.0/libusb.h>
@@ -47,45 +47,54 @@
 #include "dji_platform.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Exported constants --------------------------------------------------------*/
-#define LINUX_USB_BULK1_EP_OUT_FD               "/dev/usb-ffs/bulk1/ep1"
-#define LINUX_USB_BULK1_EP_IN_FD                "/dev/usb-ffs/bulk1/ep2"
+#define LINUX_USB_BULK1_EP_OUT_FD "/dev/usb-ffs/bulk1/ep1"
+#define LINUX_USB_BULK1_EP_IN_FD "/dev/usb-ffs/bulk1/ep2"
 
-#define LINUX_USB_BULK1_INTERFACE_NUM           (2)
-#define LINUX_USB_BULK1_END_POINT_IN            (0x83)
-#define LINUX_USB_BULK1_END_POINT_OUT           (2)
+#define LINUX_USB_BULK1_INTERFACE_NUM (2)
+#define LINUX_USB_BULK1_END_POINT_IN (0x83)
+#define LINUX_USB_BULK1_END_POINT_OUT (2)
 
-#define LINUX_USB_BULK2_EP_OUT_FD               "/dev/usb-ffs/bulk2/ep1"
-#define LINUX_USB_BULK2_EP_IN_FD                "/dev/usb-ffs/bulk2/ep2"
+#define LINUX_USB_BULK2_EP_OUT_FD "/dev/usb-ffs/bulk2/ep1"
+#define LINUX_USB_BULK2_EP_IN_FD "/dev/usb-ffs/bulk2/ep2"
 
-#define LINUX_USB_BULK2_INTERFACE_NUM           (3)
-#define LINUX_USB_BULK2_END_POINT_IN            (0x84)
-#define LINUX_USB_BULK2_END_POINT_OUT           (3)
+#define LINUX_USB_BULK2_INTERFACE_NUM (3)
+#define LINUX_USB_BULK2_END_POINT_IN (0x84)
+#define LINUX_USB_BULK2_END_POINT_OUT (3)
 
 #ifdef PLATFORM_ARCH_x86_64
-#define LINUX_USB_VID                         (0x0B95)
-#define LINUX_USB_PID                         (0x1790)
+#define LINUX_USB_VID (0x0B95)
+#define LINUX_USB_PID (0x1790)
 #else
-#define LINUX_USB_VID                         (0x0955)
-#define LINUX_USB_PID                         (0x7020)
+#define LINUX_USB_VID (0x0955)
+#define LINUX_USB_PID (0x7020)
 #endif
 
-/* Exported types ------------------------------------------------------------*/
+  /* Exported types
+   * ------------------------------------------------------------*/
 
-/* Exported functions --------------------------------------------------------*/
-T_DjiReturnCode HalUsbBulk_Init(T_DjiHalUsbBulkInfo usbBulkInfo, T_DjiUsbBulkHandle *usbBulkHandle);
-T_DjiReturnCode HalUsbBulk_DeInit(T_DjiUsbBulkHandle usbBulkHandle);
-T_DjiReturnCode HalUsbBulk_WriteData(T_DjiUsbBulkHandle usbBulkHandle, const uint8_t *buf, uint32_t len,
-                                     uint32_t *realLen);
-T_DjiReturnCode HalUsbBulk_ReadData(T_DjiUsbBulkHandle usbBulkHandle, uint8_t *buf, uint32_t len, uint32_t *realLen);
-T_DjiReturnCode HalUsbBulk_GetDeviceInfo(T_DjiHalUsbBulkDeviceInfo *deviceInfo);
+  /* Exported functions
+   * --------------------------------------------------------*/
+  T_DjiReturnCode HalUsbBulk_Init(T_DjiHalUsbBulkInfo usbBulkInfo,
+                                  T_DjiUsbBulkHandle *usbBulkHandle);
+  T_DjiReturnCode HalUsbBulk_DeInit(T_DjiUsbBulkHandle usbBulkHandle);
+  T_DjiReturnCode HalUsbBulk_WriteData(T_DjiUsbBulkHandle usbBulkHandle,
+                                       const uint8_t *buf, uint32_t len,
+                                       uint32_t *realLen);
+  T_DjiReturnCode HalUsbBulk_ReadData(T_DjiUsbBulkHandle usbBulkHandle,
+                                      uint8_t *buf, uint32_t len,
+                                      uint32_t *realLen);
+  T_DjiReturnCode HalUsbBulk_GetDeviceInfo(
+      T_DjiHalUsbBulkDeviceInfo *deviceInfo);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // HAL_USB_BULK_H
-/************************ (C) COPYRIGHT DJI Innovations *******END OF FILE******/
+#endif  // HAL_USB_BULK_H
+/************************ (C) COPYRIGHT DJI Innovations *******END OF
+ * FILE******/

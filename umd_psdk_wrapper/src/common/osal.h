@@ -30,48 +30,57 @@
 #define OSAL_H
 
 /* Includes ------------------------------------------------------------------*/
-#include <stdio.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <unistd.h>
+
 #include "dji_platform.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/* Exported constants --------------------------------------------------------*/
+  /* Exported constants
+   * --------------------------------------------------------*/
 
-/* Exported types ------------------------------------------------------------*/
+  /* Exported types
+   * ------------------------------------------------------------*/
 
-/* Exported functions --------------------------------------------------------*/
-T_DjiReturnCode Osal_TaskCreate(const char *name, void *(*taskFunc)(void *),
-                                uint32_t stackSize, void *arg, T_DjiTaskHandle *task);
-T_DjiReturnCode Osal_TaskDestroy(T_DjiTaskHandle task);
-T_DjiReturnCode Osal_TaskSleepMs(uint32_t timeMs);
+  /* Exported functions
+   * --------------------------------------------------------*/
+  T_DjiReturnCode Osal_TaskCreate(const char *name, void *(*taskFunc)(void *),
+                                  uint32_t stackSize, void *arg,
+                                  T_DjiTaskHandle *task);
+  T_DjiReturnCode Osal_TaskDestroy(T_DjiTaskHandle task);
+  T_DjiReturnCode Osal_TaskSleepMs(uint32_t timeMs);
 
-T_DjiReturnCode Osal_MutexCreate(T_DjiMutexHandle *mutex);
-T_DjiReturnCode Osal_MutexDestroy(T_DjiMutexHandle mutex);
-T_DjiReturnCode Osal_MutexLock(T_DjiMutexHandle mutex);
-T_DjiReturnCode Osal_MutexUnlock(T_DjiMutexHandle mutex);
+  T_DjiReturnCode Osal_MutexCreate(T_DjiMutexHandle *mutex);
+  T_DjiReturnCode Osal_MutexDestroy(T_DjiMutexHandle mutex);
+  T_DjiReturnCode Osal_MutexLock(T_DjiMutexHandle mutex);
+  T_DjiReturnCode Osal_MutexUnlock(T_DjiMutexHandle mutex);
 
-T_DjiReturnCode Osal_SemaphoreCreate(uint32_t initValue, T_DjiSemaHandle *semaphore);
-T_DjiReturnCode Osal_SemaphoreDestroy(T_DjiSemaHandle semaphore);
-T_DjiReturnCode Osal_SemaphoreWait(T_DjiSemaHandle semaphore);
-T_DjiReturnCode Osal_SemaphoreTimedWait(T_DjiSemaHandle semaphore, uint32_t waitTime);
-T_DjiReturnCode Osal_SemaphorePost(T_DjiSemaHandle semaphore);
+  T_DjiReturnCode Osal_SemaphoreCreate(uint32_t initValue,
+                                       T_DjiSemaHandle *semaphore);
+  T_DjiReturnCode Osal_SemaphoreDestroy(T_DjiSemaHandle semaphore);
+  T_DjiReturnCode Osal_SemaphoreWait(T_DjiSemaHandle semaphore);
+  T_DjiReturnCode Osal_SemaphoreTimedWait(T_DjiSemaHandle semaphore,
+                                          uint32_t waitTime);
+  T_DjiReturnCode Osal_SemaphorePost(T_DjiSemaHandle semaphore);
 
-T_DjiReturnCode Osal_GetTimeMs(uint32_t *ms);
-T_DjiReturnCode Osal_GetTimeUs(uint64_t *us);
+  T_DjiReturnCode Osal_GetTimeMs(uint32_t *ms);
+  T_DjiReturnCode Osal_GetTimeUs(uint64_t *us);
 
-void *Osal_Malloc(uint32_t size);
-void Osal_Free(void *ptr);
+  void *Osal_Malloc(uint32_t size);
+  void Osal_Free(void *ptr);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // OSAL_H
-/************************ (C) COPYRIGHT DJI Innovations *******END OF FILE******/
+#endif  // OSAL_H
+/************************ (C) COPYRIGHT DJI Innovations *******END OF
+ * FILE******/
