@@ -19,8 +19,7 @@ using namespace std::placeholders;  // NOLINT
 
 namespace umd_psdk {
 
-using namespace std::placeholders; 
-
+using namespace std::placeholders;
 
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())
@@ -64,7 +63,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
     return nav2_util::CallbackReturn::FAILURE;
   }
   initialize_ros_elements();
-  
+
   return nav2_util::CallbackReturn::SUCCESS;
 }
 
@@ -89,13 +88,13 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   subscribe_psdk_topics();
 
-  if(!init_camera_manager()){
+  if (!init_camera_manager()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
-  if(!init_liveview_manager()){
+  if (!init_liveview_manager()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
-  if(!init_gimbal_manager()){
+  if (!init_gimbal_manager()) {
     return nav2_util::CallbackReturn::FAILURE;
   }
   createBond();
@@ -328,83 +327,170 @@ PSDKWrapper::load_parameters()
     params_.imu_frequency = IMU_TOPIC_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.attitude", frequency)) {
+  if (!get_parameter("data_frequency.attitude", params_.attitude_frequency)) {
     RCLCPP_ERROR(get_logger(), "attitude param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.attitude_topics, frequency);
+  if (params_.attitude_frequency > ATTITUDE_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the attitude topics is higher than the maximum "
+                "allowed %d. Tha maximum value is set",
+                ATTITUDE_TOPICS_MAX_FREQ);
+    params_.attitude_frequency = ATTITUDE_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.acceleration", frequency)) {
+  if (!get_parameter("data_frequency.acceleration", params_.acceleration_frequency)) {
     RCLCPP_ERROR(get_logger(), "acceleration param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.acceleration_topics, frequency);
+  if (params_.acceleration_frequency > ACCELERATION_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the acceleration topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        ACCELERATION_TOPICS_MAX_FREQ);
+    params_.acceleration_frequency = ACCELERATION_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.velocity", frequency)) {
+  if (!get_parameter("data_frequency.velocity", params_.velocity_frequency)) {
     RCLCPP_ERROR(get_logger(), "velocity param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.velocity_topics, frequency);
+  if (params_.velocity_frequency > VELOCITY_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the velocity topics is higher than the maximum "
+                "allowed %d. Tha maximum value is set",
+                VELOCITY_TOPICS_MAX_FREQ);
+    params_.velocity_frequency = VELOCITY_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.angular_velocity", frequency)) {
+  if (!get_parameter("data_frequency.angular_velocity",
+                     params_.angular_velocity_frequency)) {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.angular_velocity_topics, frequency);
+  if (params_.angular_velocity_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the angular velocity topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
+    params_.angular_velocity_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.position", frequency)) {
+  if (!get_parameter("data_frequency.position", params_.position_frequency)) {
     RCLCPP_ERROR(get_logger(), "position param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.position_topics, frequency);
+  if (params_.position_frequency > POSITION_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the position topics is higher than the maximum "
+                "allowed %d. Tha maximum value is set",
+                POSITION_TOPICS_MAX_FREQ);
+    params_.position_frequency = POSITION_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.gps_data", frequency)) {
+  if (!get_parameter("data_frequency.gps_data", params_.gps_data_frequency)) {
     RCLCPP_ERROR(get_logger(), "gps_data param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.gps_data_topics, frequency);
+  if (params_.gps_data_frequency > GPS_DATA_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the GPS topics is higher than the maximum "
+                "allowed %d. Tha maximum value is set",
+                GPS_DATA_TOPICS_MAX_FREQ);
+    params_.gps_data_frequency = GPS_DATA_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.rtk_data", frequency)) {
+  if (!get_parameter("data_frequency.rtk_data", params_.rtk_data_frequency)) {
     RCLCPP_ERROR(get_logger(), "rtk_data param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.rtk_data_topics, frequency);
+  if (params_.rtk_data_frequency > RTK_DATA_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the RTK topics is higher than the maximum "
+                "allowed %d. Tha maximum value is set",
+                RTK_DATA_TOPICS_MAX_FREQ);
+    params_.rtk_data_frequency = RTK_DATA_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.magnetometer", frequency)) {
+  if (!get_parameter("data_frequency.magnetometer", params_.magnetometer_frequency)) {
     RCLCPP_ERROR(get_logger(), "magnetometer param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.magnetometer_topics, frequency);
+  if (params_.magnetometer_frequency > MAGNETOMETER_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the magnetometer topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        MAGNETOMETER_TOPICS_MAX_FREQ);
+    params_.magnetometer_frequency = MAGNETOMETER_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.rc_channels_data", frequency)) {
+  if (!get_parameter("data_frequency.rc_channels_data",
+                     params_.rc_channels_data_frequency)) {
     RCLCPP_ERROR(get_logger(), "rc_channels_data param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.rc_channel_topics, frequency);
+  if (params_.rc_channels_data_frequency > RC_CHANNELS_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the RC channel topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        RC_CHANNELS_TOPICS_MAX_FREQ);
+    params_.rc_channels_data_frequency = RC_CHANNELS_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.gimbal_data", frequency)) {
+  if (!get_parameter("data_frequency.gimbal_data", params_.gimbal_data_frequency)) {
     RCLCPP_ERROR(get_logger(), "gimbal_data param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.gimbal_topics, frequency);
+  if (params_.gimbal_data_frequency > GIMBAL_DATA_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the gimbal topics is higher than the maximum "
+                "allowed %d. Tha maximum value is set",
+                GIMBAL_DATA_TOPICS_MAX_FREQ);
+    params_.gimbal_data_frequency = GIMBAL_DATA_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.flight_status", frequency)) {
+  if (!get_parameter("data_frequency.flight_status", params_.flight_status_frequency)) {
     RCLCPP_ERROR(get_logger(), "flight_status param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.flight_status_topics, frequency);
+  if (params_.flight_status_frequency > FLIGHT_STATUS_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the flight status topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        FLIGHT_STATUS_TOPICS_MAX_FREQ);
+    params_.flight_status_frequency = FLIGHT_STATUS_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.battery_level", frequency)) {
+  if (!get_parameter("data_frequency.battery_level", params_.battery_level_frequency)) {
     RCLCPP_ERROR(get_logger(), "battery_level param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.battery_status_topics, frequency);
+  if (params_.battery_level_frequency > BATTERY_STATUS_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the battery status topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        BATTERY_STATUS_TOPICS_MAX_FREQ);
+    params_.battery_level_frequency = BATTERY_STATUS_TOPICS_MAX_FREQ;
+  }
 
-  if (!get_parameter("data_frequency.control_information", frequency)) {
+  if (!get_parameter("data_frequency.control_information",
+                     params_.control_information_frequency)) {
     RCLCPP_ERROR(get_logger(), "control_information param not defined");
     exit(-1);
   }
-  set_topic_frequency(&telemetry_.control_topics, frequency);
+  if (params_.control_information_frequency > CONTROL_DATA_TOPICS_MAX_FREQ) {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the control topics is higher than the maximum "
+                "allowed %d. Tha maximum value is set",
+                CONTROL_DATA_TOPICS_MAX_FREQ);
+    params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
+  }
 }
 
 bool
@@ -635,38 +721,38 @@ PSDKWrapper::initialize_ros_elements()
       "get_horizontal_radar_obstacle_avoidance",
       std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb, this, _1,
                 _2));
-//// Camera
-// Actions
-  camera_start_shoot_single_photo_action_ = 
+  //// Camera
+  // Actions
+  camera_start_shoot_single_photo_action_ =
       std::make_unique<nav2_util::SimpleActionServer<CameraStartShootSinglePhoto>>(
-            shared_from_this(), "camera_start_shoot_single_photo",
-            std::bind(&PSDKWrapper::camera_start_shoot_single_photo_callback_, this));
-  camera_start_shoot_burst_photo_action_ = 
+          shared_from_this(), "camera_start_shoot_single_photo",
+          std::bind(&PSDKWrapper::camera_start_shoot_single_photo_callback_, this));
+  camera_start_shoot_burst_photo_action_ =
       std::make_unique<nav2_util::SimpleActionServer<CameraStartShootBurstPhoto>>(
-            shared_from_this(), "camera_start_shoot_burst_photo",
-            std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_callback_, this));
+          shared_from_this(), "camera_start_shoot_burst_photo",
+          std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_callback_, this));
   camera_start_shoot_aeb_photo_action_ =
       std::make_unique<nav2_util::SimpleActionServer<CameraStartShootAEBPhoto>>(
-            shared_from_this(), "camera_start_shoot_aeb_photo",
-            std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_callback_, this));
+          shared_from_this(), "camera_start_shoot_aeb_photo",
+          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_callback_, this));
   camera_start_shoot_interval_photo_action_ =
       std::make_unique<nav2_util::SimpleActionServer<CameraStartShootIntervalPhoto>>(
-            shared_from_this(), "camera_start_shoot_interval_photo",
-            std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_callback_, this));
+          shared_from_this(), "camera_start_shoot_interval_photo",
+          std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_callback_, this));
   camera_stop_shoot_photo_action_ =
       std::make_unique<nav2_util::SimpleActionServer<CameraStopShootPhoto>>(
-            shared_from_this(), "camera_stop_shoot_photo",
-            std::bind(&PSDKWrapper::camera_stop_shoot_photo_callback_, this));
+          shared_from_this(), "camera_stop_shoot_photo",
+          std::bind(&PSDKWrapper::camera_stop_shoot_photo_callback_, this));
   camera_record_video_action_ =
       std::make_unique<nav2_util::SimpleActionServer<CameraRecordVideo>>(
-            shared_from_this(), "camera_record_video",
-            std::bind(&PSDKWrapper::camera_record_video_callback_, this));
-  camera_get_laser_ranging_info_action_ = 
+          shared_from_this(), "camera_record_video",
+          std::bind(&PSDKWrapper::camera_record_video_callback_, this));
+  camera_get_laser_ranging_info_action_ =
       std::make_unique<nav2_util::SimpleActionServer<CameraGetLaserRangingInfo>>(
-            shared_from_this(), "camera_get_laser_ranging_info",
-            std::bind(&PSDKWrapper::camera_get_laser_ranging_info_callback_, this));
+          shared_from_this(), "camera_get_laser_ranging_info",
+          std::bind(&PSDKWrapper::camera_get_laser_ranging_info_callback_, this));
   // TODO(@lidiadltv): Enable these actions once are working properly
-  // camera_download_file_list_action_ = 
+  // camera_download_file_list_action_ =
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
   //           shared_from_this(), "camera_download_file_list",
   //           std::bind(&PSDKWrapper::camera_download_file_list_callback_, this));
@@ -678,66 +764,75 @@ PSDKWrapper::initialize_ros_elements()
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
   //           shared_from_this(), "camera_delete_file_by_index",
   //           std::bind(&PSDKWrapper::camera_delete_file_by_index_callback_, this));
-  camera_streaming_action_ = 
+  camera_streaming_action_ =
       std::make_unique<nav2_util::SimpleActionServer<CameraStreaming>>(
-            shared_from_this(), "camera_streaming",
-            std::bind(&PSDKWrapper::camera_streaming_callback_, this));
-// Services
+          shared_from_this(), "camera_streaming",
+          std::bind(&PSDKWrapper::camera_streaming_callback_, this));
+  // Services
   camera_get_type_service_ = create_service<CameraGetType>(
-            "camera_get_type",
-            std::bind(&PSDKWrapper::camera_get_type_callback_, this, _1, _2), qos_profile_);
+      "camera_get_type",
+      std::bind(&PSDKWrapper::camera_get_type_callback_, this, _1, _2), qos_profile_);
   camera_set_ev_service_ = create_service<CameraSetEV>(
-            "camera_set_ev",
-            std::bind(&PSDKWrapper::camera_set_ev_callback_, this, _1, _2), qos_profile_);
+      "camera_set_ev", std::bind(&PSDKWrapper::camera_set_ev_callback_, this, _1, _2),
+      qos_profile_);
   camera_get_ev_service_ = create_service<CameraGetEV>(
-            "camera_get_ev",
-            std::bind(&PSDKWrapper::camera_get_ev_callback_, this, _1, _2), qos_profile_);
+      "camera_get_ev", std::bind(&PSDKWrapper::camera_get_ev_callback_, this, _1, _2),
+      qos_profile_);
   camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
-            "camera_set_shutter_speed",
-            std::bind(&PSDKWrapper::camera_set_shutter_speed_callback_, this, _1, _2), qos_profile_);
+      "camera_set_shutter_speed",
+      std::bind(&PSDKWrapper::camera_set_shutter_speed_callback_, this, _1, _2),
+      qos_profile_);
   camera_get_shutter_speed_service_ = create_service<CameraGetShutterSpeed>(
-            "camera_get_shutter_speed",
-            std::bind(&PSDKWrapper::camera_get_shutter_speed_callback_, this, _1, _2), qos_profile_);
+      "camera_get_shutter_speed",
+      std::bind(&PSDKWrapper::camera_get_shutter_speed_callback_, this, _1, _2),
+      qos_profile_);
   camera_set_iso_service_ = create_service<CameraSetISO>(
-            "camera_set_iso",
-            std::bind(&PSDKWrapper::camera_set_iso_callback_, this, _1, _2), qos_profile_);
+      "camera_set_iso", std::bind(&PSDKWrapper::camera_set_iso_callback_, this, _1, _2),
+      qos_profile_);
   camera_get_iso_service_ = create_service<CameraGetISO>(
-            "camera_get_iso",
-            std::bind(&PSDKWrapper::camera_get_iso_callback_, this, _1, _2), qos_profile_);
+      "camera_get_iso", std::bind(&PSDKWrapper::camera_get_iso_callback_, this, _1, _2),
+      qos_profile_);
   camera_set_focus_target_service_ = create_service<CameraSetFocusTarget>(
-            "camera_set_focus_target",
-            std::bind(&PSDKWrapper::camera_set_focus_target_callback_, this, _1, _2), qos_profile_);
+      "camera_set_focus_target",
+      std::bind(&PSDKWrapper::camera_set_focus_target_callback_, this, _1, _2),
+      qos_profile_);
   camera_get_focus_target_service_ = create_service<CameraGetFocusTarget>(
-            "camera_get_focus_target",
-            std::bind(&PSDKWrapper::camera_get_focus_target_callback_, this, _1, _2), qos_profile_);
+      "camera_get_focus_target",
+      std::bind(&PSDKWrapper::camera_get_focus_target_callback_, this, _1, _2),
+      qos_profile_);
   camera_set_focus_mode_service_ = create_service<CameraSetFocusMode>(
-            "camera_set_focus_mode",
-            std::bind(&PSDKWrapper::camera_set_focus_mode_callback_, this, _1, _2), qos_profile_);
+      "camera_set_focus_mode",
+      std::bind(&PSDKWrapper::camera_set_focus_mode_callback_, this, _1, _2),
+      qos_profile_);
   camera_get_focus_mode_service_ = create_service<CameraGetFocusMode>(
-            "camera_get_focus_mode",
-            std::bind(&PSDKWrapper::camera_get_focus_mode_callback_, this, _1, _2), qos_profile_);
+      "camera_get_focus_mode",
+      std::bind(&PSDKWrapper::camera_get_focus_mode_callback_, this, _1, _2),
+      qos_profile_);
   camera_set_optical_zoom_service_ = create_service<CameraSetOpticalZoom>(
-            "camera_set_optical_zoom",
-            std::bind(&PSDKWrapper::camera_set_optical_zoom_callback_, this, _1, _2), qos_profile_);
+      "camera_set_optical_zoom",
+      std::bind(&PSDKWrapper::camera_set_optical_zoom_callback_, this, _1, _2),
+      qos_profile_);
   camera_get_optical_zoom_service_ = create_service<CameraGetOpticalZoom>(
-            "camera_get_optical_zoom",
-            std::bind(&PSDKWrapper::camera_get_optical_zoom_callback_, this, _1, _2), qos_profile_);
-  camera_set_infrared_zoom_service_= create_service<CameraSetInfraredZoom>(
-            "camera_set_infrared_zoom",
-            std::bind(&PSDKWrapper::camera_set_infrared_zoom_callback_, this, _1, _2), qos_profile_);
-//// Gimbal
-// Services
+      "camera_get_optical_zoom",
+      std::bind(&PSDKWrapper::camera_get_optical_zoom_callback_, this, _1, _2),
+      qos_profile_);
+  camera_set_infrared_zoom_service_ = create_service<CameraSetInfraredZoom>(
+      "camera_set_infrared_zoom",
+      std::bind(&PSDKWrapper::camera_set_infrared_zoom_callback_, this, _1, _2),
+      qos_profile_);
+  //// Gimbal
+  // Services
   gimbal_set_mode_service_ = create_service<GimbalSetMode>(
       "gimbal_set_mode",
       std::bind(&PSDKWrapper::gimbal_set_mode_callback_, this, _1, _2), qos_profile_);
   gimbal_reset_service_ = create_service<GimbalReset>(
-      "gimbal_reset",
-      std::bind(&PSDKWrapper::gimbal_reset_callback_, this, _1, _2), qos_profile_);
-// Actions
-  gimbal_rotation_action_ = 
+      "gimbal_reset", std::bind(&PSDKWrapper::gimbal_reset_callback_, this, _1, _2),
+      qos_profile_);
+  // Actions
+  gimbal_rotation_action_ =
       std::make_unique<nav2_util::SimpleActionServer<GimbalRotation>>(
-            shared_from_this(), "gimbal_rotation",
-            std::bind(&PSDKWrapper::gimbal_rotation_callback_, this));
+          shared_from_this(), "gimbal_rotation",
+          std::bind(&PSDKWrapper::gimbal_rotation_callback_, this));
 }
 
 void
@@ -791,27 +886,6 @@ PSDKWrapper::activate_ros_elements()
   camera_streaming_action_->activate();
   // Gimbal
   gimbal_rotation_action_->activate();
-  // Telemetry
-  attitude_pub_->on_activate();
-  acceleration_ground_pub_->on_activate();
-  acceleration_body_pub_->on_activate();
-  imu_pub_->on_activate();
-  velocity_ground_pub_->on_activate();
-  flight_status_pub_->on_activate();
-  altitude_pub_->on_activate();
-  relative_height_pub_->on_activate();
-  gps_position_pub_->on_activate();
-  rtk_position_pub_->on_activate();
-  magnetometer_pub_->on_activate();
-  rc_pub_->on_activate();
-  gimbal_angles_pub_->on_activate();
-  gimbal_status_pub_->on_activate();
-  aircraft_status_pub_->on_activate();
-  battery_pub_->on_activate();
-  flight_anomaly_pub_->on_activate();
-  position_fused_pub_->on_activate();
-  relative_obstacle_info_pub_->on_activate();
-  home_position_pub_->on_activate();
 }
 
 void
@@ -938,7 +1012,7 @@ PSDKWrapper::clean_ros_elements()
   get_downwards_vo_obstacle_avoidance_srv_.reset();
   get_horizontal_radar_obstacle_avoidance_srv_.reset();
 
-  //Camera
+  // Camera
   camera_start_shoot_single_photo_action_.reset();
   camera_start_shoot_burst_photo_action_.reset();
   camera_start_shoot_aeb_photo_action_.reset();

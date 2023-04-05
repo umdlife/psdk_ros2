@@ -1,8 +1,8 @@
 /**
  ********************************************************************
  * @file    dji_camera_stream_decoder.hpp
- * @brief   This is the header file for "dji_camera_stream_decoder.cpp", defining the structure and
- * (exported) function prototypes.
+ * @brief   This is the header file for "dji_camera_stream_decoder.cpp", defining the
+ *structure and (exported) function prototypes.
  *
  * @copyright (c) 2021 DJI. All rights reserved.
  *
@@ -34,8 +34,8 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#include "pthread.h"
 #include "dji_camera_image_handler.hpp"
+#include "pthread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,36 +45,36 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 class DJICameraStreamDecoder {
-public:
-    DJICameraStreamDecoder();
-    ~DJICameraStreamDecoder();
-    bool init();
-    void cleanup();
+ public:
+  DJICameraStreamDecoder();
+  ~DJICameraStreamDecoder();
+  bool init();
+  void cleanup();
 
-    void callbackThreadFunc();
-    void decodeBuffer(const uint8_t *pBuf, int len);
-    static void *callbackThreadEntry(void *p);
-    bool registerCallback(CameraImageCallback f, void *param);
-    DJICameraImageHandler decodedImageHandler;
+  void callbackThreadFunc();
+  void decodeBuffer(const uint8_t *pBuf, int len);
+  static void *callbackThreadEntry(void *p);
+  bool registerCallback(CameraImageCallback f, void *param);
+  DJICameraImageHandler decodedImageHandler;
 
-private:
-    pthread_t callbackThread;
-    bool initSuccess;
-    bool cbThreadIsRunning;
-    int cbThreadStatus;
-    CameraImageCallback cb;
-    void *cbUserParam;
+ private:
+  pthread_t callbackThread;
+  bool initSuccess;
+  bool cbThreadIsRunning;
+  int cbThreadStatus;
+  CameraImageCallback cb;
+  void *cbUserParam;
 
-    pthread_mutex_t decodemutex;
-    AVCodecContext *pCodecCtx;
-    AVCodec *pCodec;
-    AVCodecParserContext *pCodecParserCtx;
-    SwsContext *pSwsCtx;
+  pthread_mutex_t decodemutex;
+  AVCodecContext *pCodecCtx;
+  AVCodec *pCodec;
+  AVCodecParserContext *pCodecParserCtx;
+  SwsContext *pSwsCtx;
 
-    AVFrame *pFrameYUV;
-    AVFrame *pFrameRGB;
-    uint8_t *rgbBuf;
-    size_t bufSize;
+  AVFrame *pFrameYUV;
+  AVFrame *pFrameRGB;
+  uint8_t *rgbBuf;
+  size_t bufSize;
 };
 
 /* Exported functions --------------------------------------------------------*/
@@ -83,13 +83,5 @@ private:
 }
 #endif
 
-#endif // DJI_CAMERA_STREAM_DECCODER_H
+#endif  // DJI_CAMERA_STREAM_DECCODER_H
 /************************ (C) COPYRIGHT DJI Innovations *******END OF FILE******/
-
-
-
-
-
-
-
-

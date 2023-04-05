@@ -39,13 +39,16 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
-T_DjiReturnCode Osal_FileOpen(const char *fileName, const char *fileMode, T_DjiFileHandle *fileObj);
+T_DjiReturnCode Osal_FileOpen(const char *fileName, const char *fileMode,
+                              T_DjiFileHandle *fileObj);
 
 T_DjiReturnCode Osal_FileClose(T_DjiFileHandle fileObj);
 
-T_DjiReturnCode Osal_FileWrite(T_DjiFileHandle fileObj, const uint8_t *buf, uint32_t len, uint32_t *realLen);
+T_DjiReturnCode Osal_FileWrite(T_DjiFileHandle fileObj, const uint8_t *buf,
+                               uint32_t len, uint32_t *realLen);
 
-T_DjiReturnCode Osal_FileRead(T_DjiFileHandle fileObj, uint8_t *buf, uint32_t len, uint32_t *realLen);
+T_DjiReturnCode Osal_FileRead(T_DjiFileHandle fileObj, uint8_t *buf, uint32_t len,
+                              uint32_t *realLen);
 
 T_DjiReturnCode Osal_FileSeek(T_DjiFileHandle fileObj, uint32_t offset);
 
@@ -69,5 +72,5 @@ T_DjiReturnCode Osal_Stat(const char *filePath, T_DjiFileInfo *fileInfo);
 }
 #endif
 
-#endif // OSAL_FS_H
+#endif  // OSAL_FS_H
 /************************ (C) COPYRIGHT DJI Innovations *******END OF FILE******/

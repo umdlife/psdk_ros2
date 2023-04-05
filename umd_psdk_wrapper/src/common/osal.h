@@ -30,12 +30,13 @@
 #define OSAL_H
 
 /* Includes ------------------------------------------------------------------*/
-#include <stdio.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <unistd.h>
+
 #include "dji_platform.h"
 
 #ifdef __cplusplus
@@ -73,5 +74,5 @@ void Osal_Free(void *ptr);
 }
 #endif
 
-#endif // OSAL_H
+#endif  // OSAL_H
 /************************ (C) COPYRIGHT DJI Innovations *******END OF FILE******/

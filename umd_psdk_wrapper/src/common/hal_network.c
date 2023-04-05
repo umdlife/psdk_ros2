@@ -25,11 +25,12 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "string.h"
-#include "stdlib.h"
-#include "stdio.h"
 #include "hal_network.h"
+
 #include "dji_logger.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
 
 /* Private constants ---------------------------------------------------------*/
 
@@ -40,51 +41,57 @@
 /* Private functions declaration ---------------------------------------------*/
 
 /* Exported functions definition ---------------------------------------------*/
-T_DjiReturnCode HalNetWork_Init(const char *ipAddr, const char *netMask, T_DjiNetworkHandle *halObj)
+T_DjiReturnCode
+HalNetWork_Init(const char *ipAddr, const char *netMask, T_DjiNetworkHandle *halObj)
 {
-    int32_t ret;
-    char cmdStr[LINUX_CMD_STR_MAX_SIZE];
+  int32_t ret;
+  char cmdStr[LINUX_CMD_STR_MAX_SIZE];
 
-    if (ipAddr == NULL || netMask == NULL) {
-        USER_LOG_ERROR("hal network config param error");
-        return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
-    }
+  if (ipAddr == NULL || netMask == NULL) {
+    USER_LOG_ERROR("hal network config param error");
+    return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
+  }
 
-    //Attention: need root permission to config ip addr and netmask.
-    memset(cmdStr, 0, sizeof(cmdStr));
+  // Attention: need root permission to config ip addr and netmask.
+  memset(cmdStr, 0, sizeof(cmdStr));
 
-    snprintf(cmdStr, sizeof(cmdStr), "ifconfig %s up", LINUX_NETWORK_DEV);
-    ret = system(cmdStr);
-    if (ret != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        USER_LOG_ERROR("Can't open the network."
-                       "Probably the program not execute with root permission."
-                       "Please use the root permission to execute the program.");
-        return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
-    }
+  snprintf(cmdStr, sizeof(cmdStr), "ifconfig %s up", LINUX_NETWORK_DEV);
+  ret = system(cmdStr);
+  if (ret != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    USER_LOG_ERROR(
+        "Can't open the network."
+        "Probably the program not execute with root permission."
+        "Please use the root permission to execute the program.");
+    return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
+  }
 
-    snprintf(cmdStr, sizeof(cmdStr), "ifconfig %s %s netmask %s", LINUX_NETWORK_DEV, ipAddr, netMask);
-    ret = system(cmdStr);
-    if (ret != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
-        USER_LOG_ERROR("Can't config the ip address of network."
-                       "Probably the program not execute with root permission."
-                       "Please use the root permission to execute the program.");
-        return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
-    }
+  snprintf(cmdStr, sizeof(cmdStr), "ifconfig %s %s netmask %s", LINUX_NETWORK_DEV,
+           ipAddr, netMask);
+  ret = system(cmdStr);
+  if (ret != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS) {
+    USER_LOG_ERROR(
+        "Can't config the ip address of network."
+        "Probably the program not execute with root permission."
+        "Please use the root permission to execute the program.");
+    return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
+  }
 
-    return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
-T_DjiReturnCode HalNetWork_DeInit(T_DjiNetworkHandle halObj)
+T_DjiReturnCode
+HalNetWork_DeInit(T_DjiNetworkHandle halObj)
 {
-    return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
-T_DjiReturnCode HalNetWork_GetDeviceInfo(T_DjiHalNetworkDeviceInfo *deviceInfo)
+T_DjiReturnCode
+HalNetWork_GetDeviceInfo(T_DjiHalNetworkDeviceInfo *deviceInfo)
 {
-    deviceInfo->usbNetAdapter.vid = USB_NET_ADAPTER_VID;
-    deviceInfo->usbNetAdapter.pid = USB_NET_ADAPTER_PID;
+  deviceInfo->usbNetAdapter.vid = USB_NET_ADAPTER_VID;
+  deviceInfo->usbNetAdapter.pid = USB_NET_ADAPTER_PID;
 
-    return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
 /* Private functions definition-----------------------------------------------*/

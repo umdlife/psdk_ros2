@@ -24,7 +24,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "umd_psdk_wrapper/dji_camera_image_handler.hpp"
-#include <iostream> 
+
+#include <iostream>
 
 /* Private constants ---------------------------------------------------------*/
 
@@ -37,58 +38,63 @@
 /* Exported functions definition ---------------------------------------------*/
 DJICameraImageHandler::DJICameraImageHandler() : m_newImageFlag(false)
 {
-    pthread_mutex_init(&m_mutex, NULL);
-    pthread_cond_init(&m_condv, NULL);
+  pthread_mutex_init(&m_mutex, NULL);
+  pthread_cond_init(&m_condv, NULL);
 }
 
 DJICameraImageHandler::~DJICameraImageHandler()
 {
-    pthread_mutex_destroy(&m_mutex);
-    pthread_cond_destroy(&m_condv);
+  pthread_mutex_destroy(&m_mutex);
+  pthread_cond_destroy(&m_condv);
 }
 
-bool DJICameraImageHandler::getNewImageWithLock(CameraRGBImage &copyOfImage, int timeoutMilliSec)
+bool
+DJICameraImageHandler::getNewImageWithLock(CameraRGBImage &copyOfImage,
+                                           int timeoutMilliSec)
 {
-    int result;
+  int result;
 
-    /*! @note
-     * Here result == 0 means successful.
-     * Because this is the behavior of pthread_cond_timedwait.
+  /*! @note
+   * Here result == 0 means successful.
+   * Because this is the behavior of pthread_cond_timedwait.
+   */
+  pthread_mutex_lock(&m_mutex);
+  if (m_newImageFlag) {
+    /* At this point, a copy of m_img is made, so it is safe to
+     * do any modifications to copyOfImage in user code.
      */
-    pthread_mutex_lock(&m_mutex);
-    if (m_newImageFlag) {
-        /* At this point, a copy of m_img is made, so it is safe to
-         * do any modifications to copyOfImage in user code.
-         */
-        copyOfImage = m_img;
-        m_newImageFlag = false;
-        result = 0;
-    } else {
-        struct timespec absTimeout;
-        clock_gettime(CLOCK_REALTIME, &absTimeout);
-        absTimeout.tv_nsec += timeoutMilliSec * 1e6;
-        result = pthread_cond_timedwait(&m_condv, &m_mutex, &absTimeout);
+    copyOfImage = m_img;
+    m_newImageFlag = false;
+    result = 0;
+  }
+  else {
+    struct timespec absTimeout;
+    clock_gettime(CLOCK_REALTIME, &absTimeout);
+    absTimeout.tv_nsec += timeoutMilliSec * 1e6;
+    result = pthread_cond_timedwait(&m_condv, &m_mutex, &absTimeout);
 
-        if (result == 0) {
-            copyOfImage = m_img;
-            m_newImageFlag = false;
-        }
+    if (result == 0) {
+      copyOfImage = m_img;
+      m_newImageFlag = false;
     }
-    pthread_mutex_unlock(&m_mutex);
-    return (result == 0) ? true : false;
+  }
+  pthread_mutex_unlock(&m_mutex);
+  return (result == 0) ? true : false;
 }
 
-void DJICameraImageHandler::writeNewImageWithLock(uint8_t *buf, int bufSize, int width, int height)
+void
+DJICameraImageHandler::writeNewImageWithLock(uint8_t *buf, int bufSize, int width,
+                                             int height)
 {
-    pthread_mutex_lock(&m_mutex);
+  pthread_mutex_lock(&m_mutex);
 
-    m_img.rawData.assign(buf, buf + bufSize);
-    m_img.height = height;
-    m_img.width = width;
-    m_newImageFlag = true;
+  m_img.rawData.assign(buf, buf + bufSize);
+  m_img.height = height;
+  m_img.width = width;
+  m_newImageFlag = true;
 
-    pthread_cond_signal(&m_condv);
-    pthread_mutex_unlock(&m_mutex);
+  pthread_cond_signal(&m_condv);
+  pthread_mutex_unlock(&m_mutex);
 }
 
 /* Private functions definition-----------------------------------------------*/
