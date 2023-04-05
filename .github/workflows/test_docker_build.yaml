@@ -17,7 +17,7 @@ jobs:
   rebuild_docker:
     strategy:
       matrix:
-        parent_repo: [umd_copter]
+        parent_repo: [umd_robot_essentials]
         stage: [dev_stage, prod_stage]
     uses: umdlife/umd_workflows/.github/workflows/rebuild_docker_dep.yaml@main
     with:
