@@ -83,6 +83,9 @@ enum FlightStatus
   FLIGHT_STATUS_IN_AIR = 2 /*!< Aircraft is in air. */
 };
 
+/**
+ * @todo (Bianca) Implement the remaining/ commented DJI topics
+ */
 const std::vector<DJITopic> topics_to_subscribe{
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC, IMU_TOPIC_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, ATTITUDE_TOPICS_MAX_FREQ},

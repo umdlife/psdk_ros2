@@ -548,20 +548,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
       battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
-  //       acceleration_ground_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
-  //       acceleration_body_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::Altitude>::SharedPtr
-  //       altitude_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
-  //       relative_height_pub_;
-
-  //   rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::RelativeObstacleInfo>::
-  //       SharedPtr relative_obstacle_info_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<
-  //       psdk_interfacesg::HomePosition>::SharedPtr
-  //       home_position_pub_;
 
   /* ROS subscribers*/
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
