@@ -74,7 +74,7 @@ PSDKWrapper::camera_get_type_callback_(
     return;
   }
   else
-  { // TODO(@lidiadltv): Remove this map
+  {  // TODO(@lidiadltv): Remove this map
     for (auto &it : camera_type_str)
     {
       if (it.first == camera_type)
@@ -500,7 +500,7 @@ PSDKWrapper::camera_set_optical_zoom_callback_(
     return;
   }
   else
-  { // TODO(@lidiadltv): If we can wait to see the result is an action
+  {  // TODO(@lidiadltv): If we can wait to see the result is an action
     response->success = true;
     return;
   }
