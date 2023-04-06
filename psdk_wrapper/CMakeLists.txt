@@ -47,7 +47,7 @@ else()
 endif()
 
 # Check if PSDK lib is found
-set(PSDK_PATH /Tools/Payload-SDK/psdk_lib/lib/${TOOLCHAIN_NAME})
+set(PSDK_PATH ${PROJECT_SOURCE_DIR}/../../Payload-SDK/psdk_lib/lib/${TOOLCHAIN_NAME})
 find_library(PSDK_LIB NAMES libpayloadsdk.a PATHS ${PSDK_PATH})
 if (PSDK_LIB)
   message(STATUS "PSDK library found: ${PSDK_LIB}")
@@ -57,7 +57,7 @@ endif()
 
 
 # Include PSDK header files
-include_directories(/Tools/Payload-SDK/psdk_lib/include)
+include_directories(${PROJECT_SOURCE_DIR}/../..//Payload-SDK/psdk_lib/include)
 include_directories(include)
 include_directories(src/common)
 
