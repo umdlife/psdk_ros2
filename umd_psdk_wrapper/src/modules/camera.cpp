@@ -570,16 +570,18 @@ PSDKWrapper::camera_set_infrared_zoom_callback_(
 }
 
 void
-PSDKWrapper::camera_start_shoot_single_photo_callback_() // TODO(@lidiadltv): Change name, remove start word
+PSDKWrapper::camera_start_shoot_single_photo_callback_(
+    const std::shared_ptr<CameraStartShootSinglePhoto::Request> request,
+    const std::shared_ptr<CameraStartShootSinglePhoto::Response> response) // TODO(@lidiadltv): Change name, remove start word
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot single photo");
-  auto current_goal =
-      camera_start_shoot_single_photo_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraStartShootSinglePhoto::Result>();
-  action_result->result = false;
+  // auto current_goal =
+  //     camera_start_shoot_single_photo_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraStartShootSinglePhoto::Result>();
+  // action_result->result = false;
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   /*!< set camera work mode as shoot photo */
   // TODO(@lidiadtlv): Check if if works passing directly an int instead of
   // index
@@ -593,7 +595,8 @@ PSDKWrapper::camera_start_shoot_single_photo_callback_() // TODO(@lidiadltv): Ch
         "set mounted position %d camera's work mode as shoot-photo mode failed,"
         " error code :0x%08X",
         index, return_code);
-    camera_start_shoot_single_photo_action_->terminate_current(action_result);
+    response->success = false;
+    return;
   }
   /*!< set shoot-photo mode */
   return_code = DjiCameraManager_SetShootPhotoMode(
@@ -606,7 +609,8 @@ PSDKWrapper::camera_start_shoot_single_photo_callback_() // TODO(@lidiadltv): Ch
                 "single-photo mode failed,"
                 " error code :0x%08X",
                 index, return_code);
-    camera_start_shoot_single_photo_action_->terminate_current(action_result);
+    response->success = false;
+    return;
   }
   // TODO(@lidiadltv): Do I have to add a sleep like in the Payload-SDK
   // examples??
@@ -615,30 +619,33 @@ PSDKWrapper::camera_start_shoot_single_photo_callback_() // TODO(@lidiadltv): Ch
       index, DJI_CAMERA_MANAGER_SHOOT_PHOTO_MODE_SINGLE);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    camera_start_shoot_single_photo_action_->terminate_current(action_result);
+    response->success = false;
+    return;
   }
   else
   {
-    action_result->result = true;
-    camera_start_shoot_single_photo_action_->succeeded_current(action_result);
+    response->success = true;
+    return;
   }
 }
 
 void
-PSDKWrapper::camera_start_shoot_burst_photo_callback_()
+PSDKWrapper::camera_start_shoot_burst_photo_callback_(
+    const std::shared_ptr<CameraStartShootBurstPhoto::Request> request,
+    const std::shared_ptr<CameraStartShootBurstPhoto::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot burst photo");
-  auto current_goal =
-      camera_start_shoot_burst_photo_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraStartShootBurstPhoto::Result>();
-  action_result->result = false;
+  // auto current_goal =
+  //     camera_start_shoot_burst_photo_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraStartShootBurstPhoto::Result>();
+  // action_result->result = false;
   T_DjiReturnCode return_code;
 
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   E_DjiCameraBurstCount burst_count =
-      static_cast<E_DjiCameraBurstCount>(current_goal->photo_burst_count);
+      static_cast<E_DjiCameraBurstCount>(request->photo_burst_count);
 
   /*!< set camera work mode as shoot photo */
   return_code =
@@ -650,7 +657,7 @@ PSDKWrapper::camera_start_shoot_burst_photo_callback_()
         "set mounted position %d camera's work mode as shoot photo mode failed,"
         " error code :0x%08X.",
         index, return_code);
-    camera_start_shoot_burst_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   /*!< set shoot-photo mode */
@@ -661,7 +668,7 @@ PSDKWrapper::camera_start_shoot_burst_photo_callback_()
     RCLCPP_INFO(get_logger(),
                 "Not supported command for camera mounted in position %d ",
                 index);
-    camera_start_shoot_burst_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -671,7 +678,7 @@ PSDKWrapper::camera_start_shoot_burst_photo_callback_()
                 "burst-photo mode failed,"
                 " error code :0x%08X",
                 index, return_code);
-    camera_start_shoot_burst_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   /*! wait the APP change the shoot-photo mode display */
@@ -686,7 +693,7 @@ PSDKWrapper::camera_start_shoot_burst_photo_callback_()
                 "set mounted position %d camera's burst count(%d) failed,"
                 " error code :0x%08X.",
                 index, burst_count, return_code);
-    camera_start_shoot_burst_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   /*!< start to shoot single photo */
@@ -698,30 +705,32 @@ PSDKWrapper::camera_start_shoot_burst_photo_callback_()
                 "Mounted position %d camera shoot photo failed, "
                 "error code :0x%08X.",
                 index, return_code);
-    camera_start_shoot_burst_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   else
   {
-    action_result->result = true;
-    camera_start_shoot_burst_photo_action_->succeeded_current(action_result);
+    response->success = true;
+    return;
   }
 }
 
 void
-PSDKWrapper::camera_start_shoot_aeb_photo_callback_()
+PSDKWrapper::camera_start_shoot_aeb_photo_callback_(
+    const std::shared_ptr<CameraStartShootAEBPhoto::Request> request,
+    const std::shared_ptr<CameraStartShootAEBPhoto::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot AEB photo");
-  auto current_goal = camera_start_shoot_aeb_photo_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraStartShootAEBPhoto::Result>();
-  action_result->result = false;
+  // auto current_goal = camera_start_shoot_aeb_photo_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraStartShootAEBPhoto::Result>();
+  // action_result->result = false;
   T_DjiReturnCode return_code;
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   E_DjiCameraManagerPhotoAEBCount aeb_count =
       static_cast<E_DjiCameraManagerPhotoAEBCount>(
-          current_goal->photo_aeb_count);
+          request->photo_aeb_count);
 
   /*!< set camera work mode as shoot photo */
   return_code =
@@ -734,7 +743,7 @@ PSDKWrapper::camera_start_shoot_aeb_photo_callback_()
         "set mounted position %d camera's work mode as shoot photo mode failed,"
         " error code :0x%08X.",
         index, return_code);
-    camera_start_shoot_aeb_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
 
@@ -746,7 +755,7 @@ PSDKWrapper::camera_start_shoot_aeb_photo_callback_()
     RCLCPP_INFO(get_logger(),
                 "Command unsupported for camera mounted in position %d,",
                 index);
-    camera_start_shoot_aeb_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
 
@@ -757,7 +766,7 @@ PSDKWrapper::camera_start_shoot_aeb_photo_callback_()
                 "AEB-photo mode failed,"
                 " error code :0x%08X.",
                 index, return_code);
-    camera_start_shoot_aeb_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
 
@@ -773,7 +782,7 @@ PSDKWrapper::camera_start_shoot_aeb_photo_callback_()
                 "set mounted position %d camera's AEB count(%d) failed,"
                 " error code :0x%08X.",
                 index, aeb_count, return_code);
-    camera_start_shoot_aeb_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   /*!< start to shoot single photo */
@@ -785,32 +794,34 @@ PSDKWrapper::camera_start_shoot_aeb_photo_callback_()
                 "Mounted position %d camera shoot photo failed, "
                 "error code :0x%08X.",
                 index, return_code);
-    camera_start_shoot_aeb_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   else
   {
-    action_result->result = true;
-    camera_start_shoot_aeb_photo_action_->succeeded_current(action_result);
+    response->success = true;
+    return;
   }
 }
 
 void
-PSDKWrapper::camera_start_shoot_interval_photo_callback_()
+PSDKWrapper::camera_start_shoot_interval_photo_callback_(
+    const std::shared_ptr<CameraStartShootIntervalPhoto::Request> request,
+    const std::shared_ptr<CameraStartShootIntervalPhoto::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot interval photo");
-  auto current_goal =
-      camera_start_shoot_interval_photo_action_->get_current_goal();
-  auto action_result =
-      std::make_shared<CameraStartShootIntervalPhoto::Result>();
-  action_result->result = false;
+  // auto current_goal =
+  //     camera_start_shoot_interval_photo_action_->get_current_goal();
+  // auto action_result =
+  //     std::make_shared<CameraStartShootIntervalPhoto::Result>();
+  // action_result->result = false;
   T_DjiReturnCode return_code;
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiCameraPhotoTimeIntervalSettings interval_data;
-  interval_data.captureCount = current_goal->photo_num_conticap;
-  interval_data.timeIntervalSeconds = current_goal->time_interval;
+  interval_data.captureCount = request->photo_num_conticap;
+  interval_data.timeIntervalSeconds = request->time_interval;
 
   /*!< set camera work mode as shoot photo */
   return_code =
@@ -822,7 +833,7 @@ PSDKWrapper::camera_start_shoot_interval_photo_callback_()
         "set mounted position %d camera's work mode as shoot photo mode failed,"
         " error code :0x%08X.",
         index, return_code);
-    camera_start_shoot_interval_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   // TODO(@lidiadltv): Check if we can change TaskSleepMs time without
@@ -837,7 +848,7 @@ PSDKWrapper::camera_start_shoot_interval_photo_callback_()
     RCLCPP_INFO(get_logger(),
                 "Command unsupported for camera mounted in position %d,",
                 index);
-    camera_start_shoot_interval_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
 
@@ -849,7 +860,7 @@ PSDKWrapper::camera_start_shoot_interval_photo_callback_()
         "mode failed,"
         " error code :0x%08X",
         index, return_code);
-    camera_start_shoot_interval_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
 
@@ -868,7 +879,7 @@ PSDKWrapper::camera_start_shoot_interval_photo_callback_()
         "(photo number:%d, time interval:%d) failed, error code :0x%08X.",
         index, interval_data.captureCount, interval_data.timeIntervalSeconds,
         return_code);
-    camera_start_shoot_interval_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
 
@@ -885,26 +896,28 @@ PSDKWrapper::camera_start_shoot_interval_photo_callback_()
                 "Mounted position %d camera shoot photo failed, "
                 "error code :0x%08X.",
                 index, return_code);
-    camera_start_shoot_interval_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   else
   {
-    action_result->result = true;
-    camera_start_shoot_interval_photo_action_->succeeded_current(action_result);
+    response->success = true;
+    return;
   }
 }
 
 // TODO(@lidiadltv): Do not expose this, use the action cancel goal
 void
-PSDKWrapper::camera_stop_shoot_photo_callback_() 
+PSDKWrapper::camera_stop_shoot_photo_callback_(
+    const std::shared_ptr<CameraStopShootPhoto::Request> request,
+    const std::shared_ptr<CameraStopShootPhoto::Response> response) 
 {
   RCLCPP_INFO(get_logger(), "Calling Camera stop shoot photo");
-  auto current_goal = camera_stop_shoot_photo_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraStopShootPhoto::Result>();
-  action_result->result = false;
+  // auto current_goal = camera_stop_shoot_photo_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraStopShootPhoto::Result>();
+  // action_result->result = false;
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiReturnCode return_code;
 
   return_code = DjiCameraManager_StopShootPhoto(index);
@@ -915,26 +928,28 @@ PSDKWrapper::camera_stop_shoot_photo_callback_()
                 "Mounted position %d camera stop to shoot photo failed,"
                 " error code:0x%08X.",
                 index, return_code);
-    camera_stop_shoot_photo_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   else
   {
-    action_result->result = true;
-    camera_stop_shoot_photo_action_->succeeded_current(action_result);
+    response->success = true;
+    return;
   }
 }
 
 void
-PSDKWrapper::camera_record_video_callback_()
+PSDKWrapper::camera_record_video_callback_(
+    const std::shared_ptr<CameraRecordVideo::Request> request,
+    const std::shared_ptr<CameraRecordVideo::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera stop shoot photo");
-  auto current_goal = camera_record_video_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraRecordVideo::Result>();
-  action_result->result = false;
+  // auto current_goal = camera_record_video_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraRecordVideo::Result>();
+  // action_result->result = false;
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
-  bool record_status = current_goal->start_stop;
+      static_cast<E_DjiMountPosition>(request->payload_index);
+  bool record_status = request->start_stop;
   T_DjiReturnCode return_code;
 
   /*!< set camera work mode as record video */
@@ -948,7 +963,7 @@ PSDKWrapper::camera_record_video_callback_()
                 "mode failed,"
                 " error code :0x%08X",
                 index, return_code);
-    camera_record_video_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
 
@@ -963,7 +978,7 @@ PSDKWrapper::camera_record_video_callback_()
                   "Mounted position %d camera start to record video failed,"
                   " error code:0x%08X.",
                   index, return_code);
-      camera_record_video_action_->terminate_current(action_result);
+      response->success = false;
       return;
     }
   }
@@ -978,24 +993,26 @@ PSDKWrapper::camera_record_video_callback_()
                   "Mounted position %d camera stop to record video failed,"
                   " error code:0x%08X.",
                   index, return_code);
-      camera_record_video_action_->terminate_current(action_result);
+      response->success = false;
       return;
     }
   }
   // TODO(@lidiadltv): Test what happens if I leave the start_stop empty on the
   // call. Bug?
-  action_result->result = true;
-  camera_record_video_action_->succeeded_current(action_result);
+  response->success = true;
+  return;
 }
 
 void
-PSDKWrapper::camera_get_laser_ranging_info_callback_()
+PSDKWrapper::camera_get_laser_ranging_info_callback_(
+    const std::shared_ptr<CameraGetLaserRangingInfo::Request> request,
+    const std::shared_ptr<CameraGetLaserRangingInfo::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera get laser ranging info");
-  auto current_goal = camera_get_laser_ranging_info_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraGetLaserRangingInfo::Result>();
+  // auto current_goal = camera_get_laser_ranging_info_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraGetLaserRangingInfo::Result>();
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiReturnCode return_code;
   T_DjiCameraManagerLaserRangingInfo laser_ranging_info;
   return_code =
@@ -1007,33 +1024,36 @@ PSDKWrapper::camera_get_laser_ranging_info_callback_()
         "Could not take laser ranging info from camera mounted in position %d,"
         " error code :0x%08X",
         index, return_code);
-    camera_get_laser_ranging_info_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   else
   {
-    action_result->longitude = laser_ranging_info.longitude;
-    action_result->latitude = laser_ranging_info.latitude;
-    action_result->altitude = laser_ranging_info.altitude;
-    action_result->distance = laser_ranging_info.distance;
-    action_result->screen_x = laser_ranging_info.screenX;
-    action_result->screen_y = laser_ranging_info.screenY;
-    action_result->enable_lidar = laser_ranging_info.enable_lidar;
-    action_result->exception = laser_ranging_info.exception;
-    camera_get_laser_ranging_info_action_->succeeded_current(action_result);
+    response->longitude = laser_ranging_info.longitude;
+    response->latitude = laser_ranging_info.latitude;
+    response->altitude = laser_ranging_info.altitude;
+    response->distance = laser_ranging_info.distance;
+    response->screen_x = laser_ranging_info.screenX;
+    response->screen_y = laser_ranging_info.screenY;
+    response->enable_lidar = laser_ranging_info.enable_lidar;
+    response->exception = laser_ranging_info.exception;
+    response->success = true;
+    return;
   }
 }
 
 // TODO(@lidiadltv): Not working. Debug potential issue
 void
-PSDKWrapper::camera_download_file_list_callback_()
+PSDKWrapper::camera_download_file_list_callback_(
+    const std::shared_ptr<CameraDownloadFileList::Request> request,
+    const std::shared_ptr<CameraDownloadFileList::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera download file list");
-  auto current_goal = camera_download_file_list_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraDownloadFileList::Result>();
+  // auto current_goal = camera_download_file_list_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraDownloadFileList::Result>();
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiCameraManagerFileList media_file_list;
 
   return_code = DjiCameraManager_DownloadFileList(index, &media_file_list);
@@ -1041,73 +1061,76 @@ PSDKWrapper::camera_download_file_list_callback_()
   {
     RCLCPP_INFO(get_logger(), "Download file list failed, error code: 0x%08X.",
                 return_code);
-    camera_download_file_list_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   else
   {
-    action_result->result = media_file_list.totalCount;
-    camera_download_file_list_action_->succeeded_current(action_result);
+    // action_result->result = media_file_list.totalCount;
+    // TODO(@lidiadltv): Return file name list
+    response->success = true;
     return;
   }
 }
 
 // TODO(@lidiadltv): Not working. Debug potential issue
 void
-PSDKWrapper::camera_download_file_by_index_callback_()
+PSDKWrapper::camera_download_file_by_index_callback_(
+    const std::shared_ptr<CameraDownloadFileByIndex::Request> request,
+    const std::shared_ptr<CameraDownloadFileByIndex::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera download file by index");
-  auto current_goal = camera_download_file_by_index_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraDownloadFileByIndex::Result>();
-  action_result->result = false;
+  // auto current_goal = camera_download_file_by_index_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraDownloadFileByIndex::Result>();
+  // action_result->result = false;
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
 
   return_code =
-      DjiCameraManager_DownloadFileByIndex(index, current_goal->file_index);
+      DjiCameraManager_DownloadFileByIndex(index, request->file_index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_INFO(get_logger(),
                 "Download file by index failed, error code: 0x%08X.",
                 return_code);
-    camera_download_file_by_index_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   else
   {
-    action_result->result = true;
-    camera_download_file_by_index_action_->succeeded_current(action_result);
+    response->success = true;
     return;
   }
 }
 
 // TODO(@lidiadltv): Not working. Debug potential issue
 void
-PSDKWrapper::camera_delete_file_by_index_callback_()
+PSDKWrapper::camera_delete_file_by_index_callback_(
+    const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
+    const std::shared_ptr<CameraDeleteFileByIndex::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera delete file by index");
-  auto current_goal = camera_delete_file_by_index_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraDeleteFileByIndex::Result>();
-  action_result->result = false;
+  // auto current_goal = camera_delete_file_by_index_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraDeleteFileByIndex::Result>();
+  // action_result->result = false;
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiCameraManagerFileList media_file_list;
 
   return_code =
-      DjiCameraManager_DeleteFileByIndex(index, current_goal->file_index);
+      DjiCameraManager_DeleteFileByIndex(index, request->file_index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_INFO(get_logger(), "Failed to delete file, error code: 0x%08X.",
                 return_code);
-    camera_delete_file_by_index_action_->terminate_current(action_result);
+    response->success = false;
     return;
   }
   else
   {
-    action_result->result = true;
-    camera_delete_file_by_index_action_->succeeded_current(action_result);
+    response->success = true;
     return;
   }
 }
@@ -1177,18 +1200,20 @@ PSDKWrapper::create_streaming_pipeline()
 }
 
 void
-PSDKWrapper::camera_streaming_callback_()
+PSDKWrapper::camera_streaming_callback_(
+    const std::shared_ptr<CameraStreaming::Request> request,
+    const std::shared_ptr<CameraStreaming::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling streaming");
-  auto current_goal = camera_streaming_action_->get_current_goal();
-  auto action_result = std::make_shared<CameraStreaming::Result>();
-  action_result->result = false;
+  // auto current_goal = camera_streaming_action_->get_current_goal();
+  // auto action_result = std::make_shared<CameraStreaming::Result>();
+  // action_result->result = false;
   T_DjiReturnCode return_code;
   E_DjiLiveViewCameraPosition index =
-      static_cast<E_DjiLiveViewCameraPosition>(current_goal->payload_index);
+      static_cast<E_DjiLiveViewCameraPosition>(request->payload_index);
   E_DjiLiveViewCameraSource camera_source =
-      static_cast<E_DjiLiveViewCameraSource>(current_goal->camera_source);
-  if (current_goal->start_stop)
+      static_cast<E_DjiLiveViewCameraSource>(request->camera_source);
+  if (request->start_stop)
   {
     RCLCPP_INFO(get_logger(), "Starting streaming...");
     create_streaming_pipeline();
@@ -1200,16 +1225,16 @@ PSDKWrapper::camera_streaming_callback_()
       RCLCPP_INFO(get_logger(),
                   "Failed to start streaming, error code: 0x%08X.",
                   return_code);
-      camera_streaming_action_->terminate_current(action_result);
+      response->success = false;
       return;
     }
     else
     {
-      action_result->result = true;
-      camera_streaming_action_->succeeded_current(action_result);
+      response->success = true;
+      return;
     }
   }
-  else if (!current_goal->start_stop)
+  else if (!request->start_stop)
   {
     RCLCPP_INFO(get_logger(), "Stopping streaming...");
     return_code = DjiLiveview_StopH264Stream(index, camera_source);
@@ -1217,7 +1242,7 @@ PSDKWrapper::camera_streaming_callback_()
     {
       RCLCPP_INFO(get_logger(), "Failed to stop streaming, error code: 0x%08X.",
                   return_code);
-      camera_streaming_action_->terminate_current(action_result);
+      response->success = false;
       return;
     }
     else
@@ -1228,8 +1253,8 @@ PSDKWrapper::camera_streaming_callback_()
       {
         deocder->second->cleanup();
       }
-      action_result->result = true;
-      camera_streaming_action_->succeeded_current(action_result);
+      response->success = true;
+      return;
     }
   }
 }

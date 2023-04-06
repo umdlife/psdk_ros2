@@ -1,9 +1,6 @@
-# Goal definition
+#request
 uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
 uint8 photo_burst_count #see enum E_DjiCameraBurstCount in dji_typedef.h
 ---
-# Result definition
-bool result
----
-# Feedback definition
-
+#response
+bool success

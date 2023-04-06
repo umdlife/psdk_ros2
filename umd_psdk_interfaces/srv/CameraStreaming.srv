@@ -1,10 +1,8 @@
-# Goal definition
+#request
 uint8 payload_index 1 # see enum E_DjiLiveViewCameraPosition in dji_liveview.h
 bool start_stop # 0 for stop and 1 for start
 uint8 camera_source
----
-# Result definition
-bool result
 
 ---
-# Feedback definition
+#response
+bool success

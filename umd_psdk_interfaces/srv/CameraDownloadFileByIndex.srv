@@ -1,9 +1,6 @@
-# Goal definition
+#request
 uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
 uint32 file_index
 ---
-# Result definition
-bool result
-
----
-# Feedback definition
+#response
+bool success

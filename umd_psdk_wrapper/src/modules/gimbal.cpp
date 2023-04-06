@@ -82,31 +82,30 @@ PSDKWrapper::gimbal_reset_callback_(
 }
 
 void
-PSDKWrapper::gimbal_rotation_callback_()
+PSDKWrapper::gimbal_rotation_callback_(
+    const std::shared_ptr<GimbalRotation::Request> request,
+    const std::shared_ptr<GimbalRotation::Response> response)
 {
-  RCLCPP_INFO(get_logger(), "Calling Gimbal rotation action");
-  auto current_goal = gimbal_rotation_action_->get_current_goal();
-  auto action_result = std::make_shared<GimbalRotation::Result>();
-  action_result->result = false;
+  RCLCPP_INFO(get_logger(), "Calling Gimbal rotation service");
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(current_goal->payload_index);
+      static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiGimbalManagerRotation rotation;
   rotation.rotationMode =
-      static_cast<E_DjiGimbalRotationMode>(current_goal->rotation_mode);
-  rotation.pitch = current_goal->pitch;
-  rotation.roll = current_goal->roll;
-  rotation.yaw = current_goal->yaw;
-  rotation.time = current_goal->time;
+      static_cast<E_DjiGimbalRotationMode>(request->rotation_mode);
+  rotation.pitch = request->pitch;
+  rotation.roll = request->roll;
+  rotation.yaw = request->yaw;
+  rotation.time = request->time;
 
   // TODO(@lidiadltv): Test if DJI_GIMBAL_MODE_FREE is the mode I want to set by
-  // default
+  // default or it is DJI_GIMBAL_MODE_YAW_FOLLOW
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: 0x%08X",
                 return_code);
-    gimbal_rotation_action_->terminate_current(action_result);
+    response->success = false;
   }
 
   return_code = DjiGimbalManager_Rotate(index, rotation);
@@ -116,12 +115,13 @@ PSDKWrapper::gimbal_rotation_callback_()
         get_logger(),
         "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: 0x%08X",
         rotation.pitch, rotation.roll, rotation.yaw, return_code);
-    gimbal_rotation_action_->terminate_current(action_result);
+    response->success = false;
+    return;
   }
   else
   {
-    action_result->result = true;
-    gimbal_rotation_action_->succeeded_current(action_result);
+    response->success = true;
+    return;
   }
 }
 

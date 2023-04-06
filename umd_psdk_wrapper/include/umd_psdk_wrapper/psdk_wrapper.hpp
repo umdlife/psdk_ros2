@@ -55,18 +55,7 @@
 #include "dji_camera_manager.h"
 #include "dji_gimbal_manager.h"
 #include "dji_liveview.h"
-#include "umd_psdk_interfaces/action/camera_delete_file_by_index.hpp"
-#include "umd_psdk_interfaces/action/camera_download_file_by_index.hpp"
-#include "umd_psdk_interfaces/action/camera_download_file_list.hpp"
-#include "umd_psdk_interfaces/action/camera_get_laser_ranging_info.hpp"
-#include "umd_psdk_interfaces/action/camera_record_video.hpp"
-#include "umd_psdk_interfaces/action/camera_start_shoot_aeb_photo.hpp"
-#include "umd_psdk_interfaces/action/camera_start_shoot_burst_photo.hpp"
-#include "umd_psdk_interfaces/action/camera_start_shoot_interval_photo.hpp"
-#include "umd_psdk_interfaces/action/camera_start_shoot_single_photo.hpp"
-#include "umd_psdk_interfaces/action/camera_stop_shoot_photo.hpp"
-#include "umd_psdk_interfaces/action/camera_streaming.hpp"
-#include "umd_psdk_interfaces/action/gimbal_rotation.hpp"
+
 #include "umd_psdk_interfaces/msg/aircraft_status.hpp"
 #include "umd_psdk_interfaces/msg/altitude.hpp"
 #include "umd_psdk_interfaces/msg/battery.hpp"
@@ -93,10 +82,22 @@
 #include "umd_psdk_interfaces/srv/camera_set_iso.hpp"
 #include "umd_psdk_interfaces/srv/camera_set_optical_zoom.hpp"
 #include "umd_psdk_interfaces/srv/camera_set_shutter_speed.hpp"
+#include "umd_psdk_interfaces/srv/camera_delete_file_by_index.hpp"
+#include "umd_psdk_interfaces/srv/camera_download_file_by_index.hpp"
+#include "umd_psdk_interfaces/srv/camera_download_file_list.hpp"
+#include "umd_psdk_interfaces/srv/camera_get_laser_ranging_info.hpp"
+#include "umd_psdk_interfaces/srv/camera_record_video.hpp"
+#include "umd_psdk_interfaces/srv/camera_start_shoot_aeb_photo.hpp"
+#include "umd_psdk_interfaces/srv/camera_start_shoot_burst_photo.hpp"
+#include "umd_psdk_interfaces/srv/camera_start_shoot_interval_photo.hpp"
+#include "umd_psdk_interfaces/srv/camera_start_shoot_single_photo.hpp"
+#include "umd_psdk_interfaces/srv/camera_stop_shoot_photo.hpp"
+#include "umd_psdk_interfaces/srv/camera_streaming.hpp"
 #include "umd_psdk_interfaces/srv/get_home_altitude.hpp"
 #include "umd_psdk_interfaces/srv/get_obstacle_avoidance.hpp"
 #include "umd_psdk_interfaces/srv/gimbal_reset.hpp"
 #include "umd_psdk_interfaces/srv/gimbal_set_mode.hpp"
+#include "umd_psdk_interfaces/srv/gimbal_rotation.hpp"
 #include "umd_psdk_interfaces/srv/set_home_altitude.hpp"
 #include "umd_psdk_interfaces/srv/set_home_from_gps.hpp"
 #include "umd_psdk_interfaces/srv/set_obstacle_avoidance.hpp"
@@ -142,56 +143,50 @@ class PSDKWrapper : public nav2_util::LifecycleNode
    */
   ~PSDKWrapper();
 
-  // ROS actions
-  // Camera
-  using CameraStartShootSinglePhoto =
-      umd_psdk_interfaces::action::CameraStartShootSinglePhoto;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootSinglePhoto>>
-      camera_start_shoot_single_photo_action_;
-  using CameraStartShootBurstPhoto =
-      umd_psdk_interfaces::action::CameraStartShootBurstPhoto;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootBurstPhoto>>
-      camera_start_shoot_burst_photo_action_;
-  using CameraStartShootAEBPhoto =
-      umd_psdk_interfaces::action::CameraStartShootAEBPhoto;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootAEBPhoto>>
-      camera_start_shoot_aeb_photo_action_;
-  using CameraStartShootIntervalPhoto =
-      umd_psdk_interfaces::action::CameraStartShootIntervalPhoto;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraStartShootIntervalPhoto>>
-      camera_start_shoot_interval_photo_action_;
-  using CameraStopShootPhoto =
-      umd_psdk_interfaces::action::CameraStopShootPhoto;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraStopShootPhoto>>
-      camera_stop_shoot_photo_action_;
-  using CameraRecordVideo = umd_psdk_interfaces::action::CameraRecordVideo;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraRecordVideo>>
-      camera_record_video_action_;
-  using CameraGetLaserRangingInfo =
-      umd_psdk_interfaces::action::CameraGetLaserRangingInfo;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraGetLaserRangingInfo>>
-      camera_get_laser_ranging_info_action_;
-  using CameraDownloadFileList =
-      umd_psdk_interfaces::action::CameraDownloadFileList;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraDownloadFileList>>
-      camera_download_file_list_action_;
-  using CameraDownloadFileByIndex =
-      umd_psdk_interfaces::action::CameraDownloadFileByIndex;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>>
-      camera_download_file_by_index_action_;
-  using CameraDeleteFileByIndex =
-      umd_psdk_interfaces::action::CameraDeleteFileByIndex;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>
-      camera_delete_file_by_index_action_;
-  using CameraStreaming = umd_psdk_interfaces::action::CameraStreaming;
-  std::unique_ptr<nav2_util::SimpleActionServer<CameraStreaming>>
-      camera_streaming_action_;
-  // Gimbal
-  using GimbalRotation = umd_psdk_interfaces::action::GimbalRotation;
-  std::unique_ptr<nav2_util::SimpleActionServer<GimbalRotation>>
-      gimbal_rotation_action_;
   // ROS services
   // Camera
+  using CameraStartShootSinglePhoto =
+      umd_psdk_interfaces::srv::CameraStartShootSinglePhoto;
+  rclcpp::Service<CameraStartShootSinglePhoto>::SharedPtr 
+      camera_start_shoot_single_photo_service_;
+  using CameraStartShootBurstPhoto =
+      umd_psdk_interfaces::srv::CameraStartShootBurstPhoto;
+  rclcpp::Service<CameraStartShootBurstPhoto>::SharedPtr
+      camera_start_shoot_burst_photo_service_;
+  using CameraStartShootAEBPhoto =
+      umd_psdk_interfaces::srv::CameraStartShootAEBPhoto;
+  rclcpp::Service<CameraStartShootAEBPhoto>::SharedPtr
+      camera_start_shoot_aeb_photo_service_;
+  using CameraStartShootIntervalPhoto =
+      umd_psdk_interfaces::srv::CameraStartShootIntervalPhoto;
+  rclcpp::Service<CameraStartShootIntervalPhoto>::SharedPtr
+      camera_start_shoot_interval_photo_service_;
+  using CameraStopShootPhoto =
+      umd_psdk_interfaces::srv::CameraStopShootPhoto;
+  rclcpp::Service<CameraStopShootPhoto>::SharedPtr
+      camera_stop_shoot_photo_service_;
+  using CameraRecordVideo = umd_psdk_interfaces::srv::CameraRecordVideo;
+  rclcpp::Service<CameraRecordVideo>::SharedPtr
+      camera_record_video_service_;
+  using CameraGetLaserRangingInfo =
+      umd_psdk_interfaces::srv::CameraGetLaserRangingInfo;
+  rclcpp::Service<CameraGetLaserRangingInfo>::SharedPtr
+      camera_get_laser_ranging_info_service_;
+  using CameraDownloadFileList =
+      umd_psdk_interfaces::srv::CameraDownloadFileList;
+  rclcpp::Service<CameraDownloadFileList>::SharedPtr
+      camera_download_file_list_service_;
+  using CameraDownloadFileByIndex =
+      umd_psdk_interfaces::srv::CameraDownloadFileByIndex;
+  rclcpp::Service<CameraDownloadFileByIndex>::SharedPtr
+      camera_download_file_by_index_service_;
+  using CameraDeleteFileByIndex =
+      umd_psdk_interfaces::srv::CameraDeleteFileByIndex;
+  rclcpp::Service<CameraDeleteFileByIndex>::SharedPtr
+      camera_delete_file_by_index_service_;
+  using CameraStreaming = umd_psdk_interfaces::srv::CameraStreaming;
+  rclcpp::Service<CameraStreaming>::SharedPtr
+      camera_streaming_service_; 
   using CameraGetType = umd_psdk_interfaces::srv::CameraGetType;
   rclcpp::Service<CameraGetType>::SharedPtr camera_get_type_service_;
   using CameraSetEV = umd_psdk_interfaces::srv::CameraSetEV;
@@ -232,6 +227,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   using GimbalReset = umd_psdk_interfaces::srv::GimbalReset;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
+  using GimbalRotation = umd_psdk_interfaces::srv::GimbalRotation;
+  rclcpp::Service<GimbalRotation>::SharedPtr gimbal_rotation_service_;
 
  protected:
   T_DjiReturnCode start_camera_stream(CameraImageCallback callback,
@@ -691,12 +688,48 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void camera_set_infrared_zoom_callback_(
       const std::shared_ptr<CameraSetInfraredZoom::Request> request,
       const std::shared_ptr<CameraSetInfraredZoom::Response> response);
+  void camera_start_shoot_single_photo_callback_(
+      const std::shared_ptr<CameraStartShootSinglePhoto::Request> request,
+      const std::shared_ptr<CameraStartShootSinglePhoto::Response> response);
+  void camera_start_shoot_burst_photo_callback_(
+      const std::shared_ptr<CameraStartShootBurstPhoto::Request> request,
+      const std::shared_ptr<CameraStartShootBurstPhoto::Response> response);
+  void camera_start_shoot_aeb_photo_callback_(
+      const std::shared_ptr<CameraStartShootAEBPhoto::Request> request,
+      const std::shared_ptr<CameraStartShootAEBPhoto::Response> response);
+  void camera_start_shoot_interval_photo_callback_(
+      const std::shared_ptr<CameraStartShootIntervalPhoto::Request> request,
+      const std::shared_ptr<CameraStartShootIntervalPhoto::Response> response);
+  void camera_stop_shoot_photo_callback_(
+      const std::shared_ptr<CameraStopShootPhoto::Request> request,
+      const std::shared_ptr<CameraStopShootPhoto::Response> response);
+  void camera_record_video_callback_(
+      const std::shared_ptr<CameraRecordVideo::Request> request,
+      const std::shared_ptr<CameraRecordVideo::Response> response);
+  void camera_get_laser_ranging_info_callback_(
+      const std::shared_ptr<CameraGetLaserRangingInfo::Request> request,
+      const std::shared_ptr<CameraGetLaserRangingInfo::Response> response);
+  void camera_download_file_list_callback_(
+      const std::shared_ptr<CameraDownloadFileList::Request> request,
+      const std::shared_ptr<CameraDownloadFileList::Response> response);
+  void camera_download_file_by_index_callback_(
+      const std::shared_ptr<CameraDownloadFileByIndex::Request> request,
+      const std::shared_ptr<CameraDownloadFileByIndex::Response> response);
+  void camera_delete_file_by_index_callback_(
+      const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
+      const std::shared_ptr<CameraDeleteFileByIndex::Response> response);
+  void camera_streaming_callback_(
+      const std::shared_ptr<CameraStreaming::Request> request,
+      const std::shared_ptr<CameraStreaming::Response> response);
   void gimbal_set_mode_callback_(
       const std::shared_ptr<GimbalSetMode::Request> request,
       const std::shared_ptr<GimbalSetMode::Response> response);
   void gimbal_reset_callback_(
       const std::shared_ptr<GimbalReset::Request> request,
       const std::shared_ptr<GimbalReset::Response> response);
+  void gimbal_rotation_callback_(
+      const std::shared_ptr<GimbalRotation::Request> request,
+      const std::shared_ptr<GimbalRotation::Response> response);
   /* ROS Actions */
   friend void c_publish_streaming_callback(CameraRGBImage img, void* userData);
   friend void c_LiveviewConvertH264ToRgbCallback(
@@ -705,18 +738,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void publish_streaming_callback(CameraRGBImage img, void* userData);
   void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
                                         const uint8_t* buf, uint32_t bufLen);
-  void camera_start_shoot_single_photo_callback_();
-  void camera_start_shoot_burst_photo_callback_();
-  void camera_start_shoot_aeb_photo_callback_();
-  void camera_start_shoot_interval_photo_callback_();
-  void camera_stop_shoot_photo_callback_();
-  void camera_record_video_callback_();
-  void camera_get_laser_ranging_info_callback_();
-  void camera_download_file_list_callback_();
-  void camera_download_file_by_index_callback_();
-  void camera_delete_file_by_index_callback_();
-  void camera_streaming_callback_();
-  void gimbal_rotation_callback_();
 
   /* ROS Publishers */
   rclcpp_lifecycle::LifecyclePublisher<
