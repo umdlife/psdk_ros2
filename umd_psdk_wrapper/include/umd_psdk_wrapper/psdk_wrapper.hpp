@@ -13,8 +13,8 @@
  *
  */
 
-#ifndef UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
-#define UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
+#ifndef UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
+#define UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
 
 #include <dji_aircraft_info.h>
 #include <dji_core.h>
@@ -26,6 +26,8 @@
 #include <geometry_msgs/msg/quaternion_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <map>
+#include <memory>
 #include <nav2_util/lifecycle_node.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -53,7 +55,6 @@
 #include "dji_camera_manager.h"
 #include "dji_gimbal_manager.h"
 #include "dji_liveview.h"
-#include "dji_platform.h"
 #include "umd_psdk_interfaces/action/camera_delete_file_by_index.hpp"
 #include "umd_psdk_interfaces/action/camera_download_file_by_index.hpp"
 #include "umd_psdk_interfaces/action/camera_download_file_list.hpp"
@@ -924,4 +925,4 @@ extern std::shared_ptr<PSDKWrapper> global_ptr_;
 
 }  // namespace umd_psdk
 
-#endif  // UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
+#endif  // UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_

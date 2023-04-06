@@ -19,7 +19,6 @@
 
 namespace umd_psdk
 {
-
 bool
 PSDKWrapper::init_gimbal_manager()
 {

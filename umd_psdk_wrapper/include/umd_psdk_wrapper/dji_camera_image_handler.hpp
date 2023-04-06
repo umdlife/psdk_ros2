@@ -24,8 +24,8 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef DJI_CAMERA_IMAGE_HANDLER_H
-#define DJI_CAMERA_IMAGE_HANDLER_H
+#ifndef UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_
+#define UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_
 
 /* Includes ------------------------------------------------------------------*/
 #include <cstdint>
@@ -34,8 +34,7 @@
 #include "pthread.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C"{
 #endif
 
   /* Exported constants
@@ -78,6 +77,4 @@ extern "C"
 }
 #endif
 
-#endif  // DJI_CAMERA_IMAGE_HANDLER_H
-/************************ (C) COPYRIGHT DJI Innovations *******END OF
- * FILE******/
+#endif  // UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_

@@ -232,14 +232,14 @@ DJICameraStreamDecoder::decodeBuffer(const uint8_t *buf, int bufLen)
 
       if (!gotPicture)
       {
-        ////DSTATUS_PRIVATE("Got Frame, but no picture\n");
+        //// DSTATUS_PRIVATE("Got Frame, but no picture\n");
         continue;
       }
       else
       {
         int w = pFrameYUV->width;
         int h = pFrameYUV->height;
-        ////DSTATUS_PRIVATE("Got picture! size=%dx%d\n", w, h);
+        //// DSTATUS_PRIVATE("Got picture! size=%dx%d\n", w, h);
 
         if (nullptr == pSwsCtx)
         {
