@@ -1,0 +1,11 @@
+#request
+uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
+uint8 rotation_mode # see E_DjiGimbalRotationMode in dji_gimbal_manager.h 0 /*!< Relative angle rotation mode, represents rotating gimbal specified angles based on current angles. */
+
+float32 pitch
+float32 roll
+float32 yaw
+float32 time  # /*!< Expect execution time of gimbal rotation, unit: second. */
+---
+#response
+bool success

@@ -832,38 +832,39 @@ PSDKWrapper::initialize_ros_elements()
           "get_horizontal_radar_obstacle_avoidance",
           std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb,
                     this, _1, _2));
-  //// Camera
-  // Actions
-  camera_start_shoot_single_photo_action_ = std::make_unique<
-      nav2_util::SimpleActionServer<CameraStartShootSinglePhoto>>(
-      shared_from_this(), "camera_start_shoot_single_photo",
-      std::bind(&PSDKWrapper::camera_start_shoot_single_photo_callback_, this));
-  camera_start_shoot_burst_photo_action_ = std::make_unique<
-      nav2_util::SimpleActionServer<CameraStartShootBurstPhoto>>(
-      shared_from_this(), "camera_start_shoot_burst_photo",
-      std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_callback_, this));
-  camera_start_shoot_aeb_photo_action_ =
-      std::make_unique<nav2_util::SimpleActionServer<CameraStartShootAEBPhoto>>(
-          shared_from_this(), "camera_start_shoot_aeb_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_callback_,
-                    this));
-  camera_start_shoot_interval_photo_action_ = std::make_unique<
-      nav2_util::SimpleActionServer<CameraStartShootIntervalPhoto>>(
-      shared_from_this(), "camera_start_shoot_interval_photo",
-      std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_callback_,
-                this));
-  camera_stop_shoot_photo_action_ =
-      std::make_unique<nav2_util::SimpleActionServer<CameraStopShootPhoto>>(
-          shared_from_this(), "camera_stop_shoot_photo",
-          std::bind(&PSDKWrapper::camera_stop_shoot_photo_callback_, this));
-  camera_record_video_action_ =
-      std::make_unique<nav2_util::SimpleActionServer<CameraRecordVideo>>(
-          shared_from_this(), "camera_record_video",
-          std::bind(&PSDKWrapper::camera_record_video_callback_, this));
-  camera_get_laser_ranging_info_action_ = std::make_unique<
-      nav2_util::SimpleActionServer<CameraGetLaserRangingInfo>>(
-      shared_from_this(), "camera_get_laser_ranging_info",
-      std::bind(&PSDKWrapper::camera_get_laser_ranging_info_callback_, this));
+  // Camera
+  camera_start_shoot_single_photo_service_= 
+      create_service<CameraStartShootSinglePhoto>(
+      "camera_start_shoot_single_photo",
+      std::bind(&PSDKWrapper::camera_start_shoot_single_photo_callback_, this, _1, _2),
+      qos_profile_);
+  camera_start_shoot_burst_photo_service_ = 
+      create_service<CameraStartShootBurstPhoto>(
+      "camera_start_shoot_burst_photo",
+      std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_callback_, this, _1, _2),
+      qos_profile_);
+  camera_start_shoot_aeb_photo_service_ = create_service<CameraStartShootAEBPhoto>(
+      "camera_start_shoot_aeb_photo",
+      std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_callback_,
+      this, _1, _2),
+      qos_profile_);
+  camera_start_shoot_interval_photo_service_ = 
+      create_service<CameraStartShootIntervalPhoto>(
+      "camera_start_shoot_interval_photo",
+      std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_callback_, this, _1, _2),
+      qos_profile_);
+  camera_stop_shoot_photo_service_ = create_service<CameraStopShootPhoto>(
+      "camera_stop_shoot_photo",
+      std::bind(&PSDKWrapper::camera_stop_shoot_photo_callback_, this, _1, _2),
+      qos_profile_);
+  camera_record_video_service_ = create_service<CameraRecordVideo>(
+      "camera_record_video",
+      std::bind(&PSDKWrapper::camera_record_video_callback_, this, _1, _2),
+      qos_profile_);
+  camera_get_laser_ranging_info_service_ = create_service<CameraGetLaserRangingInfo>(
+      "camera_get_laser_ranging_info",
+      std::bind(&PSDKWrapper::camera_get_laser_ranging_info_callback_, this, _1, _2),
+      qos_profile_);
   // TODO(@lidiadltv): Enable these actions once are working properly
   // camera_download_file_list_action_ =
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
@@ -880,11 +881,10 @@ PSDKWrapper::initialize_ros_elements()
   //           shared_from_this(), "camera_delete_file_by_index",
   //           std::bind(&PSDKWrapper::camera_delete_file_by_index_callback_,
   //           this));
-  camera_streaming_action_ =
-      std::make_unique<nav2_util::SimpleActionServer<CameraStreaming>>(
-          shared_from_this(), "camera_streaming",
-          std::bind(&PSDKWrapper::camera_streaming_callback_, this));
-  // Services
+  camera_streaming_service_ = create_service<CameraStreaming>(
+      "camera_streaming",
+      std::bind(&PSDKWrapper::camera_streaming_callback_, this, _1, _2),
+      qos_profile_);
   camera_get_type_service_ = create_service<CameraGetType>(
       "camera_get_type",
       std::bind(&PSDKWrapper::camera_get_type_callback_, this, _1, _2),
@@ -951,11 +951,10 @@ PSDKWrapper::initialize_ros_elements()
       "gimbal_reset",
       std::bind(&PSDKWrapper::gimbal_reset_callback_, this, _1, _2),
       qos_profile_);
-  // Actions
-  gimbal_rotation_action_ =
-      std::make_unique<nav2_util::SimpleActionServer<GimbalRotation>>(
-          shared_from_this(), "gimbal_rotation",
-          std::bind(&PSDKWrapper::gimbal_rotation_callback_, this));
+  gimbal_rotation_service_ = create_service<GimbalRotation>(
+      "gimbal_rotation",
+      std::bind(&PSDKWrapper::gimbal_rotation_callback_, this,  _1, _2),
+      qos_profile_);
 }
 
 void
@@ -994,21 +993,6 @@ PSDKWrapper::activate_ros_elements()
   // relative_height_pub_->on_activate();
   // relative_obstacle_info_pub_->on_activate();
   // home_position_pub_->on_activate();
-
-  // Camera
-  camera_start_shoot_single_photo_action_->activate();
-  camera_start_shoot_burst_photo_action_->activate();
-  camera_start_shoot_aeb_photo_action_->activate();
-  camera_start_shoot_interval_photo_action_->activate();
-  camera_stop_shoot_photo_action_->activate();
-  camera_record_video_action_->activate();
-  camera_get_laser_ranging_info_action_->activate();
-  camera_download_file_list_action_->activate();
-  camera_download_file_by_index_action_->activate();
-  camera_delete_file_by_index_action_->activate();
-  camera_streaming_action_->activate();
-  // Gimbal
-  gimbal_rotation_action_->activate();
 }
 
 void
@@ -1047,21 +1031,6 @@ PSDKWrapper::deactivate_ros_elements()
   // relative_height_pub_->on_deactivate();
   // relative_obstacle_info_pub_->on_deactivate();
   // home_position_pub_->on_deactivate();
-
-  // Camera
-  camera_start_shoot_single_photo_action_->deactivate();
-  camera_start_shoot_burst_photo_action_->deactivate();
-  camera_start_shoot_aeb_photo_action_->deactivate();
-  camera_start_shoot_interval_photo_action_->deactivate();
-  camera_stop_shoot_photo_action_->deactivate();
-  camera_record_video_action_->deactivate();
-  camera_get_laser_ranging_info_action_->deactivate();
-  camera_download_file_list_action_->deactivate();
-  camera_download_file_by_index_action_->deactivate();
-  camera_delete_file_by_index_action_->deactivate();
-  camera_streaming_action_->deactivate();
-  // Gimbal
-  gimbal_rotation_action_->deactivate();
 }
 
 void
@@ -1136,12 +1105,12 @@ PSDKWrapper::clean_ros_elements()
   get_horizontal_radar_obstacle_avoidance_srv_.reset();
 
   // Camera
-  camera_start_shoot_single_photo_action_.reset();
-  camera_start_shoot_burst_photo_action_.reset();
-  camera_start_shoot_aeb_photo_action_.reset();
-  camera_start_shoot_interval_photo_action_.reset();
-  camera_stop_shoot_photo_action_.reset();
-  camera_record_video_action_.reset();
+  camera_start_shoot_single_photo_service_.reset();
+  camera_start_shoot_burst_photo_service_.reset();
+  camera_start_shoot_aeb_photo_service_.reset();
+  camera_start_shoot_interval_photo_service_.reset();
+  camera_stop_shoot_photo_service_.reset();
+  camera_record_video_service_.reset();
   camera_get_type_service_.reset();
   camera_set_ev_service_.reset();
   camera_get_ev_service_.reset();
@@ -1156,15 +1125,15 @@ PSDKWrapper::clean_ros_elements()
   camera_set_optical_zoom_service_.reset();
   camera_get_optical_zoom_service_.reset();
   camera_set_infrared_zoom_service_.reset();
-  camera_get_laser_ranging_info_action_.reset();
-  camera_download_file_list_action_.reset();
-  camera_download_file_by_index_action_.reset();
-  camera_delete_file_by_index_action_.reset();
-  camera_streaming_action_.reset();
+  camera_get_laser_ranging_info_service_.reset();
+  camera_download_file_list_service_.reset();
+  camera_download_file_by_index_service_.reset();
+  camera_delete_file_by_index_service_.reset();
+  camera_streaming_service_.reset();
   // Gimbal
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();
-  gimbal_rotation_action_.reset();
+  gimbal_rotation_service_.reset();
 }
 
 }  // namespace umd_psdk
