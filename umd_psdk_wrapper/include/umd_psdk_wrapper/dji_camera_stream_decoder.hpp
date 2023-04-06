@@ -24,8 +24,8 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef DJI_CAMERA_STREAM_DECCODER_H
-#define DJI_CAMERA_STREAM_DECCODER_H
+#ifndef UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_
+#define UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_
 
 /* Includes ------------------------------------------------------------------*/
 extern "C"
@@ -89,6 +89,4 @@ extern "C"
 }
 #endif
 
-#endif  // DJI_CAMERA_STREAM_DECCODER_H
-/************************ (C) COPYRIGHT DJI Innovations *******END OF
- * FILE******/
+#endif  // UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_

@@ -20,6 +20,7 @@
   <depend>std_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>umd_psdk_interfaces</depend>
+  <depend>umd_rtsp</depend>
   <depend>std_srvs</depend>
 
   <export>

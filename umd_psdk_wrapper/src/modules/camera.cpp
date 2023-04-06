@@ -21,7 +21,6 @@ std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder *> streamDecoder;
 
 namespace umd_psdk
 {
-
 bool
 PSDKWrapper::init_camera_manager()
 {
@@ -75,7 +74,7 @@ PSDKWrapper::camera_get_type_callback_(
     return;
   }
   else
-  {
+  { // TODO(@lidiadltv): Remove this map
     for (auto &it : camera_type_str)
     {
       if (it.first == camera_type)
@@ -501,7 +500,7 @@ PSDKWrapper::camera_set_optical_zoom_callback_(
     return;
   }
   else
-  {
+  { // TODO(@lidiadltv): If we can wait to see the result is an action
     response->success = true;
     return;
   }
@@ -532,6 +531,7 @@ PSDKWrapper::camera_get_optical_zoom_callback_(
   {
     response->success = true;
     // TODO(@lidiadltv): Return also maxOpticalZoomFactor in the service?
+    // Add this to camera info
     response->zoom_factor = zoom_factor.currentOpticalZoomFactor;
     return;
   }
@@ -570,7 +570,7 @@ PSDKWrapper::camera_set_infrared_zoom_callback_(
 }
 
 void
-PSDKWrapper::camera_start_shoot_single_photo_callback_()
+PSDKWrapper::camera_start_shoot_single_photo_callback_() // TODO(@lidiadltv): Change name, remove start word
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot single photo");
   auto current_goal =
@@ -895,8 +895,9 @@ PSDKWrapper::camera_start_shoot_interval_photo_callback_()
   }
 }
 
+// TODO(@lidiadltv): Do not expose this, use the action cancel goal
 void
-PSDKWrapper::camera_stop_shoot_photo_callback_()
+PSDKWrapper::camera_stop_shoot_photo_callback_() 
 {
   RCLCPP_INFO(get_logger(), "Calling Camera stop shoot photo");
   auto current_goal = camera_stop_shoot_photo_action_->get_current_goal();
