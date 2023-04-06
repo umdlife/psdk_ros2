@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(umd_psdk_wrapper)
+project(psdk_wrapper)
 
 SET(BUILD_SHARED_LIBS ON)
 
@@ -29,7 +29,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(umd_psdk_interfaces REQUIRED)
+find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 
 # Find toolchain name needed to select the right PSDK lib
@@ -69,7 +69,7 @@ set(dependencies
   geometry_msgs
   std_msgs
   nav_msgs
-  umd_psdk_interfaces
+  psdk_interfaces
   std_srvs
 )
 
