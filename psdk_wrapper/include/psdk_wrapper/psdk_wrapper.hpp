@@ -1,6 +1,6 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` package and is subject to
+ * This file is part of the `psdk_wrapper` package and is subject to
  * the terms and conditions defined in the file LICENSE.txt contained therein.
  */
 /**
@@ -13,8 +13,8 @@
  *
  */
 
-#ifndef UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
-#define UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
 
 #include <dji_aircraft_info.h>
 #include <dji_core.h>
@@ -48,41 +48,41 @@
 #include "osal_socket.h"   //NOLINT
 
 // PSDK wrapper interfaces
-#include "umd_psdk_interfaces/msg/aircraft_status.hpp"
-#include "umd_psdk_interfaces/msg/altitude.hpp"
-#include "umd_psdk_interfaces/msg/battery.hpp"
-#include "umd_psdk_interfaces/msg/flight_anomaly.hpp"
-#include "umd_psdk_interfaces/msg/flight_status.hpp"
-#include "umd_psdk_interfaces/msg/gimbal_status.hpp"
-#include "umd_psdk_interfaces/msg/gps_details.hpp"
-#include "umd_psdk_interfaces/msg/gps_fused.hpp"
-#include "umd_psdk_interfaces/msg/home_position.hpp"
-#include "umd_psdk_interfaces/msg/position_fused.hpp"
-#include "umd_psdk_interfaces/msg/relative_obstacle_info.hpp"
-#include "umd_psdk_interfaces/msg/rtk_yaw.hpp"
-#include "umd_psdk_interfaces/srv/get_home_altitude.hpp"
-#include "umd_psdk_interfaces/srv/get_obstacle_avoidance.hpp"
-#include "umd_psdk_interfaces/srv/set_home_altitude.hpp"
-#include "umd_psdk_interfaces/srv/set_home_from_gps.hpp"
-#include "umd_psdk_interfaces/srv/set_obstacle_avoidance.hpp"
-#include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_interfaces/msg/aircraft_status.hpp"
+#include "psdk_interfaces/msg/altitude.hpp"
+#include "psdk_interfaces/msg/battery.hpp"
+#include "psdk_interfaces/msg/flight_anomaly.hpp"
+#include "psdk_interfaces/msg/flight_status.hpp"
+#include "psdk_interfaces/msg/gimbal_status.hpp"
+#include "psdk_interfaces/msg/gps_details.hpp"
+#include "psdk_interfaces/msg/gps_fused.hpp"
+#include "psdk_interfaces/msg/home_position.hpp"
+#include "psdk_interfaces/msg/position_fused.hpp"
+#include "psdk_interfaces/msg/relative_obstacle_info.hpp"
+#include "psdk_interfaces/msg/rtk_yaw.hpp"
+#include "psdk_interfaces/srv/get_home_altitude.hpp"
+#include "psdk_interfaces/srv/get_obstacle_avoidance.hpp"
+#include "psdk_interfaces/srv/set_home_altitude.hpp"
+#include "psdk_interfaces/srv/set_home_from_gps.hpp"
+#include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
+#include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 /**
- * @class umd_psdk::PSDKWrapper
+ * @class psdk_ros2::PSDKWrapper
  * @brief A ROS wrapper that brings all the DJI PSDK functionalities to ROS
  */
 
 class PSDKWrapper : public nav2_util::LifecycleNode
 {
  public:
-  using SetHomeFromGPS = umd_psdk_interfaces::srv::SetHomeFromGPS;
+  using SetHomeFromGPS = psdk_interfaces::srv::SetHomeFromGPS;
   using Trigger = std_srvs::srv::Trigger;
-  using SetHomeAltitude = umd_psdk_interfaces::srv::SetHomeAltitude;
-  using GetHomeAltitude = umd_psdk_interfaces::srv::GetHomeAltitude;
-  using SetObstacleAvoidance = umd_psdk_interfaces::srv::SetObstacleAvoidance;
-  using GetObstacleAvoidance = umd_psdk_interfaces::srv::GetObstacleAvoidance;
+  using SetHomeAltitude = psdk_interfaces::srv::SetHomeAltitude;
+  using GetHomeAltitude = psdk_interfaces::srv::GetHomeAltitude;
+  using SetObstacleAvoidance = psdk_interfaces::srv::SetObstacleAvoidance;
+  using GetObstacleAvoidance = psdk_interfaces::srv::GetObstacleAvoidance;
 
   /**
    * @brief Construct a new PSDKWrapper object
@@ -503,15 +503,15 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>::SharedPtr
       imu_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::PositionFused>::SharedPtr position_fused_pub_;
+      psdk_interfaces::msg::PositionFused>::SharedPtr position_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::GPSFused>::SharedPtr gps_fused_pub_;
+      psdk_interfaces::msg::GPSFused>::SharedPtr gps_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
       gps_position_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::TwistStamped>::SharedPtr gps_velocity_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::GPSDetails>::SharedPtr gps_details_pub_;
+      psdk_interfaces::msg::GPSDetails>::SharedPtr gps_details_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       gps_signal_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
@@ -520,8 +520,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode
       rtk_position_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::TwistStamped>::SharedPtr rtk_velocity_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::RTKYaw>::SharedPtr rtk_yaw_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::RTKYaw>::SharedPtr
+      rtk_yaw_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       rtk_position_info_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
@@ -533,34 +533,34 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr gimbal_angles_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::GimbalStatus>::SharedPtr gimbal_status_pub_;
+      psdk_interfaces::msg::GimbalStatus>::SharedPtr gimbal_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::FlightStatus>::SharedPtr flight_status_pub_;
+      psdk_interfaces::msg::FlightStatus>::SharedPtr flight_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       landing_gear_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt16>::SharedPtr
       motor_start_error_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::AircraftStatus>::SharedPtr aircraft_status_pub_;
+      psdk_interfaces::msg::AircraftStatus>::SharedPtr aircraft_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      umd_psdk_interfaces::msg::Battery>::SharedPtr battery_pub_;
+      psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::Battery>::SharedPtr
+      battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
   //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
   //       acceleration_ground_pub_;
   //   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::SharedPtr
   //       acceleration_body_pub_;
-  //   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::Altitude>::SharedPtr
+  //   rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::Altitude>::SharedPtr
   //       altitude_pub_;
   //   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
   //       relative_height_pub_;
 
-  //   rclcpp_lifecycle::LifecyclePublisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>::
+  //   rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::RelativeObstacleInfo>::
   //       SharedPtr relative_obstacle_info_pub_;
   //   rclcpp_lifecycle::LifecyclePublisher<
-  //       umd_psdk_interfaces::msg::HomePosition>::SharedPtr
+  //       psdk_interfacesg::HomePosition>::SharedPtr
   //       home_position_pub_;
 
   /* ROS subscribers*/
@@ -676,6 +676,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
  * functions, such as the C-type callbacks
  */
 extern std::shared_ptr<PSDKWrapper> global_ptr_;
-}  // namespace umd_psdk
+}  // namespace psdk_ros2
 
-#endif  // UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_HPP_

@@ -1,6 +1,6 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` package and is subject to
+ * This file is part of the `psdk_wrapper` package and is subject to
  * the terms and conditions defined in the file LICENSE.txt contained therein.
  */
 /**
@@ -12,8 +12,8 @@
  * Contact: bianca@unmanned.life
  *
  */
-#ifndef UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
-#define UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
 
 #include <dji_fc_subscription.h>
 #include <dji_flight_controller.h>
@@ -38,9 +38,9 @@
 
 #define GOOD_GPS_SIGNAL_LEVEL 5
 
-namespace umd_psdk
+namespace psdk_ros2
 {
-namespace utils
+namespace psdk_utils
 {
 
 struct DJITopic
@@ -146,7 +146,7 @@ double inline rad_to_deg(const double radians)
 {
   return (radians * 180) / C_PI;
 };
-};  // namespace utils
-}  // namespace umd_psdk
+};  // namespace psdk_utils
+}  // namespace psdk_ros2
 
-#endif  // UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_

@@ -1,6 +1,6 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is
+ * This file is part of the `psdk_wrapper` source code package and is
  * subject to the terms and conditions defined in the file LICENSE.txt contained
  * therein.
  */
@@ -14,10 +14,10 @@
  *
  */
 
-#include "umd_psdk_wrapper/psdk_wrapper.hpp"
-#include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/psdk_wrapper.hpp"
+#include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 
 bool
@@ -605,13 +605,13 @@ PSDKWrapper::flight_control_position_yaw_cb(
    */
   tf2::Matrix3x3 rotation_FLU2ENU;
   rotation_FLU2ENU.setRPY(0.0, 0.0, yaw_setpoint);
-  tf2::Matrix3x3 rotation_FRD2NED(umd_psdk::utils::R_NED2ENU.transpose() *
+  tf2::Matrix3x3 rotation_FRD2NED(psdk_utils::R_NED2ENU.transpose() *
                                   rotation_FLU2ENU *
-                                  utils::R_FLU2FRD.transpose());
+                                  psdk_utils::R_FLU2FRD.transpose());
   double temp1, temp2, temp_yaw;
   rotation_FRD2NED.getRPY(temp1, temp2, temp_yaw);
   yaw_cmd = static_cast<float>(temp_yaw);
-  yaw_cmd = utils::rad_to_deg(yaw_cmd);
+  yaw_cmd = psdk_utils::rad_to_deg(yaw_cmd);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
                                                            yaw_cmd};
@@ -639,7 +639,7 @@ PSDKWrapper::flight_control_velocity_yawrate_cb(
   x_cmd = y_setpoint;
   y_cmd = x_setpoint;
   z_cmd = z_setpoint;
-  yaw_cmd = utils::rad_to_deg(-yaw_setpoint);
+  yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
                                                            yaw_cmd};
@@ -668,7 +668,7 @@ PSDKWrapper::flight_control_body_velocity_yawrate_cb(
   x_cmd = x_setpoint;
   y_cmd = -y_setpoint;
   z_cmd = z_setpoint;
-  yaw_cmd = utils::rad_to_deg(-yaw_setpoint);
+  yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
                                                            yaw_cmd};
@@ -694,14 +694,14 @@ PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb(
 
   float x_cmd, y_cmd, z_cmd, yaw_cmd;
   // Transform from F-R to F-L
-  x_cmd = utils::rad_to_deg(x_setpoint);
-  y_cmd = utils::rad_to_deg(-y_setpoint);
+  x_cmd = psdk_utils::rad_to_deg(x_setpoint);
+  y_cmd = psdk_utils::rad_to_deg(-y_setpoint);
   z_cmd = z_setpoint;
-  yaw_cmd = utils::rad_to_deg(-yaw_setpoint);
+  yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
                                                            yaw_cmd};
   DjiFlightController_ExecuteJoystickAction(joystick_command);
 }
 
-}  // namespace umd_psdk
+}  // namespace psdk_ros2

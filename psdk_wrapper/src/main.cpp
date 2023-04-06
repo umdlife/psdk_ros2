@@ -1,6 +1,6 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is
+ * This file is part of the `psdk_wrapper` source code package and is
  * subject to the terms and conditions defined in the file LICENSE.txt contained
  * therein.
  */
@@ -13,17 +13,17 @@
  * Contact: bianca@unmanned.life
  *
  */
+#include "psdk_wrapper/psdk_wrapper.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "umd_psdk_wrapper/psdk_wrapper.hpp"
 
-std::shared_ptr<umd_psdk::PSDKWrapper> umd_psdk::global_ptr_;
+std::shared_ptr<psdk_ros2::PSDKWrapper> psdk_ros2::global_ptr_;
 int
 main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
-  auto psdk_node = std::make_shared<umd_psdk::PSDKWrapper>("psdk_node");
+  auto psdk_node = std::make_shared<psdk_ros2::PSDKWrapper>("psdk_node");
 
-  umd_psdk::global_ptr_ = psdk_node;
+  psdk_ros2::global_ptr_ = psdk_node;
   rclcpp::spin(psdk_node->get_node_base_interface());
 
   rclcpp::shutdown();
