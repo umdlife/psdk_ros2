@@ -36,6 +36,8 @@ find_package(umd_psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(umd_rtsp REQUIRED)
+find_package(nlohmann_json 3.7.0 REQUIRED)
+find_package(umd_http REQUIRED)
 
 
 include_directories(include
