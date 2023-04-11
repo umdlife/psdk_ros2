@@ -14,10 +14,10 @@
  *
  */
 
-#include "umd_psdk_wrapper/psdk_wrapper.hpp"
-#include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/psdk_wrapper.hpp"
+#include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 bool
 PSDKWrapper::init_gimbal_manager()
@@ -125,4 +125,4 @@ PSDKWrapper::gimbal_rotation_callback_(
   }
 }
 
-}  // namespace umd_psdk
+}  // namespace psdk_ros2

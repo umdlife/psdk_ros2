@@ -32,7 +32,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(umd_psdk_interfaces REQUIRED)
+find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(umd_rtsp REQUIRED)
@@ -83,7 +83,7 @@ set(dependencies
   geometry_msgs
   std_msgs
   nav_msgs
-  umd_psdk_interfaces
+  psdk_interfaces
   std_srvs
 )
 

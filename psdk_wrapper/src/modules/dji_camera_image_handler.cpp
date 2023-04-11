@@ -23,7 +23,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "umd_psdk_wrapper/dji_camera_image_handler.hpp"
+#include "psdk_wrapper/dji_camera_image_handler.hpp"
 
 #include <iostream>
 
