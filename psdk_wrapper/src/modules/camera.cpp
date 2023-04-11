@@ -14,12 +14,12 @@
  *
  */
 
-#include "umd_psdk_wrapper/psdk_wrapper.hpp"
-#include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/psdk_wrapper.hpp"
+#include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
 std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder *> streamDecoder;
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 bool
 PSDKWrapper::init_camera_manager()
@@ -1259,4 +1259,4 @@ PSDKWrapper::camera_streaming_callback_(
   }
 }
 
-}  // namespace umd_psdk
+}  // namespace psdk_ros2

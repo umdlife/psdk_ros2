@@ -56,53 +56,53 @@
 #include "dji_gimbal_manager.h"
 #include "dji_liveview.h"
 
-#include "umd_psdk_interfaces/msg/aircraft_status.hpp"
-#include "umd_psdk_interfaces/msg/altitude.hpp"
-#include "umd_psdk_interfaces/msg/battery.hpp"
-#include "umd_psdk_interfaces/msg/flight_anomaly.hpp"
-#include "umd_psdk_interfaces/msg/flight_status.hpp"
-#include "umd_psdk_interfaces/msg/gimbal_status.hpp"
-#include "umd_psdk_interfaces/msg/gps_details.hpp"
-#include "umd_psdk_interfaces/msg/gps_fused.hpp"
-#include "umd_psdk_interfaces/msg/home_position.hpp"
-#include "umd_psdk_interfaces/msg/position_fused.hpp"
-#include "umd_psdk_interfaces/msg/relative_obstacle_info.hpp"
-#include "umd_psdk_interfaces/msg/rtk_yaw.hpp"
-#include "umd_psdk_interfaces/srv/camera_get_ev.hpp"
-#include "umd_psdk_interfaces/srv/camera_get_focus_mode.hpp"
-#include "umd_psdk_interfaces/srv/camera_get_focus_target.hpp"
-#include "umd_psdk_interfaces/srv/camera_get_iso.hpp"
-#include "umd_psdk_interfaces/srv/camera_get_optical_zoom.hpp"
-#include "umd_psdk_interfaces/srv/camera_get_shutter_speed.hpp"
-#include "umd_psdk_interfaces/srv/camera_get_type.hpp"
-#include "umd_psdk_interfaces/srv/camera_set_ev.hpp"
-#include "umd_psdk_interfaces/srv/camera_set_focus_mode.hpp"
-#include "umd_psdk_interfaces/srv/camera_set_focus_target.hpp"
-#include "umd_psdk_interfaces/srv/camera_set_infrared_zoom.hpp"
-#include "umd_psdk_interfaces/srv/camera_set_iso.hpp"
-#include "umd_psdk_interfaces/srv/camera_set_optical_zoom.hpp"
-#include "umd_psdk_interfaces/srv/camera_set_shutter_speed.hpp"
-#include "umd_psdk_interfaces/srv/camera_delete_file_by_index.hpp"
-#include "umd_psdk_interfaces/srv/camera_download_file_by_index.hpp"
-#include "umd_psdk_interfaces/srv/camera_download_file_list.hpp"
-#include "umd_psdk_interfaces/srv/camera_get_laser_ranging_info.hpp"
-#include "umd_psdk_interfaces/srv/camera_record_video.hpp"
-#include "umd_psdk_interfaces/srv/camera_start_shoot_aeb_photo.hpp"
-#include "umd_psdk_interfaces/srv/camera_start_shoot_burst_photo.hpp"
-#include "umd_psdk_interfaces/srv/camera_start_shoot_interval_photo.hpp"
-#include "umd_psdk_interfaces/srv/camera_start_shoot_single_photo.hpp"
-#include "umd_psdk_interfaces/srv/camera_stop_shoot_photo.hpp"
-#include "umd_psdk_interfaces/srv/camera_streaming.hpp"
-#include "umd_psdk_interfaces/srv/get_home_altitude.hpp"
-#include "umd_psdk_interfaces/srv/get_obstacle_avoidance.hpp"
-#include "umd_psdk_interfaces/srv/gimbal_reset.hpp"
-#include "umd_psdk_interfaces/srv/gimbal_set_mode.hpp"
-#include "umd_psdk_interfaces/srv/gimbal_rotation.hpp"
-#include "umd_psdk_interfaces/srv/set_home_altitude.hpp"
-#include "umd_psdk_interfaces/srv/set_home_from_gps.hpp"
-#include "umd_psdk_interfaces/srv/set_obstacle_avoidance.hpp"
-#include "umd_psdk_wrapper/dji_camera_stream_decoder.hpp"
-#include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_interfaces/msg/aircraft_status.hpp"
+#include "psdk_interfaces/msg/altitude.hpp"
+#include "psdk_interfaces/msg/battery.hpp"
+#include "psdk_interfaces/msg/flight_anomaly.hpp"
+#include "psdk_interfaces/msg/flight_status.hpp"
+#include "psdk_interfaces/msg/gimbal_status.hpp"
+#include "psdk_interfaces/msg/gps_details.hpp"
+#include "psdk_interfaces/msg/gps_fused.hpp"
+#include "psdk_interfaces/msg/home_position.hpp"
+#include "psdk_interfaces/msg/position_fused.hpp"
+#include "psdk_interfaces/msg/relative_obstacle_info.hpp"
+#include "psdk_interfaces/msg/rtk_yaw.hpp"
+#include "psdk_interfaces/srv/camera_get_ev.hpp"
+#include "psdk_interfaces/srv/camera_get_focus_mode.hpp"
+#include "psdk_interfaces/srv/camera_get_focus_target.hpp"
+#include "psdk_interfaces/srv/camera_get_iso.hpp"
+#include "psdk_interfaces/srv/camera_get_optical_zoom.hpp"
+#include "psdk_interfaces/srv/camera_get_shutter_speed.hpp"
+#include "psdk_interfaces/srv/camera_get_type.hpp"
+#include "psdk_interfaces/srv/camera_set_ev.hpp"
+#include "psdk_interfaces/srv/camera_set_focus_mode.hpp"
+#include "psdk_interfaces/srv/camera_set_focus_target.hpp"
+#include "psdk_interfaces/srv/camera_set_infrared_zoom.hpp"
+#include "psdk_interfaces/srv/camera_set_iso.hpp"
+#include "psdk_interfaces/srv/camera_set_optical_zoom.hpp"
+#include "psdk_interfaces/srv/camera_set_shutter_speed.hpp"
+#include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
+#include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
+#include "psdk_interfaces/srv/camera_download_file_list.hpp"
+#include "psdk_interfaces/srv/camera_get_laser_ranging_info.hpp"
+#include "psdk_interfaces/srv/camera_record_video.hpp"
+#include "psdk_interfaces/srv/camera_start_shoot_aeb_photo.hpp"
+#include "psdk_interfaces/srv/camera_start_shoot_burst_photo.hpp"
+#include "psdk_interfaces/srv/camera_start_shoot_interval_photo.hpp"
+#include "psdk_interfaces/srv/camera_start_shoot_single_photo.hpp"
+#include "psdk_interfaces/srv/camera_stop_shoot_photo.hpp"
+#include "psdk_interfaces/srv/camera_streaming.hpp"
+#include "psdk_interfaces/srv/get_home_altitude.hpp"
+#include "psdk_interfaces/srv/get_obstacle_avoidance.hpp"
+#include "psdk_interfaces/srv/gimbal_reset.hpp"
+#include "psdk_interfaces/srv/gimbal_set_mode.hpp"
+#include "psdk_interfaces/srv/gimbal_rotation.hpp"
+#include "psdk_interfaces/srv/set_home_altitude.hpp"
+#include "psdk_interfaces/srv/set_home_from_gps.hpp"
+#include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
+#include "psdk_wrapper/dji_camera_stream_decoder.hpp"
+#include "psdk_wrapper/psdk_wrapper_utils.hpp"
 #ifdef OPEN_CV_INSTALLED
 
 #include "opencv2/dnn.hpp"
@@ -113,22 +113,22 @@ using namespace cv;
 
 #include <functional>
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 /**
- * @class umd_psdk::PSDKWrapper
+ * @class psdk_ros2::PSDKWrapper
  * @brief A ROS wrapper that brings all the DJI PSDK functionalities to ROS
  */
 
 class PSDKWrapper : public nav2_util::LifecycleNode
 {
  public:
-  using SetHomeFromGPS = umd_psdk_interfaces::srv::SetHomeFromGPS;
+  using SetHomeFromGPS = psdk_interfaces::srv::SetHomeFromGPS;
   using Trigger = std_srvs::srv::Trigger;
-  using SetHomeAltitude = umd_psdk_interfaces::srv::SetHomeAltitude;
-  using GetHomeAltitude = umd_psdk_interfaces::srv::GetHomeAltitude;
-  using SetObstacleAvoidance = umd_psdk_interfaces::srv::SetObstacleAvoidance;
-  using GetObstacleAvoidance = umd_psdk_interfaces::srv::GetObstacleAvoidance;
+  using SetHomeAltitude = psdk_interfaces::srv::SetHomeAltitude;
+  using GetHomeAltitude = psdk_interfaces::srv::GetHomeAltitude;
+  using SetObstacleAvoidance = psdk_interfaces::srv::SetObstacleAvoidance;
+  using GetObstacleAvoidance = psdk_interfaces::srv::GetObstacleAvoidance;
 
   /**
    * @brief Construct a new PSDKWrapper object
@@ -944,6 +944,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
  */
 extern std::shared_ptr<PSDKWrapper> global_ptr_;
 
-}  // namespace umd_psdk
+}  // namespace psdk_ros2
 
 #endif  // UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_PSDK_WRAPPER_HPP_

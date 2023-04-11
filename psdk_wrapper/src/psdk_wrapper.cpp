@@ -14,11 +14,11 @@
  *
  */
 
-#include "umd_psdk_wrapper/psdk_wrapper.hpp"
+#include "psdk_wrapper/psdk_wrapper.hpp"
 
 using namespace std::placeholders;  // NOLINT
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 using namespace std::placeholders;
 
@@ -1136,4 +1136,4 @@ PSDKWrapper::clean_ros_elements()
   gimbal_rotation_service_.reset();
 }
 
-}  // namespace umd_psdk
+}  // namespace psdk_ros2

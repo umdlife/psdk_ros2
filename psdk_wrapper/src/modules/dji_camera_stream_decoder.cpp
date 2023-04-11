@@ -23,7 +23,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "umd_psdk_wrapper/dji_camera_stream_decoder.hpp"
+#include "psdk_wrapper/dji_camera_stream_decoder.hpp"
 
 #include <iostream>
 

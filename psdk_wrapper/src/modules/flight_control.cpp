@@ -14,10 +14,10 @@
  *
  */
 
-#include "umd_psdk_wrapper/psdk_wrapper.hpp"
-#include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/psdk_wrapper.hpp"
+#include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 
 bool
@@ -605,7 +605,7 @@ PSDKWrapper::flight_control_position_yaw_cb(
    */
   tf2::Matrix3x3 rotation_FLU2ENU;
   rotation_FLU2ENU.setRPY(0.0, 0.0, yaw_setpoint);
-  tf2::Matrix3x3 rotation_FRD2NED(umd_psdk::utils::R_NED2ENU.transpose() *
+  tf2::Matrix3x3 rotation_FRD2NED(psdk_ros2::utils::R_NED2ENU.transpose() *
                                   rotation_FLU2ENU *
                                   utils::R_FLU2FRD.transpose());
   double temp1, temp2, temp_yaw;
@@ -704,4 +704,4 @@ PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb(
   DjiFlightController_ExecuteJoystickAction(joystick_command);
 }
 
-}  // namespace umd_psdk
+}  // namespace psdk_ros2

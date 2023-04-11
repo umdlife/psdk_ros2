@@ -23,7 +23,7 @@
 
 #define GOOD_GPS_SIGNAL_LEVEL 5
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 namespace utils
 {
@@ -132,4 +132,4 @@ double inline rad_to_deg(const double radians)
   return (radians * 180) / C_PI;
 };
 };  // namespace utils
-}  // namespace umd_psdk
+}  // namespace psdk_ros2

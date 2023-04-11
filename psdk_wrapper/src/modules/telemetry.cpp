@@ -16,10 +16,10 @@
 
 #include <math.h>
 
-#include "umd_psdk_wrapper/psdk_wrapper.hpp"
-#include "umd_psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/psdk_wrapper.hpp"
+#include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
-namespace umd_psdk
+namespace psdk_ros2
 {
 
 bool
@@ -240,8 +240,8 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
 
   current_quat_FRD2NED.setRotation(tf2::Quaternion(
       quaternion->q1, quaternion->q2, quaternion->q3, quaternion->q0));
-  tf2::Matrix3x3 R_FLU2ENU = umd_psdk::utils::R_NED2ENU * current_quat_FRD2NED *
-                             umd_psdk::utils::R_FLU2FRD;
+  tf2::Matrix3x3 R_FLU2ENU = psdk_ros2::utils::R_NED2ENU * current_quat_FRD2NED *
+                             psdk_ros2::utils::R_FLU2FRD;
   R_FLU2ENU.getRotation(current_quat_FLU2ENU);
 
   geometry_msgs::msg::QuaternionStamped quaternion_msg;
@@ -297,7 +297,7 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
       tf2::Quaternion(hard_sync_data->q.q1, hard_sync_data->q.q2,
                       hard_sync_data->q.q3, hard_sync_data->q.q0));
   tf2::Matrix3x3 R_FLU2ENU =
-      umd_psdk::utils::R_NED2ENU * R_FRD2NED * umd_psdk::utils::R_FLU2FRD;
+      psdk_ros2::utils::R_NED2ENU * R_FRD2NED * psdk_ros2::utils::R_FLU2FRD;
   tf2::Quaternion q_FLU2ENU;
   R_FLU2ENU.getRotation(q_FLU2ENU);
 
@@ -314,11 +314,11 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
   imu_msg.angular_velocity.z = -hard_sync_data->w.z;
 
   imu_msg.linear_acceleration.x =
-      hard_sync_data->a.x * umd_psdk::utils::C_GRAVITY_CONSTANT;
+      hard_sync_data->a.x * psdk_ros2::utils::C_GRAVITY_CONSTANT;
   imu_msg.linear_acceleration.y =
-      -hard_sync_data->a.y * umd_psdk::utils::C_GRAVITY_CONSTANT;
+      -hard_sync_data->a.y * psdk_ros2::utils::C_GRAVITY_CONSTANT;
   imu_msg.linear_acceleration.z =
-      -hard_sync_data->a.z * umd_psdk::utils::C_GRAVITY_CONSTANT;
+      -hard_sync_data->a.z * psdk_ros2::utils::C_GRAVITY_CONSTANT;
   imu_pub_->publish(imu_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -337,7 +337,7 @@ PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
    * ENU ground coordinate frame
    */
   tf2::Vector3 position_NED{position_vo->x, position_vo->y, position_vo->z};
-  tf2::Vector3 position_ENU = umd_psdk::utils::R_NED2ENU * position_NED;
+  tf2::Vector3 position_ENU = psdk_ros2::utils::R_NED2ENU * position_NED;
   umd_psdk_interfaces::msg::PositionFused position_msg;
   position_msg.header.stamp = this->get_clock()->now();
   position_msg.header.frame_id = ground_frame_;
@@ -371,8 +371,8 @@ PSDKWrapper::gps_fused_callback(const uint8_t *data, uint16_t dataSize,
   umd_psdk_interfaces::msg::GPSFused gps_fused_msg;
   gps_fused_msg.header.stamp = this->get_clock()->now();
   // DJI unit is rad. Transform it to deg
-  gps_fused_msg.longitude = umd_psdk::utils::rad_to_deg(gps_fused->longitude);
-  gps_fused_msg.latitude = umd_psdk::utils::rad_to_deg(gps_fused->latitude);
+  gps_fused_msg.longitude = psdk_ros2::utils::rad_to_deg(gps_fused->longitude);
+  gps_fused_msg.latitude = psdk_ros2::utils::rad_to_deg(gps_fused->latitude);
   // Altitude, WGS 84 reference ellipsoid, unit: m.
   gps_fused_msg.altitude = gps_fused->altitude;
   gps_fused_msg.num_visible_satellites = gps_fused->visibleSatelliteNumber;
@@ -1201,4 +1201,4 @@ PSDKWrapper::get_frequency(const int frequency)
   }
 }
 
-}  // namespace umd_psdk
+}  // namespace psdk_ros2
