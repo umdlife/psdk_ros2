@@ -16,3 +16,4 @@ repos:
         args: ['-style=file']
       - id: cpplint              # linter (or style-error checker) for Google C++ Style Guide
       - id: cppcheck             # static analyzer for C/C++ code
+    

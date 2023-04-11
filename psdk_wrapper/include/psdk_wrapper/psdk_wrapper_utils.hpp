@@ -1,4 +1,19 @@
-#pragma once
+/* Copyright (C) 2023 Unmanned Life - All Rights Reserved
+ *
+ * This file is part of the `psdk_wrapper` package and is subject to
+ * the terms and conditions defined in the file LICENSE.txt contained therein.
+ */
+/**
+ * @file psdk_wrapper_utils.hpp
+ *
+ * @brief Header file containing utility functions and constants
+ *
+ * @author Bianca Bendris
+ * Contact: bianca@unmanned.life
+ *
+ */
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
 
 #include <dji_fc_subscription.h>
 #include <dji_flight_controller.h>
@@ -25,7 +40,7 @@
 
 namespace psdk_ros2
 {
-namespace utils
+namespace psdk_utils
 {
 
 struct DJITopic
@@ -68,6 +83,9 @@ enum FlightStatus
   FLIGHT_STATUS_IN_AIR = 2 /*!< Aircraft is in air. */
 };
 
+/**
+ * @todo (Bianca) Implement the remaining/ commented DJI topics
+ */
 const std::vector<DJITopic> topics_to_subscribe{
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC, IMU_TOPIC_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, ATTITUDE_TOPICS_MAX_FREQ},
@@ -131,5 +149,7 @@ double inline rad_to_deg(const double radians)
 {
   return (radians * 180) / C_PI;
 };
-};  // namespace utils
+};  // namespace psdk_utils
 }  // namespace psdk_ros2
+
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_

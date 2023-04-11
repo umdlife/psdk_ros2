@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>umd_psdk_wrapper</name>
+  <name>psdk_wrapper</name>
   <version>1.0.0</version>
   <description>ROS2 wrapper for the DJI PSDK</description>
   <maintainer email="bianca@unmanned.life">Bianca Bendris</maintainer>
@@ -19,8 +19,8 @@
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>umd_psdk_interfaces</depend>
   <depend>umd_rtsp</depend>
+  <depend>psdk_interfaces</depend>
   <depend>std_srvs</depend>
 
   <export>
