@@ -1,4 +1,4 @@
-$ROBOT_NS:
+/**:
   psdk_wrapper_node:
     ros__parameters:
       app_name: "TestPSDK"

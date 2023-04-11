@@ -1,6 +1,6 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is
+ * This file is part of the `psdk_wrapper` source code package and is
  * subject to the terms and conditions defined in the file LICENSE.txt contained
  * therein.
  */
@@ -13,8 +13,8 @@
  * Contact: bianca@unmanned.life
  *
  */
-#include "rclcpp/rclcpp.hpp"
 #include "psdk_wrapper/psdk_wrapper.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 std::shared_ptr<psdk_ros2::PSDKWrapper> psdk_ros2::global_ptr_;
 int

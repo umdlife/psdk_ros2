@@ -1,6 +1,6 @@
 /* Copyright (C) 2023 Unmanned Life - All Rights Reserved
  *
- * This file is part of the `umd_psdk_wrapper` source code package and is
+ * This file is part of the `psdk_wrapper` source code package and is
  * subject to the terms and conditions defined in the file LICENSE.txt contained
  * therein.
  */
@@ -648,16 +648,15 @@ PSDKWrapper::initialize_ros_elements()
   imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("dji_psdk_ros/imu", 10);
   velocity_ground_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
       "dji_psdk_ros/velocity_ground_ENU", 10);
-  position_fused_pub_ =
-      create_publisher<umd_psdk_interfaces::msg::PositionFused>(
-          "dji_psdk_ros/position_fused", 10);
-  gps_fused_pub_ = create_publisher<umd_psdk_interfaces::msg::GPSFused>(
+  position_fused_pub_ = create_publisher<psdk_interfaces::msg::PositionFused>(
+      "dji_psdk_ros/position_fused", 10);
+  gps_fused_pub_ = create_publisher<psdk_interfaces::msg::GPSFused>(
       "dji_psdk_ros/gps_fused", 10);
   gps_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
       "dji_psdk_ros/gps_position", 10);
   gps_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
       "dji_psdk_ros/gps_velocity", 10);
-  gps_details_pub_ = create_publisher<umd_psdk_interfaces::msg::GPSDetails>(
+  gps_details_pub_ = create_publisher<psdk_interfaces::msg::GPSDetails>(
       "dji_psdk_ros/gps_details", 10);
   gps_signal_pub_ = create_publisher<std_msgs::msg::UInt8>(
       "dji_psdk_ros/gps_signal_level", 10);
@@ -667,7 +666,7 @@ PSDKWrapper::initialize_ros_elements()
       "dji_psdk_ros/rtk_position", 10);
   rtk_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
       "dji_psdk_ros/rtk_velocity", 10);
-  rtk_yaw_pub_ = create_publisher<umd_psdk_interfaces::msg::RTKYaw>(
+  rtk_yaw_pub_ = create_publisher<psdk_interfaces::msg::RTKYaw>(
       "dji_psdk_ros/rtk_yaw", 10);
   rtk_position_info_pub_ = create_publisher<std_msgs::msg::UInt8>(
       "dji_psdk_ros/rtk_position_info", 10);
@@ -678,21 +677,19 @@ PSDKWrapper::initialize_ros_elements()
   rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("dji_psdk_ros/rc", 10);
   gimbal_angles_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
       "dji_psdk_ros/gimbal_angles", 10);
-  gimbal_status_pub_ = create_publisher<umd_psdk_interfaces::msg::GimbalStatus>(
+  gimbal_status_pub_ = create_publisher<psdk_interfaces::msg::GimbalStatus>(
       "dji_psdk_ros/gimbal_status", 10);
-  flight_status_pub_ = create_publisher<umd_psdk_interfaces::msg::FlightStatus>(
+  flight_status_pub_ = create_publisher<psdk_interfaces::msg::FlightStatus>(
       "dji_psdk_ros/flight_status", 10);
-  aircraft_status_pub_ =
-      create_publisher<umd_psdk_interfaces::msg::AircraftStatus>(
-          "dji_psdk_ros/aircraft_status", 10);
+  aircraft_status_pub_ = create_publisher<psdk_interfaces::msg::AircraftStatus>(
+      "dji_psdk_ros/aircraft_status", 10);
   landing_gear_pub_ = create_publisher<std_msgs::msg::UInt8>(
       "dji_psdk_ros/landing_gear_status", 10);
   motor_start_error_pub_ = create_publisher<std_msgs::msg::UInt16>(
       "dji_psdk_ros/motor_start_error", 10);
-  flight_anomaly_pub_ =
-      create_publisher<umd_psdk_interfaces::msg::FlightAnomaly>(
-          "dji_psdk_ros/flight_anomaly", 10);
-  battery_pub_ = create_publisher<umd_psdk_interfaces::msg::Battery>(
+  flight_anomaly_pub_ = create_publisher<psdk_interfaces::msg::FlightAnomaly>(
+      "dji_psdk_ros/flight_anomaly", 10);
+  battery_pub_ = create_publisher<psdk_interfaces::msg::Battery>(
       "dji_psdk_ros/battery", 10);
   height_fused_pub_ =
       create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/height_fused", 10);
@@ -705,16 +702,16 @@ PSDKWrapper::initialize_ros_elements()
   // create_publisher<geometry_msgs::msg::AccelStamped>(
   //     "dji_psdk_ros/acceleration_body", 10);
   // altitude_pub_ =
-  //     create_publisher<umd_psdk_interfaces::msg::Altitude>("dji_psdk_ros/altitude",
+  //     create_publisher<psdk_interfaces::msg::Altitude>("dji_psdk_ros/altitude",
   //     10);
   // relative_height_pub_ =
   //     create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/relative_height",
   //     10);
   // relative_obstacle_info_pub_ =
-  //     create_publisher<umd_psdk_interfaces::msg::RelativeObstacleInfo>(
+  //     create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
   //         "dji_psdk_ros/relative_obstacle_info", 10);
   // home_position_pub_ =
-  // create_publisher<umd_psdk_interfaces::msg::HomePosition>(
+  // create_publisher<psdk_interfaces::msg::HomePosition>(
   //     "dji_psdk_ros/home_position", 10);
 
   RCLCPP_INFO(get_logger(), "Creating subscribers");
