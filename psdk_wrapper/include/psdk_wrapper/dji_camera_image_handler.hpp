@@ -34,7 +34,8 @@
 #include "pthread.h"
 
 #ifdef __cplusplus
-extern "C"{
+extern "C"
+{
 #endif
 
   /* Exported constants
