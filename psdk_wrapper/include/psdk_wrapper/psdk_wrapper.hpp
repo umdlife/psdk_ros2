@@ -47,6 +47,11 @@
 #include "osal_fs.h"       //NOLINT
 #include "osal_socket.h"   //NOLINT
 
+#include <umd_rtsp/rtsp_streamer.hpp>
+#include "dji_camera_manager.h"
+#include "dji_gimbal_manager.h"
+#include "dji_liveview.h"
+
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/aircraft_status.hpp"
 #include "psdk_interfaces/msg/altitude.hpp"
@@ -60,11 +65,40 @@
 #include "psdk_interfaces/msg/position_fused.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
+#include "psdk_interfaces/srv/camera_get_ev.hpp"
+#include "psdk_interfaces/srv/camera_get_focus_mode.hpp"
+#include "psdk_interfaces/srv/camera_get_focus_target.hpp"
+#include "psdk_interfaces/srv/camera_get_iso.hpp"
+#include "psdk_interfaces/srv/camera_get_optical_zoom.hpp"
+#include "psdk_interfaces/srv/camera_get_shutter_speed.hpp"
+#include "psdk_interfaces/srv/camera_get_type.hpp"
+#include "psdk_interfaces/srv/camera_set_ev.hpp"
+#include "psdk_interfaces/srv/camera_set_focus_mode.hpp"
+#include "psdk_interfaces/srv/camera_set_focus_target.hpp"
+#include "psdk_interfaces/srv/camera_set_infrared_zoom.hpp"
+#include "psdk_interfaces/srv/camera_set_iso.hpp"
+#include "psdk_interfaces/srv/camera_set_optical_zoom.hpp"
+#include "psdk_interfaces/srv/camera_set_shutter_speed.hpp"
+#include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
+#include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
+#include "psdk_interfaces/srv/camera_download_file_list.hpp"
+#include "psdk_interfaces/srv/camera_get_laser_ranging_info.hpp"
+#include "psdk_interfaces/srv/camera_record_video.hpp"
+#include "psdk_interfaces/srv/camera_start_shoot_aeb_photo.hpp"
+#include "psdk_interfaces/srv/camera_start_shoot_burst_photo.hpp"
+#include "psdk_interfaces/srv/camera_start_shoot_interval_photo.hpp"
+#include "psdk_interfaces/srv/camera_start_shoot_single_photo.hpp"
+#include "psdk_interfaces/srv/camera_stop_shoot_photo.hpp"
+#include "psdk_interfaces/srv/camera_streaming.hpp"
 #include "psdk_interfaces/srv/get_home_altitude.hpp"
 #include "psdk_interfaces/srv/get_obstacle_avoidance.hpp"
+#include "psdk_interfaces/srv/gimbal_reset.hpp"
+#include "psdk_interfaces/srv/gimbal_set_mode.hpp"
+#include "psdk_interfaces/srv/gimbal_rotation.hpp"
 #include "psdk_interfaces/srv/set_home_altitude.hpp"
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
 #include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
+#include "psdk_wrapper/dji_camera_stream_decoder.hpp"
 #include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
 namespace psdk_ros2
@@ -83,6 +117,91 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   using GetHomeAltitude = psdk_interfaces::srv::GetHomeAltitude;
   using SetObstacleAvoidance = psdk_interfaces::srv::SetObstacleAvoidance;
   using GetObstacleAvoidance = psdk_interfaces::srv::GetObstacleAvoidance;
+  // Camera
+  using CameraStartShootSinglePhoto =
+      psdk_interfaces::srv::CameraStartShootSinglePhoto;
+  rclcpp::Service<CameraStartShootSinglePhoto>::SharedPtr 
+      camera_start_shoot_single_photo_service_;
+  using CameraStartShootBurstPhoto =
+      psdk_interfaces::srv::CameraStartShootBurstPhoto;
+  rclcpp::Service<CameraStartShootBurstPhoto>::SharedPtr
+      camera_start_shoot_burst_photo_service_;
+  using CameraStartShootAEBPhoto =
+      psdk_interfaces::srv::CameraStartShootAEBPhoto;
+  rclcpp::Service<CameraStartShootAEBPhoto>::SharedPtr
+      camera_start_shoot_aeb_photo_service_;
+  using CameraStartShootIntervalPhoto =
+      psdk_interfaces::srv::CameraStartShootIntervalPhoto;
+  rclcpp::Service<CameraStartShootIntervalPhoto>::SharedPtr
+      camera_start_shoot_interval_photo_service_;
+  using CameraStopShootPhoto =
+      psdk_interfaces::srv::CameraStopShootPhoto;
+  rclcpp::Service<CameraStopShootPhoto>::SharedPtr
+      camera_stop_shoot_photo_service_;
+  using CameraRecordVideo = psdk_interfaces::srv::CameraRecordVideo;
+  rclcpp::Service<CameraRecordVideo>::SharedPtr
+      camera_record_video_service_;
+  using CameraGetLaserRangingInfo =
+      psdk_interfaces::srv::CameraGetLaserRangingInfo;
+  rclcpp::Service<CameraGetLaserRangingInfo>::SharedPtr
+      camera_get_laser_ranging_info_service_;
+  using CameraDownloadFileList =
+      psdk_interfaces::srv::CameraDownloadFileList;
+  rclcpp::Service<CameraDownloadFileList>::SharedPtr
+      camera_download_file_list_service_;
+  using CameraDownloadFileByIndex =
+      psdk_interfaces::srv::CameraDownloadFileByIndex;
+  rclcpp::Service<CameraDownloadFileByIndex>::SharedPtr
+      camera_download_file_by_index_service_;
+  using CameraDeleteFileByIndex =
+      psdk_interfaces::srv::CameraDeleteFileByIndex;
+  rclcpp::Service<CameraDeleteFileByIndex>::SharedPtr
+      camera_delete_file_by_index_service_;
+  using CameraStreaming = psdk_interfaces::srv::CameraStreaming;
+  rclcpp::Service<CameraStreaming>::SharedPtr
+      camera_streaming_service_; 
+  using CameraGetType = psdk_interfaces::srv::CameraGetType;
+  rclcpp::Service<CameraGetType>::SharedPtr camera_get_type_service_;
+  using CameraSetEV = psdk_interfaces::srv::CameraSetEV;
+  rclcpp::Service<CameraSetEV>::SharedPtr camera_set_ev_service_;
+  using CameraGetEV = psdk_interfaces::srv::CameraGetEV;
+  rclcpp::Service<CameraGetEV>::SharedPtr camera_get_ev_service_;
+  using CameraSetShutterSpeed = psdk_interfaces::srv::CameraSetShutterSpeed;
+  rclcpp::Service<CameraSetShutterSpeed>::SharedPtr
+      camera_set_shutter_speed_service_;
+  using CameraGetShutterSpeed = psdk_interfaces::srv::CameraGetShutterSpeed;
+  rclcpp::Service<CameraGetShutterSpeed>::SharedPtr
+      camera_get_shutter_speed_service_;
+  using CameraSetISO = psdk_interfaces::srv::CameraSetISO;
+  rclcpp::Service<CameraSetISO>::SharedPtr camera_set_iso_service_;
+  using CameraGetISO = psdk_interfaces::srv::CameraGetISO;
+  rclcpp::Service<CameraGetISO>::SharedPtr camera_get_iso_service_;
+  using CameraSetFocusTarget = psdk_interfaces::srv::CameraSetFocusTarget;
+  rclcpp::Service<CameraSetFocusTarget>::SharedPtr
+      camera_set_focus_target_service_;
+  using CameraGetFocusTarget = psdk_interfaces::srv::CameraGetFocusTarget;
+  rclcpp::Service<CameraGetFocusTarget>::SharedPtr
+      camera_get_focus_target_service_;
+  using CameraSetFocusMode = psdk_interfaces::srv::CameraSetFocusMode;
+  rclcpp::Service<CameraSetFocusMode>::SharedPtr camera_set_focus_mode_service_;
+  using CameraGetFocusMode = psdk_interfaces::srv::CameraGetFocusMode;
+  rclcpp::Service<CameraGetFocusMode>::SharedPtr camera_get_focus_mode_service_;
+  using CameraSetOpticalZoom = psdk_interfaces::srv::CameraSetOpticalZoom;
+  rclcpp::Service<CameraSetOpticalZoom>::SharedPtr
+      camera_set_optical_zoom_service_;
+  using CameraGetOpticalZoom = psdk_interfaces::srv::CameraGetOpticalZoom;
+  rclcpp::Service<CameraGetOpticalZoom>::SharedPtr
+      camera_get_optical_zoom_service_;
+  using CameraSetInfraredZoom = psdk_interfaces::srv::CameraSetInfraredZoom;
+  rclcpp::Service<CameraSetInfraredZoom>::SharedPtr
+      camera_set_infrared_zoom_service_;
+  // Gimbal
+  using GimbalSetMode = psdk_interfaces::srv::GimbalSetMode;
+  rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
+  using GimbalReset = psdk_interfaces::srv::GimbalReset;
+  rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
+  using GimbalRotation = psdk_interfaces::srv::GimbalRotation;
+  rclcpp::Service<GimbalRotation>::SharedPtr gimbal_rotation_service_;
 
   /**
    * @brief Construct a new PSDKWrapper object
@@ -205,6 +324,22 @@ class PSDKWrapper : public nav2_util::LifecycleNode
    * @return true/false
    */
   bool init_flight_control();
+
+  /**
+   * @brief Initiate the camera module
+   * @return true/false
+   */
+  bool init_camera_manager();
+  /**
+   * @brief Initiate the streaming module
+   * @return true/false
+   */
+  bool init_liveview_manager();
+  /**
+   * @brief Initiate the gimbal module
+   * @return true/false
+   */
+  bool init_gimbal_manager();
 
   /**
    * @brief Get the DJI frequency object associated with a certain frequency
@@ -494,6 +629,102 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void get_upwards_radar_obstacle_avoidance_cb(
       const std::shared_ptr<GetObstacleAvoidance::Request> request,
       const std::shared_ptr<GetObstacleAvoidance::Response> response);
+  // Camera
+  void camera_get_type_callback_(
+      const std::shared_ptr<CameraGetType::Request> request,
+      const std::shared_ptr<CameraGetType::Response> response);
+  void camera_set_ev_callback_(
+      const std::shared_ptr<CameraSetEV::Request> request,
+      const std::shared_ptr<CameraSetEV::Response> response);
+  void camera_get_ev_callback_(
+      const std::shared_ptr<CameraGetEV::Request> request,
+      const std::shared_ptr<CameraGetEV::Response> response);
+  void camera_set_shutter_speed_callback_(
+      const std::shared_ptr<CameraSetShutterSpeed::Request> request,
+      const std::shared_ptr<CameraSetShutterSpeed::Response> response);
+  void camera_get_shutter_speed_callback_(
+      const std::shared_ptr<CameraGetShutterSpeed::Request> request,
+      const std::shared_ptr<CameraGetShutterSpeed::Response> response);
+  void camera_set_iso_callback_(
+      const std::shared_ptr<CameraSetISO::Request> request,
+      const std::shared_ptr<CameraSetISO::Response> response);
+  void camera_get_iso_callback_(
+      const std::shared_ptr<CameraGetISO::Request> request,
+      const std::shared_ptr<CameraGetISO::Response> response);
+  void camera_set_focus_target_callback_(
+      const std::shared_ptr<CameraSetFocusTarget::Request> request,
+      const std::shared_ptr<CameraSetFocusTarget::Response> response);
+  void camera_get_focus_target_callback_(
+      const std::shared_ptr<CameraGetFocusTarget::Request> request,
+      const std::shared_ptr<CameraGetFocusTarget::Response> response);
+  void camera_set_focus_mode_callback_(
+      const std::shared_ptr<CameraSetFocusMode::Request> request,
+      const std::shared_ptr<CameraSetFocusMode::Response> response);
+  void camera_get_focus_mode_callback_(
+      const std::shared_ptr<CameraGetFocusMode::Request> request,
+      const std::shared_ptr<CameraGetFocusMode::Response> response);
+  void camera_set_optical_zoom_callback_(
+      const std::shared_ptr<CameraSetOpticalZoom::Request> request,
+      const std::shared_ptr<CameraSetOpticalZoom::Response> response);
+  void camera_get_optical_zoom_callback_(
+      const std::shared_ptr<CameraGetOpticalZoom::Request> request,
+      const std::shared_ptr<CameraGetOpticalZoom::Response> response);
+  void camera_set_infrared_zoom_callback_(
+      const std::shared_ptr<CameraSetInfraredZoom::Request> request,
+      const std::shared_ptr<CameraSetInfraredZoom::Response> response);
+  void camera_start_shoot_single_photo_callback_(
+      const std::shared_ptr<CameraStartShootSinglePhoto::Request> request,
+      const std::shared_ptr<CameraStartShootSinglePhoto::Response> response);
+  void camera_start_shoot_burst_photo_callback_(
+      const std::shared_ptr<CameraStartShootBurstPhoto::Request> request,
+      const std::shared_ptr<CameraStartShootBurstPhoto::Response> response);
+  void camera_start_shoot_aeb_photo_callback_(
+      const std::shared_ptr<CameraStartShootAEBPhoto::Request> request,
+      const std::shared_ptr<CameraStartShootAEBPhoto::Response> response);
+  void camera_start_shoot_interval_photo_callback_(
+      const std::shared_ptr<CameraStartShootIntervalPhoto::Request> request,
+      const std::shared_ptr<CameraStartShootIntervalPhoto::Response> response);
+  void camera_stop_shoot_photo_callback_(
+      const std::shared_ptr<CameraStopShootPhoto::Request> request,
+      const std::shared_ptr<CameraStopShootPhoto::Response> response);
+  void camera_record_video_callback_(
+      const std::shared_ptr<CameraRecordVideo::Request> request,
+      const std::shared_ptr<CameraRecordVideo::Response> response);
+  void camera_get_laser_ranging_info_callback_(
+      const std::shared_ptr<CameraGetLaserRangingInfo::Request> request,
+      const std::shared_ptr<CameraGetLaserRangingInfo::Response> response);
+  void camera_download_file_list_callback_(
+      const std::shared_ptr<CameraDownloadFileList::Request> request,
+      const std::shared_ptr<CameraDownloadFileList::Response> response);
+  void camera_download_file_by_index_callback_(
+      const std::shared_ptr<CameraDownloadFileByIndex::Request> request,
+      const std::shared_ptr<CameraDownloadFileByIndex::Response> response);
+  void camera_delete_file_by_index_callback_(
+      const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
+      const std::shared_ptr<CameraDeleteFileByIndex::Response> response);
+  void camera_streaming_callback_(
+      const std::shared_ptr<CameraStreaming::Request> request,
+      const std::shared_ptr<CameraStreaming::Response> response);
+  void gimbal_set_mode_callback_(
+      const std::shared_ptr<GimbalSetMode::Request> request,
+      const std::shared_ptr<GimbalSetMode::Response> response);
+  void gimbal_reset_callback_(
+      const std::shared_ptr<GimbalReset::Request> request,
+      const std::shared_ptr<GimbalReset::Response> response);
+  void gimbal_rotation_callback_(
+      const std::shared_ptr<GimbalRotation::Request> request,
+      const std::shared_ptr<GimbalRotation::Response> response);
+  T_DjiReturnCode start_camera_stream(CameraImageCallback callback,
+                                      void* userData,
+                                      E_DjiLiveViewCameraPosition index,
+                                      E_DjiLiveViewCameraSource camera_source);
+  friend void c_publish_streaming_callback(CameraRGBImage img, void* userData);
+  friend void c_LiveviewConvertH264ToRgbCallback(
+      E_DjiLiveViewCameraPosition position, const uint8_t* buf,
+      uint32_t bufLen);
+  void publish_streaming_callback(CameraRGBImage img, void* userData);
+  void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
+                                        const uint8_t* buf, uint32_t bufLen);
 
   /* ROS Publishers */
   rclcpp_lifecycle::LifecyclePublisher<
@@ -654,6 +885,30 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   int gps_signal_level_{0};
   float local_altitude_reference_{0};
   bool local_altitude_reference_set_{false};
+
+  const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
+
+  // Streaming
+  void create_streaming_pipeline();
+  umd_rtsp::RTSPStreamer rtsp_streamer_;
+  bool streaming_pipeline_configured = false;
+  std::map<E_DjiCameraType, std::string> camera_type_str = {
+      {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
+      {DJI_CAMERA_TYPE_Z30, "Zenmuse Z30"},
+      {DJI_CAMERA_TYPE_XT2, "Zenmuse XT2"},
+      {DJI_CAMERA_TYPE_PSDK, "Payload Camera"},
+      {DJI_CAMERA_TYPE_XTS, "Zenmuse XTS"},
+      {DJI_CAMERA_TYPE_H20, "Zenmuse H20"},
+      {DJI_CAMERA_TYPE_H20T, "Zenmuse H20T"},
+      {DJI_CAMERA_TYPE_P1, "Zenmuse P1"},
+      {DJI_CAMERA_TYPE_L1, "Zenmuse L1"},
+      {DJI_CAMERA_TYPE_H20N, "Zenmuse H20N"},
+      {DJI_CAMERA_TYPE_M30, "M30 Camera"},
+      {DJI_CAMERA_TYPE_M30T, "M30T Camera"},
+      {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
+      {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
+  };
+
 };
 
 /**
