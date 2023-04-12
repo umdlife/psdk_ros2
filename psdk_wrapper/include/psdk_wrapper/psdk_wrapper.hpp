@@ -39,18 +39,17 @@
 #include <std_msgs/msg/u_int8.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
+#include <umd_rtsp/rtsp_streamer.hpp>
 
+#include "dji_camera_manager.h"
+#include "dji_gimbal_manager.h"
+#include "dji_liveview.h"
 #include "hal_network.h"   //NOLINT
 #include "hal_uart.h"      //NOLINT
 #include "hal_usb_bulk.h"  //NOLINT
 #include "osal.h"          //NOLINT
 #include "osal_fs.h"       //NOLINT
 #include "osal_socket.h"   //NOLINT
-
-#include <umd_rtsp/rtsp_streamer.hpp>
-#include "dji_camera_manager.h"
-#include "dji_gimbal_manager.h"
-#include "dji_liveview.h"
 
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/aircraft_status.hpp"
@@ -65,13 +64,18 @@
 #include "psdk_interfaces/msg/position_fused.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
+#include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
+#include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
+#include "psdk_interfaces/srv/camera_download_file_list.hpp"
 #include "psdk_interfaces/srv/camera_get_ev.hpp"
 #include "psdk_interfaces/srv/camera_get_focus_mode.hpp"
 #include "psdk_interfaces/srv/camera_get_focus_target.hpp"
 #include "psdk_interfaces/srv/camera_get_iso.hpp"
+#include "psdk_interfaces/srv/camera_get_laser_ranging_info.hpp"
 #include "psdk_interfaces/srv/camera_get_optical_zoom.hpp"
 #include "psdk_interfaces/srv/camera_get_shutter_speed.hpp"
 #include "psdk_interfaces/srv/camera_get_type.hpp"
+#include "psdk_interfaces/srv/camera_record_video.hpp"
 #include "psdk_interfaces/srv/camera_set_ev.hpp"
 #include "psdk_interfaces/srv/camera_set_focus_mode.hpp"
 #include "psdk_interfaces/srv/camera_set_focus_target.hpp"
@@ -79,11 +83,6 @@
 #include "psdk_interfaces/srv/camera_set_iso.hpp"
 #include "psdk_interfaces/srv/camera_set_optical_zoom.hpp"
 #include "psdk_interfaces/srv/camera_set_shutter_speed.hpp"
-#include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
-#include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
-#include "psdk_interfaces/srv/camera_download_file_list.hpp"
-#include "psdk_interfaces/srv/camera_get_laser_ranging_info.hpp"
-#include "psdk_interfaces/srv/camera_record_video.hpp"
 #include "psdk_interfaces/srv/camera_start_shoot_aeb_photo.hpp"
 #include "psdk_interfaces/srv/camera_start_shoot_burst_photo.hpp"
 #include "psdk_interfaces/srv/camera_start_shoot_interval_photo.hpp"
@@ -93,8 +92,8 @@
 #include "psdk_interfaces/srv/get_home_altitude.hpp"
 #include "psdk_interfaces/srv/get_obstacle_avoidance.hpp"
 #include "psdk_interfaces/srv/gimbal_reset.hpp"
-#include "psdk_interfaces/srv/gimbal_set_mode.hpp"
 #include "psdk_interfaces/srv/gimbal_rotation.hpp"
+#include "psdk_interfaces/srv/gimbal_set_mode.hpp"
 #include "psdk_interfaces/srv/set_home_altitude.hpp"
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
 #include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
@@ -120,7 +119,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   // Camera
   using CameraStartShootSinglePhoto =
       psdk_interfaces::srv::CameraStartShootSinglePhoto;
-  rclcpp::Service<CameraStartShootSinglePhoto>::SharedPtr 
+  rclcpp::Service<CameraStartShootSinglePhoto>::SharedPtr
       camera_start_shoot_single_photo_service_;
   using CameraStartShootBurstPhoto =
       psdk_interfaces::srv::CameraStartShootBurstPhoto;
@@ -134,32 +133,27 @@ class PSDKWrapper : public nav2_util::LifecycleNode
       psdk_interfaces::srv::CameraStartShootIntervalPhoto;
   rclcpp::Service<CameraStartShootIntervalPhoto>::SharedPtr
       camera_start_shoot_interval_photo_service_;
-  using CameraStopShootPhoto =
-      psdk_interfaces::srv::CameraStopShootPhoto;
+  using CameraStopShootPhoto = psdk_interfaces::srv::CameraStopShootPhoto;
   rclcpp::Service<CameraStopShootPhoto>::SharedPtr
       camera_stop_shoot_photo_service_;
   using CameraRecordVideo = psdk_interfaces::srv::CameraRecordVideo;
-  rclcpp::Service<CameraRecordVideo>::SharedPtr
-      camera_record_video_service_;
+  rclcpp::Service<CameraRecordVideo>::SharedPtr camera_record_video_service_;
   using CameraGetLaserRangingInfo =
       psdk_interfaces::srv::CameraGetLaserRangingInfo;
   rclcpp::Service<CameraGetLaserRangingInfo>::SharedPtr
       camera_get_laser_ranging_info_service_;
-  using CameraDownloadFileList =
-      psdk_interfaces::srv::CameraDownloadFileList;
+  using CameraDownloadFileList = psdk_interfaces::srv::CameraDownloadFileList;
   rclcpp::Service<CameraDownloadFileList>::SharedPtr
       camera_download_file_list_service_;
   using CameraDownloadFileByIndex =
       psdk_interfaces::srv::CameraDownloadFileByIndex;
   rclcpp::Service<CameraDownloadFileByIndex>::SharedPtr
       camera_download_file_by_index_service_;
-  using CameraDeleteFileByIndex =
-      psdk_interfaces::srv::CameraDeleteFileByIndex;
+  using CameraDeleteFileByIndex = psdk_interfaces::srv::CameraDeleteFileByIndex;
   rclcpp::Service<CameraDeleteFileByIndex>::SharedPtr
       camera_delete_file_by_index_service_;
   using CameraStreaming = psdk_interfaces::srv::CameraStreaming;
-  rclcpp::Service<CameraStreaming>::SharedPtr
-      camera_streaming_service_; 
+  rclcpp::Service<CameraStreaming>::SharedPtr camera_streaming_service_;
   using CameraGetType = psdk_interfaces::srv::CameraGetType;
   rclcpp::Service<CameraGetType>::SharedPtr camera_get_type_service_;
   using CameraSetEV = psdk_interfaces::srv::CameraSetEV;
@@ -908,7 +902,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
       {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
       {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
   };
-
 };
 
 /**
