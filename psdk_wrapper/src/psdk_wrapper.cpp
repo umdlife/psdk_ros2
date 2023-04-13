@@ -20,7 +20,6 @@ using namespace std::placeholders;  // NOLINT
 
 namespace psdk_ros2
 {
-using namespace std::placeholders;
 
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())

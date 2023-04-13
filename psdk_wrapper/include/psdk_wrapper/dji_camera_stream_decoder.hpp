@@ -24,8 +24,8 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_
-#define UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_
 
 /* Includes ------------------------------------------------------------------*/
 extern "C"
@@ -35,8 +35,8 @@ extern "C"
 #include <libswscale/swscale.h>
 }
 
-#include "dji_camera_image_handler.hpp"
-#include "pthread.h"
+#include "dji_camera_image_handler.hpp" //NOLINT
+#include "pthread.h" //NOLINT
 
 #ifdef __cplusplus
 extern "C"
@@ -89,4 +89,4 @@ extern "C"
 }
 #endif
 
-#endif  // UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_DJI_CAMERA_STREAM_DECODER_HPP_
