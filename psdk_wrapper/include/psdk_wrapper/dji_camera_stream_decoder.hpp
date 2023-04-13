@@ -35,8 +35,8 @@ extern "C"
 #include <libswscale/swscale.h>
 }
 
-#include "dji_camera_image_handler.hpp" //NOLINT
-#include "pthread.h" //NOLINT
+#include "dji_camera_image_handler.hpp"  //NOLINT
+#include "pthread.h"                     //NOLINT
 
 #ifdef __cplusplus
 extern "C"

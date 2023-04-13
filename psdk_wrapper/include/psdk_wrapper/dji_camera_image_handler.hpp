@@ -31,7 +31,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "pthread.h" //NOLINT
+#include "pthread.h"  //NOLINT
 
 #ifdef __cplusplus
 extern "C"
@@ -62,7 +62,8 @@ extern "C"
 
     void writeNewImageWithLock(uint8_t *buf, int bufSize, int width,
                                int height);
-    bool getNewImageWithLock(CameraRGBImage &copyOfImage, int timeoutMilliSec); //NOLINT
+    bool getNewImageWithLock(CameraRGBImage &copyOfImage,
+                             int timeoutMilliSec);  // NOLINT
 
    private:
     pthread_mutex_t m_mutex;
