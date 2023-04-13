@@ -17,7 +17,8 @@ jobs:
       PAT: ${{ secrets.UMDLIFEDEV_TOKEN }}
     with:
       regex_exclude: .*src/common/.*
-                     .*src/modules/dji_camera_*
+                     .*src/modules/dji_camera_image_handler.cpp
+                     .*src/modules/dji_camera_stream_decoder.cpp
 
   rebuild_docker:
     strategy:
