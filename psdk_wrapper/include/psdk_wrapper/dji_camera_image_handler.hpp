@@ -62,7 +62,9 @@ extern "C"
 
     void writeNewImageWithLock(uint8_t *buf, int bufSize, int width,
                                int height);
-    bool getNewImageWithLock(CameraRGBImage &copyOfImage, int timeoutMilliSec); //NOLINT
+    bool getNewImageWithLock(
+      CameraRGBImage &copyOfImage, //NOLINT
+      int timeoutMilliSec); 
 
    private:
     pthread_mutex_t m_mutex;
