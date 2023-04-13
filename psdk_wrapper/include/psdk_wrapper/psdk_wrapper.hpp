@@ -42,9 +42,9 @@
 #include <string>
 #include <umd_rtsp/rtsp_streamer.hpp>
 
-#include "dji_camera_manager.h"
-#include "dji_gimbal_manager.h"
-#include "dji_liveview.h"
+#include "dji_camera_manager.h"  //NOLINT
+#include "dji_gimbal_manager.h" //NOLINT
+#include "dji_liveview.h"  //NOLINT
 #include "hal_network.h"   //NOLINT
 #include "hal_uart.h"      //NOLINT
 #include "hal_usb_bulk.h"  //NOLINT

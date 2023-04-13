@@ -27,9 +27,9 @@
 
 #include <iostream>
 
-#include "dji_logger.h"
-#include "pthread.h"
-#include "unistd.h"
+#include "dji_logger.h"  //NOLINT
+#include "pthread.h"     //NOLINT
+#include "unistd.h"      //NOLINT
 
 /* Private constants ---------------------------------------------------------*/
 
@@ -251,8 +251,8 @@ DJICameraStreamDecoder::decodeBuffer(const uint8_t *buf, int bufLen)
         if (nullptr == rgbBuf)
         {
           bufSize = avpicture_get_size(AV_PIX_FMT_RGB24, w, h);
-          rgbBuf = (uint8_t *)av_malloc(bufSize);
-          avpicture_fill((AVPicture *)pFrameRGB, rgbBuf, AV_PIX_FMT_RGB24, w,
+          rgbBuf = reinterpret_cast<uint8_t *>(av_malloc(bufSize));
+          avpicture_fill(reinterpret_cast<AVPicture *>(pFrameRGB), rgbBuf, AV_PIX_FMT_RGB24, w,
                          h);
         }
 

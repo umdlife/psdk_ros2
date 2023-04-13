@@ -24,14 +24,14 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_
-#define UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_
 
 /* Includes ------------------------------------------------------------------*/
 #include <cstdint>
 #include <vector>
 
-#include "pthread.h"
+#include "pthread.h" //NOLINT
 
 #ifdef __cplusplus
 extern "C"
@@ -62,7 +62,7 @@ extern "C"
 
     void writeNewImageWithLock(uint8_t *buf, int bufSize, int width,
                                int height);
-    bool getNewImageWithLock(CameraRGBImage &copyOfImage, int timeoutMilliSec);
+    bool getNewImageWithLock(CameraRGBImage &copyOfImage, int timeoutMilliSec); //NOLINT
 
    private:
     pthread_mutex_t m_mutex;
@@ -78,4 +78,4 @@ extern "C"
 }
 #endif
 
-#endif  // UMD_PSDK_UMD_PSDK_WRAPPER_INCLUDE_UMD_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_DJI_CAMERA_IMAGE_HANDLER_HPP_
