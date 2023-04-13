@@ -252,8 +252,8 @@ DJICameraStreamDecoder::decodeBuffer(const uint8_t *buf, int bufLen)
         {
           bufSize = avpicture_get_size(AV_PIX_FMT_RGB24, w, h);
           rgbBuf = reinterpret_cast<uint8_t *>(av_malloc(bufSize));
-          avpicture_fill(reinterpret_cast<AVPicture *>(pFrameRGB), rgbBuf, AV_PIX_FMT_RGB24, w,
-                         h);
+          avpicture_fill(reinterpret_cast<AVPicture *>(pFrameRGB), rgbBuf,
+                         AV_PIX_FMT_RGB24, w, h);
         }
 
         if (nullptr != pSwsCtx && nullptr != rgbBuf)

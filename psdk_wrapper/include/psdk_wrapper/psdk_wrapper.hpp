@@ -43,14 +43,14 @@
 #include <umd_rtsp/rtsp_streamer.hpp>
 
 #include "dji_camera_manager.h"  //NOLINT
-#include "dji_gimbal_manager.h" //NOLINT
-#include "dji_liveview.h"  //NOLINT
-#include "hal_network.h"   //NOLINT
-#include "hal_uart.h"      //NOLINT
-#include "hal_usb_bulk.h"  //NOLINT
-#include "osal.h"          //NOLINT
-#include "osal_fs.h"       //NOLINT
-#include "osal_socket.h"   //NOLINT
+#include "dji_gimbal_manager.h"  //NOLINT
+#include "dji_liveview.h"        //NOLINT
+#include "hal_network.h"         //NOLINT
+#include "hal_uart.h"            //NOLINT
+#include "hal_usb_bulk.h"        //NOLINT
+#include "osal.h"                //NOLINT
+#include "osal_fs.h"             //NOLINT
+#include "osal_socket.h"         //NOLINT
 
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/aircraft_status.hpp"
