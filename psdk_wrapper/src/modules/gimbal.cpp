@@ -94,11 +94,11 @@ PSDKWrapper::gimbal_rotation_callback_(
   rotation_deg.rotationMode =
       static_cast<E_DjiGimbalRotationMode>(request->rotation_mode);
 
-  rotation_deg.pitch = (request->pitch * 180)/M_PI_2;
-  rotation_deg.roll = (request->roll * 180)/M_PI_2;
-  rotation_deg.yaw = (request->yaw * 180)/M_PI_2;
+  rotation_deg.pitch = (request->pitch * 180) / M_PI_2;
+  rotation_deg.roll = (request->roll * 180) / M_PI_2;
+  rotation_deg.yaw = (request->yaw * 180) / M_PI_2;
   rotation_deg.time = request->time;
-  
+
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -106,7 +106,7 @@ PSDKWrapper::gimbal_rotation_callback_(
                 return_code);
     response->success = false;
   }
-  
+
   return_code = DjiGimbalManager_Rotate(index, rotation_deg);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {

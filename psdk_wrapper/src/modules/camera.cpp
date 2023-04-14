@@ -345,10 +345,8 @@ PSDKWrapper::camera_set_focus_target_callback_(
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiCameraManagerFocusPosData focus_point;
-  focus_point.focusX =
-      request->x_target;  
-  focus_point.focusY =
-      request->y_target; 
+  focus_point.focusX = request->x_target;
+  focus_point.focusY = request->y_target;
   return_code =
       DjiCameraManager_SetFocusMode(index, DJI_CAMERA_MANAGER_FOCUS_MODE_AUTO);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
@@ -500,7 +498,7 @@ PSDKWrapper::camera_set_optical_zoom_callback_(
     return;
   }
   else
-  { 
+  {
     response->success = true;
     return;
   }
