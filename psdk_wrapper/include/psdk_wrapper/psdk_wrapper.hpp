@@ -28,6 +28,7 @@
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <map>
+#include <cmath>
 #include <memory>
 #include <nav2_util/lifecycle_node.hpp>
 #include <nav_msgs/msg/odometry.hpp>
@@ -884,6 +885,7 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 
   // Streaming
+  std::string camera_streaming_path_;
   void create_streaming_pipeline();
   umd_rtsp::RTSPStreamer rtsp_streamer_;
   bool streaming_pipeline_configured = false;

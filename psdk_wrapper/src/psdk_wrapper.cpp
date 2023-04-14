@@ -50,6 +50,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.flight_status", 1);
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
+
+  declare_parameter("camera.streaming_path", "mystream");
 }
 PSDKWrapper::~PSDKWrapper() {}
 
@@ -558,6 +560,7 @@ PSDKWrapper::load_parameters()
         CONTROL_DATA_TOPICS_MAX_FREQ);
     params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
   }
+  get_parameter("camera.streaming_path", camera_streaming_path_);
 }
 
 bool
