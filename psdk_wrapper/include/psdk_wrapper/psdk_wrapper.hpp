@@ -23,12 +23,12 @@
 #include <dji_platform.h>
 #include <dji_typedef.h>
 
+#include <cmath>
 #include <geometry_msgs/msg/accel_stamped.hpp>
 #include <geometry_msgs/msg/quaternion_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <map>
-#include <cmath>
 #include <memory>
 #include <nav2_util/lifecycle_node.hpp>
 #include <nav_msgs/msg/odometry.hpp>
