@@ -90,16 +90,15 @@ PSDKWrapper::gimbal_rotation_callback_(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  T_DjiGimbalManagerRotation rotation;
-  rotation.rotationMode =
+  T_DjiGimbalManagerRotation rotation_deg;
+  rotation_deg.rotationMode =
       static_cast<E_DjiGimbalRotationMode>(request->rotation_mode);
-  rotation.pitch = request->pitch;
-  rotation.roll = request->roll;
-  rotation.yaw = request->yaw;
-  rotation.time = request->time;
 
-  // TODO(@lidiadltv): Test if DJI_GIMBAL_MODE_FREE is the mode I want to set by
-  // default or it is DJI_GIMBAL_MODE_YAW_FOLLOW
+  rotation_deg.pitch = (request->pitch * 180)/M_PI_2;
+  rotation_deg.roll = (request->roll * 180)/M_PI_2;
+  rotation_deg.yaw = (request->yaw * 180)/M_PI_2;
+  rotation_deg.time = request->time;
+  
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -107,14 +106,14 @@ PSDKWrapper::gimbal_rotation_callback_(
                 return_code);
     response->success = false;
   }
-
-  return_code = DjiGimbalManager_Rotate(index, rotation);
+  
+  return_code = DjiGimbalManager_Rotate(index, rotation_deg);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_INFO(
         get_logger(),
         "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: 0x%08X",
-        rotation.pitch, rotation.roll, rotation.yaw, return_code);
+        rotation_deg.pitch, rotation_deg.roll, rotation_deg.yaw, return_code);
     response->success = false;
     return;
   }
