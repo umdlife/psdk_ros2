@@ -346,9 +346,9 @@ PSDKWrapper::camera_set_focus_target_callback_(
       static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiCameraManagerFocusPosData focus_point;
   focus_point.focusX =
-      request->x_target;  // static_cast<dji_f32_t>(request->x_target);
+      request->x_target;  
   focus_point.focusY =
-      request->y_target;  // static_cast<dji_f32_t>(request->y_target);
+      request->y_target; 
   return_code =
       DjiCameraManager_SetFocusMode(index, DJI_CAMERA_MANAGER_FOCUS_MODE_AUTO);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
@@ -500,7 +500,7 @@ PSDKWrapper::camera_set_optical_zoom_callback_(
     return;
   }
   else
-  {  // TODO(@lidiadltv): If we can wait to see the result is an action
+  { 
     response->success = true;
     return;
   }
@@ -576,11 +576,6 @@ PSDKWrapper::camera_start_shoot_single_photo_callback_(
         response)  // TODO(@lidiadltv): Change name, remove start word
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot single photo");
-  // auto current_goal =
-  //     camera_start_shoot_single_photo_action_->get_current_goal();
-  // auto action_result =
-  // std::make_shared<CameraStartShootSinglePhoto::Result>();
-  // action_result->result = false;
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
@@ -637,11 +632,6 @@ PSDKWrapper::camera_start_shoot_burst_photo_callback_(
     const std::shared_ptr<CameraStartShootBurstPhoto::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot burst photo");
-  // auto current_goal =
-  //     camera_start_shoot_burst_photo_action_->get_current_goal();
-  // auto action_result =
-  // std::make_shared<CameraStartShootBurstPhoto::Result>();
-  // action_result->result = false;
   T_DjiReturnCode return_code;
 
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
@@ -724,10 +714,6 @@ PSDKWrapper::camera_start_shoot_aeb_photo_callback_(
     const std::shared_ptr<CameraStartShootAEBPhoto::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot AEB photo");
-  // auto current_goal =
-  // camera_start_shoot_aeb_photo_action_->get_current_goal(); auto
-  // action_result = std::make_shared<CameraStartShootAEBPhoto::Result>();
-  // action_result->result = false;
   T_DjiReturnCode return_code;
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
   E_DjiMountPosition index =
@@ -813,11 +799,6 @@ PSDKWrapper::camera_start_shoot_interval_photo_callback_(
     const std::shared_ptr<CameraStartShootIntervalPhoto::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera shoot interval photo");
-  // auto current_goal =
-  //     camera_start_shoot_interval_photo_action_->get_current_goal();
-  // auto action_result =
-  //     std::make_shared<CameraStartShootIntervalPhoto::Result>();
-  // action_result->result = false;
   T_DjiReturnCode return_code;
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
   E_DjiMountPosition index =
@@ -909,16 +890,12 @@ PSDKWrapper::camera_start_shoot_interval_photo_callback_(
   }
 }
 
-// TODO(@lidiadltv): Do not expose this, use the action cancel goal
 void
 PSDKWrapper::camera_stop_shoot_photo_callback_(
     const std::shared_ptr<CameraStopShootPhoto::Request> request,
     const std::shared_ptr<CameraStopShootPhoto::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera stop shoot photo");
-  // auto current_goal = camera_stop_shoot_photo_action_->get_current_goal();
-  // auto action_result = std::make_shared<CameraStopShootPhoto::Result>();
-  // action_result->result = false;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiReturnCode return_code;
@@ -947,9 +924,6 @@ PSDKWrapper::camera_record_video_callback_(
     const std::shared_ptr<CameraRecordVideo::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera stop shoot photo");
-  // auto current_goal = camera_record_video_action_->get_current_goal();
-  // auto action_result = std::make_shared<CameraRecordVideo::Result>();
-  // action_result->result = false;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
   bool record_status = request->start_stop;
@@ -985,7 +959,6 @@ PSDKWrapper::camera_record_video_callback_(
       return;
     }
   }
-  // TODO(@lidiadltv): Should I put this in a service since is not a long task?
   else if (!record_status)
   {
     return_code = DjiCameraManager_StopRecordVideo(index);
@@ -1000,8 +973,6 @@ PSDKWrapper::camera_record_video_callback_(
       return;
     }
   }
-  // TODO(@lidiadltv): Test what happens if I leave the start_stop empty on the
-  // call. Bug?
   response->success = true;
   return;
 }
@@ -1012,9 +983,6 @@ PSDKWrapper::camera_get_laser_ranging_info_callback_(
     const std::shared_ptr<CameraGetLaserRangingInfo::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera get laser ranging info");
-  // auto current_goal =
-  // camera_get_laser_ranging_info_action_->get_current_goal(); auto
-  // action_result = std::make_shared<CameraGetLaserRangingInfo::Result>();
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
   T_DjiReturnCode return_code;
@@ -1053,8 +1021,6 @@ PSDKWrapper::camera_download_file_list_callback_(
     const std::shared_ptr<CameraDownloadFileList::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera download file list");
-  // auto current_goal = camera_download_file_list_action_->get_current_goal();
-  // auto action_result = std::make_shared<CameraDownloadFileList::Result>();
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
@@ -1070,7 +1036,6 @@ PSDKWrapper::camera_download_file_list_callback_(
   }
   else
   {
-    // action_result->result = media_file_list.totalCount;
     // TODO(@lidiadltv): Return file name list
     response->success = true;
     return;
@@ -1084,10 +1049,6 @@ PSDKWrapper::camera_download_file_by_index_callback_(
     const std::shared_ptr<CameraDownloadFileByIndex::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera download file by index");
-  // auto current_goal =
-  // camera_download_file_by_index_action_->get_current_goal(); auto
-  // action_result = std::make_shared<CameraDownloadFileByIndex::Result>();
-  // action_result->result = false;
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
@@ -1116,10 +1077,6 @@ PSDKWrapper::camera_delete_file_by_index_callback_(
     const std::shared_ptr<CameraDeleteFileByIndex::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling Camera delete file by index");
-  // auto current_goal =
-  // camera_delete_file_by_index_action_->get_current_goal(); auto action_result
-  // = std::make_shared<CameraDeleteFileByIndex::Result>();
-  // action_result->result = false;
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
@@ -1198,7 +1155,7 @@ PSDKWrapper::create_streaming_pipeline()
 {
   if (!streaming_pipeline_configured)
   {
-    std::string url_writer = "rtsp://127.0.0.1:8554/mystream";
+    std::string url_writer = "rtsp://127.0.0.1:8554/" + camera_streaming_path_;
     rtsp_streamer_.on_configure_writer(1920, 1080, 30, 9000, url_writer);
     streaming_pipeline_configured = true;
   }
@@ -1210,9 +1167,6 @@ PSDKWrapper::camera_streaming_callback_(
     const std::shared_ptr<CameraStreaming::Response> response)
 {
   RCLCPP_INFO(get_logger(), "Calling streaming");
-  // auto current_goal = camera_streaming_action_->get_current_goal();
-  // auto action_result = std::make_shared<CameraStreaming::Result>();
-  // action_result->result = false;
   T_DjiReturnCode return_code;
   E_DjiLiveViewCameraPosition index =
       static_cast<E_DjiLiveViewCameraPosition>(request->payload_index);
