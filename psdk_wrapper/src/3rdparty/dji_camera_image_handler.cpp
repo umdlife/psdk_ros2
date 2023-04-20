@@ -23,7 +23,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "psdk_wrapper/dji_camera_image_handler.hpp"
+#include "dji_camera_image_handler.hpp"
 
 #include <iostream>
 

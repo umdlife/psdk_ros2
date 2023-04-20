@@ -28,7 +28,8 @@
         control_information: 50
       
       camera:
-        streaming: "mystream"
+        streaming_path: "/mystream"
+        streaming_port: "8554"
 
 
 
