@@ -3,8 +3,6 @@ project(psdk_wrapper)
 
 SET(BUILD_SHARED_LIBS ON)
 
-# Find 3rdparty cmake files
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../Payload-SDK/samples/sample_c++/platform/linux/common/3rdparty)
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
