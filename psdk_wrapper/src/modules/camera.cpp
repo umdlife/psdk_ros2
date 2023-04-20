@@ -17,8 +17,6 @@
 #include "psdk_wrapper/psdk_wrapper.hpp"
 #include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
-std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder *> streamDecoder;
-
 namespace psdk_ros2
 {
 bool
@@ -40,38 +38,6 @@ PSDKWrapper::deinit_camera_manager()
   if (DjiCameraManager_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Could not deinitialize camera manager.");
-    return false;
-  }
-  return true;
-}
-
-
-bool
-PSDKWrapper::init_liveview_manager()
-{
-  RCLCPP_INFO(get_logger(), "Initiating Live view manager...");
-  if (DjiLiveview_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-  {
-    RCLCPP_ERROR(get_logger(), "Could not initialize Live view manager.");
-    return false;
-  }
-
-  streamDecoder = {
-      {DJI_LIVEVIEW_CAMERA_POSITION_FPV, (new DJICameraStreamDecoder())},
-      {DJI_LIVEVIEW_CAMERA_POSITION_NO_1, (new DJICameraStreamDecoder())},
-      {DJI_LIVEVIEW_CAMERA_POSITION_NO_2, (new DJICameraStreamDecoder())},
-      {DJI_LIVEVIEW_CAMERA_POSITION_NO_3, (new DJICameraStreamDecoder())},
-  };
-
-  return true;
-}
-
-bool PSDKWrapper::deinit_liveview_manager()
-{
-  RCLCPP_INFO(get_logger(), "Denitiating Live view manager...");
-  if (DjiLiveview_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-  {
-    RCLCPP_ERROR(get_logger(), "Could not deinitialize Live view manager.");
     return false;
   }
   return true;

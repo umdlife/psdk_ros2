@@ -88,7 +88,6 @@
 #include "psdk_interfaces/srv/camera_start_shoot_interval_photo.hpp"
 #include "psdk_interfaces/srv/camera_start_shoot_single_photo.hpp"
 #include "psdk_interfaces/srv/camera_stop_shoot_photo.hpp"
-#include "psdk_interfaces/srv/camera_streaming.hpp"
 #include "psdk_interfaces/srv/get_home_altitude.hpp"
 #include "psdk_interfaces/srv/get_obstacle_avoidance.hpp"
 #include "psdk_interfaces/srv/gimbal_reset.hpp"
@@ -132,7 +131,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   using CameraDownloadFileByIndex =
       psdk_interfaces::srv::CameraDownloadFileByIndex;
   using CameraDeleteFileByIndex = psdk_interfaces::srv::CameraDeleteFileByIndex;
-  using CameraStreaming = psdk_interfaces::srv::CameraStreaming;
   using CameraGetType = psdk_interfaces::srv::CameraGetType;
   using CameraSetEV = psdk_interfaces::srv::CameraSetEV;
   using CameraGetEV = psdk_interfaces::srv::CameraGetEV;
@@ -217,8 +215,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
     std::string hardware_connection;
     std::string uart_dev_1;
     std::string uart_dev_2;
-    std::string camera_streaming_path;
-    std::string camera_streaming_port;
     int imu_frequency;
     int attitude_frequency;
     int acceleration_frequency;
@@ -666,9 +662,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void camera_delete_file_by_index_cb(
       const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
       const std::shared_ptr<CameraDeleteFileByIndex::Response> response);
-  void camera_streaming_cb(
-      const std::shared_ptr<CameraStreaming::Request> request,
-      const std::shared_ptr<CameraStreaming::Response> response);
   void gimbal_set_mode_cb(
       const std::shared_ptr<GimbalSetMode::Request> request,
       const std::shared_ptr<GimbalSetMode::Response> response);
@@ -802,7 +795,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
       camera_download_file_by_index_service_;
   rclcpp::Service<CameraDeleteFileByIndex>::SharedPtr
       camera_delete_file_by_index_service_;
-  rclcpp::Service<CameraStreaming>::SharedPtr camera_streaming_service_;
   rclcpp::Service<CameraGetType>::SharedPtr camera_get_type_service_;
   rclcpp::Service<CameraSetEV>::SharedPtr camera_set_ev_service_;
   rclcpp::Service<CameraGetEV>::SharedPtr camera_get_ev_service_;
@@ -887,6 +879,23 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   bool local_altitude_reference_set_{false};
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
+  
+  std::map<E_DjiCameraType, std::string> camera_type_str = {
+    {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
+    {DJI_CAMERA_TYPE_Z30, "Zenmuse Z30"},
+    {DJI_CAMERA_TYPE_XT2, "Zenmuse XT2"},
+    {DJI_CAMERA_TYPE_PSDK, "Payload Camera"},
+    {DJI_CAMERA_TYPE_XTS, "Zenmuse XTS"},
+    {DJI_CAMERA_TYPE_H20, "Zenmuse H20"},
+    {DJI_CAMERA_TYPE_H20T, "Zenmuse H20T"},
+    {DJI_CAMERA_TYPE_P1, "Zenmuse P1"},
+    {DJI_CAMERA_TYPE_L1, "Zenmuse L1"},
+    {DJI_CAMERA_TYPE_H20N, "Zenmuse H20N"},
+    {DJI_CAMERA_TYPE_M30, "M30 Camera"},
+    {DJI_CAMERA_TYPE_M30T, "M30T Camera"},
+    {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
+    {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
+  };
 
 };
 
