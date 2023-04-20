@@ -50,7 +50,6 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.flight_status", 1);
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
-
 }
 PSDKWrapper::~PSDKWrapper() {}
 
@@ -131,7 +130,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
-   if (!deinit_camera_manager() || !deinit_gimbal_manager())
+  if (!deinit_camera_manager() || !deinit_gimbal_manager())
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
