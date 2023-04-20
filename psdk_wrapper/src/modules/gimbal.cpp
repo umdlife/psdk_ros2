@@ -93,7 +93,6 @@ PSDKWrapper::gimbal_reset_cb(
   }
 }
 
-
 void
 PSDKWrapper::gimbal_rotation_cb(
     const psdk_interfaces::msg::GimbalRotation::SharedPtr msg)
