@@ -59,7 +59,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraDownloadFileList.srv"
   "srv/CameraDownloadFileByIndex.srv"
   "srv/CameraDeleteFileByIndex.srv"
-  "srv/CameraStreaming.srv"
   "srv/GimbalSetMode.srv"
   "srv/GimbalReset.srv"
   "msg/RTKYaw.msg"
