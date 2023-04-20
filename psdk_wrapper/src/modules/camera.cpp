@@ -45,7 +45,6 @@ PSDKWrapper::deinit_camera_manager()
   return true;
 }
 
-
 bool
 PSDKWrapper::init_liveview_manager()
 {
@@ -66,7 +65,8 @@ PSDKWrapper::init_liveview_manager()
   return true;
 }
 
-bool PSDKWrapper::deinit_liveview_manager()
+bool
+PSDKWrapper::deinit_liveview_manager()
 {
   RCLCPP_INFO(get_logger(), "Denitiating Live view manager...");
   if (DjiLiveview_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -121,14 +121,12 @@ PSDKWrapper::camera_set_ev_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  E_DjiCameraManagerExposureMode work_mode = 
-    static_cast<E_DjiCameraManagerExposureMode>(
-          request->work_mode);
+  E_DjiCameraManagerExposureMode work_mode =
+      static_cast<E_DjiCameraManagerExposureMode>(request->work_mode);
   E_DjiCameraManagerExposureCompensation ev_factor =
       static_cast<E_DjiCameraManagerExposureCompensation>(request->ev_factor);
 
-  return_code = DjiCameraManager_SetExposureMode(
-      index, work_mode);
+  return_code = DjiCameraManager_SetExposureMode(index, work_mode);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(),
@@ -198,20 +196,19 @@ PSDKWrapper::camera_set_shutter_speed_cb(
   E_DjiCameraManagerShutterSpeed shutter_speed_factor =
       static_cast<E_DjiCameraManagerShutterSpeed>(
           request->shutter_speed_factor);
-  E_DjiCameraManagerExposureMode work_mode = 
-    static_cast<E_DjiCameraManagerExposureMode>(
-          request->work_mode);
+  E_DjiCameraManagerExposureMode work_mode =
+      static_cast<E_DjiCameraManagerExposureMode>(request->work_mode);
 
-    return_code = DjiCameraManager_SetExposureMode(index, work_mode);
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(),
-                   "Set mounted position %d camera's exposure mode failed,"
-                   "error code: 0x%08X\r\n",
-                   index, return_code);
-      response->success = false;
-      return;
-    }
+  return_code = DjiCameraManager_SetExposureMode(index, work_mode);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Set mounted position %d camera's exposure mode failed,"
+                 "error code: 0x%08X\r\n",
+                 index, return_code);
+    response->success = false;
+    return;
+  }
 
   return_code = DjiCameraManager_SetShutterSpeed(index, shutter_speed_factor);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
@@ -281,14 +278,12 @@ PSDKWrapper::camera_set_iso_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  E_DjiCameraManagerExposureMode work_mode = 
-    static_cast<E_DjiCameraManagerExposureMode>(
-          request->work_mode);
+  E_DjiCameraManagerExposureMode work_mode =
+      static_cast<E_DjiCameraManagerExposureMode>(request->work_mode);
   E_DjiCameraManagerISO iso_factor =
       static_cast<E_DjiCameraManagerISO>(request->iso_factor);
 
-  return_code = DjiCameraManager_SetExposureMode(
-      index, work_mode);
+  return_code = DjiCameraManager_SetExposureMode(index, work_mode);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
       return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND)
   {
@@ -1167,8 +1162,9 @@ PSDKWrapper::create_streaming_pipeline()
 {
   if (!streaming_pipeline_configured)
   {
-    std::string url_writer = 
-      "rtsp://127.0.0.1:" + params_.camera_streaming_port + params_.camera_streaming_path;
+    std::string url_writer =
+        "rtsp://127.0.0.1:" + params_.camera_streaming_port +
+        params_.camera_streaming_path;
     rtsp_streamer_.on_configure_writer(1920, 1080, 30, 9000, url_writer);
     streaming_pipeline_configured = true;
   }
