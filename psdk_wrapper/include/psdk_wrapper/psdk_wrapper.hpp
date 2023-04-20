@@ -664,9 +664,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void gimbal_set_mode_cb(
       const std::shared_ptr<GimbalSetMode::Request> request,
       const std::shared_ptr<GimbalSetMode::Response> response);
-  void gimbal_reset_cb(
-      const std::shared_ptr<GimbalReset::Request> request,
-      const std::shared_ptr<GimbalReset::Response> response);
+  void gimbal_reset_cb(const std::shared_ptr<GimbalReset::Request> request,
+                       const std::shared_ptr<GimbalReset::Response> response);
 
   /* ROS Publishers */
   rclcpp_lifecycle::LifecyclePublisher<
@@ -876,24 +875,23 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   bool local_altitude_reference_set_{false};
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
-  
-  std::map<E_DjiCameraType, std::string> camera_type_str = {
-    {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
-    {DJI_CAMERA_TYPE_Z30, "Zenmuse Z30"},
-    {DJI_CAMERA_TYPE_XT2, "Zenmuse XT2"},
-    {DJI_CAMERA_TYPE_PSDK, "Payload Camera"},
-    {DJI_CAMERA_TYPE_XTS, "Zenmuse XTS"},
-    {DJI_CAMERA_TYPE_H20, "Zenmuse H20"},
-    {DJI_CAMERA_TYPE_H20T, "Zenmuse H20T"},
-    {DJI_CAMERA_TYPE_P1, "Zenmuse P1"},
-    {DJI_CAMERA_TYPE_L1, "Zenmuse L1"},
-    {DJI_CAMERA_TYPE_H20N, "Zenmuse H20N"},
-    {DJI_CAMERA_TYPE_M30, "M30 Camera"},
-    {DJI_CAMERA_TYPE_M30T, "M30T Camera"},
-    {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
-    {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
-  };
 
+  std::map<E_DjiCameraType, std::string> camera_type_str = {
+      {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
+      {DJI_CAMERA_TYPE_Z30, "Zenmuse Z30"},
+      {DJI_CAMERA_TYPE_XT2, "Zenmuse XT2"},
+      {DJI_CAMERA_TYPE_PSDK, "Payload Camera"},
+      {DJI_CAMERA_TYPE_XTS, "Zenmuse XTS"},
+      {DJI_CAMERA_TYPE_H20, "Zenmuse H20"},
+      {DJI_CAMERA_TYPE_H20T, "Zenmuse H20T"},
+      {DJI_CAMERA_TYPE_P1, "Zenmuse P1"},
+      {DJI_CAMERA_TYPE_L1, "Zenmuse L1"},
+      {DJI_CAMERA_TYPE_H20N, "Zenmuse H20N"},
+      {DJI_CAMERA_TYPE_M30, "M30 Camera"},
+      {DJI_CAMERA_TYPE_M30T, "M30T Camera"},
+      {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
+      {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
+  };
 };
 
 /**
