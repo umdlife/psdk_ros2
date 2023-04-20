@@ -31,8 +31,20 @@ PSDKWrapper::init_gimbal_manager()
   return true;
 }
 
+bool
+PSDKWrapper::deinit_gimbal_manager()
+{
+  RCLCPP_INFO(get_logger(), "Deinitiating gimbal manager...");
+  if (DjiGimbalManager_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not deinitialize gimbal manager");
+    return false;
+  }
+  return true;
+}
+
 void
-PSDKWrapper::gimbal_set_mode_callback_(
+PSDKWrapper::gimbal_set_mode_cb(
     const std::shared_ptr<GimbalSetMode::Request> request,
     const std::shared_ptr<GimbalSetMode::Response> response)
 {
@@ -58,7 +70,7 @@ PSDKWrapper::gimbal_set_mode_callback_(
 }
 
 void
-PSDKWrapper::gimbal_reset_callback_(
+PSDKWrapper::gimbal_reset_cb(
     const std::shared_ptr<GimbalReset::Request> request,
     const std::shared_ptr<GimbalReset::Response> response)
 {
@@ -82,7 +94,7 @@ PSDKWrapper::gimbal_reset_callback_(
 }
 
 void
-PSDKWrapper::gimbal_rotation_callback_(
+PSDKWrapper::gimbal_rotation_cb(
     const std::shared_ptr<GimbalRotation::Request> request,
     const std::shared_ptr<GimbalRotation::Response> response)
 {
@@ -94,9 +106,9 @@ PSDKWrapper::gimbal_rotation_callback_(
   rotation_deg.rotationMode =
       static_cast<E_DjiGimbalRotationMode>(request->rotation_mode);
 
-  rotation_deg.pitch = (request->pitch * 180) / M_PI_2;
-  rotation_deg.roll = (request->roll * 180) / M_PI_2;
-  rotation_deg.yaw = (request->yaw * 180) / M_PI_2;
+  rotation_deg.pitch = psdk_ros2::psdk_utils::rad_to_deg(request->pitch);
+  rotation_deg.roll = psdk_ros2::psdk_utils::rad_to_deg(request->roll);
+  rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(request->yaw);
   rotation_deg.time = request->time;
 
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);

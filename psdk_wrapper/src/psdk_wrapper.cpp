@@ -51,7 +51,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
 
-  declare_parameter("camera.streaming_path", "mystream");
+  declare_parameter("camera.streaming_path", rclcpp::ParameterValue(""));
+  declare_parameter("camera.streaming_port", rclcpp::ParameterValue(""));
 }
 PSDKWrapper::~PSDKWrapper() {}
 
@@ -93,15 +94,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   subscribe_psdk_topics();
 
-  if (!init_camera_manager())
-  {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-  if (!init_liveview_manager())
-  {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-  if (!init_gimbal_manager())
+  if (!init_camera_manager() || !init_liveview_manager() || !init_gimbal_manager())
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -137,6 +130,10 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   int deinit_result = DjiFlightController_Deinit() ^
                       DjiFcSubscription_DeInit() ^ DjiCore_DeInit();
   if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    return nav2_util::CallbackReturn::FAILURE;
+  }
+   if (!deinit_camera_manager() || !deinit_liveview_manager() || !deinit_gimbal_manager())
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -560,7 +557,16 @@ PSDKWrapper::load_parameters()
         CONTROL_DATA_TOPICS_MAX_FREQ);
     params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
   }
-  get_parameter("camera.streaming_path", camera_streaming_path_);
+  if (!get_parameter("camera.streaming_path", params_.camera_streaming_path))
+  {
+    RCLCPP_ERROR(get_logger(), "camera_streaming_path param not defined");
+    exit(-1);
+  }
+  if (!get_parameter("camera.streaming_port", params_.camera_streaming_port))
+  {
+    RCLCPP_ERROR(get_logger(), "camera_streaming_port param not defined");
+    exit(-1);
+  }
 }
 
 bool
@@ -835,130 +841,130 @@ PSDKWrapper::initialize_ros_elements()
   camera_start_shoot_single_photo_service_ =
       create_service<CameraStartShootSinglePhoto>(
           "camera_start_shoot_single_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_single_photo_callback_,
+          std::bind(&PSDKWrapper::camera_start_shoot_single_photo_cb,
                     this, _1, _2),
           qos_profile_);
   camera_start_shoot_burst_photo_service_ =
       create_service<CameraStartShootBurstPhoto>(
           "camera_start_shoot_burst_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_callback_,
+          std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_cb,
                     this, _1, _2),
           qos_profile_);
   camera_start_shoot_aeb_photo_service_ =
       create_service<CameraStartShootAEBPhoto>(
           "camera_start_shoot_aeb_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_callback_, this,
+          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_cb, this,
                     _1, _2),
           qos_profile_);
   camera_start_shoot_interval_photo_service_ =
       create_service<CameraStartShootIntervalPhoto>(
           "camera_start_shoot_interval_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_callback_,
+          std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_cb,
                     this, _1, _2),
           qos_profile_);
   camera_stop_shoot_photo_service_ = create_service<CameraStopShootPhoto>(
       "camera_stop_shoot_photo",
-      std::bind(&PSDKWrapper::camera_stop_shoot_photo_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_stop_shoot_photo_cb, this, _1, _2),
       qos_profile_);
   camera_record_video_service_ = create_service<CameraRecordVideo>(
       "camera_record_video",
-      std::bind(&PSDKWrapper::camera_record_video_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_record_video_cb, this, _1, _2),
       qos_profile_);
   camera_get_laser_ranging_info_service_ =
       create_service<CameraGetLaserRangingInfo>(
           "camera_get_laser_ranging_info",
-          std::bind(&PSDKWrapper::camera_get_laser_ranging_info_callback_, this,
+          std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this,
                     _1, _2),
           qos_profile_);
   // TODO(@lidiadltv): Enable these actions once are working properly
   // camera_download_file_list_action_ =
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
   //           shared_from_this(), "camera_download_file_list",
-  //           std::bind(&PSDKWrapper::camera_download_file_list_callback_,
+  //           std::bind(&PSDKWrapper::camera_download_file_list_cb,
   //           this));
   // camera_download_file_by_index_action_ =
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>>(
   //           shared_from_this(), "camera_download_file_by_index",
-  //           std::bind(&PSDKWrapper::camera_download_file_by_index_callback_,
+  //           std::bind(&PSDKWrapper::camera_download_file_by_index_cb,
   //           this));
   // camera_delete_file_by_index_action_ =
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
   //           shared_from_this(), "camera_delete_file_by_index",
-  //           std::bind(&PSDKWrapper::camera_delete_file_by_index_callback_,
+  //           std::bind(&PSDKWrapper::camera_delete_file_by_index_cb,
   //           this));
   camera_streaming_service_ = create_service<CameraStreaming>(
       "camera_streaming",
-      std::bind(&PSDKWrapper::camera_streaming_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_streaming_cb, this, _1, _2),
       qos_profile_);
   camera_get_type_service_ = create_service<CameraGetType>(
       "camera_get_type",
-      std::bind(&PSDKWrapper::camera_get_type_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2),
       qos_profile_);
   camera_set_ev_service_ = create_service<CameraSetEV>(
       "camera_set_ev",
-      std::bind(&PSDKWrapper::camera_set_ev_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_set_ev_cb, this, _1, _2),
       qos_profile_);
   camera_get_ev_service_ = create_service<CameraGetEV>(
       "camera_get_ev",
-      std::bind(&PSDKWrapper::camera_get_ev_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_get_ev_cb, this, _1, _2),
       qos_profile_);
   camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
       "camera_set_shutter_speed",
-      std::bind(&PSDKWrapper::camera_set_shutter_speed_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_set_shutter_speed_cb, this, _1, _2),
       qos_profile_);
   camera_get_shutter_speed_service_ = create_service<CameraGetShutterSpeed>(
       "camera_get_shutter_speed",
-      std::bind(&PSDKWrapper::camera_get_shutter_speed_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_get_shutter_speed_cb, this, _1, _2),
       qos_profile_);
   camera_set_iso_service_ = create_service<CameraSetISO>(
       "camera_set_iso",
-      std::bind(&PSDKWrapper::camera_set_iso_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_set_iso_cb, this, _1, _2),
       qos_profile_);
   camera_get_iso_service_ = create_service<CameraGetISO>(
       "camera_get_iso",
-      std::bind(&PSDKWrapper::camera_get_iso_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_get_iso_cb, this, _1, _2),
       qos_profile_);
   camera_set_focus_target_service_ = create_service<CameraSetFocusTarget>(
       "camera_set_focus_target",
-      std::bind(&PSDKWrapper::camera_set_focus_target_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_set_focus_target_cb, this, _1, _2),
       qos_profile_);
   camera_get_focus_target_service_ = create_service<CameraGetFocusTarget>(
       "camera_get_focus_target",
-      std::bind(&PSDKWrapper::camera_get_focus_target_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_get_focus_target_cb, this, _1, _2),
       qos_profile_);
   camera_set_focus_mode_service_ = create_service<CameraSetFocusMode>(
       "camera_set_focus_mode",
-      std::bind(&PSDKWrapper::camera_set_focus_mode_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_set_focus_mode_cb, this, _1, _2),
       qos_profile_);
   camera_get_focus_mode_service_ = create_service<CameraGetFocusMode>(
       "camera_get_focus_mode",
-      std::bind(&PSDKWrapper::camera_get_focus_mode_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_get_focus_mode_cb, this, _1, _2),
       qos_profile_);
   camera_set_optical_zoom_service_ = create_service<CameraSetOpticalZoom>(
       "camera_set_optical_zoom",
-      std::bind(&PSDKWrapper::camera_set_optical_zoom_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_set_optical_zoom_cb, this, _1, _2),
       qos_profile_);
   camera_get_optical_zoom_service_ = create_service<CameraGetOpticalZoom>(
       "camera_get_optical_zoom",
-      std::bind(&PSDKWrapper::camera_get_optical_zoom_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_get_optical_zoom_cb, this, _1, _2),
       qos_profile_);
   camera_set_infrared_zoom_service_ = create_service<CameraSetInfraredZoom>(
       "camera_set_infrared_zoom",
-      std::bind(&PSDKWrapper::camera_set_infrared_zoom_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::camera_set_infrared_zoom_cb, this, _1, _2),
       qos_profile_);
   //// Gimbal
   // Services
   gimbal_set_mode_service_ = create_service<GimbalSetMode>(
       "gimbal_set_mode",
-      std::bind(&PSDKWrapper::gimbal_set_mode_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::gimbal_set_mode_cb, this, _1, _2),
       qos_profile_);
   gimbal_reset_service_ = create_service<GimbalReset>(
       "gimbal_reset",
-      std::bind(&PSDKWrapper::gimbal_reset_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2),
       qos_profile_);
   gimbal_rotation_service_ = create_service<GimbalRotation>(
       "gimbal_rotation",
-      std::bind(&PSDKWrapper::gimbal_rotation_callback_, this, _1, _2),
+      std::bind(&PSDKWrapper::gimbal_rotation_cb, this, _1, _2),
       qos_profile_);
 }
 
