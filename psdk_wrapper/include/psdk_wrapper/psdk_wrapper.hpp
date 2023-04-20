@@ -52,7 +52,6 @@
 #include "osal_socket.h"         //NOLINT
 
 // PSDK wrapper interfaces
-#include "dji_camera_stream_decoder.hpp"
 #include "psdk_interfaces/msg/aircraft_status.hpp"
 #include "psdk_interfaces/msg/altitude.hpp"
 #include "psdk_interfaces/msg/battery.hpp"
