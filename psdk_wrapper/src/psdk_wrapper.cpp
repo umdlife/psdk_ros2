@@ -51,8 +51,6 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
 
-  declare_parameter("camera.streaming_path", rclcpp::ParameterValue(""));
-  declare_parameter("camera.streaming_port", rclcpp::ParameterValue(""));
 }
 PSDKWrapper::~PSDKWrapper() {}
 
@@ -94,7 +92,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   subscribe_psdk_topics();
 
-  if (!init_camera_manager() || !init_liveview_manager() || !init_gimbal_manager())
+  if (!init_camera_manager() || !init_gimbal_manager())
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -133,7 +131,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
-   if (!deinit_camera_manager() || !deinit_liveview_manager() || !deinit_gimbal_manager())
+   if (!deinit_camera_manager() || !deinit_gimbal_manager())
   {
     return nav2_util::CallbackReturn::FAILURE;
   }
@@ -557,16 +555,6 @@ PSDKWrapper::load_parameters()
         CONTROL_DATA_TOPICS_MAX_FREQ);
     params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
   }
-  if (!get_parameter("camera.streaming_path", params_.camera_streaming_path))
-  {
-    RCLCPP_ERROR(get_logger(), "camera_streaming_path param not defined");
-    exit(-1);
-  }
-  if (!get_parameter("camera.streaming_port", params_.camera_streaming_port))
-  {
-    RCLCPP_ERROR(get_logger(), "camera_streaming_port param not defined");
-    exit(-1);
-  }
 }
 
 bool
@@ -895,10 +883,6 @@ PSDKWrapper::initialize_ros_elements()
   //           shared_from_this(), "camera_delete_file_by_index",
   //           std::bind(&PSDKWrapper::camera_delete_file_by_index_cb,
   //           this));
-  camera_streaming_service_ = create_service<CameraStreaming>(
-      "camera_streaming",
-      std::bind(&PSDKWrapper::camera_streaming_cb, this, _1, _2),
-      qos_profile_);
   camera_get_type_service_ = create_service<CameraGetType>(
       "camera_get_type",
       std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2),
@@ -1139,7 +1123,6 @@ PSDKWrapper::clean_ros_elements()
   camera_download_file_list_service_.reset();
   camera_download_file_by_index_service_.reset();
   camera_delete_file_by_index_service_.reset();
-  camera_streaming_service_.reset();
   // Gimbal
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();

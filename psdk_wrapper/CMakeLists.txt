@@ -33,12 +33,7 @@ find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(umd_rtsp REQUIRED)
-find_package(nlohmann_json 3.7.0 REQUIRED)
-find_package(umd_http REQUIRED)
-find_package(FFMPEG REQUIRED)  
-find_package(LIBUSB REQUIRED)
+
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -63,59 +58,11 @@ else()
   message(FATAL_ERROR "PSDK library NOT found")
 endif()
 
-if (OpenCV_FOUND)                                                                                                 
-  message( "\n${PROJECT_NAME}...")                                                                                
-  message( STATUS " - Includes: ${OpenCV_INCLUDE_DIRS}")                                                                                                                                                                             
-  message( STATUS " - Libraries: ${OpenCV_LIBRARIES}")                                                            
-  add_definitions(-DOPEN_CV_INSTALLED)                                                                            
-else()                                                                                                            
-  message( FATAL_ERROR "OpenCV is required for this code to stream")                                 
-endif ()                                                                                                          
-
-
-if (FFMPEG_FOUND)      
-   message(STATUS "Found FFMPEG installed in the system")
-    message(STATUS " - Includes: ${FFMPEG_INCLUDE_DIR}")
-    message(STATUS " - Libraries: ${FFMPEG_LIBRARIES}")
-
-    EXECUTE_PROCESS(COMMAND ffmpeg -version
-            OUTPUT_VARIABLE ffmpeg_version_psdk_libput
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-    string(REGEX MATCH "version.*Copyright" ffmpeg_version_line ${ffmpeg_version_psdk_libput})
-    string(REGEX MATCH " .* " ffmpeg_version ${ffmpeg_version_line})
-    string(REGEX MATCH "^ 5.*$" ffmpeg_major_version ${ffmpeg_version})
-
-    if (HEAD${ffmpeg_major_version} STREQUAL "HEAD")
-        message(STATUS " - Version: ${ffmpeg_version}")
-    else ()
-        message(FATAL_ERROR " - Not support FFMPEG version: ${ffmpeg_major_version}, please install 4.x.x instead.")
-    endif ()
-
-    # target_link_libraries(psdk_wrapper_node ${FFMPEG_LIBRARIES})
-else ()
-    message(FATAL_ERROR "Cannot Find FFMPEG")
-endif (FFMPEG_FOUND)
-
-
-if (LIBUSB_FOUND)
-    message(STATUS "Found LIBUSB installed in the system")
-    message(STATUS " - Includes: ${LIBUSB_INCLUDE_DIR}")
-    message(STATUS " - Libraries: ${LIBUSB_LIBRARY}")
-
-    add_definitions(-DLIBUSB_INSTALLED)
-    # target_link_libraries(psdk_wrapper_node usb-1.0)
-else ()
-    message(FATAL_ERROR "Cannot Find LIBUSB")
-endif (LIBUSB_FOUND)
-
 if (NOT EXECUTABLE_OUTPUT_PATH)
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 endif ()
 
-include_directories(${FFMPEG_INCLUDE_DIR})
-include_directories(include                                                                                       
-                    ${OpenCV_INCLUDE_DIRS})
+
 # Include PSDK header files
 include_directories(${PROJECT_SOURCE_DIR}/../..//Payload-SDK/psdk_lib/include)
 include_directories(include)
@@ -143,8 +90,6 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/flight_control.cpp
   src/modules/camera.cpp
   src/modules/gimbal.cpp
-  src/3rdparty/dji_camera_image_handler.cpp
-  src/3rdparty/dji_camera_stream_decoder.cpp
   src/3rdparty/osal_fs.c
   src/3rdparty/osal_socket.c
   src/3rdparty/osal.c
@@ -160,12 +105,6 @@ ament_target_dependencies(psdk_wrapper_libs
 target_link_libraries(
   psdk_wrapper_libs
   ${PSDK_LIB}
-  ${OpenCV_LIBRARIES}
-  ${FFMPEG_LIBRARIES}
-  -lusb-1.0
-  -lavcodec
-  -lswscale
-  umd_rtsp::umd_rtsp
 )
 
 target_link_libraries(

@@ -41,11 +41,9 @@
 #include <std_msgs/msg/u_int8.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
-#include <umd_rtsp/rtsp_streamer.hpp>
 
 #include "dji_camera_manager.h"  //NOLINT
 #include "dji_gimbal_manager.h"  //NOLINT
-#include "dji_liveview.h"        //NOLINT
 #include "hal_network.h"         //NOLINT
 #include "hal_uart.h"            //NOLINT
 #include "hal_usb_bulk.h"        //NOLINT
@@ -99,7 +97,6 @@
 #include "psdk_interfaces/srv/set_home_altitude.hpp"
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
 #include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
-#include "dji_camera_stream_decoder.hpp"
 #include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
 namespace psdk_ros2
@@ -288,16 +285,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
    * @return true/false
    */
   bool deinit_camera_manager();
-  /**
-   * @brief Initiate the streaming module
-   * @return true/false
-   */
-  bool init_liveview_manager();
-  /**
-   * @brief Deinitiate the streaming module
-   * @return true/false
-   */
-  bool deinit_liveview_manager();
   /**
    * @brief Initiate the gimbal module
    * @return true/false
@@ -688,17 +675,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void gimbal_reset_cb(
       const std::shared_ptr<GimbalReset::Request> request,
       const std::shared_ptr<GimbalReset::Response> response);
-  T_DjiReturnCode start_camera_stream(CameraImageCallback callback,
-                                      void* userData,
-                                      E_DjiLiveViewCameraPosition index,
-                                      E_DjiLiveViewCameraSource camera_source);
-  friend void c_publish_streaming_callback(CameraRGBImage img, void* userData);
-  friend void c_LiveviewConvertH264ToRgbCallback(
-      E_DjiLiveViewCameraPosition position, const uint8_t* buf,
-      uint32_t bufLen);
-  void publish_streaming_callback(CameraRGBImage img, void* userData);
-  void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
-                                        const uint8_t* buf, uint32_t bufLen);
 
   /* ROS Publishers */
   rclcpp_lifecycle::LifecyclePublisher<
@@ -912,26 +888,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 
-  // Streaming
-  void create_streaming_pipeline();
-  umd_rtsp::RTSPStreamer rtsp_streamer_;
-  bool streaming_pipeline_configured = false;
-  std::map<E_DjiCameraType, std::string> camera_type_str = {
-      {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
-      {DJI_CAMERA_TYPE_Z30, "Zenmuse Z30"},
-      {DJI_CAMERA_TYPE_XT2, "Zenmuse XT2"},
-      {DJI_CAMERA_TYPE_PSDK, "Payload Camera"},
-      {DJI_CAMERA_TYPE_XTS, "Zenmuse XTS"},
-      {DJI_CAMERA_TYPE_H20, "Zenmuse H20"},
-      {DJI_CAMERA_TYPE_H20T, "Zenmuse H20T"},
-      {DJI_CAMERA_TYPE_P1, "Zenmuse P1"},
-      {DJI_CAMERA_TYPE_L1, "Zenmuse L1"},
-      {DJI_CAMERA_TYPE_H20N, "Zenmuse H20N"},
-      {DJI_CAMERA_TYPE_M30, "M30 Camera"},
-      {DJI_CAMERA_TYPE_M30T, "M30T Camera"},
-      {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
-      {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
-  };
 };
 
 /**
