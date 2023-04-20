@@ -16,7 +16,7 @@ jobs:
     secrets:
       PAT: ${{ secrets.UMDLIFEDEV_TOKEN }}
     with:
-      regex_exclude: .*src/common/.*
+      regex_exclude: .*src/3rdparty/.*
   rebuild_docker:
     strategy:
       matrix:
