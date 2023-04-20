@@ -745,6 +745,9 @@ PSDKWrapper::initialize_ros_elements()
           10,
           std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb,
                     this, _1));
+  gimbal_rotation_sub_ = create_subscription<psdk_interfaces::msg::GimbalRotation>(
+      "dji_psdk_ros/gimbal_rotation", 10,
+      std::bind(&PSDKWrapper::gimbal_rotation_cb, this, std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Creating services");
   set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
@@ -962,10 +965,6 @@ PSDKWrapper::initialize_ros_elements()
       "gimbal_reset",
       std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2),
       qos_profile_);
-  gimbal_rotation_service_ = create_service<GimbalRotation>(
-      "gimbal_rotation",
-      std::bind(&PSDKWrapper::gimbal_rotation_cb, this, _1, _2),
-      qos_profile_);
 }
 
 void
@@ -1144,7 +1143,6 @@ PSDKWrapper::clean_ros_elements()
   // Gimbal
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();
-  gimbal_rotation_service_.reset();
 }
 
 }  // namespace psdk_ros2

@@ -93,30 +93,30 @@ PSDKWrapper::gimbal_reset_cb(
   }
 }
 
+
 void
 PSDKWrapper::gimbal_rotation_cb(
-    const std::shared_ptr<GimbalRotation::Request> request,
-    const std::shared_ptr<GimbalRotation::Response> response)
+    const psdk_interfaces::msg::GimbalRotation::SharedPtr msg)
 {
-  RCLCPP_INFO(get_logger(), "Calling Gimbal rotation service");
+  (void)msg;
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(request->payload_index);
+      static_cast<E_DjiMountPosition>(msg->payload_index);
   T_DjiGimbalManagerRotation rotation_deg;
   rotation_deg.rotationMode =
-      static_cast<E_DjiGimbalRotationMode>(request->rotation_mode);
-
-  rotation_deg.pitch = psdk_ros2::psdk_utils::rad_to_deg(request->pitch);
-  rotation_deg.roll = psdk_ros2::psdk_utils::rad_to_deg(request->roll);
-  rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(request->yaw);
-  rotation_deg.time = request->time;
+      static_cast<E_DjiGimbalRotationMode>(msg->rotation_mode);
+  rotation_deg.pitch = psdk_ros2::psdk_utils::rad_to_deg(msg->pitch);
+  rotation_deg.roll = psdk_ros2::psdk_utils::rad_to_deg(msg->roll);
+  rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(msg->yaw);
+  rotation_deg.time = msg->time;
 
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);
+
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: 0x%08X",
                 return_code);
-    response->success = false;
+    return;
   }
 
   return_code = DjiGimbalManager_Rotate(index, rotation_deg);
@@ -126,12 +126,6 @@ PSDKWrapper::gimbal_rotation_cb(
         get_logger(),
         "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: 0x%08X",
         rotation_deg.pitch, rotation_deg.roll, rotation_deg.yaw, return_code);
-    response->success = false;
-    return;
-  }
-  else
-  {
-    response->success = true;
     return;
   }
 }
