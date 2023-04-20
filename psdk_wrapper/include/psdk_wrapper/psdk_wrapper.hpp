@@ -52,11 +52,13 @@
 #include "osal_socket.h"         //NOLINT
 
 // PSDK wrapper interfaces
+#include "dji_camera_stream_decoder.hpp"
 #include "psdk_interfaces/msg/aircraft_status.hpp"
 #include "psdk_interfaces/msg/altitude.hpp"
 #include "psdk_interfaces/msg/battery.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
+#include "psdk_interfaces/msg/gimbal_rotation.hpp"
 #include "psdk_interfaces/msg/gimbal_status.hpp"
 #include "psdk_interfaces/msg/gps_details.hpp"
 #include "psdk_interfaces/msg/gps_fused.hpp"
@@ -91,7 +93,6 @@
 #include "psdk_interfaces/srv/get_home_altitude.hpp"
 #include "psdk_interfaces/srv/get_obstacle_avoidance.hpp"
 #include "psdk_interfaces/srv/gimbal_reset.hpp"
-#include "psdk_interfaces/msg/gimbal_rotation.hpp"
 #include "psdk_interfaces/srv/gimbal_set_mode.hpp"
 #include "psdk_interfaces/srv/set_home_altitude.hpp"
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
@@ -512,8 +513,8 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
 
   /**
-   * @brief Callback function to control roll, pitch, yaw and time. 
-   * @param msg  psdk_interfaces::msg::GimbalRotation. 
+   * @brief Callback function to control roll, pitch, yaw and time.
+   * @param msg  psdk_interfaces::msg::GimbalRotation.
    * Rotation mode allows to set incremental, absolute or speed mode
    * command.
    */
@@ -593,12 +594,10 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void camera_get_type_cb(
       const std::shared_ptr<CameraGetType::Request> request,
       const std::shared_ptr<CameraGetType::Response> response);
-  void camera_set_ev_cb(
-      const std::shared_ptr<CameraSetEV::Request> request,
-      const std::shared_ptr<CameraSetEV::Response> response);
-  void camera_get_ev_cb(
-      const std::shared_ptr<CameraGetEV::Request> request,
-      const std::shared_ptr<CameraGetEV::Response> response);
+  void camera_set_ev_cb(const std::shared_ptr<CameraSetEV::Request> request,
+                        const std::shared_ptr<CameraSetEV::Response> response);
+  void camera_get_ev_cb(const std::shared_ptr<CameraGetEV::Request> request,
+                        const std::shared_ptr<CameraGetEV::Response> response);
   void camera_set_shutter_speed_cb(
       const std::shared_ptr<CameraSetShutterSpeed::Request> request,
       const std::shared_ptr<CameraSetShutterSpeed::Response> response);
@@ -737,7 +736,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   // Gimbal
   rclcpp::Subscription<psdk_interfaces::msg::GimbalRotation>::SharedPtr
       gimbal_rotation_sub_;
-  
 
   /* ROS Services */
   rclcpp::Service<SetHomeFromGPS>::SharedPtr set_home_from_gps_srv_;
@@ -819,7 +817,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   // Gimbal
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
-
 
   /**
    * @brief Get the gps signal level

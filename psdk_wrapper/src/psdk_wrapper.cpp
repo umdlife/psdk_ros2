@@ -733,9 +733,11 @@ PSDKWrapper::initialize_ros_elements()
           10,
           std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb,
                     this, _1));
-  gimbal_rotation_sub_ = create_subscription<psdk_interfaces::msg::GimbalRotation>(
-      "dji_psdk_ros/gimbal_rotation", 10,
-      std::bind(&PSDKWrapper::gimbal_rotation_cb, this, std::placeholders::_1));
+  gimbal_rotation_sub_ =
+      create_subscription<psdk_interfaces::msg::GimbalRotation>(
+          "dji_psdk_ros/gimbal_rotation", 10,
+          std::bind(&PSDKWrapper::gimbal_rotation_cb, this,
+                    std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Creating services");
   set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
@@ -832,26 +834,26 @@ PSDKWrapper::initialize_ros_elements()
   camera_start_shoot_single_photo_service_ =
       create_service<CameraStartShootSinglePhoto>(
           "camera_start_shoot_single_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_single_photo_cb,
-                    this, _1, _2),
+          std::bind(&PSDKWrapper::camera_start_shoot_single_photo_cb, this, _1,
+                    _2),
           qos_profile_);
   camera_start_shoot_burst_photo_service_ =
       create_service<CameraStartShootBurstPhoto>(
           "camera_start_shoot_burst_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_cb,
-                    this, _1, _2),
+          std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_cb, this, _1,
+                    _2),
           qos_profile_);
   camera_start_shoot_aeb_photo_service_ =
       create_service<CameraStartShootAEBPhoto>(
           "camera_start_shoot_aeb_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_cb, this,
-                    _1, _2),
+          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_cb, this, _1,
+                    _2),
           qos_profile_);
   camera_start_shoot_interval_photo_service_ =
       create_service<CameraStartShootIntervalPhoto>(
           "camera_start_shoot_interval_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_cb,
-                    this, _1, _2),
+          std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_cb, this,
+                    _1, _2),
           qos_profile_);
   camera_stop_shoot_photo_service_ = create_service<CameraStopShootPhoto>(
       "camera_stop_shoot_photo",
@@ -864,8 +866,8 @@ PSDKWrapper::initialize_ros_elements()
   camera_get_laser_ranging_info_service_ =
       create_service<CameraGetLaserRangingInfo>(
           "camera_get_laser_ranging_info",
-          std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this,
-                    _1, _2),
+          std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this, _1,
+                    _2),
           qos_profile_);
   // TODO(@lidiadltv): Enable these actions once are working properly
   // camera_download_file_list_action_ =
@@ -885,15 +887,12 @@ PSDKWrapper::initialize_ros_elements()
   //           this));
   camera_get_type_service_ = create_service<CameraGetType>(
       "camera_get_type",
-      std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2),
-      qos_profile_);
+      std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2), qos_profile_);
   camera_set_ev_service_ = create_service<CameraSetEV>(
-      "camera_set_ev",
-      std::bind(&PSDKWrapper::camera_set_ev_cb, this, _1, _2),
+      "camera_set_ev", std::bind(&PSDKWrapper::camera_set_ev_cb, this, _1, _2),
       qos_profile_);
   camera_get_ev_service_ = create_service<CameraGetEV>(
-      "camera_get_ev",
-      std::bind(&PSDKWrapper::camera_get_ev_cb, this, _1, _2),
+      "camera_get_ev", std::bind(&PSDKWrapper::camera_get_ev_cb, this, _1, _2),
       qos_profile_);
   camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
       "camera_set_shutter_speed",
@@ -905,12 +904,10 @@ PSDKWrapper::initialize_ros_elements()
       qos_profile_);
   camera_set_iso_service_ = create_service<CameraSetISO>(
       "camera_set_iso",
-      std::bind(&PSDKWrapper::camera_set_iso_cb, this, _1, _2),
-      qos_profile_);
+      std::bind(&PSDKWrapper::camera_set_iso_cb, this, _1, _2), qos_profile_);
   camera_get_iso_service_ = create_service<CameraGetISO>(
       "camera_get_iso",
-      std::bind(&PSDKWrapper::camera_get_iso_cb, this, _1, _2),
-      qos_profile_);
+      std::bind(&PSDKWrapper::camera_get_iso_cb, this, _1, _2), qos_profile_);
   camera_set_focus_target_service_ = create_service<CameraSetFocusTarget>(
       "camera_set_focus_target",
       std::bind(&PSDKWrapper::camera_set_focus_target_cb, this, _1, _2),
@@ -943,11 +940,9 @@ PSDKWrapper::initialize_ros_elements()
   // Services
   gimbal_set_mode_service_ = create_service<GimbalSetMode>(
       "gimbal_set_mode",
-      std::bind(&PSDKWrapper::gimbal_set_mode_cb, this, _1, _2),
-      qos_profile_);
+      std::bind(&PSDKWrapper::gimbal_set_mode_cb, this, _1, _2), qos_profile_);
   gimbal_reset_service_ = create_service<GimbalReset>(
-      "gimbal_reset",
-      std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2),
+      "gimbal_reset", std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2),
       qos_profile_);
 }
 

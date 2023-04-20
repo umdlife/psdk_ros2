@@ -87,14 +87,12 @@ PSDKWrapper::camera_set_ev_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  E_DjiCameraManagerExposureMode work_mode = 
-    static_cast<E_DjiCameraManagerExposureMode>(
-          request->work_mode);
+  E_DjiCameraManagerExposureMode work_mode =
+      static_cast<E_DjiCameraManagerExposureMode>(request->work_mode);
   E_DjiCameraManagerExposureCompensation ev_factor =
       static_cast<E_DjiCameraManagerExposureCompensation>(request->ev_factor);
 
-  return_code = DjiCameraManager_SetExposureMode(
-      index, work_mode);
+  return_code = DjiCameraManager_SetExposureMode(index, work_mode);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(),
@@ -164,20 +162,19 @@ PSDKWrapper::camera_set_shutter_speed_cb(
   E_DjiCameraManagerShutterSpeed shutter_speed_factor =
       static_cast<E_DjiCameraManagerShutterSpeed>(
           request->shutter_speed_factor);
-  E_DjiCameraManagerExposureMode work_mode = 
-    static_cast<E_DjiCameraManagerExposureMode>(
-          request->work_mode);
+  E_DjiCameraManagerExposureMode work_mode =
+      static_cast<E_DjiCameraManagerExposureMode>(request->work_mode);
 
-    return_code = DjiCameraManager_SetExposureMode(index, work_mode);
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(),
-                   "Set mounted position %d camera's exposure mode failed,"
-                   "error code: 0x%08X\r\n",
-                   index, return_code);
-      response->success = false;
-      return;
-    }
+  return_code = DjiCameraManager_SetExposureMode(index, work_mode);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Set mounted position %d camera's exposure mode failed,"
+                 "error code: 0x%08X\r\n",
+                 index, return_code);
+    response->success = false;
+    return;
+  }
 
   return_code = DjiCameraManager_SetShutterSpeed(index, shutter_speed_factor);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
@@ -247,14 +244,12 @@ PSDKWrapper::camera_set_iso_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  E_DjiCameraManagerExposureMode work_mode = 
-    static_cast<E_DjiCameraManagerExposureMode>(
-          request->work_mode);
+  E_DjiCameraManagerExposureMode work_mode =
+      static_cast<E_DjiCameraManagerExposureMode>(request->work_mode);
   E_DjiCameraManagerISO iso_factor =
       static_cast<E_DjiCameraManagerISO>(request->iso_factor);
 
-  return_code = DjiCameraManager_SetExposureMode(
-      index, work_mode);
+  return_code = DjiCameraManager_SetExposureMode(index, work_mode);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
       return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND)
   {
@@ -1075,4 +1070,130 @@ PSDKWrapper::camera_delete_file_by_index_cb(
   }
 }
 
+<<<<<<< HEAD
+=======
+void
+c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
+                                   const uint8_t *buf, uint32_t bufLen)
+{
+  return global_ptr_->LiveviewConvertH264ToRgbCallback(position, buf, bufLen);
+}
+
+void
+PSDKWrapper::LiveviewConvertH264ToRgbCallback(
+    E_DjiLiveViewCameraPosition position, const uint8_t *buf, uint32_t bufLen)
+{
+  auto deocder = streamDecoder.find(position);
+  if ((deocder != streamDecoder.end()) && deocder->second)
+  {
+    deocder->second->decodeBuffer(buf, bufLen);
+  }
+}
+
+void
+c_publish_streaming_callback(CameraRGBImage img, void *userData)
+{
+  return global_ptr_->publish_streaming_callback(img, userData);
+}
+
+void
+PSDKWrapper::publish_streaming_callback(CameraRGBImage img, void *userData)
+{
+  rtsp_streamer_.publish_rtsp_stream(img.rawData);
+}
+
+T_DjiReturnCode
+PSDKWrapper::start_camera_stream(CameraImageCallback callback, void *userData,
+                                 E_DjiLiveViewCameraPosition index,
+                                 E_DjiLiveViewCameraSource camera_source)
+{
+  auto deocder = streamDecoder.find(index);
+
+  if ((deocder != streamDecoder.end()) && deocder->second)
+  {
+    deocder->second->init();
+    deocder->second->registerCallback(callback, userData);
+
+    T_DjiReturnCode returnCode = 0;
+    returnCode = DjiLiveview_StartH264Stream(
+        index, camera_source, c_LiveviewConvertH264ToRgbCallback);
+    return returnCode;
+  }
+  else
+  {
+    return DJI_ERROR_SYSTEM_MODULE_CODE_NOT_FOUND;
+  }
+}
+
+void
+PSDKWrapper::create_streaming_pipeline()
+{
+  if (!streaming_pipeline_configured)
+  {
+    std::string url_writer =
+        "rtsp://127.0.0.1:" + params_.camera_streaming_port +
+        params_.camera_streaming_path;
+    rtsp_streamer_.on_configure_writer(1920, 1080, 30, 9000, url_writer);
+    streaming_pipeline_configured = true;
+  }
+}
+
+void
+PSDKWrapper::camera_streaming_cb(
+    const std::shared_ptr<CameraStreaming::Request> request,
+    const std::shared_ptr<CameraStreaming::Response> response)
+{
+  RCLCPP_INFO(get_logger(), "Calling streaming");
+  T_DjiReturnCode return_code;
+  E_DjiLiveViewCameraPosition index =
+      static_cast<E_DjiLiveViewCameraPosition>(request->payload_index);
+  E_DjiLiveViewCameraSource camera_source =
+      static_cast<E_DjiLiveViewCameraSource>(request->camera_source);
+  if (request->start_stop)
+  {
+    RCLCPP_INFO(get_logger(), "Starting streaming...");
+    create_streaming_pipeline();
+    char mainName[] = "MAIN_CAM";
+    return_code = start_camera_stream(&c_publish_streaming_callback, &mainName,
+                                      index, camera_source);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_INFO(get_logger(),
+                  "Failed to start streaming, error code: 0x%08X.",
+                  return_code);
+      response->success = false;
+      return;
+    }
+    else
+    {
+      response->success = true;
+      return;
+    }
+  }
+  else if (!request->start_stop)
+  {
+    RCLCPP_INFO(get_logger(), "Stopping streaming...");
+    return_code = DjiLiveview_StopH264Stream(index, camera_source);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_INFO(get_logger(), "Failed to stop streaming, error code: 0x%08X.",
+                  return_code);
+      response->success = false;
+      return;
+    }
+    else
+    {
+      streaming_pipeline_configured = false;
+      auto deocder = streamDecoder.find(index);
+      if ((deocder != streamDecoder.end()) && deocder->second)
+      {
+        deocder->second->cleanup();
+      }
+      response->success = true;
+      return;
+    }
+  }
+}
+
+>>>>>>> 5cc95f0dbafaf6bf759daa0c636de58c830110f4
 }  // namespace psdk_ros2
