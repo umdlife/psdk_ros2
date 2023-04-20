@@ -94,7 +94,7 @@
 #include "psdk_interfaces/srv/get_home_altitude.hpp"
 #include "psdk_interfaces/srv/get_obstacle_avoidance.hpp"
 #include "psdk_interfaces/srv/gimbal_reset.hpp"
-#include "psdk_interfaces/srv/gimbal_rotation.hpp"
+#include "psdk_interfaces/msg/gimbal_rotation.hpp"
 #include "psdk_interfaces/srv/gimbal_set_mode.hpp"
 #include "psdk_interfaces/srv/set_home_altitude.hpp"
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
@@ -153,7 +153,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   // Gimbal
   using GimbalSetMode = psdk_interfaces::srv::GimbalSetMode;
   using GimbalReset = psdk_interfaces::srv::GimbalReset;
-  using GimbalRotation = psdk_interfaces::srv::GimbalRotation;
 
   /**
    * @brief Construct a new PSDKWrapper object
@@ -529,6 +528,15 @@ class PSDKWrapper : public nav2_util::LifecycleNode
    */
   void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
 
+  /**
+   * @brief Callback function to control roll, pitch, yaw and time. 
+   * @param msg  psdk_interfaces::msg::GimbalRotation. 
+   * Rotation mode allows to set incremental, absolute or speed mode
+   * command.
+   */
+  void gimbal_rotation_cb(
+      const psdk_interfaces::msg::GimbalRotation::SharedPtr msg);
+
   /* ROS Service callbacks*/
   void set_home_from_gps_cb(
       const std::shared_ptr<SetHomeFromGPS::Request> request,
@@ -680,9 +688,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   void gimbal_reset_cb(
       const std::shared_ptr<GimbalReset::Request> request,
       const std::shared_ptr<GimbalReset::Response> response);
-  void gimbal_rotation_cb(
-      const std::shared_ptr<GimbalRotation::Request> request,
-      const std::shared_ptr<GimbalRotation::Response> response);
   T_DjiReturnCode start_camera_stream(CameraImageCallback callback,
                                       void* userData,
                                       E_DjiLiveViewCameraPosition index,
@@ -760,6 +765,10 @@ class PSDKWrapper : public nav2_util::LifecycleNode
       flight_control_body_velocity_yawrate_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
       flight_control_rollpitch_yawrate_vertpos_sub_;
+  // Gimbal
+  rclcpp::Subscription<psdk_interfaces::msg::GimbalRotation>::SharedPtr
+      gimbal_rotation_sub_;
+  
 
   /* ROS Services */
   rclcpp::Service<SetHomeFromGPS>::SharedPtr set_home_from_gps_srv_;
@@ -842,7 +851,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   // Gimbal
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
-  rclcpp::Service<GimbalRotation>::SharedPtr gimbal_rotation_service_;
 
 
   /**
