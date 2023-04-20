@@ -26,10 +26,5 @@
         flight_status: 1
         battery_level: 1
         control_information: 50
-      
-      camera:
-        streaming_path: "/mystream"
-        streaming_port: "8554"
-
 
 
