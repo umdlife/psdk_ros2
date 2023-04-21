@@ -1,0 +1,9 @@
+#request
+uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
+# uint8 zoom_direction # see enum E_DjiCameraZoomDirection in dji_typedef.h 0 /*!< The lens moves in the far direction, the zoom factor becomes smaller. */
+                                                                         # 1 /*!< The lens moves in the near direction, the zoom factor becomes larger. */
+float32 zoom_factor
+
+---
+#response
+bool success
