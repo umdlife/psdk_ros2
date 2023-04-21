@@ -20,6 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/AircraftStatus.msg"
@@ -33,6 +34,33 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/GPSDetails.msg"
   "msg/RelativeObstacleInfo.msg"
   "msg/SDKCtrlInfo.msg"
+  "msg/GimbalRotation.msg"
+  "srv/CameraGetType.srv"
+  "srv/CameraSetEV.srv"
+  "srv/CameraGetEV.srv"
+  "srv/CameraSetShutterSpeed.srv"
+  "srv/CameraGetShutterSpeed.srv"
+  "srv/CameraSetISO.srv"
+  "srv/CameraGetISO.srv"
+  "srv/CameraSetFocusTarget.srv"
+  "srv/CameraGetFocusTarget.srv"
+  "srv/CameraSetFocusMode.srv"
+  "srv/CameraGetFocusMode.srv"
+  "srv/CameraSetOpticalZoom.srv"
+  "srv/CameraGetOpticalZoom.srv"
+  "srv/CameraSetInfraredZoom.srv"
+  "srv/CameraStartShootSinglePhoto.srv"
+  "srv/CameraStartShootBurstPhoto.srv"
+  "srv/CameraStartShootAEBPhoto.srv"
+  "srv/CameraStartShootIntervalPhoto.srv"
+  "srv/CameraStopShootPhoto.srv"
+  "srv/CameraRecordVideo.srv"
+  "srv/CameraGetLaserRangingInfo.srv"
+  "srv/CameraDownloadFileList.srv"
+  "srv/CameraDownloadFileByIndex.srv"
+  "srv/CameraDeleteFileByIndex.srv"
+  "srv/GimbalSetMode.srv"
+  "srv/GimbalReset.srv"
   "msg/RTKYaw.msg"
   "msg/FlightStatus.msg"
   "srv/SetHomeFromGPS.srv"

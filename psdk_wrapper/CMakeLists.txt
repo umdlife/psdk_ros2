@@ -32,6 +32,7 @@ find_package(nav_msgs REQUIRED)
 find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 
+
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
   OUTPUT_VARIABLE DEVICE_SYSTEM_ID)
@@ -55,11 +56,15 @@ else()
   message(FATAL_ERROR "PSDK library NOT found")
 endif()
 
+if (NOT EXECUTABLE_OUTPUT_PATH)
+    set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+endif ()
+
 
 # Include PSDK header files
 include_directories(${PROJECT_SOURCE_DIR}/../..//Payload-SDK/psdk_lib/include)
 include_directories(include)
-include_directories(src/common)
+include_directories(src/3rdparty)
 
 set(dependencies
   rclcpp
@@ -81,12 +86,14 @@ add_library(psdk_wrapper_libs SHARED
   src/psdk_wrapper.cpp
   src/modules/telemetry.cpp
   src/modules/flight_control.cpp
-  src/common/osal_fs.c
-  src/common/osal_socket.c
-  src/common/osal.c
-  src/common/hal_network.c
-  src/common/hal_uart.c
-  src/common/hal_usb_bulk.c
+  src/modules/camera.cpp
+  src/modules/gimbal.cpp
+  src/3rdparty/osal_fs.c
+  src/3rdparty/osal_socket.c
+  src/3rdparty/osal.c
+  src/3rdparty/hal_network.c
+  src/3rdparty/hal_uart.c
+  src/3rdparty/hal_usb_bulk.c
 )
 
 ament_target_dependencies(psdk_wrapper_libs
