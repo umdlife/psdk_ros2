@@ -144,10 +144,10 @@ PSDKWrapper::set_environment()
 {
   RCLCPP_INFO(get_logger(), "Setting environment");
   T_DjiReturnCode return_code;
-  T_DjiOsalHandler osal_handler;
-  T_DjiHalUartHandler uart_handler;
-  T_DjiFileSystemHandler file_system_handler;
-  T_DjiSocketHandler socket_handler;
+  T_DjiOsalHandler osal_handler = {0};
+  T_DjiHalUartHandler uart_handler = {0};
+  T_DjiFileSystemHandler file_system_handler = {0};
+  T_DjiSocketHandler socket_handler{0};
 
   socket_handler.Socket = Osal_Socket;
   socket_handler.Bind = Osal_Bind;
@@ -176,6 +176,7 @@ PSDKWrapper::set_environment()
   osal_handler.Free = Osal_Free;
   osal_handler.GetTimeMs = Osal_GetTimeMs;
   osal_handler.GetTimeUs = Osal_GetTimeUs;
+  osal_handler.GetRandomNum = Osal_GetRandomNum;
 
   uart_handler.UartInit = HalUart_Init;
   uart_handler.UartDeInit = HalUart_DeInit;
