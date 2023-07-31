@@ -1,8 +1,8 @@
 /**
  ********************************************************************
  * @file    osal_socket.h
- * @brief   This is the header file for "osal_socket.c", defining the structure
- *and (exported) function prototypes.
+ * @brief   This is the header file for "osal_socket.c", defining the structure and
+ * (exported) function prototypes.
  *
  * @copyright (c) 2021 DJI. All rights reserved.
  *
@@ -31,55 +31,42 @@
 #include "dji_platform.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-  /* Exported constants
-   * --------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
 
-  /* Exported types
-   * ------------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
 
-  /* Exported functions
-   * --------------------------------------------------------*/
-  T_DjiReturnCode Osal_Socket(E_DjiSocketMode mode,
-                              T_DjiSocketHandle *socketHandle);
+/* Exported functions --------------------------------------------------------*/
+T_DjiReturnCode Osal_Socket(E_DjiSocketMode mode, T_DjiSocketHandle *socketHandle);
 
-  T_DjiReturnCode Osal_Close(T_DjiSocketHandle socketHandle);
+T_DjiReturnCode Osal_Close(T_DjiSocketHandle socketHandle);
 
-  T_DjiReturnCode Osal_Bind(T_DjiSocketHandle socketHandle, const char *ipAddr,
-                            uint32_t port);
+T_DjiReturnCode Osal_Bind(T_DjiSocketHandle socketHandle, const char *ipAddr, uint32_t port);
 
-  T_DjiReturnCode Osal_UdpSendData(T_DjiSocketHandle socketHandle,
-                                   const char *ipAddr, uint32_t port,
-                                   const uint8_t *buf, uint32_t len,
-                                   uint32_t *realLen);
+T_DjiReturnCode Osal_UdpSendData(T_DjiSocketHandle socketHandle, const char *ipAddr, uint32_t port,
+                                 const uint8_t *buf, uint32_t len, uint32_t *realLen);
 
-  T_DjiReturnCode Osal_UdpRecvData(T_DjiSocketHandle socketHandle, char *ipAddr,
-                                   uint32_t *port, uint8_t *buf, uint32_t len,
-                                   uint32_t *realLen);
+T_DjiReturnCode Osal_UdpRecvData(T_DjiSocketHandle socketHandle, char *ipAddr, uint32_t *port,
+                                 uint8_t *buf, uint32_t len, uint32_t *realLen);
 
-  T_DjiReturnCode Osal_TcpListen(T_DjiSocketHandle socketHandle);
+T_DjiReturnCode Osal_TcpListen(T_DjiSocketHandle socketHandle);
 
-  T_DjiReturnCode Osal_TcpAccept(T_DjiSocketHandle socketHandle, char *ipAddr,
-                                 uint32_t *port,
-                                 T_DjiSocketHandle *outSocketHandle);
+T_DjiReturnCode Osal_TcpAccept(T_DjiSocketHandle socketHandle, char *ipAddr, uint32_t *port,
+                               T_DjiSocketHandle *outSocketHandle);
 
-  T_DjiReturnCode Osal_TcpConnect(T_DjiSocketHandle socketHandle,
-                                  const char *ipAddr, uint32_t port);
+T_DjiReturnCode Osal_TcpConnect(T_DjiSocketHandle socketHandle, const char *ipAddr, uint32_t port);
 
-  T_DjiReturnCode Osal_TcpSendData(T_DjiSocketHandle socketHandle,
-                                   const uint8_t *buf, uint32_t len,
-                                   uint32_t *realLen);
+T_DjiReturnCode Osal_TcpSendData(T_DjiSocketHandle socketHandle,
+                                 const uint8_t *buf, uint32_t len, uint32_t *realLen);
 
-  T_DjiReturnCode Osal_TcpRecvData(T_DjiSocketHandle socketHandle, uint8_t *buf,
-                                   uint32_t len, uint32_t *realLen);
+T_DjiReturnCode Osal_TcpRecvData(T_DjiSocketHandle socketHandle,
+                                 uint8_t *buf, uint32_t len, uint32_t *realLen);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // OSAL_SOCKET_H
-/************************ (C) COPYRIGHT DJI Innovations *******END OF
- * FILE******/
+#endif // OSAL_SOCKET_H
+/************************ (C) COPYRIGHT DJI Innovations *******END OF FILE******/

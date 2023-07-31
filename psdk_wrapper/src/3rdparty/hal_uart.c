@@ -33,9 +33,8 @@
 #define DJI_SYSTEM_RESULT_STR_MAX_SIZE (128)
 
 /* Private types -------------------------------------------------------------*/
-typedef struct
-{
-  int uartFd;
+typedef struct {
+    int32_t uartFd;
 } T_UartHandleStruct;
 
 /* Private values
@@ -48,7 +47,7 @@ T_DjiReturnCode
 HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate,
              T_DjiUartHandle *uartHandle)
 {
-  T_UartHandleStruct *uartHandleStruct;
+    T_UartHandleStruct *uartHandleStruct = NULL;
   struct termios options;
   struct flock lock;
   T_DjiReturnCode returnCode = DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
