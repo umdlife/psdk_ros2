@@ -1026,6 +1026,71 @@ void
 PSDKWrapper::clean_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Cleaning ROS elements");
+
+  // Services
+  // General
+  set_home_from_gps_srv_.reset();
+  set_home_from_current_location_srv_.reset();
+  set_home_altitude_srv_.reset();
+  get_home_altitude_srv_.reset();
+  start_go_home_srv_.reset();
+  cancel_go_home_srv_.reset();
+  obtain_ctrl_authority_srv_.reset();
+  release_ctrl_authority_srv_.reset();
+  turn_on_motors_srv_.reset();
+  turn_off_motors_srv_.reset();
+  takeoff_srv_.reset();
+  land_srv_.reset();
+  cancel_landing_srv_.reset();
+  start_confirm_landing_srv_.reset();
+  start_force_landing_srv_.reset();
+  set_horizontal_vo_obstacle_avoidance_srv_.reset();
+  set_horizontal_radar_obstacle_avoidance_srv_.reset();
+  set_upwards_vo_obstacle_avoidance_srv_.reset();
+  set_upwards_radar_obstacle_avoidance_srv_.reset();
+  set_downwards_vo_obstacle_avoidance_srv_.reset();
+  get_horizontal_vo_obstacle_avoidance_srv_.reset();
+  get_upwards_vo_obstacle_avoidance_srv_.reset();
+  get_upwards_radar_obstacle_avoidance_srv_.reset();
+  get_downwards_vo_obstacle_avoidance_srv_.reset();
+  get_horizontal_radar_obstacle_avoidance_srv_.reset();
+  // Camera
+  camera_start_shoot_single_photo_service_.reset();
+  camera_start_shoot_burst_photo_service_.reset();
+  camera_start_shoot_aeb_photo_service_.reset();
+  camera_start_shoot_interval_photo_service_.reset();
+  camera_stop_shoot_photo_service_.reset();
+  camera_record_video_service_.reset();
+  camera_get_type_service_.reset();
+  camera_set_ev_service_.reset();
+  camera_get_ev_service_.reset();
+  camera_set_shutter_speed_service_.reset();
+  camera_get_shutter_speed_service_.reset();
+  camera_set_iso_service_.reset();
+  camera_get_iso_service_.reset();
+  camera_set_focus_target_service_.reset();
+  camera_get_focus_target_service_.reset();
+  camera_set_focus_mode_service_.reset();
+  camera_get_focus_mode_service_.reset();
+  camera_set_optical_zoom_service_.reset();
+  camera_get_optical_zoom_service_.reset();
+  camera_set_infrared_zoom_service_.reset();
+  camera_get_laser_ranging_info_service_.reset();
+  camera_download_file_list_service_.reset();
+  camera_download_file_by_index_service_.reset();
+  camera_delete_file_by_index_service_.reset();
+  // Gimbal
+  gimbal_set_mode_service_.reset();
+  gimbal_reset_service_.reset();
+
+  // Subscribers
+  flight_control_generic_sub_.reset();
+  flight_control_position_yaw_sub_.reset();
+  flight_control_velocity_yawrate_sub_.reset();
+  flight_control_body_velocity_yawrate_sub_.reset();
+  flight_control_rollpitch_yawrate_vertpos_sub_.reset();
+
+  // Publishers
   attitude_pub_.reset();
   imu_pub_.reset();
   velocity_ground_pub_.reset();
@@ -1058,69 +1123,6 @@ PSDKWrapper::clean_ros_elements()
   // relative_height_pub_.reset();
   // relative_obstacle_info_pub_.reset();
   // home_position_pub_.reset();
-
-  // Subscribers
-  flight_control_generic_sub_.reset();
-  flight_control_position_yaw_sub_.reset();
-  flight_control_velocity_yawrate_sub_.reset();
-  flight_control_body_velocity_yawrate_sub_.reset();
-  flight_control_rollpitch_yawrate_vertpos_sub_.reset();
-
-  // Services
-  set_home_from_gps_srv_.reset();
-  set_home_from_current_location_srv_.reset();
-  set_home_altitude_srv_.reset();
-  get_home_altitude_srv_.reset();
-  start_go_home_srv_.reset();
-  cancel_go_home_srv_.reset();
-  obtain_ctrl_authority_srv_.reset();
-  release_ctrl_authority_srv_.reset();
-  turn_on_motors_srv_.reset();
-  turn_off_motors_srv_.reset();
-  takeoff_srv_.reset();
-  land_srv_.reset();
-  cancel_landing_srv_.reset();
-  start_confirm_landing_srv_.reset();
-  start_force_landing_srv_.reset();
-  set_horizontal_vo_obstacle_avoidance_srv_.reset();
-  set_horizontal_radar_obstacle_avoidance_srv_.reset();
-  set_upwards_vo_obstacle_avoidance_srv_.reset();
-  set_upwards_radar_obstacle_avoidance_srv_.reset();
-  set_downwards_vo_obstacle_avoidance_srv_.reset();
-  get_horizontal_vo_obstacle_avoidance_srv_.reset();
-  get_upwards_vo_obstacle_avoidance_srv_.reset();
-  get_upwards_radar_obstacle_avoidance_srv_.reset();
-  get_downwards_vo_obstacle_avoidance_srv_.reset();
-  get_horizontal_radar_obstacle_avoidance_srv_.reset();
-
-  // Camera
-  camera_start_shoot_single_photo_service_.reset();
-  camera_start_shoot_burst_photo_service_.reset();
-  camera_start_shoot_aeb_photo_service_.reset();
-  camera_start_shoot_interval_photo_service_.reset();
-  camera_stop_shoot_photo_service_.reset();
-  camera_record_video_service_.reset();
-  camera_get_type_service_.reset();
-  camera_set_ev_service_.reset();
-  camera_get_ev_service_.reset();
-  camera_set_shutter_speed_service_.reset();
-  camera_get_shutter_speed_service_.reset();
-  camera_set_iso_service_.reset();
-  camera_get_iso_service_.reset();
-  camera_set_focus_target_service_.reset();
-  camera_get_focus_target_service_.reset();
-  camera_set_focus_mode_service_.reset();
-  camera_get_focus_mode_service_.reset();
-  camera_set_optical_zoom_service_.reset();
-  camera_get_optical_zoom_service_.reset();
-  camera_set_infrared_zoom_service_.reset();
-  camera_get_laser_ranging_info_service_.reset();
-  camera_download_file_list_service_.reset();
-  camera_download_file_by_index_service_.reset();
-  camera_delete_file_by_index_service_.reset();
-  // Gimbal
-  gimbal_set_mode_service_.reset();
-  gimbal_reset_service_.reset();
 }
 
 }  // namespace psdk_ros2
