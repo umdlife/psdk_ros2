@@ -1,9 +1,9 @@
-/* Copyright (C) 2023 Unmanned Life - All Rights Reserved
- *
- * This file is part of the `psdk_wrapper` source code package and is
- * subject to the terms and conditions defined in the file LICENSE.txt contained
- * therein.
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 /**
  * @file psdk_wrapper.cpp
  *
