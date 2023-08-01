@@ -65,11 +65,11 @@ PSDKWrapper::set_home_from_current_location_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Could not set the home location using current aicraft location");
+        "Could not set the home location using current aicraft position");
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Home position has been set to current location!");
+  RCLCPP_INFO(get_logger(), "Home location has been set to current position!");
   response->success = true;
 }
 
@@ -84,7 +84,7 @@ PSDKWrapper::set_home_altitude_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Could not set the home location using current aicraft location");
+        "Could not set the home altitude at the current aicraft location");
     response->success = false;
     return;
   }
@@ -104,7 +104,7 @@ PSDKWrapper::get_home_altitude_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Could not set the home location using current aicraft location");
+        "Could not get the home location using current aicraft location");
     response->success = false;
     return;
   }

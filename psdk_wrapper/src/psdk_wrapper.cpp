@@ -35,6 +35,11 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("uart_dev_1", rclcpp::ParameterValue(""));
   declare_parameter("uart_dev_2", rclcpp::ParameterValue(""));
 
+  declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
+  declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
+  declare_parameter("map_frame", rclcpp::ParameterValue("psdk_map_enu"));
+  declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
+
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
   declare_parameter("data_frequency.attitude", 1);
@@ -335,6 +340,31 @@ PSDKWrapper::load_parameters()
   name = "UART_DEV_2";
   setenv(name, params_.uart_dev_2.c_str(), 1);
   RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
+
+  if (!get_parameter("imu_frame", params_.imu_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "imu_frame param not defined, using default one: %s",
+                params_.imu_frame.c_str());
+  }
+  if (!get_parameter("body_frame", params_.body_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "body_frame param not defined, using default one: %s",
+                params_.body_frame.c_str());
+  }
+  if (!get_parameter("map_frame", params_.map_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "map_frame param not defined, using default one: %s",
+                params_.map_frame.c_str());
+  }
+  if (!get_parameter("gimbal_frame", params_.gimbal_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "gimbal_frame param not defined, using default one: %s",
+                params_.gimbal_frame.c_str());
+  }
 
   // Get data frequency
   if (!get_parameter("data_frequency.imu", params_.imu_frequency))
