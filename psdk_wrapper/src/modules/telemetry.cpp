@@ -246,7 +246,7 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t dataSize,
 
   geometry_msgs::msg::QuaternionStamped quaternion_msg;
   quaternion_msg.header.stamp = this->get_clock()->now();
-  quaternion_msg.header.frame_id = body_frame_;
+  quaternion_msg.header.frame_id = params_.body_frame;
   quaternion_msg.quaternion.w = current_quat_FLU2ENU.getW();
   quaternion_msg.quaternion.x = current_quat_FLU2ENU.getX();
   quaternion_msg.quaternion.y = current_quat_FLU2ENU.getY();
@@ -266,7 +266,7 @@ PSDKWrapper::velocity_callback(const uint8_t *data, uint16_t dataSize,
           *reinterpret_cast<const T_DjiFcSubscriptionVelocity *>(data));
   geometry_msgs::msg::TwistStamped twist_msg;
   twist_msg.header.stamp = this->get_clock()->now();
-  twist_msg.header.frame_id = ground_frame_;
+  twist_msg.header.frame_id = params_.map_frame;
   /* Note: The y and x data is swapped to follow the REP103 convention and use
    * ENU representation. Original DJI twist msg is given as NEU.
    */
@@ -288,7 +288,7 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
           *reinterpret_cast<const T_DjiFcSubscriptionHardSync *>(data));
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header.stamp = this->get_clock()->now();
-  imu_msg.header.frame_id = body_frame_;
+  imu_msg.header.frame_id = params_.imu_frame;
   /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt.
    * to a NED ground coordinate frame. Following REP 103, this quaternion is
    * transformed in FLU in body frame wrt. to a ENU ground coordinate frame
@@ -340,7 +340,7 @@ PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
   tf2::Vector3 position_ENU = psdk_utils::R_NED2ENU * position_NED;
   psdk_interfaces::msg::PositionFused position_msg;
   position_msg.header.stamp = this->get_clock()->now();
-  position_msg.header.frame_id = ground_frame_;
+  position_msg.header.frame_id = params_.map_frame;
   position_msg.position.x = position_ENU.getX();
   position_msg.position.y = position_ENU.getY();
   position_msg.position.z = position_ENU.getZ();
@@ -411,7 +411,7 @@ PSDKWrapper::gps_velocity_callback(const uint8_t *data, uint16_t dataSize,
           *reinterpret_cast<const T_DjiFcSubscriptionGpsVelocity *>(data));
   geometry_msgs::msg::TwistStamped gps_velocity_msg;
   gps_velocity_msg.header.stamp = this->get_clock()->now();
-  gps_velocity_msg.header.frame_id = ground_frame_;
+  gps_velocity_msg.header.frame_id = params_.map_frame;
   // Convert cm/s given by dji topic to m/s
   gps_velocity_msg.twist.linear.x = gps_velocity->x / 100;
   gps_velocity_msg.twist.linear.y = gps_velocity->y / 100;

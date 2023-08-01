@@ -215,6 +215,10 @@ class PSDKWrapper : public nav2_util::LifecycleNode
     std::string hardware_connection;
     std::string uart_dev_1;
     std::string uart_dev_2;
+    std::string imu_frame;
+    std::string body_frame;
+    std::string map_frame;
+    std::string gimbal_frame;
     int imu_frequency;
     int attitude_frequency;
     int acceleration_frequency;
@@ -865,8 +869,6 @@ class PSDKWrapper : public nav2_util::LifecycleNode
 
   /* Global variables*/
   PSDKParams params_;
-  std::string body_frame_{"base_link"};
-  std::string ground_frame_{"map"};
   rclcpp::Node::SharedPtr node_;
 
   int gps_signal_level_{0};
