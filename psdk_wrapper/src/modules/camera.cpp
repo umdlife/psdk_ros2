@@ -59,7 +59,7 @@ PSDKWrapper::camera_get_type_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Get mounted position %d camera's type failed, error code: 0x%08X\r\n",
+        "Get mounted position %d camera's type failed, error code: %ld",
         index, return_code);
     response->success = false;
     return;
@@ -98,7 +98,7 @@ PSDKWrapper::camera_set_ev_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Set mounted position %d camera's exposure mode failed,"
-                 "error code: 0x%08X\r\n",
+                 "error code: %ld",
                  index, return_code);
     response->success = false;
     return;
@@ -109,7 +109,7 @@ PSDKWrapper::camera_set_ev_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Set mounted position %d camera's EV failed,"
-                 "error code: 0x%08X\r\n",
+                 "error code: %ld",
                  index, return_code);
     response->success = false;
     return;
@@ -137,7 +137,7 @@ PSDKWrapper::camera_get_ev_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Get mounted position %d camera's EV failed,"
-                 "error code: 0x%08X\r\n",
+                 "error code: %ld",
                  index, return_code);
     response->success = false;
     return;
@@ -171,7 +171,7 @@ PSDKWrapper::camera_set_shutter_speed_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Set mounted position %d camera's exposure mode failed,"
-                 "error code: 0x%08X\r\n",
+                 "error code: %ld",
                  index, return_code);
     response->success = false;
     return;
@@ -256,7 +256,7 @@ PSDKWrapper::camera_set_iso_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Set mounted position %d camera's exposure mode failed,"
-                 "error code: 0x%08X\r\n",
+                 "error code: %ld",
                  index, return_code);
     response->success = false;
     return;
