@@ -3,8 +3,9 @@ repos:
     rev: stable
     hooks:
       - id: black
-        language_version: python3.8
-  - repo: https://gitlab.com/pycqa/flake8
+        language_version: python3
+        name: python3.8
+  - repo: https://github.com/pycqa/flake8
     rev: '3.7.9'  # pick a git hash / tag to point to
     hooks:
       - id: flake8
@@ -16,4 +17,3 @@ repos:
         args: ['-style=file']
       - id: cpplint              # linter (or style-error checker) for Google C++ Style Guide
       - id: cppcheck             # static analyzer for C/C++ code
-    
