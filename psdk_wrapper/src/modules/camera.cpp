@@ -59,8 +59,8 @@ PSDKWrapper::camera_get_type_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Get mounted position %d camera's type failed, error code: %ld",
-        index, return_code);
+        "Get mounted position %d camera's type failed, error code: %ld", index,
+        return_code);
     response->success = false;
     return;
   }
