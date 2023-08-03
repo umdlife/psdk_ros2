@@ -1,3 +1,5 @@
 docs/_build
 docs/doxyoutput
 docs/api
+
+.pre-commit-config.yaml
