@@ -122,6 +122,7 @@ install(DIRECTORY include/
 
 install(DIRECTORY
   cfg
+  launch
   DESTINATION share/${PROJECT_NAME}/
 )
 
