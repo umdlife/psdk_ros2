@@ -18,21 +18,20 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
+
+from launch.actions import EmitEvent
+from launch.actions import LogInfo
+from launch.actions import RegisterEventHandler
+from launch_ros.actions import Node
+from launch_ros.actions import LifecycleNode
+from launch_ros.event_handlers import OnStateTransition
+from launch_ros.events.lifecycle import ChangeState
+import lifecycle_msgs.msg
+import launch
+
 def generate_launch_description():
-    # Lifecycle Manager arguments
-    autostart = LaunchConfiguration("autostart")
-    lifecycle_nodes = [
-        "psdk_wrapper_node",
-    ]
 
-    declare_autostart_cmd = DeclareLaunchArgument(
-        "autostart",
-        default_value="true",
-        description="Automatically startup the lifecyle nodes",
-    )
-
-    # Create LaunchConfiguration variables
-
+    # Get wrapper parameters
     psdk_wrapper_pkg_share = FindPackageShare("psdk_wrapper").find("psdk_wrapper")
     wrapper_params = os.path.join(
         psdk_wrapper_pkg_share,
@@ -40,33 +39,39 @@ def generate_launch_description():
         "psdk_params.yaml",
     )
 
-    start_lifecycle_cmd = Node(
-        package="nav2_lifecycle_manager",
-        executable="lifecycle_manager",
-        name="lifecycle_manager_psdk",
-        output="screen",
-        parameters=[
-            {"autostart": autostart},
-            {"node_names": lifecycle_nodes},
-            {"bond_timeout": 0.0},
-        ],
-    )
-
-    # Start PSDK Wrapper
-    start_psdk_wrapper_cmd = Node(
+    # Prepare the wrapper node
+    wrapper_node = LifecycleNode(
         package="psdk_wrapper",
         executable="psdk_wrapper_node",
         name="psdk_wrapper_node",
+        output = 'screen',
+        namespace = 'wrapper',
         parameters=[wrapper_params],
-        output="screen",
+    )
+
+    # Configure lifecycle node
+    wrapper_configure_trans_event = EmitEvent(
+        event=ChangeState(
+            lifecycle_node_matcher = launch.events.matches_action(wrapper_node),
+            transition_id = lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+        )
+    )
+
+    # Activate lifecycle node
+    wrapper_activate_trans_event = EmitEvent(
+        event = ChangeState(
+            lifecycle_node_matcher = launch.events.matches_action(wrapper_node),
+            transition_id = lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+         )
     )
 
     # Create LaunchDescription and populate
     ld = LaunchDescription()
 
     # Declare Launch options
-    ld.add_action(declare_autostart_cmd)
-    ld.add_action(start_lifecycle_cmd)
-    ld.add_action(start_psdk_wrapper_cmd)
+    ld.add_action(wrapper_node)
+    ld.add_action(wrapper_configure_trans_event)
+    ld.add_action(wrapper_activate_trans_event)
+    
 
     return ld

@@ -23,7 +23,7 @@ namespace psdk_ros2
 {
 
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
-    : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())
+    : rclcpp_lifecycle::LifecycleNode(node_name, "", rclcpp::NodeOptions())
 {
   RCLCPP_INFO(get_logger(), "Creating Constructor PSDKWrapper");
   declare_parameter("app_name", rclcpp::ParameterValue(""));
@@ -59,7 +59,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
 }
 PSDKWrapper::~PSDKWrapper() {}
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
@@ -67,14 +67,14 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   load_parameters();
   if (!set_environment())
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
   initialize_ros_elements();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
@@ -85,27 +85,26 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   if (!init(&user_info))
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
 
   activate_ros_elements();
 
   if (!init_telemetry() || !init_flight_control())
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
 
   subscribe_psdk_topics();
 
   if (!init_camera_manager() || !init_gimbal_manager())
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
-  createBond();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
@@ -113,20 +112,19 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
   unsubscribe_psdk_topics();
   deactivate_ros_elements();
 
-  destroyBond();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
   clean_ros_elements();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
@@ -134,15 +132,15 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
                       DjiFcSubscription_DeInit() ^ DjiCore_DeInit();
   if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
   if (!deinit_camera_manager() || !deinit_gimbal_manager())
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
   global_ptr_.reset();
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 bool

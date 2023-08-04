@@ -32,8 +32,9 @@
 #include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <map>
 #include <memory>
-#include <nav2_util/lifecycle_node.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
@@ -107,9 +108,12 @@ namespace psdk_ros2
  * @brief A ROS wrapper that brings all the DJI PSDK functionalities to ROS
  */
 
-class PSDKWrapper : public nav2_util::LifecycleNode
+class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 {
  public:
+  using CallbackReturn =
+      rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
   using SetHomeFromGPS = psdk_interfaces::srv::SetHomeFromGPS;
   using Trigger = std_srvs::srv::Trigger;
   using SetHomeAltitude = psdk_interfaces::srv::SetHomeAltitude;
@@ -168,42 +172,37 @@ class PSDKWrapper : public nav2_util::LifecycleNode
   /**
    * @brief Configures member variable and sets the environment
    * @param state Reference to Lifecycle state
-   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
+   * @return CallbackReturn SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_configure(
-      const rclcpp_lifecycle::State& state) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State& state) override;
 
   /**
    * @brief Initializes main PSDK modules
    * @param state Reference to Lifecycle state
-   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
+   * @return CallbackReturn SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_activate(
-      const rclcpp_lifecycle::State& state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State& state) override;
 
   /**
    * @brief Deactivates main PSDK modules and other member variables
    * @param state Reference to Lifecycle state
-   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
+   * @return CallbackReturn SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_deactivate(
-      const rclcpp_lifecycle::State& state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State& state) override;
 
   /**
    * @brief Resets member variables
    * @param state Reference to Lifecycle state
-   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
+   * @return CallbackReturn SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_cleanup(
-      const rclcpp_lifecycle::State& state) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State& state) override;
 
   /**
    * @brief Initializes main PSDK modules
    * @param state Reference to Lifecycle state
-   * @return nav2_util::CallbackReturn SUCCESS or FAILURE
+   * @return CallbackReturn SUCCESS or FAILURE
    */
-  nav2_util::CallbackReturn on_shutdown(
-      const rclcpp_lifecycle::State& state) override;
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override;
 
  private:
   struct PSDKParams
