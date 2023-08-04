@@ -58,7 +58,7 @@ PSDKWrapper::gimbal_set_mode_cb(
   return_code = DjiGimbalManager_SetMode(index, gimbal_mode);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: 0x%08X",
+    RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: %ld",
                 return_code);
     response->success = false;
     return;
@@ -82,7 +82,7 @@ PSDKWrapper::gimbal_reset_cb(
   return_code = DjiGimbalManager_Reset(index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Reset gimbal failed, error code: 0x%08X",
+    RCLCPP_INFO(get_logger(), "Reset gimbal failed, error code: %ld",
                 return_code);
     response->success = false;
     return;
@@ -114,7 +114,7 @@ PSDKWrapper::gimbal_rotation_cb(
 
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: 0x%08X",
+    RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: %ld",
                 return_code);
     return;
   }
@@ -124,7 +124,7 @@ PSDKWrapper::gimbal_rotation_cb(
   {
     RCLCPP_INFO(
         get_logger(),
-        "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: 0x%08X",
+        "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: %ld",
         rotation_deg.pitch, rotation_deg.roll, rotation_deg.yaw, return_code);
     return;
   }

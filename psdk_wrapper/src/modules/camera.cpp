@@ -183,7 +183,7 @@ PSDKWrapper::camera_set_shutter_speed_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Set mounted position %d camera's shutter speed %d failed, "
-                 "error code: 0x%08X.",
+                 "error code: %ld.",
                  index, shutter_speed_factor, return_code);
     response->success = false;
     return;
@@ -212,7 +212,7 @@ PSDKWrapper::camera_get_shutter_speed_cb(
   // {
   //   RCLCPP_ERROR(get_logger(),
   //                "Set mounted position %d camera's exposure mode failed,"
-  //                "error code: 0x%08X and mode is: %d\r\n",
+  //                "error code: %ld and mode is: %d\r\n",
   //                index, return_code,
   //                DJI_CAMERA_MANAGER_EXPOSURE_MODE_EXPOSURE_UNKNOWN);
   // }
@@ -223,7 +223,7 @@ PSDKWrapper::camera_get_shutter_speed_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Get mounted position %d camera's shutter speed failed, "
-                 "error code: 0x%08X.",
+                 "error code: %ld.",
                  index, return_code);
     response->success = false;
     return;
@@ -268,7 +268,7 @@ PSDKWrapper::camera_set_iso_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Set mounted position %d camera's iso %d failed, "
-                 "error code: 0x%08X.",
+                 "error code: %ld.",
                  index, iso_factor, return_code);
     response->success = false;
     return;
@@ -297,8 +297,8 @@ PSDKWrapper::camera_get_iso_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Get mounted position %d camera's iso failed, error code: 0x%08X.",
-        index, return_code);
+        "Get mounted position %d camera's iso failed, error code: %ld.", index,
+        return_code);
     response->success = false;
     return;
   }
@@ -331,7 +331,7 @@ PSDKWrapper::camera_set_focus_target_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Set mounted position %d camera's focus mode(%d) failed,"
-                 " error code :0x%08X.",
+                 " error code :%ld.",
                  index, DJI_CAMERA_MANAGER_FOCUS_MODE_AUTO, return_code);
     response->success = false;
     return;
@@ -343,7 +343,7 @@ PSDKWrapper::camera_set_focus_target_cb(
     RCLCPP_ERROR(
         get_logger(),
         "Set mounted position %d camera's focus point(%0.1f, %0.1f) failed,"
-        " error code :0x%08X.",
+        " error code :%ld.",
         index, focus_point.focusX, focus_point.focusY, return_code);
     response->success = false;
     return;
@@ -372,7 +372,7 @@ PSDKWrapper::camera_get_focus_target_cb(
     RCLCPP_ERROR(
         get_logger(),
         "Set mounted position %d camera's focus point(%0.1f, %0.1f) failed,"
-        " error code :0x%08X.",
+        " error code :%ld.",
         index, focus_point.focusX, focus_point.focusY, return_code);
     response->success = false;
     return;
@@ -405,7 +405,7 @@ PSDKWrapper::camera_set_focus_mode_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Set mounted position %d camera's focus mode(%d) failed,"
-                 " error code :0x%08X.",
+                 " error code :%ld.",
                  index, focus_mode, return_code);
     response->success = false;
     return;
@@ -434,7 +434,7 @@ PSDKWrapper::camera_get_focus_mode_cb(
         get_logger(),
         "Service failed trying to get focus mode from camera mounted in "
         "position %d failed,"
-        " error code :0x%08X.",
+        " error code :%ld.",
         index, return_code);
     response->success = false;
     return;
@@ -468,7 +468,7 @@ PSDKWrapper::camera_set_optical_zoom_cb(
     RCLCPP_ERROR(
         get_logger(),
         "Set mounted position %d camera's zoom factor(%0.1f) failed, error "
-        "code :0x%08X",
+        "code :%ld",
         index, request->zoom_factor, return_code);
     response->success = false;
     return;
@@ -496,7 +496,7 @@ PSDKWrapper::camera_get_optical_zoom_cb(
   {
     RCLCPP_ERROR(get_logger(),
                  "Get mounted position %d camera's zoom param failed, error "
-                 "code :0x%08X",
+                 "code :%ld",
                  index, return_code);
     response->success = false;
     return;
@@ -531,7 +531,7 @@ PSDKWrapper::camera_set_infrared_zoom_cb(
     RCLCPP_ERROR(
         get_logger(),
         "Set mounted position %d camera's zoom factor(%0.1f) failed, error "
-        "code :0x%08X",
+        "code :%ld",
         index, request->zoom_factor, return_code);
     response->success = false;
     return;
@@ -564,7 +564,7 @@ PSDKWrapper::camera_start_shoot_single_photo_cb(
     RCLCPP_INFO(
         get_logger(),
         "set mounted position %d camera's work mode as shoot-photo mode failed,"
-        " error code :0x%08X",
+        " error code :%ld",
         index, return_code);
     response->success = false;
     return;
@@ -578,7 +578,7 @@ PSDKWrapper::camera_start_shoot_single_photo_cb(
     RCLCPP_INFO(get_logger(),
                 "set mounted position %d camera's shoot photo mode as "
                 "single-photo mode failed,"
-                " error code :0x%08X",
+                " error code :%ld",
                 index, return_code);
     response->success = false;
     return;
@@ -622,7 +622,7 @@ PSDKWrapper::camera_start_shoot_burst_photo_cb(
     RCLCPP_INFO(
         get_logger(),
         "set mounted position %d camera's work mode as shoot photo mode failed,"
-        " error code :0x%08X.",
+        " error code :%ld.",
         index, return_code);
     response->success = false;
     return;
@@ -643,7 +643,7 @@ PSDKWrapper::camera_start_shoot_burst_photo_cb(
     RCLCPP_INFO(get_logger(),
                 "set mounted position %d camera's shoot photo mode as "
                 "burst-photo mode failed,"
-                " error code :0x%08X",
+                " error code :%ld",
                 index, return_code);
     response->success = false;
     return;
@@ -658,7 +658,7 @@ PSDKWrapper::camera_start_shoot_burst_photo_cb(
   {
     RCLCPP_INFO(get_logger(),
                 "set mounted position %d camera's burst count(%d) failed,"
-                " error code :0x%08X.",
+                " error code :%ld.",
                 index, burst_count, return_code);
     response->success = false;
     return;
@@ -670,7 +670,7 @@ PSDKWrapper::camera_start_shoot_burst_photo_cb(
   {
     RCLCPP_INFO(get_logger(),
                 "Mounted position %d camera shoot photo failed, "
-                "error code :0x%08X.",
+                "error code :%ld.",
                 index, return_code);
     response->success = false;
     return;
@@ -704,7 +704,7 @@ PSDKWrapper::camera_start_shoot_aeb_photo_cb(
     RCLCPP_INFO(
         get_logger(),
         "set mounted position %d camera's work mode as shoot photo mode failed,"
-        " error code :0x%08X.",
+        " error code :%ld.",
         index, return_code);
     response->success = false;
     return;
@@ -727,7 +727,7 @@ PSDKWrapper::camera_start_shoot_aeb_photo_cb(
     RCLCPP_INFO(get_logger(),
                 "set mounted position %d camera's shoot photo mode as "
                 "AEB-photo mode failed,"
-                " error code :0x%08X.",
+                " error code :%ld.",
                 index, return_code);
     response->success = false;
     return;
@@ -743,7 +743,7 @@ PSDKWrapper::camera_start_shoot_aeb_photo_cb(
   {
     RCLCPP_INFO(get_logger(),
                 "set mounted position %d camera's AEB count(%d) failed,"
-                " error code :0x%08X.",
+                " error code :%ld.",
                 index, aeb_count, return_code);
     response->success = false;
     return;
@@ -755,7 +755,7 @@ PSDKWrapper::camera_start_shoot_aeb_photo_cb(
   {
     RCLCPP_INFO(get_logger(),
                 "Mounted position %d camera shoot photo failed, "
-                "error code :0x%08X.",
+                "error code :%ld.",
                 index, return_code);
     response->success = false;
     return;
@@ -789,7 +789,7 @@ PSDKWrapper::camera_start_shoot_interval_photo_cb(
     RCLCPP_INFO(
         get_logger(),
         "set mounted position %d camera's work mode as shoot photo mode failed,"
-        " error code :0x%08X.",
+        " error code :%ld.",
         index, return_code);
     response->success = false;
     return;
@@ -816,7 +816,7 @@ PSDKWrapper::camera_start_shoot_interval_photo_cb(
         get_logger(),
         "set mounted position %d camera's shoot photo mode as interval-photo "
         "mode failed,"
-        " error code :0x%08X",
+        " error code :%ld",
         index, return_code);
     response->success = false;
     return;
@@ -831,12 +831,11 @@ PSDKWrapper::camera_start_shoot_interval_photo_cb(
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS &&
       return_code != DJI_ERROR_CAMERA_MANAGER_MODULE_CODE_UNSUPPORTED_COMMAND)
   {
-    RCLCPP_INFO(
-        get_logger(),
-        "set mounted position %d camera's time interval parameter"
-        "(photo number:%d, time interval:%d) failed, error code :0x%08X.",
-        index, interval_data.captureCount, interval_data.timeIntervalSeconds,
-        return_code);
+    RCLCPP_INFO(get_logger(),
+                "set mounted position %d camera's time interval parameter"
+                "(photo number:%d, time interval:%d) failed, error code :%ld.",
+                index, interval_data.captureCount,
+                interval_data.timeIntervalSeconds, return_code);
     response->success = false;
     return;
   }
@@ -852,7 +851,7 @@ PSDKWrapper::camera_start_shoot_interval_photo_cb(
   {
     RCLCPP_INFO(get_logger(),
                 "Mounted position %d camera shoot photo failed, "
-                "error code :0x%08X.",
+                "error code :%ld.",
                 index, return_code);
     response->success = false;
     return;
@@ -880,7 +879,7 @@ PSDKWrapper::camera_stop_shoot_photo_cb(
   {
     RCLCPP_INFO(get_logger(),
                 "Mounted position %d camera stop to shoot photo failed,"
-                " error code:0x%08X.",
+                " error code:%ld.",
                 index, return_code);
     response->success = false;
     return;
@@ -912,7 +911,7 @@ PSDKWrapper::camera_record_video_cb(
     RCLCPP_INFO(get_logger(),
                 "set mounted position %d camera's work mode as record-video "
                 "mode failed,"
-                " error code :0x%08X",
+                " error code :%ld",
                 index, return_code);
     response->success = false;
     return;
@@ -927,7 +926,7 @@ PSDKWrapper::camera_record_video_cb(
     {
       RCLCPP_INFO(get_logger(),
                   "Mounted position %d camera start to record video failed,"
-                  " error code:0x%08X.",
+                  " error code:%ld.",
                   index, return_code);
       response->success = false;
       return;
@@ -941,7 +940,7 @@ PSDKWrapper::camera_record_video_cb(
     {
       RCLCPP_INFO(get_logger(),
                   "Mounted position %d camera stop to record video failed,"
-                  " error code:0x%08X.",
+                  " error code:%ld.",
                   index, return_code);
       response->success = false;
       return;
@@ -968,7 +967,7 @@ PSDKWrapper::camera_get_laser_ranging_info_cb(
     RCLCPP_INFO(
         get_logger(),
         "Could not take laser ranging info from camera mounted in position %d,"
-        " error code :0x%08X",
+        " error code :%ld",
         index, return_code);
     response->success = false;
     return;
@@ -1003,7 +1002,7 @@ PSDKWrapper::camera_download_file_list_cb(
   return_code = DjiCameraManager_DownloadFileList(index, &media_file_list);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Download file list failed, error code: 0x%08X.",
+    RCLCPP_INFO(get_logger(), "Download file list failed, error code: %ld.",
                 return_code);
     response->success = false;
     return;
@@ -1031,8 +1030,7 @@ PSDKWrapper::camera_download_file_by_index_cb(
       DjiCameraManager_DownloadFileByIndex(index, request->file_index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(),
-                "Download file by index failed, error code: 0x%08X.",
+    RCLCPP_INFO(get_logger(), "Download file by index failed, error code: %ld.",
                 return_code);
     response->success = false;
     return;
@@ -1059,7 +1057,7 @@ PSDKWrapper::camera_delete_file_by_index_cb(
   return_code = DjiCameraManager_DeleteFileByIndex(index, request->file_index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Failed to delete file, error code: 0x%08X.",
+    RCLCPP_INFO(get_logger(), "Failed to delete file, error code: %ld.",
                 return_code);
     response->success = false;
     return;
