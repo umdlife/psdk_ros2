@@ -33,12 +33,13 @@
 #include "stdlib.h"
 
 /* Private constants ---------------------------------------------------------*/
+#define SOCKET_RECV_BUF_MAX_SIZE (1000 * 1000 * 10)
+
+/* Private types -------------------------------------------------------------*/
 typedef struct
 {
   int socketFd;
 } T_SocketHandleStruct;
-
-/* Private types -------------------------------------------------------------*/
 
 /* Private values
  * -------------------------------------------------------------*/
@@ -50,6 +51,15 @@ T_DjiReturnCode
 Osal_Socket(E_DjiSocketMode mode, T_DjiSocketHandle *socketHandle)
 {
   T_SocketHandleStruct *socketHandleStruct;
+  socklen_t optlen = sizeof(int);
+  int rcvBufSize = SOCKET_RECV_BUF_MAX_SIZE;
+  int opt = 1;
+
+  /*! set the socket default read buffer to 20MByte */
+  system("echo 20000000 > /proc/sys/net/core/rmem_default");
+
+  /*! set the socket max read buffer to 50MByte */
+  system("echo 50000000 > /proc/sys/net/core/rmem_max");
 
   if (socketHandle == NULL)
   {
@@ -65,6 +75,18 @@ Osal_Socket(E_DjiSocketMode mode, T_DjiSocketHandle *socketHandle)
   if (mode == DJI_SOCKET_MODE_UDP)
   {
     socketHandleStruct->socketFd = socket(PF_INET, SOCK_DGRAM, 0);
+
+    if (setsockopt(socketHandleStruct->socketFd, SOL_SOCKET, SO_REUSEADDR, &opt,
+                   optlen) < 0)
+    {
+      goto out;
+    }
+
+    if (setsockopt(socketHandleStruct->socketFd, SOL_SOCKET, SO_RCVBUF,
+                   &rcvBufSize, optlen) < 0)
+    {
+      goto out;
+    }
   }
   else if (mode == DJI_SOCKET_MODE_TCP)
   {
@@ -72,12 +94,18 @@ Osal_Socket(E_DjiSocketMode mode, T_DjiSocketHandle *socketHandle)
   }
   else
   {
-    return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
+    goto out;
   }
 
   *socketHandle = socketHandleStruct;
 
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+
+out:
+  close(socketHandleStruct->socketFd);
+  free(socketHandleStruct);
+
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
 }
 
 T_DjiReturnCode
@@ -97,6 +125,8 @@ Osal_Close(T_DjiSocketHandle socketHandle)
   {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
+
+  free(socketHandle);
 
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
