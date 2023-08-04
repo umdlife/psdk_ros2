@@ -28,12 +28,35 @@ html_theme = "sphinx_rtd_theme"
 
 # -- Breathe configuration -------------------------------------------------
 
-breathe_projects = {"C++ API Documentation": "doxyoutput/xml/"}
+breathe_projects = {"C++ API Documentation": "doxyoutput/xml"}
 breathe_default_project = "C++ API Documentation"
+
+
+# somewhere in `conf.py`, *BERORE* declaring `exhale_args`
+def specificationsForKind(kind):
+    '''
+    For a given input ``kind``, return the list of reStructuredText specifications
+    for the associated Breathe directive.
+    '''
+    # Change the defaults for .. doxygenclass:: and .. doxygenstruct::
+    if kind == "class" or kind == "struct":
+        return [
+          ":members:",
+          ":protected-members:",
+          ":private-members:"
+        ]
+    # An empty list signals to Exhale to use the defaults
+    else:
+        return []
+    
+
+# Use exhale's utility function to transform `specificationsForKind`
+# defined above into something Exhale can use
+from exhale import utils
 
 # Setup the exhale extension
 exhale_args = {
-    "verboseBuild": False,
+    "verboseBuild": True,
     "containmentFolder": "./api",
     "rootFileName": "library_root.rst",
     "rootFileTitle": "Library API",
@@ -41,7 +64,9 @@ exhale_args = {
     "createTreeView": True,
     "exhaleExecutesDoxygen": True,
     "exhaleUseDoxyfile": True,
-    # "pageLevelConfigMeta": ":github_url: https://github.com/ethz-asl/" + name
+    "customSpecificationsMapping": utils.makeCustomSpecificationsMapping(
+        specificationsForKind
+    )
 }
 
 
