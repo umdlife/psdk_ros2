@@ -63,9 +63,9 @@ To avoid changing the device name each time you run the psdk application, you ca
 
 ```bash
 # DJI Serial Comm
-SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666", SYMLINK+="dji_serial"
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="YourVendor", ATTRS{idProduct}=="YourProduct", MODE="0666", SYMLINK+="dji_serial"
 # DJI Advanced Sensing
-SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="2ca3", ATTRS{idProduct}=="001f", MODE="0666", SYMLINK+="dji_advanced_sensing"
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="YourVendor", ATTRS{idProduct}=="YourProduct", MODE="0666", SYMLINK+="dji_advanced_sensing"
 ```
 
 
