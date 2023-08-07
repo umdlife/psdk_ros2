@@ -288,16 +288,19 @@ PSDKWrapper::load_parameters()
     RCLCPP_ERROR(get_logger(), "app_name param not defined");
     exit(-1);
   }
+  RCLCPP_INFO(get_logger(), "App name: %s", params_.app_name.c_str());
   if (!get_parameter("app_id", params_.app_id))
   {
     RCLCPP_ERROR(get_logger(), "app_id param not defined");
     exit(-1);
   }
+  RCLCPP_INFO(get_logger(), "App id: %s", params_.app_id.c_str());
   if (!get_parameter("app_key", params_.app_key))
   {
     RCLCPP_ERROR(get_logger(), "app_key param not defined");
     exit(-1);
   }
+  RCLCPP_INFO(get_logger(), "App key: %s", params_.app_key.c_str());
   if (!get_parameter("app_license", params_.app_license))
   {
     RCLCPP_ERROR(get_logger(), "app_license param not defined");
@@ -696,7 +699,7 @@ PSDKWrapper::initialize_ros_elements()
   rtk_position_info_pub_ =
       create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_position_info", 10);
   rtk_yaw_info_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_position_info", 10);
+      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_yaw_info", 10);
   magnetic_field_pub_ = create_publisher<sensor_msgs::msg::MagneticField>(
       "psdk_ros2/magnetic_field", 10);
   rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("psdk_ros2/rc", 10);
@@ -716,8 +719,8 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/flight_anomaly", 10);
   battery_pub_ =
       create_publisher<psdk_interfaces::msg::Battery>("psdk_ros2/battery", 10);
-  height_fused_pub_ =
-      create_publisher<std_msgs::msg::Float32>("psdk_ros2/height_fused", 10);
+  height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
+      "psdk_ros2/height_above_ground", 10);
 
   /** @todo Implement other useful publishers */
   // acceleration_ground_pub_ =
