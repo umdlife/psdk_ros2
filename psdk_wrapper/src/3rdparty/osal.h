@@ -1,8 +1,6 @@
 /**
  ********************************************************************
  * @file    osal.h
- * @version V2.0.0
- * @date    2019/8/28
  * @brief   This is the header file for "osal.c", defining the structure and
  * (exported) function prototypes.
  *
@@ -73,6 +71,7 @@ extern "C"
 
   T_DjiReturnCode Osal_GetTimeMs(uint32_t *ms);
   T_DjiReturnCode Osal_GetTimeUs(uint64_t *us);
+  T_DjiReturnCode Osal_GetRandomNum(uint16_t *randomNum);
 
   void *Osal_Malloc(uint32_t size);
   void Osal_Free(void *ptr);
