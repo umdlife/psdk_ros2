@@ -23,7 +23,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/AircraftStatus.msg"
+  "msg/DisplayMode.msg"
   "msg/Altitude.msg"
   "msg/Battery.msg"
   "msg/FlightAnomaly.msg"
