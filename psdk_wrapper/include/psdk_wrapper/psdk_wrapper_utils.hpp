@@ -51,7 +51,7 @@ struct DJITopic
   int max_frequency;
 };
 
-enum AircraftStatus
+enum DisplayMode
 {
   DISPLAY_MODE_MANUAL_CTRL = 0,
   DISPLAY_MODE_ATTITUDE = 1,

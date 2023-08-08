@@ -55,9 +55,9 @@
 #include "osal_socket.h"         //NOLINT
 
 // PSDK wrapper interfaces
-#include "psdk_interfaces/msg/aircraft_status.hpp"
 #include "psdk_interfaces/msg/altitude.hpp"
 #include "psdk_interfaces/msg/battery.hpp"
+#include "psdk_interfaces/msg/display_mode.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
@@ -717,7 +717,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt16>::SharedPtr
       motor_start_error_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      psdk_interfaces::msg::AircraftStatus>::SharedPtr aircraft_status_pub_;
+      psdk_interfaces::msg::DisplayMode>::SharedPtr display_mode_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
   rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::Battery>::SharedPtr

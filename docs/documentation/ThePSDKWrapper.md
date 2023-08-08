@@ -93,7 +93,7 @@ This module subscribes to the main data exposed by the PSDK libraries and publis
 | DJI Topic                                 | ROS 2 Topic          |
 | ----------------------------------------- | -------------------- |
 | DJI_FC_SUBSCRIPTION_TOPIC_STATUS_FLIGHT   | psdk_ros2/flight_status |
-| DJI_FC_SUBSCRIPTION_TOPIC_STATUS_DISPLAYMODE | psdk_ros2/aircraft_status |
+| DJI_FC_SUBSCRIPTION_TOPIC_STATUS_DISPLAYMODE | psdk_ros2/display_mode |
 | DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR | psdk_ros2/landing_gear_status |
 | DJI_FC_SUBSCRIPTION_TOPIC_STATUS_MOTOR_START_ERROR | psdk_ros2/motor_start_error |
 | DJI_FC_SUBSCRIPTION_TOPIC_FLIGHT_ANOMALY  | psdk_ros2/flight_anomaly |
