@@ -709,8 +709,8 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/gimbal_status", 10);
   flight_status_pub_ = create_publisher<psdk_interfaces::msg::FlightStatus>(
       "psdk_ros2/flight_status", 10);
-  aircraft_status_pub_ = create_publisher<psdk_interfaces::msg::AircraftStatus>(
-      "psdk_ros2/aircraft_status", 10);
+  display_mode_pub_ = create_publisher<psdk_interfaces::msg::DisplayMode>(
+      "psdk_ros2/display_mode", 10);
   landing_gear_pub_ = create_publisher<std_msgs::msg::UInt8>(
       "psdk_ros2/landing_gear_status", 10);
   motor_start_error_pub_ = create_publisher<std_msgs::msg::UInt16>(
@@ -1004,7 +1004,7 @@ PSDKWrapper::activate_ros_elements()
   gimbal_angles_pub_->on_activate();
   gimbal_status_pub_->on_activate();
   flight_status_pub_->on_activate();
-  aircraft_status_pub_->on_activate();
+  display_mode_pub_->on_activate();
   landing_gear_pub_->on_activate();
   motor_start_error_pub_->on_activate();
   flight_anomaly_pub_->on_activate();
@@ -1042,7 +1042,7 @@ PSDKWrapper::deactivate_ros_elements()
   gimbal_angles_pub_->on_deactivate();
   gimbal_status_pub_->on_deactivate();
   flight_status_pub_->on_deactivate();
-  aircraft_status_pub_->on_deactivate();
+  display_mode_pub_->on_deactivate();
   motor_start_error_pub_->on_deactivate();
   landing_gear_pub_->on_deactivate();
   flight_anomaly_pub_->on_deactivate();
@@ -1145,7 +1145,7 @@ PSDKWrapper::clean_ros_elements()
   gimbal_angles_pub_.reset();
   gimbal_status_pub_.reset();
   flight_status_pub_.reset();
-  aircraft_status_pub_.reset();
+  display_mode_pub_.reset();
   landing_gear_pub_.reset();
   motor_start_error_pub_.reset();
   flight_anomaly_pub_.reset();

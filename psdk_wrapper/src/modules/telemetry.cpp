@@ -684,10 +684,10 @@ PSDKWrapper::display_mode_callback(const uint8_t *data, uint16_t dataSize,
   std::unique_ptr<T_DjiFcSubscriptionDisplaymode> display_mode =
       std::make_unique<T_DjiFcSubscriptionDisplaymode>(
           *reinterpret_cast<const T_DjiFcSubscriptionDisplaymode *>(data));
-  psdk_interfaces::msg::AircraftStatus aircraft_status_msg;
-  aircraft_status_msg.header.stamp = this->get_clock()->now();
-  aircraft_status_msg.display_mode = *display_mode;
-  aircraft_status_pub_->publish(aircraft_status_msg);
+  psdk_interfaces::msg::DisplayMode display_mode_msg;
+  display_mode_msg.header.stamp = this->get_clock()->now();
+  display_mode_msg.display_mode = *display_mode;
+  display_mode_pub_->publish(display_mode_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
