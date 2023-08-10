@@ -67,10 +67,10 @@ c_imu_callback(const uint8_t *data, uint16_t dataSize,
 }
 
 T_DjiReturnCode
-c_position_vo_callback(const uint8_t *data, uint16_t dataSize,
+c_vo_position_callback(const uint8_t *data, uint16_t dataSize,
                        const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->position_vo_callback(data, dataSize, timestamp);
+  return global_ptr_->vo_position_callback(data, dataSize, timestamp);
 }
 
 T_DjiReturnCode
@@ -325,7 +325,7 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t dataSize,
 }
 
 T_DjiReturnCode
-PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
+PSDKWrapper::vo_position_callback(const uint8_t *data, uint16_t dataSize,
                                   const T_DjiDataTimestamp *timestamp)
 {
   (void)dataSize;
@@ -333,7 +333,7 @@ PSDKWrapper::position_vo_callback(const uint8_t *data, uint16_t dataSize,
   std::unique_ptr<T_DjiFcSubscriptionPositionVO> position_vo =
       std::make_unique<T_DjiFcSubscriptionPositionVO>(
           *reinterpret_cast<const T_DjiFcSubscriptionPositionVO *>(data));
-  /* Note: The quaternion provided by DJI is in NED
+  /* Note: The position provided by DJI is in NED
    * ground coordinate frame. Following REP 103, this position is transformed to
    * ENU ground coordinate frame
    */
@@ -837,7 +837,7 @@ PSDKWrapper::subscribe_psdk_topics()
   {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_POSITION_VO,
-        get_frequency(params_.position_frequency), c_position_vo_callback);
+        get_frequency(params_.position_frequency), c_vo_position_callback);
 
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
