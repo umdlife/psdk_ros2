@@ -343,7 +343,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_imu_callback(const uint8_t* data, uint16_t dataSize,
                                         const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_position_vo_callback(
+  friend T_DjiReturnCode c_vo_position_callback(
       const uint8_t* data, uint16_t dataSize,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_gps_fused_callback(
@@ -419,7 +419,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
                                     const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode imu_callback(const uint8_t* data, uint16_t dataSize,
                                const T_DjiDataTimestamp* timestamp);
-  T_DjiReturnCode position_vo_callback(const uint8_t* data, uint16_t dataSize,
+  T_DjiReturnCode vo_position_callback(const uint8_t* data, uint16_t dataSize,
                                        const T_DjiDataTimestamp* timestamp);
   T_DjiReturnCode gps_fused_callback(const uint8_t* data, uint16_t dataSize,
                                      const T_DjiDataTimestamp* timestamp);
