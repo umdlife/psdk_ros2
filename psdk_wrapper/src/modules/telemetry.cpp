@@ -616,11 +616,24 @@ PSDKWrapper::gimbal_angles_callback(const uint8_t *data, uint16_t dataSize,
   std::unique_ptr<T_DjiFcSubscriptionGimbalAngles> gimbal_angles =
       std::make_unique<T_DjiFcSubscriptionGimbalAngles>(
           *reinterpret_cast<const T_DjiFcSubscriptionGimbalAngles *>(data));
+
+  tf2::Matrix3x3 rotation_NED;
+  tf2::Quaternion current_quat_FLU2ENU;
+  /* Please note that the output  of T_DjiFcSubscriptionGimbalAngles uses
+   * x -> pitch, y -> roll, z -> yaw. Thus, the order is inverted when using the
+   * function setRPY*/
+  rotation_NED.setRPY(psdk_utils::deg_to_rad(gimbal_angles->y),
+                      psdk_utils::deg_to_rad(gimbal_angles->x),
+                      psdk_utils::deg_to_rad(gimbal_angles->z));
+  double transformed_roll, transformed_pitch, transformed_yaw;
+  tf2::Matrix3x3 rotation_ENU = psdk_utils::R_NED2ENU * rotation_NED;
+  rotation_ENU.getRPY(transformed_roll, transformed_pitch, transformed_yaw);
   geometry_msgs::msg::Vector3Stamped gimbal_angles_msg;
   gimbal_angles_msg.header.stamp = this->get_clock()->now();
-  gimbal_angles_msg.vector.x = gimbal_angles->x;  // Pitch
-  gimbal_angles_msg.vector.y = gimbal_angles->y;  // Roll
-  gimbal_angles_msg.vector.z = gimbal_angles->z;  // Yaw
+  gimbal_angles_msg.vector.x = transformed_roll;
+  gimbal_angles_msg.vector.y = transformed_pitch;
+  gimbal_angles_msg.vector.z = transformed_yaw;
+
   gimbal_angles_pub_->publish(gimbal_angles_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -642,7 +655,7 @@ PSDKWrapper::gimbal_status_callback(const uint8_t *data, uint16_t dataSize,
   gimbal_status_msg.roll_limited = gimbal_status->rollLimited;
   gimbal_status_msg.yaw_limited = gimbal_status->yawLimited;
   gimbal_status_msg.calibrating = gimbal_status->calibrating;
-  gimbal_status_msg.prev_calibrationg_result =
+  gimbal_status_msg.prev_calibration_result =
       gimbal_status->prevCalibrationgResult;
   gimbal_status_msg.installed_direction = gimbal_status->installedDirection;
   gimbal_status_msg.disabled_mvo = gimbal_status->disabled_mvo;
