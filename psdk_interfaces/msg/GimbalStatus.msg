@@ -5,7 +5,7 @@ uint32 pitch_limited           # 1 - axis reached limit, 0 - no
 uint32 roll_limited            # 1 - axis reached limit, 0 - no 
 uint32 yaw_limited             # 1 - axis reached limit, 0 - no 
 uint32 calibrating            # 1 - calibrating, 0 - no 
-uint32 prev_calibrationg_result # 1 - success, 0 - fail 
+uint32 prev_calibration_result # 1 - success, 0 - fail 
 uint32 installed_direction     # 1 - reversed for OSMO, 0 - normal 
 uint32 disabled_mvo
 uint32 gear_show_unable

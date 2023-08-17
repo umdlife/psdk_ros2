@@ -756,7 +756,7 @@ PSDKWrapper::initialize_ros_elements()
                     _1));
   flight_control_body_velocity_yawrate_sub_ =
       create_subscription<sensor_msgs::msg::Joy>(
-          "psdk_ros2/flight_control_setpoint_FRUvelocity_yawrate", 10,
+          "psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate", 10,
           std::bind(&PSDKWrapper::flight_control_body_velocity_yawrate_cb, this,
                     _1));
   flight_control_rollpitch_yawrate_vertpos_sub_ =

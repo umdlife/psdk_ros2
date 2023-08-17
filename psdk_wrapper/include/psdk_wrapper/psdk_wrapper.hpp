@@ -105,7 +105,7 @@ namespace psdk_ros2
 {
 /**
  * @class psdk_ros2::PSDKWrapper
- * @brief A ROS wrapper that brings all the DJI PSDK functionalities to ROS
+ * @brief A ROS 2 wrapper that brings all the DJI PSDK functionalities to ROS 2
  */
 
 class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
@@ -299,7 +299,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   /**
    * @brief Get the DJI frequency object associated with a certain frequency
-   * @param frequency
+   * @param frequency variable to store the output frequency
    * @return E_DjiDataSubscriptionTopicFreq
    */
   E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
@@ -325,12 +325,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   void clean_ros_elements();
   /**
-   * @brief Subscribe to DJI topics
+   * @brief Subscribe to telemetry topics exposed by the DJI PSDK library
    */
   void subscribe_psdk_topics();
 
   /**
-   * @brief Unsubscribe to DJI topics
+   * @brief Unsubscribe the telemetry topics
    */
   void unsubscribe_psdk_topics();
 
@@ -470,38 +470,40 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiReturnCode height_fused_callback(const uint8_t* data, uint16_t dataSize,
                                         const T_DjiDataTimestamp* timestamp);
 
-  /* ROS subscriber callbacks*/
   /**
    * @brief Callback function to control aircraft position and yaw. This
-   * function uses the ground reference frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw
-   * command.
+   * function expects the commands to be given with respect to a global ENU
+   * frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [m], y [m], z [m]
+   * and yaw [rad] command.
    */
   void flight_control_position_yaw_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
   /**
    * @brief Callback function to control aircraft velocity and yaw rate. This
-   * function uses the ground reference frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw
-   * command.
+   * function expects the commands to be given with respect to a global ENU
+   * frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [m/s], y [m/s], z
+   * [m/s] and yaw [rad/s] command.
    */
   void flight_control_velocity_yawrate_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
 
   /**
-   * @brief Callback function to control aircraft velocity and yaw. This
-   * function uses the body reference frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw
-   * command.
+   * @brief Callback function to control aircraft velocity and yaw.  This
+   * function expects the commands to be given with respect to a FLU body frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [m/s], y [m/s], z
+   * [m/s] and yaw [rad/s] command.
    */
   void flight_control_body_velocity_yawrate_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
 
   /**
    * @brief Callback function to control roll, pitch, yawrate and thrust. This
-   * function uses the body reference frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw
-   * command.
+   * function expects the commands to be given with respect to a FLU body frame.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [rad], y [rad], z
+   * [rad] and yaw [rad/s] command.
+   * @note This type of control is not implemented at this moment.
    */
   void flight_control_rollpitch_yawrate_vertpos_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
@@ -510,9 +512,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Callback function to exposing a generic control method of the
    * aircraft.The type of commands as well as the reference frame is specified
    * in a flag within the msg.
-   * @note This type of control is not implemented at this moment.
    * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw
    * command.
+   * @note This type of control is not implemented at this moment.
    */
   void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
 
@@ -525,7 +527,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   void gimbal_rotation_cb(
       const psdk_interfaces::msg::GimbalRotation::SharedPtr msg);
 
-  /* ROS Service callbacks*/
   void set_home_from_gps_cb(
       const std::shared_ptr<SetHomeFromGPS::Request> request,
       const std::shared_ptr<SetHomeFromGPS::Response> response);
@@ -671,61 +672,196 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   void gimbal_reset_cb(const std::shared_ptr<GimbalReset::Request> request,
                        const std::shared_ptr<GimbalReset::Response> response);
 
-  /* ROS Publishers */
+  /** @name ROS 2 Publishers
+   * This group contains all the ROS 2 publishers defined for this wrapper
+   */
+  ///@{
+  /**
+   * @brief Provides the attitude quaternion. Attitude is published as a
+   * quaternion with respect to a FLU body frame
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::QuaternionStamped>::SharedPtr attitude_pub_;
+  /**
+   * @brief Provides the copter x, y and z velocity. The velocity vector is
+   * given wrt. a global ENU frame.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::TwistStamped>::SharedPtr velocity_ground_pub_;
+  /**
+   * @brief Provides IMU data. The quaternion is given wrt. a FLU body frame.
+   */
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>::SharedPtr
       imu_pub_;
+  /**
+   * @brief Position data publisher.
+   * @details Fused copter position wrt. to a Cartesian global frame with ENU
+   * orientation (best effort). As documented in the PSDK libraries, if fno GPS
+   * is available this topic uses the VO + compass information to determine the
+   * XY axis orientation. If any malfunction is present, these axis will not
+   * point to the East, Norh directions as expected. This position output is the
+   * fusion of the following sensors:
+   * @sensors IMU, VO, GPS (if available), RTK (if available), ultrasonic,
+   * magnetometer, barometer
+   * A health flag for each axis offers an indication if the data is valid or
+   * not.
+   * @note This information should be used with care, specially when intended
+   * for control purposes.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::PositionFused>::SharedPtr position_fused_pub_;
+  /**
+   * @brief This topic provides the GPS longitude [deg], latitude [deg] and
+   * altitude (WGS84 reference ellipsoid [m]) data along with the number of
+   * visible satellites.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::GPSFused>::SharedPtr gps_fused_pub_;
+  /**
+   * @brief This topic provides GPS the longitude [deg], latitude [deg] and
+   * altitude [m].
+   */
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
       gps_position_pub_;
+  /**
+   * @brief This topic provides GPS the x, y, and z velocity in [m/s].
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::TwistStamped>::SharedPtr gps_velocity_pub_;
+  /**
+   * @brief This topic provides information related with the accuracy and well
+   * functioning of the GPS sensors. The type of information given by this topic
+   * is described in psdk_interfaces::msg::GPSDetails
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::GPSDetails>::SharedPtr gps_details_pub_;
+  /**
+   * @brief Provides GPS signal level data. Signal level is represented from 0
+   * to 5, being 0 the worst and 5 the best GPS value.
+   */
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       gps_signal_pub_;
+  /**
+   * @brief Provides similar data as the topic gps_signal_level with the main
+   * difference being that if the home point is not set, it always returns 0.
+   */
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       gps_control_pub_;
+  /**
+   * @brief Provides the RTK longitude [deg], latitude [deg], and
+   * HFSL Height above mean sea level [m]
+   */
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
       rtk_position_pub_;
+  /**
+   * @brief Provides the x, y and z RTK velocity data in [m/s]
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::TwistStamped>::SharedPtr rtk_velocity_pub_;
+  /**
+   * @brief Provides RTK yaw data. As documented in the PSDK libraries, this yaw
+   * value represents the vector from ANT1 to ANT2 as configured in DJI
+   * Assistant 2. This means that the value of RTK yaw will be 90deg offset from
+   * the yaw of the aircraft.
+   */
   rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::RTKYaw>::SharedPtr
       rtk_yaw_pub_;
+  /**
+   * @brief Provides state information regarding the RTK
+   * position solution. Uses the enum RTKSolutionState to define the quality of
+   * the solution.
+   */
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       rtk_position_info_pub_;
+  /**
+   * @brief Provides state information regarding the RTK
+   * yaw solution. Uses the enum RTKSolutionState to define the quality of
+   * the solution.
+   */
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       rtk_yaw_info_pub_;
+  /**
+   * @brief Provides magnetometer reading in x, y, z,
+   * fused with IMU and GPS @ up to 100Hz yaw solution.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       sensor_msgs::msg::MagneticField>::SharedPtr magnetic_field_pub_;
+  /**
+   * @brief Remote controller input data up to 100 Hz.This topic provides stick
+   * inputs, mode switch and landing gear switch.
+   */
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Joy>::SharedPtr
       rc_pub_;
+  /**
+   * @brief Provides the roll, pitch and yaw of the
+   * gimbal up to 50Hz. These angles are in [rad] and wrt. an ENU oriented
+   * reference frame attached to the gimbal structure.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr gimbal_angles_pub_;
+  /**
+   * @brief Provides the gimbal status data following data up to 50 Hz.
+   * More information regarding the gimbal status data can be found in
+   * psdk_interfaces::msg::GimbalStatus.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::GimbalStatus>::SharedPtr gimbal_status_pub_;
+  /**
+   * @brief Provides the flight status data. Indicates if the copter is either
+   * stopped, on ground or in air. More information regarding the flight status
+   * data can be found in psdk_interfaces::msg::FlightStatus.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightStatus>::SharedPtr flight_status_pub_;
+  /**
+   * @brief  Provides the status of the landing gear @ up to 50Hz
+   */
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       landing_gear_pub_;
+  /**
+   * @brief  Provides information regarding the reason why the motors could not
+   * be started. Available @ up to 50Hz. The information provided here
+   * corresponds to an error code as defined in dji_error.h
+   */
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt16>::SharedPtr
       motor_start_error_pub_;
+  /**
+   * @brief Provides information regarding the state of the copter @ up to 50Hz
+   * Please refer to either the  enum DisplayMode or the msg definition
+   * psdk_interfaces::msg::DisplayMode for more details.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::DisplayMode>::SharedPtr display_mode_pub_;
+  /**
+   * @brief Provides information regarding different errors the
+   * aircraft may encounter in flight @ up to 50Hz. Please refer to the msg
+   * definition psdk_interfaces::msg::FlightAnomaly for more details.
+   */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
+  /**
+   * @brief Provides information regarding the battery capacity, current,
+   * voltage and percentage. Please refer to the msg definition
+   * psdk_interfaces::msg::Battery for more details.
+   */
   rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::Battery>::SharedPtr
       battery_pub_;
+  /**
+   * @brief Provides the relative height above ground in [m] at up to 100Hz.
+   * This data is the result of the fusion between the Visual Odometry and
+   * Ultrasonic sensor.
+   * @note This topic does not have a 'valid' flag. Thus, if the copter is too
+   * far from an object to be detected by the ultrasonic/VO sensors, the values
+   * will latch and there is no feedback given to the user.
+   */
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
+  ///@}
 
-  /* ROS subscribers*/
+  /** @name ROS 2 Subscribers
+   * This group contains all the ROS 2 subscribers defined for this wrapper
+   */
+  ///@{
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
       flight_control_generic_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
@@ -739,8 +875,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   // Gimbal
   rclcpp::Subscription<psdk_interfaces::msg::GimbalRotation>::SharedPtr
       gimbal_rotation_sub_;
+  ///@}
 
-  /* ROS Services */
+  /** @name ROS 2 Services
+   * This group contains all the ROS 2 services defined for this wrapper
+   */
   rclcpp::Service<SetHomeFromGPS>::SharedPtr set_home_from_gps_srv_;
   rclcpp::Service<Trigger>::SharedPtr set_home_from_current_location_srv_;
   rclcpp::Service<SetHomeAltitude>::SharedPtr set_home_altitude_srv_;
@@ -820,6 +959,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   // Gimbal
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
+  ///@}
 
   /**
    * @brief Get the gps signal level
@@ -852,8 +992,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     return local_altitude_reference_set_;
   };
   /**
-   * @brief Get the local altitude reference value. If it is not set, default
-   * value is 0
+   * @brief Get the local altitude reference value. If it is not set,
+   * default value is 0
    * @return float local_altitude_reference
    */
   inline float
