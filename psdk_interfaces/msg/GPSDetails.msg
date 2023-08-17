@@ -1,6 +1,6 @@
 std_msgs/Header header
-float32 horizontal_dop                              # Horizontal dilution of precision, unit: 0.01, eg: 100 = 1.00, <1: ideal, 1-2: excellent, 2-5: good, 5-10: moderate, 10-20: fair, >20: poor.
-float32 position_dop                                # Position dilution of precision, unit: 0.01, eg: 100 = 1.00, <1: ideal, 1-2: excellent, 2-5: good, 5-10: moderate, 10-20: fair, >20: poor.
+float32 horizontal_dop                             # Horizontal dilution of precision, unit: 0.01, eg: 100 = 1.00, <1: ideal, 1-2: excellent, 2-5: good, 5-10: moderate, 10-20: fair, >20: poor.
+float32 position_dop                               # Position dilution of precision, unit: 0.01, eg: 100 = 1.00, <1: ideal, 1-2: excellent, 2-5: good, 5-10: moderate, 10-20: fair, >20: poor.
 
 uint16 GPS_FIX_STATE_NO_FIX = 0                    # GPS position has not been fixed. 
 uint16 GPS_FIX_STATE_DEAD_RECKONING_ONLY = 1       # GPS position is dead reckoned only. 
