@@ -151,9 +151,9 @@ These commands are relative to the global Cartesian frame where the aircraft has
 - `axes[3]`: yaw rate command [rad/s]
 
 
-#### `/psdk_ros2/flight_control_setpoint_FRUvelocity_yawrate`
+#### `/psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate`
 
-These commands are relative to the body frame (FRU)
+These commands are relative to the body frame (FLU)
 - **Message Type**: `sensor_msgs::msg::Joy`
 - `axes[0]`: x velocity command [m/s]
 - `axes[1]`: y velocity command [m/s]
@@ -162,13 +162,49 @@ These commands are relative to the body frame (FRU)
 
 #### `/psdk_ros2/flight_control_setpoint_generic`
 
-  * WIP: not implemented currently 
+  * WIP: currently not implemented  
 
 #### `/psdk_ros2/flight_control_setpoint_rollpitch_yawrate_zposition`
 
-  * WIP: not implemented currently 
+  * WIP: currently not implemented  
 
 ### Camera 
+
+This module implements all functionalities related with different camera payloads that can be mounted on-board the copter.  
+
+| Name                              | Type      | Currently working                                            | Command                                                      | Input                                                        | Output                 |
+| --------------------------------- | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ---------------------- |
+| camera_get_type                   | Service   | Not tested                                                   |                                                              | Mounting position (by default 1 in PSDK)                     | String E_DjiCameraType |
+| camera_set_ev                     | Service   | Not tested                                                   |                                                              | Mounting position (by default 1 in PSDK) Exposure compensation factor | bool                   |
+| camera_get_ev                     | Service   | Not tested                                                   |                                                              | Mounting position (by default 1 in PSDK)                     | Exposure factor        |
+| camera_set_shutter_speed          | Service   | Not working! Returns code 0x0E3                              |                                                              | Mounting position (by default 1 in PSDK) Shutter speed factor | bool                   |
+| camera_get_shutter_speed          | Service   | Not working! Returns code 0x0E3                              |                                                              | Mounting position (by default 1 in PSDK)                     |                        |
+| camera_set_iso                    | Service   | Not tested                                                   |                                                              |                                                              |                        |
+| camera_get_iso                    | Service   | Not tested                                                   |                                                              |                                                              |                        |
+| camera_set_focus_target           | Service   | Not working! Returns code 0x0E3                              |                                                              |                                                              |                        |
+| camera_get_focus_target           | Service   | Not tested                                                   |                                                              |                                                              |                        |
+| camera_set_focus_mode             | Service   | Not working! Returns code 0x0E3                              |                                                              |                                                              |                        |
+| camera_get_focus_mode             | Service   | Not working! Returns code 0x0E3                              |                                                              |                                                              |                        |
+| camera_set_optical_zoom           | Service   | working                                                      | ros2 service call /robot128/psdk_ros2/camera_set_optical_zoom psdk_interfaces/srv/CameraSetOpticalZoom "payload_index: 1  zoom_factor: 3.0" |                                                              |                        |
+| camera_get_optical_zoom           | Service   | working                                                      | ros2 service call /robot128/psdk_ros2/camera_get_optical_zoom psdk_interfaces/srv/CameraGetOpticalZoom "payload_index: 1" |                                                              |                        |
+| camera_set_infrared_zoom          | Service   | Cannot test it                                               |                                                              |                                                              |                        |
+| camera_start_shoot_single_photo   | Service   | working                                                      | ros2 service call /robot128/psdk_ros2/camera_start_shoot_single_photo psdk_interfaces/srv/CameraStartShootSinglePhoto "payload_index: 1" |                                                              |                        |
+| camera_start_shoot_burst_photo    | Service   | Cannot test this with the H20. According to the PSDK command not supported for the camera. Check which one can we use for testing this |                                                              |                                                              |                        |
+| camera_start_shoot_aeb_photo      | Service   | Not possible to test it using the H20                        |                                                              |                                                              |                        |
+| camera_start_shoot_interval_photo | Service   | working                                                      | ros2 service call /robot128/psdk_ros2/camera_start_shoot_interval_photo psdk_interfaces/srv/CameraStartShootIntervalPhoto "payload_index: 1  photo_num_conticap: 5  time_interval: 2"   ros2 service call /robot128/psdk_ros2/camera_start_shoot_interval_photo psdk_interfaces/srv/CameraStartShootIntervalPhoto "payload_index: 1  photo_num_conticap: 255  time_interval: 5" |                                                              |                        |
+| camera_stop_shoot_photo           | Service   | working                                                      | ros2 service call /robot128/psdk_ros2/camera_stop_shoot_photo psdk_interfaces/srv/CameraStopShootPhoto "payload_index: 1" |                                                              |                        |
+| camera_record_video               | Service   | working                                                      | ros2 service call /robot128/psdk_ros2/camera_record_video psdk_interfaces/srv/CameraRecordVideo "payload_index: 1  start_stop: true"   ros2 service call /robot128/psdk_ros2/camera_record_video psdk_interfaces/srv/CameraRecordVideo "payload_index: 1  start_stop: false" |                                                              |                        |
+| camera_get_laser_ranging_info     | Service   | Not tested                                                   |                                                              |                                                              |                        |
+| camera_download_file_list         | Service   | Not working                                                  |                                                              |                                                              |                        |
+| camera_download_file_by_index     | Service   | Not working                                                  |                                                              |                                                              |                        |
+| camera_delete_file_by_index       | Service   | Not working                                                  |                                                              |                                                              |                        |
+| gimbal_set_mode_cb                | Service   | Not tested                                                   |                                                              |                                                              |                        |
+| gimbal_reset_cb                   | Service   | working                                                      | ros2 service call /robot128/psdk_ros2/gimbal_reset psdk_interfaces/srv/GimbalReset "payload_index: 1" |                                                              |                        |
+| gimbal_rotation_cb                | Publisher | working                                                      | ros2 topic pub /robot128/psdk_ros2/gimbal_rotation psdk_interfaces/msg/GimbalRotation "payload_index: 1 rotation_mode: 0  pitch: 5.0  roll: 0.0  yaw: 20.0  time: 0.0"    ros2 topic pub --once /robot128/psdk_ros2/gimbal_rotation psdk_interfaces/msg/GimbalRotation "payload_index: 1 rotation_mode: 1  pitch: 0.0  roll: 0.0 yaw: 90.0  time: 0.0"   ros2 topic pub --once /robot128/psdk_ros2/gimbal_rotation psdk_interfaces/msg/GimbalRotation "payload_index: 1 rotation_mode: 2 pitch: 0.0 roll: 0.0 yaw: 2.0  time: 5.0" |                                                              |                        |
+
+ 
+
+ 
 
 ### Gimbal
 

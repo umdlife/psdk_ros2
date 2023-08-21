@@ -10,7 +10,7 @@ from exhale import utils
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "psdk_ros2 wrapper"
-copyright = "2023, Bianca Bendris"
+copyright = "2023, Unmanned Life"
 author = "Bianca Bendris"
 master_doc = "index"
 
