@@ -35,7 +35,7 @@ PSDKWrapper::init_gimbal_manager()
 bool
 PSDKWrapper::deinit_gimbal_manager()
 {
-  RCLCPP_INFO(get_logger(), "Deinitiating gimbal manager...");
+  RCLCPP_INFO(get_logger(), "Deinitializing gimbal manager...");
   if (DjiGimbalManager_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Could not deinitialize gimbal manager");

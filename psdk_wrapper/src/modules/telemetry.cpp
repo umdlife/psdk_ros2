@@ -29,8 +29,19 @@ PSDKWrapper::init_telemetry()
   RCLCPP_INFO(get_logger(), "Initiating telemetry...");
   if (DjiFcSubscription_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
-                 "Could not initialize data subscription module.");
+    RCLCPP_ERROR(get_logger(), "Could not initialize the telemetry module.");
+    return false;
+  }
+  return true;
+}
+
+bool
+PSDKWrapper::deinit_telemetry()
+{
+  RCLCPP_INFO(get_logger(), "Deinitializing telemetry...");
+  if (DjiFcSubscription_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not deinitialize the telemetry module.");
     return false;
   }
   return true;

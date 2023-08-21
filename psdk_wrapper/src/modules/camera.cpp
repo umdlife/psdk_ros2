@@ -35,7 +35,7 @@ PSDKWrapper::init_camera_manager()
 bool
 PSDKWrapper::deinit_camera_manager()
 {
-  RCLCPP_INFO(get_logger(), "Deinitiating camera manager...");
+  RCLCPP_INFO(get_logger(), "Deinitializing camera manager...");
   if (DjiCameraManager_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Could not deinitialize camera manager.");
