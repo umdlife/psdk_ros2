@@ -33,6 +33,19 @@ PSDKWrapper::init_flight_control()
   return true;
 }
 
+bool
+PSDKWrapper::deinit_flight_control()
+{
+  RCLCPP_INFO(get_logger(), "Deinitializing flight control module...");
+  if (DjiFlightController_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not deinitialze the flight control module.");
+    return false;
+  }
+  return true;
+}
+
 void
 PSDKWrapper::set_home_from_gps_cb(
     const std::shared_ptr<SetHomeFromGPS::Request> request,
