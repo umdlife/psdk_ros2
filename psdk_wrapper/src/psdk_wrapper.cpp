@@ -721,6 +721,8 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<psdk_interfaces::msg::Battery>("psdk_ros2/battery", 10);
   height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/height_above_ground", 10);
+  main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
+      "psdk_ros2/main_camera_stream", 10);
 
   /** @todo Implement other useful publishers */
   // acceleration_ground_pub_ =
@@ -864,7 +866,7 @@ PSDKWrapper::initialize_ros_elements()
           "psdk_ros2/get_horizontal_radar_obstacle_avoidance",
           std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb,
                     this, _1, _2));
-  // Camera
+  /* Camera */
   camera_start_shoot_single_photo_service_ =
       create_service<CameraStartShootSinglePhoto>(
           "psdk_ros2/camera_start_shoot_single_photo",
@@ -970,8 +972,12 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/camera_set_infrared_zoom",
       std::bind(&PSDKWrapper::camera_set_infrared_zoom_cb, this, _1, _2),
       qos_profile_);
-  //// Gimbal
-  // Services
+  /* Streaming */
+  camera_setup_streaming_service_ = create_service<CameraSetupStreaming>(
+      "camera_setup_streaming",
+      std::bind(&PSDKWrapper::camera_setup_streaming_cb, this, _1, _2),
+      qos_profile_);
+  /* Gimbal */
   gimbal_set_mode_service_ = create_service<GimbalSetMode>(
       "psdk_ros2/gimbal_set_mode",
       std::bind(&PSDKWrapper::gimbal_set_mode_cb, this, _1, _2), qos_profile_);
@@ -1010,6 +1016,7 @@ PSDKWrapper::activate_ros_elements()
   flight_anomaly_pub_->on_activate();
   battery_pub_->on_activate();
   height_fused_pub_->on_activate();
+  main_camera_stream_pub_->on_activate();
   // acceleration_ground_pub_->on_activate();
   // acceleration_body_pub_->on_activate();
   // altitude_pub_->on_activate();
@@ -1048,6 +1055,7 @@ PSDKWrapper::deactivate_ros_elements()
   flight_anomaly_pub_->on_deactivate();
   battery_pub_->on_deactivate();
   height_fused_pub_->on_deactivate();
+  main_camera_stream_pub_->on_deactivate();
   // acceleration_ground_pub_->on_deactivate();
   // acceleration_body_pub_->on_deactivate();
   // altitude_pub_->on_deactivate();
@@ -1113,6 +1121,8 @@ PSDKWrapper::clean_ros_elements()
   camera_download_file_list_service_.reset();
   camera_download_file_by_index_service_.reset();
   camera_delete_file_by_index_service_.reset();
+  // Streaming
+  camera_setup_streaming_service_.reset();
   // Gimbal
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();
@@ -1151,6 +1161,7 @@ PSDKWrapper::clean_ros_elements()
   flight_anomaly_pub_.reset();
   battery_pub_.reset();
   height_fused_pub_.reset();
+  main_camera_stream_pub_.reset();
   // acceleration_ground_pub_.reset();
   // acceleration_body_pub_.reset();
   // altitude_pub_.reset();
