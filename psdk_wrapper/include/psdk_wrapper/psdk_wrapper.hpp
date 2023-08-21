@@ -278,13 +278,21 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
    */
   bool init_telemetry();
-
+  /**
+   * @brief Deinitialize the telemetry module
+   * @return true/false
+   */
+  bool deinit_telemetry();
   /**
    * @brief Initialize the flight control module
    * @return true/false
    */
   bool init_flight_control();
-
+  /**
+   * @brief Deinitialize the flight control module
+   * @return true/false
+   */
+  bool deinit_flight_control();
   /**
    * @brief Initialize the camera module
    * @return true/false

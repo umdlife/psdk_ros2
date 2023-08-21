@@ -90,21 +90,13 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   activate_ros_elements();
 
-  if (!init_telemetry() || !init_flight_control())
+  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
+      !init_gimbal_manager() || !init_liveview())
   {
     return CallbackReturn::FAILURE;
   }
 
   subscribe_psdk_topics();
-
-  if (!init_camera_manager() || !init_gimbal_manager())
-  {
-    return CallbackReturn::FAILURE;
-  }
-  if (!init_liveview())
-  {
-    return CallbackReturn::FAILURE;
-  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -132,20 +124,24 @@ PSDKWrapper::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  int deinit_result = DjiFlightController_Deinit() ^
-                      DjiFcSubscription_DeInit() ^ DjiCore_DeInit();
+
+  auto deinit_result = DjiCore_DeInit();
   if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
+    RCLCPP_ERROR(get_logger(),
+                 "DJI core could not be deinitialized. Error code is: %ld",
+                 deinit_result);
     return CallbackReturn::FAILURE;
   }
-  if (!deinit_camera_manager() || !deinit_gimbal_manager())
+
+  // Deinitialize all remaining modules
+  if (!deinit_telemetry() || !deinit_flight_control() ||
+      !deinit_camera_manager() || !deinit_gimbal_manager() ||
+      !deinit_liveview())
   {
     return CallbackReturn::FAILURE;
   }
-  if (!deinit_liveview())
-  {
-    return CallbackReturn::FAILURE;
-  }
+
   global_ptr_.reset();
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
   return CallbackReturn::SUCCESS;
