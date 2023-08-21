@@ -58,7 +58,6 @@ c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
                                    const uint8_t *buffer,
                                    uint32_t buffer_length)
 {
-  std::cout << "c_LiveviewConvertH264ToRgbCallback" << std::endl;
   return global_ptr_->LiveviewConvertH264ToRgbCallback(position, buffer,
                                                        buffer_length);
 }
@@ -68,11 +67,9 @@ PSDKWrapper::LiveviewConvertH264ToRgbCallback(
     E_DjiLiveViewCameraPosition position, const uint8_t *buffer,
     uint32_t buffer_length)
 {
-  RCLCPP_INFO(get_logger(), "LiveviewConvertH264ToRgbCallback");
   auto decoder = stream_decoder.find(position);
   if ((decoder != stream_decoder.end()) && decoder->second)
   {
-    RCLCPP_INFO(get_logger(), "decoding....");
     decoder->second->decodeBuffer(buffer, buffer_length);
   }
 }
@@ -80,7 +77,6 @@ PSDKWrapper::LiveviewConvertH264ToRgbCallback(
 void
 c_publish_streaming_callback(CameraRGBImage img, void *user_data)
 {
-  std::cout << "c_publish_streaming_callback" << std::endl;
   return global_ptr_->publish_main_camera_images(img, user_data);
 }
 
@@ -197,7 +193,6 @@ void
 PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
 {
   // VehicleNode *node_ptr = (VehicleNode *)user_data;
-  RCLCPP_INFO(get_logger(), "publish_main_camera_images");
   sensor_msgs::msg::Image img;
   img.height = rgb_img.height;
   img.width = rgb_img.width;
