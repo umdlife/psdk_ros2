@@ -18,18 +18,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# Set the paths to the FFMPEG libraries and include files
-# set(FFMPEG_LIBRARY_DIRS "/usr/lib/x86_64-linux-gnu")
-# set(FFMPEG_INCLUDE_DIRS "/usr/include/x86_64-linux-gnu")
-
-# # Specify the libraries you need from FFMPEG
-# set(FFMPEG_LIBRARIES "avformat;avcodec;avutil;swscale")  # List all required libraries
-
-
-# # Set the paths to the LIBUSB library
-# set(LIBUSB_INCLUDE_DIR "/usr/lib/x86_64-linux-gnu")
-# set(FFMPEG_INCLUDE_DIRS "/usr/include/x86_64-linux-gnu")
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -44,13 +32,13 @@ find_package(tf2 REQUIRED)
 find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 
+# Add path to FindFFMPEG.cmake and FindLIBUSB.cmake files
 set(CMAKE_MODULE_PATH 
-  ${PROJECT_SOURCE_DIR}/cfg)
+  ${PROJECT_SOURCE_DIR}/cfg/3rdparty)
 
 find_package(OpenCV REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(LIBUSB REQUIRED)
-
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -86,8 +74,8 @@ else()
 endif ()                                                                                                          
 
 
-if (FFMPEG_FOUND)      
-   message(STATUS "Found FFMPEG installed in the system")
+if (FFMPEG_FOUND)
+    message(STATUS "Found FFMPEG installed in the system")
     message(STATUS " - Includes: ${FFMPEG_INCLUDE_DIR}")
     message(STATUS " - Libraries: ${FFMPEG_LIBRARIES}")
 
@@ -104,10 +92,9 @@ if (FFMPEG_FOUND)
     else ()
         message(FATAL_ERROR " - Not support FFMPEG version: ${ffmpeg_major_version}, please install 4.x.x instead.")
     endif ()
-
-    # target_link_libraries(psdk_wrapper_node ${FFMPEG_LIBRARIES})
+    add_definitions(-DFFMPEG_INSTALLED)
 else ()
-    message(FATAL_ERROR "Cannot Find FFMPEG")
+    message(STATUS "Cannot Find FFMPEG")
 endif (FFMPEG_FOUND)
 
 if (LIBUSB_FOUND)
@@ -116,9 +103,8 @@ if (LIBUSB_FOUND)
     message(STATUS " - Libraries: ${LIBUSB_LIBRARY}")
 
     add_definitions(-DLIBUSB_INSTALLED)
-    # target_link_libraries(psdk_wrapper_node usb-1.0)
 else ()
-    message(FATAL_ERROR "Cannot Find LIBUSB")
+    message(STATUS "Cannot Find LIBUSB")
 endif (LIBUSB_FOUND)
 
 if (NOT EXECUTABLE_OUTPUT_PATH)
