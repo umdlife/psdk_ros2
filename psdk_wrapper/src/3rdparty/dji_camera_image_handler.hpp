@@ -1,8 +1,8 @@
 /**
  ********************************************************************
  * @file    dji_camera_image_handler.hpp
- * @brief   This is the header file for "dji_camera_image_handler.cpp", defining the structure and
- * (exported) function prototypes.
+ * @brief   This is the header file for "dji_camera_image_handler.cpp", defining
+ *the structure and (exported) function prototypes.
  *
  * @copyright (c) 2021 DJI. All rights reserved.
  *
@@ -28,47 +28,56 @@
 #define DJI_CAMERA_IMAGE_HANDLER_H
 
 /* Includes ------------------------------------------------------------------*/
-#include "pthread.h"
 #include <cstdint>
 #include <vector>
 
+#include "pthread.h"
+
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/* Exported constants --------------------------------------------------------*/
+  /* Exported constants
+   * --------------------------------------------------------*/
 
-/* Exported types ------------------------------------------------------------*/
-struct CameraRGBImage {
+  /* Exported types
+   * ------------------------------------------------------------*/
+  struct CameraRGBImage
+  {
     std::vector<uint8_t> rawData;
     int height;
     int width;
-};
+  };
 
-typedef void (*CameraImageCallback)(CameraRGBImage pImg, void *userData);
+  typedef void (*CameraImageCallback)(CameraRGBImage pImg, void *userData);
 
-typedef void (*H264Callback)(const uint8_t *buf, int bufLen, void *userData);
+  typedef void (*H264Callback)(const uint8_t *buf, int bufLen, void *userData);
 
-class DJICameraImageHandler {
-public:
+  class DJICameraImageHandler
+  {
+   public:
     DJICameraImageHandler();
     ~DJICameraImageHandler();
 
-    void writeNewImageWithLock(uint8_t *buf, int bufSize, int width, int height);
+    void writeNewImageWithLock(uint8_t *buf, int bufSize, int width,
+                               int height);
     bool getNewImageWithLock(CameraRGBImage &copyOfImage, int timeoutMilliSec);
 
-private:
+   private:
     pthread_mutex_t m_mutex;
     pthread_cond_t m_condv;
     CameraRGBImage m_img;
     bool m_newImageFlag;
-};
+  };
 
-/* Exported functions --------------------------------------------------------*/
+  /* Exported functions
+   * --------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // DJI_CAMERA_IMAGE_HANDLER_H
-/************************ (C) COPYRIGHT DJI Innovations *******END OF FILE******/
+#endif  // DJI_CAMERA_IMAGE_HANDLER_H
+/************************ (C) COPYRIGHT DJI Innovations *******END OF
+ * FILE******/

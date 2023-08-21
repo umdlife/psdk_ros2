@@ -1,8 +1,8 @@
 /**
  ********************************************************************
  * @file    dji_camera_stream_decoder.hpp
- * @brief   This is the header file for "dji_camera_stream_decoder.cpp", defining the structure and
- * (exported) function prototypes.
+ * @brief   This is the header file for "dji_camera_stream_decoder.cpp",
+ *defining the structure and (exported) function prototypes.
  *
  * @copyright (c) 2021 DJI. All rights reserved.
  *
@@ -28,7 +28,8 @@
 #define DJI_CAMERA_STREAM_DECCODER_H
 
 /* Includes ------------------------------------------------------------------*/
-extern "C" {
+extern "C"
+{
 #ifdef FFMPEG_INSTALLED
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -36,18 +37,22 @@ extern "C" {
 #endif
 }
 
-#include "pthread.h"
 #include "dji_camera_image_handler.hpp"
+#include "pthread.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/* Exported constants --------------------------------------------------------*/
+  /* Exported constants
+   * --------------------------------------------------------*/
 
-/* Exported types ------------------------------------------------------------*/
-class DJICameraStreamDecoder {
-public:
+  /* Exported types
+   * ------------------------------------------------------------*/
+  class DJICameraStreamDecoder
+  {
+   public:
     DJICameraStreamDecoder();
     ~DJICameraStreamDecoder();
     bool init();
@@ -59,7 +64,7 @@ public:
     bool registerCallback(CameraImageCallback f, void *param);
     DJICameraImageHandler decodedImageHandler;
 
-private:
+   private:
     pthread_t callbackThread;
     bool initSuccess;
     bool cbThreadIsRunning;
@@ -80,22 +85,15 @@ private:
 #endif
     uint8_t *rgbBuf;
     size_t bufSize;
-};
+  };
 
-/* Exported functions --------------------------------------------------------*/
+  /* Exported functions
+   * --------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // DJI_CAMERA_STREAM_DECCODER_H
-/************************ (C) COPYRIGHT DJI Innovations *******END OF FILE******/
-
-
-
-
-
-
-
-
-
+#endif  // DJI_CAMERA_STREAM_DECCODER_H
+/************************ (C) COPYRIGHT DJI Innovations *******END OF
+ * FILE******/
