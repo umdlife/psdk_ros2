@@ -1,0 +1,6 @@
+#request
+uint8 payload_index 1       # see enum E_DjiMountPosition in dji_typedef.h
+uint16 aperture             # see enum E_DjiCameraManagerAperture in dji_camera_manager.h
+---
+#response
+bool success

@@ -516,7 +516,6 @@ PSDKWrapper::camera_set_infrared_zoom_cb(
     const std::shared_ptr<CameraSetInfraredZoom::Request> request,
     const std::shared_ptr<CameraSetInfraredZoom::Response> response)
 {
-  RCLCPP_ERROR(get_logger(), "Set infrared zoom factor");
   // TODO(@lidiadltv): Do I need to set the camera mode to any specific mode
   // first?
   T_DjiReturnCode return_code;
@@ -538,7 +537,75 @@ PSDKWrapper::camera_set_infrared_zoom_cb(
   }
   else
   {
+    RCLCPP_INFO(get_logger(),
+                "Setting infrared zoom factor to (%0.1f) for camera with "
+                "payload index %d.",
+                request->zoom_factor, index);
     response->success = true;
+    return;
+  }
+}
+
+void
+PSDKWrapper::camera_set_aperture_cb(
+    const std::shared_ptr<CameraSetAperture::Request> request,
+    const std::shared_ptr<CameraSetAperture::Response> response)
+{
+  E_DjiMountPosition payload_index =
+      static_cast<E_DjiMountPosition>(request->payload_index);
+  E_DjiCameraManagerAperture aperture =
+      static_cast<E_DjiCameraManagerAperture>(request->aperture);
+
+  T_DjiReturnCode return_code =
+      DjiCameraManager_SetAperture(payload_index, aperture);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Setting aperture to %d for camera with payload index %d failed, error "
+        "code :%ld",
+        request->aperture, payload_index, return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(),
+                "Setting aperture to %d for camera with payload index %d.",
+                request->aperture, payload_index);
+    response->success = true;
+    return;
+  }
+}
+
+void
+PSDKWrapper::camera_get_aperture_cb(
+    const std::shared_ptr<CameraGetAperture::Request> request,
+    const std::shared_ptr<CameraGetAperture::Response> response)
+{
+  E_DjiMountPosition payload_index =
+      static_cast<E_DjiMountPosition>(request->payload_index);
+  E_DjiCameraManagerAperture aperture;
+
+  T_DjiReturnCode return_code =
+      DjiCameraManager_GetAperture(payload_index, &aperture);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Getting aperture for camera with payload index %d failed, error "
+        "code :%ld",
+        payload_index, return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(),
+                "Got aperture = %d for camera with payload index %d.", aperture,
+                payload_index);
+    response->success = true;
+    response->aperture = aperture;
     return;
   }
 }

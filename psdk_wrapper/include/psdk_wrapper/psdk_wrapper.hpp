@@ -74,6 +74,7 @@
 #include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_list.hpp"
+#include "psdk_interfaces/srv/camera_get_aperture.hpp"
 #include "psdk_interfaces/srv/camera_get_ev.hpp"
 #include "psdk_interfaces/srv/camera_get_focus_mode.hpp"
 #include "psdk_interfaces/srv/camera_get_focus_target.hpp"
@@ -83,6 +84,7 @@
 #include "psdk_interfaces/srv/camera_get_shutter_speed.hpp"
 #include "psdk_interfaces/srv/camera_get_type.hpp"
 #include "psdk_interfaces/srv/camera_record_video.hpp"
+#include "psdk_interfaces/srv/camera_set_aperture.hpp"
 #include "psdk_interfaces/srv/camera_set_ev.hpp"
 #include "psdk_interfaces/srv/camera_set_focus_mode.hpp"
 #include "psdk_interfaces/srv/camera_set_focus_target.hpp"
@@ -155,6 +157,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   using CameraSetOpticalZoom = psdk_interfaces::srv::CameraSetOpticalZoom;
   using CameraGetOpticalZoom = psdk_interfaces::srv::CameraGetOpticalZoom;
   using CameraSetInfraredZoom = psdk_interfaces::srv::CameraSetInfraredZoom;
+  using CameraSetAperture = psdk_interfaces::srv::CameraSetAperture;
+  using CameraGetAperture = psdk_interfaces::srv::CameraGetAperture;
   // Streaming
   using CameraSetupStreaming = psdk_interfaces::srv::CameraSetupStreaming;
   // Gimbal
@@ -675,6 +679,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   void camera_set_infrared_zoom_cb(
       const std::shared_ptr<CameraSetInfraredZoom::Request> request,
       const std::shared_ptr<CameraSetInfraredZoom::Response> response);
+  void camera_set_aperture_cb(
+      const std::shared_ptr<CameraSetAperture::Request> request,
+      const std::shared_ptr<CameraSetAperture::Response> response);
+  void camera_get_aperture_cb(
+      const std::shared_ptr<CameraGetAperture::Request> request,
+      const std::shared_ptr<CameraGetAperture::Response> response);
   void camera_start_shoot_single_photo_cb(
       const std::shared_ptr<CameraStartShootSinglePhoto::Request> request,
       const std::shared_ptr<CameraStartShootSinglePhoto::Response> response);
@@ -1003,6 +1013,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       camera_get_optical_zoom_service_;
   rclcpp::Service<CameraSetInfraredZoom>::SharedPtr
       camera_set_infrared_zoom_service_;
+  rclcpp::Service<CameraSetAperture>::SharedPtr camera_set_aperture_service_;
+  rclcpp::Service<CameraGetAperture>::SharedPtr camera_get_aperture_service_;
   // Streaming
   rclcpp::Service<CameraSetupStreaming>::SharedPtr
       camera_setup_streaming_service_;
