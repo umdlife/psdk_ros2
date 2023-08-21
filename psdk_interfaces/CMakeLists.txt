@@ -49,6 +49,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraSetOpticalZoom.srv"
   "srv/CameraGetOpticalZoom.srv"
   "srv/CameraSetInfraredZoom.srv"
+  "srv/CameraSetAperture.srv"
+  "srv/CameraGetAperture.srv"
   "srv/CameraStartShootSinglePhoto.srv"
   "srv/CameraStartShootBurstPhoto.srv"
   "srv/CameraStartShootAEBPhoto.srv"

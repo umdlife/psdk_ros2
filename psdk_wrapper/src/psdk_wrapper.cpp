@@ -976,9 +976,17 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/camera_set_infrared_zoom",
       std::bind(&PSDKWrapper::camera_set_infrared_zoom_cb, this, _1, _2),
       qos_profile_);
+  camera_set_aperture_service_ = create_service<CameraSetAperture>(
+      "psdk_ros2/camera_set_aperture",
+      std::bind(&PSDKWrapper::camera_set_aperture_cb, this, _1, _2),
+      qos_profile_);
+  camera_get_aperture_service_ = create_service<CameraGetAperture>(
+      "psdk_ros2/camera_get_aperture",
+      std::bind(&PSDKWrapper::camera_get_aperture_cb, this, _1, _2),
+      qos_profile_);
   /* Streaming */
   camera_setup_streaming_service_ = create_service<CameraSetupStreaming>(
-      "camera_setup_streaming",
+      "psdk_ros2/camera_setup_streaming",
       std::bind(&PSDKWrapper::camera_setup_streaming_cb, this, _1, _2),
       qos_profile_);
   /* Gimbal */
@@ -1121,6 +1129,7 @@ PSDKWrapper::clean_ros_elements()
   camera_set_optical_zoom_service_.reset();
   camera_get_optical_zoom_service_.reset();
   camera_set_infrared_zoom_service_.reset();
+  camera_set_aperture_service_.reset();
   camera_get_laser_ranging_info_service_.reset();
   camera_download_file_list_service_.reset();
   camera_download_file_by_index_service_.reset();
