@@ -101,6 +101,10 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   {
     return CallbackReturn::FAILURE;
   }
+  if (!init_liveview())
+  {
+    return CallbackReturn::FAILURE;
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -135,6 +139,10 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
   if (!deinit_camera_manager() || !deinit_gimbal_manager())
+  {
+    return CallbackReturn::FAILURE;
+  }
+  if (!deinit_liveview())
   {
     return CallbackReturn::FAILURE;
   }
