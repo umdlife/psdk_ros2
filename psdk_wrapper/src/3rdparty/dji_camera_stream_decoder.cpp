@@ -24,15 +24,17 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "dji_camera_stream_decoder.hpp"
-#include "unistd.h"
-#include "pthread.h"
+
 #include "dji_logger.h"
+#include "pthread.h"
+#include "unistd.h"
 
 /* Private constants ---------------------------------------------------------*/
 
 /* Private types -------------------------------------------------------------*/
 
-/* Private values -------------------------------------------------------------*/
+/* Private values
+ * -------------------------------------------------------------*/
 
 /* Private functions declaration ---------------------------------------------*/
 
@@ -54,229 +56,273 @@ DJICameraStreamDecoder::DJICameraStreamDecoder()
 #endif
       bufSize(0)
 {
-    pthread_mutex_init(&decodemutex, nullptr);
+  pthread_mutex_init(&decodemutex, nullptr);
 }
 
 DJICameraStreamDecoder::~DJICameraStreamDecoder()
 {
-    pthread_mutex_destroy(&decodemutex);
-    if(cb)
-    {
-        registerCallback(nullptr, nullptr);
-    }
+  pthread_mutex_destroy(&decodemutex);
+  if (cb)
+  {
+    registerCallback(nullptr, nullptr);
+  }
 
-    cleanup();
+  cleanup();
 }
 
-bool DJICameraStreamDecoder::init()
+bool
+DJICameraStreamDecoder::init()
 {
-    pthread_mutex_lock(&decodemutex);
+  pthread_mutex_lock(&decodemutex);
 
-    if (true == initSuccess) {
-        USER_LOG_INFO("Decoder already initialized.\n");
-        return true;
-    }
-
-#ifdef FFMPEG_INSTALLED
-    avcodec_register_all();
-    pCodecCtx = avcodec_alloc_context3(nullptr);
-    if (!pCodecCtx) {
-        return false;
-    }
-
-    pCodecCtx->thread_count = 4;
-    pCodec = avcodec_find_decoder(AV_CODEC_ID_H264);
-    if (!pCodec || avcodec_open2(pCodecCtx, pCodec, nullptr) < 0) {
-        return false;
-    }
-
-    pCodecParserCtx = av_parser_init(AV_CODEC_ID_H264);
-    if (!pCodecParserCtx) {
-        return false;
-    }
-
-    pFrameYUV = av_frame_alloc();
-    if (!pFrameYUV) {
-        return false;
-    }
-
-    pFrameRGB = av_frame_alloc();
-    if (!pFrameRGB) {
-        return false;
-    }
-
-    pSwsCtx = nullptr;
-
-    pCodecCtx->flags2 |= AV_CODEC_FLAG2_SHOW_ALL;
-#endif
-    initSuccess = true;
-    pthread_mutex_unlock(&decodemutex);
-
+  if (true == initSuccess)
+  {
+    USER_LOG_INFO("Decoder already initialized.\n");
     return true;
-}
-
-void DJICameraStreamDecoder::cleanup()
-{
-    pthread_mutex_lock(&decodemutex);
-
-    initSuccess = false;
+  }
 
 #ifdef FFMPEG_INSTALLED
-    if (nullptr != pSwsCtx) {
-        sws_freeContext(pSwsCtx);
-        pSwsCtx = nullptr;
-    }
+  avcodec_register_all();
+  pCodecCtx = avcodec_alloc_context3(nullptr);
+  if (!pCodecCtx)
+  {
+    return false;
+  }
 
-    if (nullptr != pFrameYUV) {
-        av_free(pFrameYUV);
-        pFrameYUV = nullptr;
-    }
+  pCodecCtx->thread_count = 4;
+  pCodec = avcodec_find_decoder(AV_CODEC_ID_H264);
+  if (!pCodec || avcodec_open2(pCodecCtx, pCodec, nullptr) < 0)
+  {
+    return false;
+  }
 
-    if (nullptr != pCodecParserCtx) {
-        av_parser_close(pCodecParserCtx);
-        pCodecParserCtx = nullptr;
-    }
+  pCodecParserCtx = av_parser_init(AV_CODEC_ID_H264);
+  if (!pCodecParserCtx)
+  {
+    return false;
+  }
 
-    if (nullptr != pCodec) {
-        avcodec_close(pCodecCtx);
-        pCodec = nullptr;
-    }
+  pFrameYUV = av_frame_alloc();
+  if (!pFrameYUV)
+  {
+    return false;
+  }
 
-    if (nullptr != pCodecCtx) {
-        av_free(pCodecCtx);
-        pCodecCtx = nullptr;
-    }
+  pFrameRGB = av_frame_alloc();
+  if (!pFrameRGB)
+  {
+    return false;
+  }
 
-    if (nullptr != rgbBuf) {
-        av_free(rgbBuf);
-        rgbBuf = nullptr;
-    }
+  pSwsCtx = nullptr;
 
-    if (nullptr != pFrameRGB) {
-        av_free(pFrameRGB);
-        pFrameRGB = nullptr;
-    }
+  pCodecCtx->flags2 |= AV_CODEC_FLAG2_SHOW_ALL;
 #endif
-    pthread_mutex_unlock(&decodemutex);
+  initSuccess = true;
+  pthread_mutex_unlock(&decodemutex);
+
+  return true;
 }
 
-void *DJICameraStreamDecoder::callbackThreadEntry(void *p)
+void
+DJICameraStreamDecoder::cleanup()
 {
-    //DSTATUS_PRIVATE("****** Decoder Callback Thread Start ******\n");
-    usleep(50 * 1000);
-    static_cast<DJICameraStreamDecoder *>(p)->callbackThreadFunc();
-    return nullptr;
-}
+  pthread_mutex_lock(&decodemutex);
 
-void DJICameraStreamDecoder::callbackThreadFunc()
-{
-    while (cbThreadIsRunning) {
-        CameraRGBImage copyOfImage;
-        if (!decodedImageHandler.getNewImageWithLock(copyOfImage, 1000)) {
-            //DDEBUG_PRIVATE("Decoder Callback Thread: Get image time out\n");
-            continue;
-        }
-
-        if (cb) {
-            (*cb)(copyOfImage, cbUserParam);
-        }
-    }
-}
-
-void DJICameraStreamDecoder::decodeBuffer(const uint8_t *buf, int bufLen)
-{
-    const uint8_t *pData = buf;
-    int remainingLen = bufLen;
-    int processedLen = 0;
+  initSuccess = false;
 
 #ifdef FFMPEG_INSTALLED
-    AVPacket pkt;
-    av_init_packet(&pkt);
-    pthread_mutex_lock(&decodemutex);
-    while (remainingLen > 0) {
-        if (!pCodecParserCtx || !pCodecCtx) {
-            //DSTATUS("Invalid decoder ctx.");
-            break;
-        }
-        processedLen = av_parser_parse2(pCodecParserCtx, pCodecCtx,
-                                        &pkt.data, &pkt.size,
-                                        pData, remainingLen,
-                                        AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
-        remainingLen -= processedLen;
-        pData += processedLen;
+  if (nullptr != pSwsCtx)
+  {
+    sws_freeContext(pSwsCtx);
+    pSwsCtx = nullptr;
+  }
 
-        if (pkt.size > 0) {
-            int gotPicture = 0;
-            avcodec_decode_video2(pCodecCtx, pFrameYUV, &gotPicture, &pkt);
+  if (nullptr != pFrameYUV)
+  {
+    av_free(pFrameYUV);
+    pFrameYUV = nullptr;
+  }
 
-            if (!gotPicture) {
-                ////DSTATUS_PRIVATE("Got Frame, but no picture\n");
-                continue;
-            } else {
-                int w = pFrameYUV->width;
-                int h = pFrameYUV->height;
-                ////DSTATUS_PRIVATE("Got picture! size=%dx%d\n", w, h);
+  if (nullptr != pCodecParserCtx)
+  {
+    av_parser_close(pCodecParserCtx);
+    pCodecParserCtx = nullptr;
+  }
 
-                if (nullptr == pSwsCtx) {
-                    pSwsCtx = sws_getContext(w, h, pCodecCtx->pix_fmt,
-                                             w, h, AV_PIX_FMT_RGB24,
-                                             4, nullptr, nullptr, nullptr);
-                }
+  if (nullptr != pCodec)
+  {
+    avcodec_close(pCodecCtx);
+    pCodec = nullptr;
+  }
 
-                if (nullptr == rgbBuf) {
-                    bufSize = avpicture_get_size(AV_PIX_FMT_RGB24, w, h);
-                    rgbBuf = (uint8_t *) av_malloc(bufSize);
-                    avpicture_fill((AVPicture *) pFrameRGB, rgbBuf, AV_PIX_FMT_RGB24, w, h);
-                }
+  if (nullptr != pCodecCtx)
+  {
+    av_free(pCodecCtx);
+    pCodecCtx = nullptr;
+  }
 
-                if (nullptr != pSwsCtx && nullptr != rgbBuf) {
-                    sws_scale(pSwsCtx,
-                              (uint8_t const *const *) pFrameYUV->data, pFrameYUV->linesize, 0, pFrameYUV->height,
-                              pFrameRGB->data, pFrameRGB->linesize);
+  if (nullptr != rgbBuf)
+  {
+    av_free(rgbBuf);
+    rgbBuf = nullptr;
+  }
 
-                    pFrameRGB->height = h;
-                    pFrameRGB->width = w;
+  if (nullptr != pFrameRGB)
+  {
+    av_free(pFrameRGB);
+    pFrameRGB = nullptr;
+  }
+#endif
+  pthread_mutex_unlock(&decodemutex);
+}
 
-                    decodedImageHandler.writeNewImageWithLock(pFrameRGB->data[0], bufSize, w, h);
-                }
-            }
-        }
+void *
+DJICameraStreamDecoder::callbackThreadEntry(void *p)
+{
+  // DSTATUS_PRIVATE("****** Decoder Callback Thread Start ******\n");
+  usleep(50 * 1000);
+  static_cast<DJICameraStreamDecoder *>(p)->callbackThreadFunc();
+  return nullptr;
+}
+
+void
+DJICameraStreamDecoder::callbackThreadFunc()
+{
+  while (cbThreadIsRunning)
+  {
+    CameraRGBImage copyOfImage;
+    if (!decodedImageHandler.getNewImageWithLock(copyOfImage, 1000))
+    {
+      // DDEBUG_PRIVATE("Decoder Callback Thread: Get image time out\n");
+      continue;
     }
-    pthread_mutex_unlock(&decodemutex);
-    av_free_packet(&pkt);
+
+    if (cb)
+    {
+      (*cb)(copyOfImage, cbUserParam);
+    }
+  }
+}
+
+void
+DJICameraStreamDecoder::decodeBuffer(const uint8_t *buf, int bufLen)
+{
+  const uint8_t *pData = buf;
+  int remainingLen = bufLen;
+  int processedLen = 0;
+
+#ifdef FFMPEG_INSTALLED
+  AVPacket pkt;
+  av_init_packet(&pkt);
+  pthread_mutex_lock(&decodemutex);
+  while (remainingLen > 0)
+  {
+    if (!pCodecParserCtx || !pCodecCtx)
+    {
+      // DSTATUS("Invalid decoder ctx.");
+      break;
+    }
+    processedLen = av_parser_parse2(
+        pCodecParserCtx, pCodecCtx, &pkt.data, &pkt.size, pData, remainingLen,
+        AV_NOPTS_VALUE, AV_NOPTS_VALUE, AV_NOPTS_VALUE);
+    remainingLen -= processedLen;
+    pData += processedLen;
+
+    if (pkt.size > 0)
+    {
+      int gotPicture = 0;
+      avcodec_decode_video2(pCodecCtx, pFrameYUV, &gotPicture, &pkt);
+
+      if (!gotPicture)
+      {
+        ////DSTATUS_PRIVATE("Got Frame, but no picture\n");
+        continue;
+      }
+      else
+      {
+        int w = pFrameYUV->width;
+        int h = pFrameYUV->height;
+        ////DSTATUS_PRIVATE("Got picture! size=%dx%d\n", w, h);
+
+        if (nullptr == pSwsCtx)
+        {
+          pSwsCtx =
+              sws_getContext(w, h, pCodecCtx->pix_fmt, w, h, AV_PIX_FMT_RGB24,
+                             4, nullptr, nullptr, nullptr);
+        }
+
+        if (nullptr == rgbBuf)
+        {
+          bufSize = avpicture_get_size(AV_PIX_FMT_RGB24, w, h);
+          rgbBuf = (uint8_t *)av_malloc(bufSize);
+          avpicture_fill((AVPicture *)pFrameRGB, rgbBuf, AV_PIX_FMT_RGB24, w,
+                         h);
+        }
+
+        if (nullptr != pSwsCtx && nullptr != rgbBuf)
+        {
+          sws_scale(pSwsCtx, (uint8_t const *const *)pFrameYUV->data,
+                    pFrameYUV->linesize, 0, pFrameYUV->height, pFrameRGB->data,
+                    pFrameRGB->linesize);
+
+          pFrameRGB->height = h;
+          pFrameRGB->width = w;
+
+          decodedImageHandler.writeNewImageWithLock(pFrameRGB->data[0], bufSize,
+                                                    w, h);
+        }
+      }
+    }
+  }
+  pthread_mutex_unlock(&decodemutex);
+  av_free_packet(&pkt);
 #endif
 }
 
-bool DJICameraStreamDecoder::registerCallback(CameraImageCallback f, void *param)
+bool
+DJICameraStreamDecoder::registerCallback(CameraImageCallback f, void *param)
 {
-    cb = f;
-    cbUserParam = param;
+  cb = f;
+  cbUserParam = param;
 
-    /* When users register a non-nullptr callback, we will start the callback thread. */
-    if (nullptr != cb) {
-        if (!cbThreadIsRunning) {
-            cbThreadStatus = pthread_create(&callbackThread, nullptr, callbackThreadEntry, this);
-            if (0 == cbThreadStatus) {
-                //DSTATUS_PRIVATE("User callback thread created successfully!\n");
-                cbThreadIsRunning = true;
-                return true;
-            } else {
-                //DERROR_PRIVATE("User called thread creation failed!\n");
-                cbThreadIsRunning = false;
-                return false;
-            }
-        } else {
-            //DERROR_PRIVATE("Callback thread already running!\n");
-            return true;
-        }
-    } else {
-        if (cbThreadStatus == 0) {
-            cbThreadIsRunning = false;
-            pthread_join(callbackThread, nullptr);
-            cbThreadStatus = -1;
-        }
+  /* When users register a non-nullptr callback, we will start the callback
+   * thread. */
+  if (nullptr != cb)
+  {
+    if (!cbThreadIsRunning)
+    {
+      cbThreadStatus =
+          pthread_create(&callbackThread, nullptr, callbackThreadEntry, this);
+      if (0 == cbThreadStatus)
+      {
+        // DSTATUS_PRIVATE("User callback thread created successfully!\n");
+        cbThreadIsRunning = true;
         return true;
+      }
+      else
+      {
+        // DERROR_PRIVATE("User called thread creation failed!\n");
+        cbThreadIsRunning = false;
+        return false;
+      }
     }
+    else
+    {
+      // DERROR_PRIVATE("Callback thread already running!\n");
+      return true;
+    }
+  }
+  else
+  {
+    if (cbThreadStatus == 0)
+    {
+      cbThreadIsRunning = false;
+      pthread_join(callbackThread, nullptr);
+      cbThreadStatus = -1;
+    }
+    return true;
+  }
 }
 
 /* Private functions definition-----------------------------------------------*/
