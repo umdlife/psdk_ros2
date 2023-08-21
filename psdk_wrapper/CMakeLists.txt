@@ -18,6 +18,18 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Set the paths to the FFMPEG libraries and include files
+# set(FFMPEG_LIBRARY_DIRS "/usr/lib/x86_64-linux-gnu")
+# set(FFMPEG_INCLUDE_DIRS "/usr/include/x86_64-linux-gnu")
+
+# # Specify the libraries you need from FFMPEG
+# set(FFMPEG_LIBRARIES "avformat;avcodec;avutil;swscale")  # List all required libraries
+
+
+# # Set the paths to the LIBUSB library
+# set(LIBUSB_INCLUDE_DIR "/usr/lib/x86_64-linux-gnu")
+# set(FFMPEG_INCLUDE_DIRS "/usr/include/x86_64-linux-gnu")
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -31,6 +43,13 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+
+set(CMAKE_MODULE_PATH 
+  ${PROJECT_SOURCE_DIR}/cfg)
+
+find_package(OpenCV REQUIRED)
+find_package(FFMPEG REQUIRED)
+find_package(LIBUSB REQUIRED)
 
 
 # Find toolchain name needed to select the right PSDK lib
@@ -56,15 +75,63 @@ else()
   message(FATAL_ERROR "PSDK library NOT found")
 endif()
 
+
+if (OpenCV_FOUND)                                                                                                 
+  message( "\n${PROJECT_NAME}...")                                                                                
+  message( STATUS " - Includes: ${OpenCV_INCLUDE_DIRS}")                                                                                                                                                                             
+  message( STATUS " - Libraries: ${OpenCV_LIBRARIES}")                                                            
+  add_definitions(-DOPEN_CV_INSTALLED)                                                                            
+else()                                                                                                            
+  message( FATAL_ERROR "OpenCV is required for this code to stream")                                 
+endif ()                                                                                                          
+
+
+if (FFMPEG_FOUND)      
+   message(STATUS "Found FFMPEG installed in the system")
+    message(STATUS " - Includes: ${FFMPEG_INCLUDE_DIR}")
+    message(STATUS " - Libraries: ${FFMPEG_LIBRARIES}")
+
+    EXECUTE_PROCESS(COMMAND ffmpeg -version
+            OUTPUT_VARIABLE ffmpeg_version_psdk_libput
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+    string(REGEX MATCH "version.*Copyright" ffmpeg_version_line ${ffmpeg_version_psdk_libput})
+    string(REGEX MATCH " .* " ffmpeg_version ${ffmpeg_version_line})
+    string(REGEX MATCH "^ 5.*$" ffmpeg_major_version ${ffmpeg_version})
+
+    if (HEAD${ffmpeg_major_version} STREQUAL "HEAD")
+        message(STATUS " - Version: ${ffmpeg_version}")
+    else ()
+        message(FATAL_ERROR " - Not support FFMPEG version: ${ffmpeg_major_version}, please install 4.x.x instead.")
+    endif ()
+
+    # target_link_libraries(psdk_wrapper_node ${FFMPEG_LIBRARIES})
+else ()
+    message(FATAL_ERROR "Cannot Find FFMPEG")
+endif (FFMPEG_FOUND)
+
+if (LIBUSB_FOUND)
+    message(STATUS "Found LIBUSB installed in the system")
+    message(STATUS " - Includes: ${LIBUSB_INCLUDE_DIR}")
+    message(STATUS " - Libraries: ${LIBUSB_LIBRARY}")
+
+    add_definitions(-DLIBUSB_INSTALLED)
+    # target_link_libraries(psdk_wrapper_node usb-1.0)
+else ()
+    message(FATAL_ERROR "Cannot Find LIBUSB")
+endif (LIBUSB_FOUND)
+
 if (NOT EXECUTABLE_OUTPUT_PATH)
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 endif ()
-
 
 # Include PSDK header files
 include_directories(${PROJECT_SOURCE_DIR}/../..//Payload-SDK/psdk_lib/include)
 include_directories(include)
 include_directories(src/3rdparty)
+include_directories(${FFMPEG_INCLUDE_DIR})
+include_directories(include                                                                                       
+                    ${OpenCV_INCLUDE_DIRS})
 
 set(dependencies
   rclcpp
@@ -88,6 +155,9 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/flight_control.cpp
   src/modules/camera.cpp
   src/modules/gimbal.cpp
+  src/modules/liveview.cpp
+  src/3rdparty/dji_camera_image_handler.cpp
+  src/3rdparty/dji_camera_stream_decoder.cpp
   src/3rdparty/osal_fs.c
   src/3rdparty/osal_socket.c
   src/3rdparty/osal.c
@@ -108,6 +178,11 @@ target_link_libraries(
 target_link_libraries(
   psdk_wrapper_node
   psdk_wrapper_libs
+  ${OpenCV_LIBRARIES}
+  ${FFMPEG_LIBRARIES}
+  -lusb-1.0
+  -lavcodec
+  -lswscale
 )
 
 install(TARGETS

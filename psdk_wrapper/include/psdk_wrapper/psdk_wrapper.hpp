@@ -21,6 +21,7 @@
 #include <dji_aircraft_info.h>
 #include <dji_core.h>
 #include <dji_flight_controller.h>
+#include <dji_liveview.h>
 #include <dji_logger.h>
 #include <dji_platform.h>
 #include <dji_typedef.h>
@@ -35,6 +36,7 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
@@ -45,14 +47,15 @@
 #include <std_srvs/srv/trigger.hpp>
 #include <string>
 
-#include "dji_camera_manager.h"  //NOLINT
-#include "dji_gimbal_manager.h"  //NOLINT
-#include "hal_network.h"         //NOLINT
-#include "hal_uart.h"            //NOLINT
-#include "hal_usb_bulk.h"        //NOLINT
-#include "osal.h"                //NOLINT
-#include "osal_fs.h"             //NOLINT
-#include "osal_socket.h"         //NOLINT
+#include "dji_camera_manager.h"           //NOLINT
+#include "dji_camera_stream_decoder.hpp"  //NOLINT
+#include "dji_gimbal_manager.h"           //NOLINT
+#include "hal_network.h"                  //NOLINT
+#include "hal_uart.h"                     //NOLINT
+#include "hal_usb_bulk.h"                 //NOLINT
+#include "osal.h"                         //NOLINT
+#include "osal_fs.h"                      //NOLINT
+#include "osal_socket.h"                  //NOLINT
 
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/altitude.hpp"
@@ -87,6 +90,7 @@
 #include "psdk_interfaces/srv/camera_set_iso.hpp"
 #include "psdk_interfaces/srv/camera_set_optical_zoom.hpp"
 #include "psdk_interfaces/srv/camera_set_shutter_speed.hpp"
+#include "psdk_interfaces/srv/camera_setup_streaming.hpp"
 #include "psdk_interfaces/srv/camera_start_shoot_aeb_photo.hpp"
 #include "psdk_interfaces/srv/camera_start_shoot_burst_photo.hpp"
 #include "psdk_interfaces/srv/camera_start_shoot_interval_photo.hpp"
@@ -151,6 +155,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   using CameraSetOpticalZoom = psdk_interfaces::srv::CameraSetOpticalZoom;
   using CameraGetOpticalZoom = psdk_interfaces::srv::CameraGetOpticalZoom;
   using CameraSetInfraredZoom = psdk_interfaces::srv::CameraSetInfraredZoom;
+  // Streaming
+  using CameraSetupStreaming = psdk_interfaces::srv::CameraSetupStreaming;
   // Gimbal
   using GimbalSetMode = psdk_interfaces::srv::GimbalSetMode;
   using GimbalReset = psdk_interfaces::srv::GimbalReset;
@@ -236,6 +242,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     int control_information_frequency;
   };
 
+  std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder*>
+      stream_decoder;
+
   /**
    * @brief Set the environment handlers
    * @return true/false
@@ -265,37 +274,48 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool init(T_DjiUserInfo* user_info);
 
   /**
-   * @brief Initiate the telemetry module
+   * @brief Initialize the telemetry module
    * @return true/false
    */
   bool init_telemetry();
 
   /**
-   * @brief Initiate the flight control module
+   * @brief Initialize the flight control module
    * @return true/false
    */
   bool init_flight_control();
 
   /**
-   * @brief Initiate the camera module
+   * @brief Initialize the camera module
    * @return true/false
    */
   bool init_camera_manager();
   /**
-   * @brief Deinitiate the camera module
+   * @brief Deinitialize the camera module
    * @return true/false
    */
   bool deinit_camera_manager();
   /**
-   * @brief Initiate the gimbal module
+   * @brief Initialize the gimbal module
    * @return true/false
    */
   bool init_gimbal_manager();
   /**
-   * @brief Denitiate the gimbal module
+   * @brief Deinitialize the gimbal module
    * @return true/false
    */
   bool deinit_gimbal_manager();
+
+  /**
+   * @brief Initialize the liveview streaming module
+   * @return true/false
+   */
+  bool init_liveview();
+  /**
+   * @brief Deinitialize the liveview streaming module
+   * @return true/false
+   */
+  bool deinit_liveview();
 
   /**
    * @brief Get the DJI frequency object associated with a certain frequency
@@ -411,6 +431,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_height_fused_callback(
       const uint8_t* data, uint16_t dataSize,
       const T_DjiDataTimestamp* timestamp);
+  /* Streaming */
+  friend void c_publish_streaming_callback(CameraRGBImage img, void* user_data);
+  friend void c_LiveviewConvertH264ToRgbCallback(
+      E_DjiLiveViewCameraPosition position, const uint8_t* buffer,
+      uint32_t buffer_length);
 
   /*C++ type DJI topic subscriber callbacks*/
   T_DjiReturnCode attitude_callback(const uint8_t* data, uint16_t dataSize,
@@ -527,6 +552,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   void gimbal_rotation_cb(
       const psdk_interfaces::msg::GimbalRotation::SharedPtr msg);
 
+  /* Streaming callbacks*/
+  void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
+                                        const uint8_t* buffer,
+                                        uint32_t buffer_length);
+
+  /* Service callbacks*/
   void set_home_from_gps_cb(
       const std::shared_ptr<SetHomeFromGPS::Request> request,
       const std::shared_ptr<SetHomeFromGPS::Response> response);
@@ -666,6 +697,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   void camera_delete_file_by_index_cb(
       const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
       const std::shared_ptr<CameraDeleteFileByIndex::Response> response);
+  /* Streaming*/
+  void camera_setup_streaming_cb(
+      const std::shared_ptr<CameraSetupStreaming::Request> request,
+      const std::shared_ptr<CameraSetupStreaming::Response> response);
+  /* Gimbal*/
   void gimbal_set_mode_cb(
       const std::shared_ptr<GimbalSetMode::Request> request,
       const std::shared_ptr<GimbalSetMode::Response> response);
@@ -856,6 +892,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
+
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
+      main_camera_stream_pub_;
   ///@}
 
   /** @name ROS 2 Subscribers
@@ -956,6 +995,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       camera_get_optical_zoom_service_;
   rclcpp::Service<CameraSetInfraredZoom>::SharedPtr
       camera_set_infrared_zoom_service_;
+  // Streaming
+  rclcpp::Service<CameraSetupStreaming>::SharedPtr
+      camera_setup_streaming_service_;
   // Gimbal
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
@@ -1007,6 +1049,13 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param altitude  value to which to set the local altitude reference
    */
   void set_local_altitude_reference(const float altitude);
+
+  bool start_main_camera_stream(CameraImageCallback callback, void* user_data,
+                                const E_DjiLiveViewCameraPosition payload_index,
+                                const E_DjiLiveViewCameraSource camera_source);
+  bool stop_main_camera_stream(const E_DjiLiveViewCameraPosition payload_index,
+                               const E_DjiLiveViewCameraSource camera_source);
+  void publish_main_camera_images(CameraRGBImage rgb_img, void* user_data);
 
   /* Global variables*/
   PSDKParams params_;
