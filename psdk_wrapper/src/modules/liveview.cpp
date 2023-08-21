@@ -192,7 +192,7 @@ PSDKWrapper::stop_main_camera_stream(
 void
 PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
 {
-  // VehicleNode *node_ptr = (VehicleNode *)user_data;
+  reinterpret_cast<void *> user_data;
   sensor_msgs::msg::Image img;
   img.height = rgb_img.height;
   img.width = rgb_img.width;

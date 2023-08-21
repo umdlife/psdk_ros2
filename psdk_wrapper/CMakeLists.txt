@@ -33,12 +33,17 @@ find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 
 # Add path to FindFFMPEG.cmake and FindLIBUSB.cmake files
+set(PSDK_PATH ${PROJECT_SOURCE_DIR}/../../Payload-SDK)
 set(CMAKE_MODULE_PATH 
-  ${PROJECT_SOURCE_DIR}/cfg/3rdparty)
+${PSDK_PATH}/samples/sample_c++/platform/linux/common/3rdparty)
 
 find_package(OpenCV REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(LIBUSB REQUIRED)
+
+set(DJI_OSAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/common/osal)
+set(DJI_HAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/hal)
+set(DJI_STREAMING_PATH ${PSDK_PATH}/samples/sample_c++/module_sample/liveview)
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -55,8 +60,8 @@ else()
 endif()
 
 # Check if PSDK lib is found
-set(PSDK_PATH ${PROJECT_SOURCE_DIR}/../../Payload-SDK/psdk_lib/lib/${TOOLCHAIN_NAME})
-find_library(PSDK_LIB NAMES libpayloadsdk.a PATHS ${PSDK_PATH})
+set(PSDK_LIB_PATH ${PSDK_PATH}/psdk_lib/lib/${TOOLCHAIN_NAME})
+find_library(PSDK_LIB NAMES libpayloadsdk.a PATHS ${PSDK_LIB_PATH})
 if (PSDK_LIB)
   message(STATUS "PSDK library found: ${PSDK_LIB}")
 else()
@@ -72,7 +77,6 @@ if (OpenCV_FOUND)
 else()                                                                                                            
   message( FATAL_ERROR "OpenCV is required for this code to stream")                                 
 endif ()                                                                                                          
-
 
 if (FFMPEG_FOUND)
     message(STATUS "Found FFMPEG installed in the system")
@@ -112,12 +116,15 @@ if (NOT EXECUTABLE_OUTPUT_PATH)
 endif ()
 
 # Include PSDK header files
-include_directories(${PROJECT_SOURCE_DIR}/../..//Payload-SDK/psdk_lib/include)
-include_directories(include)
-include_directories(src/3rdparty)
 include_directories(${FFMPEG_INCLUDE_DIR})
 include_directories(include                                                                                       
                     ${OpenCV_INCLUDE_DIRS})
+include_directories(${DJI_OSAL_PATH})
+include_directories(${DJI_HAL_PATH})
+include_directories(${DJI_STREAMING_PATH})
+include_directories(${PROJECT_SOURCE_DIR}/../../Payload-SDK/psdk_lib/include)
+include_directories(include)
+include_directories(src/3rdparty)
 
 set(dependencies
   rclcpp
@@ -142,14 +149,14 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/camera.cpp
   src/modules/gimbal.cpp
   src/modules/liveview.cpp
-  src/3rdparty/dji_camera_image_handler.cpp
-  src/3rdparty/dji_camera_stream_decoder.cpp
-  src/3rdparty/osal_fs.c
-  src/3rdparty/osal_socket.c
-  src/3rdparty/osal.c
-  src/3rdparty/hal_network.c
   src/3rdparty/hal_uart.c
-  src/3rdparty/hal_usb_bulk.c
+  ${DJI_OSAL_PATH}/osal_fs.c
+  ${DJI_OSAL_PATH}/osal_socket.c
+  ${DJI_OSAL_PATH}/osal.c
+  ${DJI_HAL_PATH}/hal_network.c
+  ${DJI_HAL_PATH}/hal_usb_bulk.c
+  ${DJI_STREAMING_PATH}/dji_camera_image_handler.cpp
+  ${DJI_STREAMING_PATH}/dji_camera_stream_decoder.cpp
 )
 
 ament_target_dependencies(psdk_wrapper_libs
