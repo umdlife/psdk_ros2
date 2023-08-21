@@ -1,0 +1,7 @@
+#request
+uint8 payload_index 1       # please refer to enum E_DjiLiveViewCameraPosition in dji_liveview.h
+uint8 camera_source 0        # please refer to enum E_DjiLiveViewCameraSource in dji_liveview.h
+bool start_stop             # 0 for stop and 1 for start
+---
+#response
+bool success
