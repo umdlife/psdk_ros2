@@ -783,12 +783,12 @@ PSDKWrapper::initialize_ros_elements()
   set_home_from_current_location_srv_ = create_service<Trigger>(
       "psdk_ros2/set_home_from_current_location",
       std::bind(&PSDKWrapper::set_home_from_current_location_cb, this, _1, _2));
-  set_home_altitude_srv_ = create_service<SetHomeAltitude>(
-      "psdk_ros2/set_home_altitude",
-      std::bind(&PSDKWrapper::set_home_altitude_cb, this, _1, _2));
-  get_home_altitude_srv_ = create_service<GetHomeAltitude>(
-      "psdk_ros2/get_home_altitude",
-      std::bind(&PSDKWrapper::get_home_altitude_cb, this, _1, _2));
+  set_go_home_altitude_srv_ = create_service<SetGoHomeAltitude>(
+      "psdk_ros2/set_go_home_altitude",
+      std::bind(&PSDKWrapper::set_go_home_altitude_cb, this, _1, _2));
+  get_go_home_altitude_srv_ = create_service<GetGoHomeAltitude>(
+      "psdk_ros2/get_go_home_altitude",
+      std::bind(&PSDKWrapper::get_go_home_altitude_cb, this, _1, _2));
   start_go_home_srv_ = create_service<Trigger>(
       "psdk_ros2/start_go_home",
       std::bind(&PSDKWrapper::start_go_home_cb, this, _1, _2));
@@ -871,29 +871,22 @@ PSDKWrapper::initialize_ros_elements()
           std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb,
                     this, _1, _2));
   /* Camera */
-  camera_start_shoot_single_photo_service_ =
-      create_service<CameraStartShootSinglePhoto>(
-          "psdk_ros2/camera_start_shoot_single_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_single_photo_cb, this, _1,
-                    _2),
-          qos_profile_);
-  camera_start_shoot_burst_photo_service_ =
-      create_service<CameraStartShootBurstPhoto>(
-          "psdk_ros2/camera_start_shoot_burst_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_cb, this, _1,
-                    _2),
-          qos_profile_);
-  camera_start_shoot_aeb_photo_service_ =
-      create_service<CameraStartShootAEBPhoto>(
-          "psdk_ros2/camera_start_shoot_aeb_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_cb, this, _1,
-                    _2),
-          qos_profile_);
-  camera_start_shoot_interval_photo_service_ =
-      create_service<CameraStartShootIntervalPhoto>(
-          "psdk_ros2/camera_start_shoot_interval_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_cb, this,
-                    _1, _2),
+  camera_shoot_single_photo_service_ = create_service<CameraShootSinglePhoto>(
+      "psdk_ros2/camera_shoot_single_photo",
+      std::bind(&PSDKWrapper::camera_shoot_single_photo_cb, this, _1, _2),
+      qos_profile_);
+  camera_shoot_burst_photo_service_ = create_service<CameraShootBurstPhoto>(
+      "psdk_ros2/camera_shoot_burst_photo",
+      std::bind(&PSDKWrapper::camera_shoot_burst_photo_cb, this, _1, _2),
+      qos_profile_);
+  camera_shoot_aeb_photo_service_ = create_service<CameraShootAEBPhoto>(
+      "psdk_ros2/camera_shoot_aeb_photo",
+      std::bind(&PSDKWrapper::camera_shoot_aeb_photo_cb, this, _1, _2),
+      qos_profile_);
+  camera_shoot_interval_photo_service_ =
+      create_service<CameraShootIntervalPhoto>(
+          "psdk_ros2/camera_shoot_interval_photo",
+          std::bind(&PSDKWrapper::camera_shoot_interval_photo_cb, this, _1, _2),
           qos_profile_);
   camera_stop_shoot_photo_service_ = create_service<CameraStopShootPhoto>(
       "psdk_ros2/camera_stop_shoot_photo",
@@ -928,12 +921,16 @@ PSDKWrapper::initialize_ros_elements()
   camera_get_type_service_ = create_service<CameraGetType>(
       "psdk_ros2/camera_get_type",
       std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2), qos_profile_);
-  camera_set_ev_service_ = create_service<CameraSetEV>(
-      "psdk_ros2/camera_set_ev",
-      std::bind(&PSDKWrapper::camera_set_ev_cb, this, _1, _2), qos_profile_);
-  camera_get_ev_service_ = create_service<CameraGetEV>(
-      "psdk_ros2/camera_get_ev",
-      std::bind(&PSDKWrapper::camera_get_ev_cb, this, _1, _2), qos_profile_);
+  camera_set_exposure_mode_ev_service_ =
+      create_service<CameraSetExposureModeEV>(
+          "psdk_ros2/camera_set_exposure_mode_ev",
+          std::bind(&PSDKWrapper::camera_set_exposure_mode_ev_cb, this, _1, _2),
+          qos_profile_);
+  camera_get_exposure_mode_ev_service_ =
+      create_service<CameraGetExposureModeEV>(
+          "psdk_ros2/camera_get_exposure_mode_ev",
+          std::bind(&PSDKWrapper::camera_get_exposure_mode_ev_cb, this, _1, _2),
+          qos_profile_);
   camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
       "psdk_ros2/camera_set_shutter_speed",
       std::bind(&PSDKWrapper::camera_set_shutter_speed_cb, this, _1, _2),
@@ -1085,8 +1082,8 @@ PSDKWrapper::clean_ros_elements()
   // General
   set_home_from_gps_srv_.reset();
   set_home_from_current_location_srv_.reset();
-  set_home_altitude_srv_.reset();
-  get_home_altitude_srv_.reset();
+  set_go_home_altitude_srv_.reset();
+  get_go_home_altitude_srv_.reset();
   start_go_home_srv_.reset();
   cancel_go_home_srv_.reset();
   obtain_ctrl_authority_srv_.reset();
@@ -1109,15 +1106,15 @@ PSDKWrapper::clean_ros_elements()
   get_downwards_vo_obstacle_avoidance_srv_.reset();
   get_horizontal_radar_obstacle_avoidance_srv_.reset();
   // Camera
-  camera_start_shoot_single_photo_service_.reset();
-  camera_start_shoot_burst_photo_service_.reset();
-  camera_start_shoot_aeb_photo_service_.reset();
-  camera_start_shoot_interval_photo_service_.reset();
+  camera_shoot_single_photo_service_.reset();
+  camera_shoot_burst_photo_service_.reset();
+  camera_shoot_aeb_photo_service_.reset();
+  camera_shoot_interval_photo_service_.reset();
   camera_stop_shoot_photo_service_.reset();
   camera_record_video_service_.reset();
   camera_get_type_service_.reset();
-  camera_set_ev_service_.reset();
-  camera_get_ev_service_.reset();
+  camera_set_exposure_mode_ev_service_.reset();
+  camera_get_exposure_mode_ev_service_.reset();
   camera_set_shutter_speed_service_.reset();
   camera_get_shutter_speed_service_.reset();
   camera_set_iso_service_.reset();

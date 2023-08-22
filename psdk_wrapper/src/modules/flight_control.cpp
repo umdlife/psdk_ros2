@@ -88,9 +88,9 @@ PSDKWrapper::set_home_from_current_location_cb(
 }
 
 void
-PSDKWrapper::set_home_altitude_cb(
-    const std::shared_ptr<SetHomeAltitude::Request> request,
-    const std::shared_ptr<SetHomeAltitude::Response> response)
+PSDKWrapper::set_go_home_altitude_cb(
+    const std::shared_ptr<SetGoHomeAltitude::Request> request,
+    const std::shared_ptr<SetGoHomeAltitude::Response> response)
 {
   E_DjiFlightControllerGoHomeAltitude home_altitude = request->altitude;
   if (DjiFlightController_SetGoHomeAltitude(home_altitude) !=
@@ -108,9 +108,9 @@ PSDKWrapper::set_home_altitude_cb(
 }
 
 void
-PSDKWrapper::get_home_altitude_cb(
-    const std::shared_ptr<GetHomeAltitude::Request> request,
-    const std::shared_ptr<GetHomeAltitude::Response> response)
+PSDKWrapper::get_go_home_altitude_cb(
+    const std::shared_ptr<GetGoHomeAltitude::Request> request,
+    const std::shared_ptr<GetGoHomeAltitude::Response> response)
 {
   (void)request;
   if (DjiFlightController_SetHomeLocationUsingCurrentAircraftLocation() !=
