@@ -1,6 +1,6 @@
 #request
-uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
+uint8 payload_index 1       # see enum E_DjiMountPosition in dji_typedef.h
 ---
 #response
 bool success 
-string camera_type # Return camera type according to enum E_DjiCameraType in dji_typedef.h
+string camera_type          # Return camera type according to enum E_DjiCameraType in dji_typedef.h

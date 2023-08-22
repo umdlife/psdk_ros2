@@ -49,7 +49,6 @@ PSDKWrapper::gimbal_set_mode_cb(
     const std::shared_ptr<GimbalSetMode::Request> request,
     const std::shared_ptr<GimbalSetMode::Response> response)
 {
-  RCLCPP_INFO(get_logger(), "Set gimbal mode");
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
@@ -58,13 +57,15 @@ PSDKWrapper::gimbal_set_mode_cb(
   return_code = DjiGimbalManager_SetMode(index, gimbal_mode);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: %ld",
-                return_code);
+    RCLCPP_ERROR(get_logger(), "Setting gimbal mode failed, error code: %ld",
+                 return_code);
     response->success = false;
     return;
   }
   else
   {
+    RCLCPP_INFO(get_logger(), "Setting gimbal mode successfully to %d",
+                request->gimbal_mode);
     response->success = true;
     return;
   }
@@ -75,20 +76,20 @@ PSDKWrapper::gimbal_reset_cb(
     const std::shared_ptr<GimbalReset::Request> request,
     const std::shared_ptr<GimbalReset::Response> response)
 {
-  RCLCPP_INFO(get_logger(), "Set gimbal mode");
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
   return_code = DjiGimbalManager_Reset(index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Reset gimbal failed, error code: %ld",
-                return_code);
+    RCLCPP_ERROR(get_logger(), "Reset gimbal failed, error code: %ld",
+                 return_code);
     response->success = false;
     return;
   }
   else
   {
+    RCLCPP_INFO(get_logger(), "Gimbal resetted.");
     response->success = true;
     return;
   }
@@ -114,8 +115,8 @@ PSDKWrapper::gimbal_rotation_cb(
 
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: %ld",
-                return_code);
+    RCLCPP_ERROR(get_logger(), "Set gimbal mode failed, error code: %ld",
+                 return_code);
     return;
   }
 

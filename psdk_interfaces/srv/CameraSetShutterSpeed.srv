@@ -1,8 +1,7 @@
 #request
-uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
-uint8 work_mode # see E_DjiCameraManagerExposureMode in dji_camera_manager.h
-uint8 shutter_speed_factor # see enum E_DjiCameraManagerShutterSpeed in dji_camera_manager.h 
-                            # potential inputs from 0 to 66 and 0xFF for unkown
+uint8 payload_index 1            # see enum E_DjiMountPosition in dji_typedef.h
+uint8 shutter_speed_factor       # see enum E_DjiCameraManagerShutterSpeed in dji_camera_manager.h 
+                                 # potential inputs from 0 to 66 and 0xFF for unkown
 ---
 #response
 bool success

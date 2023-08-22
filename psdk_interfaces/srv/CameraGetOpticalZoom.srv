@@ -1,7 +1,8 @@
 #request
-uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
+uint8 payload_index 1       # see enum E_DjiMountPosition in dji_typedef.h
 
 ---
 #response
 bool success
-float32 zoom_factor # Returns camera zoom factor
+float32 zoom_factor         # Returns the current optical zoom factor
+float32 max_zoom_factor     # Returns the maximum optical zoom factor
