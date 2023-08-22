@@ -442,7 +442,10 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   /* Streaming */
-  friend void c_publish_streaming_callback(CameraRGBImage img, void* user_data);
+  friend void c_publish_main_streaming_callback(CameraRGBImage img,
+                                                void* user_data);
+  friend void c_publish_fpv_streaming_callback(CameraRGBImage img,
+                                               void* user_data);
   friend void c_LiveviewConvertH264ToRgbCallback(
       E_DjiLiveViewCameraPosition position, const uint8_t* buffer,
       uint32_t buffer_length);
@@ -1200,7 +1203,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Set the camera optical zoom
    * @param request CameraSetOpticalZoom service request. The camera mounted
    * position for which the request is made needs to be specified as well as the
-   * desired zoom direction (see E_DjiCameraZoomDirection 0 = OUT, 1 = IN ) and
    * zoom factor.
    * @param response CameraSetOpticalZoom service response.
    */
@@ -1456,6 +1458,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       height_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       main_camera_stream_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
+      fpv_camera_stream_pub_;
 
   /* ROS 2 Subscribers */
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
@@ -1640,6 +1644,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param user_data unused parameter
    */
   void publish_main_camera_images(CameraRGBImage rgb_img, void* user_data);
+  /**
+   * @brief Publishes the FPV camera streaming to a ROS 2 topic
+   * @param rgb_img  decoded RGB frame retrieved from the camera
+   * @param user_data unused parameter
+   */
+  void publish_fpv_camera_images(CameraRGBImage rgb_img, void* user_data);
 
   /* Global variables*/
   PSDKParams params_;
