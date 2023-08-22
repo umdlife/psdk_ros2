@@ -10,7 +10,7 @@
  *
  * @brief Header file containing utility functions and constants
  *
- * @author Bianca Bendris
+ * @authors Bianca Bendris
  * Contact: bianca@unmanned.life
  *
  */
@@ -98,10 +98,10 @@ enum RTKSolutionState
 
 enum FlightStatus
 {
-  FLIGHT_STATUS_STOPED = 0, /*!< Aircraft is on ground and motors are still. */
+  FLIGHT_STATUS_STOPED = 0, /* Aircraft is on ground and motors are still. */
   FLIGHT_STATUS_ON_GROUND =
-      1, /*!< Aircraft is on ground but motors are rotating. */
-  FLIGHT_STATUS_IN_AIR = 2 /*!< Aircraft is in air. */
+      1,                   /* Aircraft is on ground but motors are rotating. */
+  FLIGHT_STATUS_IN_AIR = 2 /* Aircraft is in air. */
 };
 
 /**
