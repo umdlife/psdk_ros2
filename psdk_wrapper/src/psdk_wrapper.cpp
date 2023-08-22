@@ -727,6 +727,8 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/height_above_ground", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", 10);
+  fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
+      "psdk_ros2/fpv_camera_stream", 10);
 
   /** @todo Implement other useful publishers */
   // acceleration_ground_pub_ =
@@ -1026,6 +1028,7 @@ PSDKWrapper::activate_ros_elements()
   battery_pub_->on_activate();
   height_fused_pub_->on_activate();
   main_camera_stream_pub_->on_activate();
+  fpv_camera_stream_pub_->on_activate();
   // acceleration_ground_pub_->on_activate();
   // acceleration_body_pub_->on_activate();
   // altitude_pub_->on_activate();
@@ -1065,6 +1068,7 @@ PSDKWrapper::deactivate_ros_elements()
   battery_pub_->on_deactivate();
   height_fused_pub_->on_deactivate();
   main_camera_stream_pub_->on_deactivate();
+  fpv_camera_stream_pub_->on_deactivate();
   // acceleration_ground_pub_->on_deactivate();
   // acceleration_body_pub_->on_deactivate();
   // altitude_pub_->on_deactivate();
@@ -1172,6 +1176,7 @@ PSDKWrapper::clean_ros_elements()
   battery_pub_.reset();
   height_fused_pub_.reset();
   main_camera_stream_pub_.reset();
+  fpv_camera_stream_pub_.reset();
   // acceleration_ground_pub_.reset();
   // acceleration_body_pub_.reset();
   // altitude_pub_.reset();

@@ -494,8 +494,6 @@ PSDKWrapper::camera_set_optical_zoom_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  // E_DjiCameraZoomDirection zoom_direction =
-  //         static_cast<E_DjiCameraZoomDirection>(request->zoom_direction);
   E_DjiCameraZoomDirection zoom_direction = DJI_CAMERA_ZOOM_DIRECTION_OUT;
   return_code = DjiCameraManager_SetOpticalZoomParam(index, zoom_direction,
                                                      request->zoom_factor);
@@ -503,7 +501,7 @@ PSDKWrapper::camera_set_optical_zoom_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Set mounted position %d camera's zoom factor(%0.1f) failed, error "
+        "Setting mounted position %d camera's zoom factor(%0.1f) failed, error "
         "code :%ld",
         index, request->zoom_factor, return_code);
     response->success = false;

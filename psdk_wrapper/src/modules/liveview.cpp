@@ -75,9 +75,15 @@ PSDKWrapper::LiveviewConvertH264ToRgbCallback(
 }
 
 void
-c_publish_streaming_callback(CameraRGBImage img, void *user_data)
+c_publish_main_streaming_callback(CameraRGBImage img, void *user_data)
 {
   return global_ptr_->publish_main_camera_images(img, user_data);
+}
+
+void
+c_publish_fpv_streaming_callback(CameraRGBImage img, void *user_data)
+{
+  return global_ptr_->publish_fpv_camera_images(img, user_data);
 }
 
 void
@@ -97,9 +103,23 @@ PSDKWrapper::camera_setup_streaming_cb(
   if (request->start_stop)
   {
     RCLCPP_INFO(get_logger(), "Starting streaming...");
-    char main_name[] = "MAIN_CAM";
-    if (start_main_camera_stream(&c_publish_streaming_callback, &main_name,
-                                 payload_index, camera_source))
+    bool streaming_result;
+    if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_NO_1)
+    {
+      char main_camera_name[] = "MAIN_CAMERA";
+      streaming_result = start_main_camera_stream(
+          &c_publish_main_streaming_callback, &main_camera_name, payload_index,
+          camera_source);
+    }
+    else if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
+    {
+      char fpv_camera_name[] = "FPV_CAMERA";
+      streaming_result = start_main_camera_stream(
+          &c_publish_fpv_streaming_callback, &fpv_camera_name, payload_index,
+          camera_source);
+    }
+
+    if (streaming_result)
     {
       response->success = true;
       return;
@@ -205,4 +225,19 @@ PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
   main_camera_stream_pub_->publish(img);
 }
 
+void
+PSDKWrapper::publish_fpv_camera_images(CameraRGBImage rgb_img, void *user_data)
+{
+  (void)user_data;
+  sensor_msgs::msg::Image img;
+  img.height = rgb_img.height;
+  img.width = rgb_img.width;
+  img.step = rgb_img.width * 3;
+  img.encoding = "rgb8";
+  img.data = rgb_img.rawData;
+
+  img.header.stamp = this->get_clock()->now();
+  img.header.frame_id = "FPV_CAMERA";
+  fpv_camera_stream_pub_->publish(img);
+}
 }  // namespace psdk_ros2
