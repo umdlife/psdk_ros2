@@ -682,7 +682,7 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/velocity_ground_ENU", 10);
   position_fused_pub_ = create_publisher<psdk_interfaces::msg::PositionFused>(
       "psdk_ros2/position_fused", 10);
-  gps_fused_pub_ = create_publisher<psdk_interfaces::msg::GPSFused>(
+  gps_fused_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
       "psdk_ros2/gps_position_fused", 10);
   gps_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
       "psdk_ros2/gps_position", 10);

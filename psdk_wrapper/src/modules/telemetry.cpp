@@ -380,15 +380,15 @@ PSDKWrapper::gps_fused_callback(const uint8_t *data, uint16_t data_size,
   std::unique_ptr<T_DjiFcSubscriptionPositionFused> gps_fused =
       std::make_unique<T_DjiFcSubscriptionPositionFused>(
           *reinterpret_cast<const T_DjiFcSubscriptionPositionFused *>(data));
-  psdk_interfaces::msg::GPSFused gps_fused_msg;
-  gps_fused_msg.header.stamp = this->get_clock()->now();
+  sensor_msgs::msg::NavSatFix gps_position_fused_msg;
+  gps_position_fused_msg.header.stamp = this->get_clock()->now();
   // DJI unit is rad. Transform it to deg
-  gps_fused_msg.longitude = psdk_utils::rad_to_deg(gps_fused->longitude);
-  gps_fused_msg.latitude = psdk_utils::rad_to_deg(gps_fused->latitude);
+  gps_position_fused_msg.longitude =
+      psdk_utils::rad_to_deg(gps_fused->longitude);
+  gps_position_fused_msg.latitude = psdk_utils::rad_to_deg(gps_fused->latitude);
   // Altitude, WGS 84 reference ellipsoid, unit: m.
-  gps_fused_msg.altitude = gps_fused->altitude;
-  gps_fused_msg.num_visible_satellites = gps_fused->visibleSatelliteNumber;
-  gps_fused_pub_->publish(gps_fused_msg);
+  gps_position_fused_msg.altitude = gps_fused->altitude;
+  gps_fused_pub_->publish(gps_position_fused_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
