@@ -47,6 +47,39 @@ PSDKWrapper::deinit_flight_control()
 }
 
 void
+PSDKWrapper::set_local_pose_ref_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
+{
+  (void)request;
+  if (current_local_position_.x_health && current_local_position_.y_health &&
+      current_local_position_.z_health)
+  {
+    local_position_reference_.vector.x = current_local_position_.position.x;
+    local_position_reference_.vector.y = current_local_position_.position.y;
+    local_position_reference_.vector.z = current_local_position_.position.z;
+    RCLCPP_INFO(
+        get_logger(), "Set local position reference to x:%f, y:%f, z:%f",
+        current_local_position_.position.x, current_local_position_.position.y,
+        current_local_position_.position.z);
+    set_local_pose_ref_ = true;
+    response->success = true;
+    return;
+  }
+  else
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
+        current_local_position_.x_health, current_local_position_.y_health,
+        current_local_position_.z_health);
+    set_local_pose_ref_ = false;
+    response->success = false;
+    return;
+  }
+}
+
+void
 PSDKWrapper::set_home_from_gps_cb(
     const std::shared_ptr<SetHomeFromGPS::Request> request,
     const std::shared_ptr<SetHomeFromGPS::Response> response)

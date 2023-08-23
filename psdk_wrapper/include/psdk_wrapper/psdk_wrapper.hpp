@@ -865,6 +865,13 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   /* ROS 2 Service callbacks */
   /**
+   * @brief Sets the current position as the new origin for the local position.
+   * @param request Trigger service request
+   * @param response Trigger service response
+   */
+  void set_local_pose_ref_cb(const std::shared_ptr<Trigger::Request> request,
+                             const std::shared_ptr<Trigger::Response> response);
+  /**
    * @brief Sets the home position from GPS data. The user inputs the latitude
    * and longitude which will represent the new home position.
    * @param request SetHomeFromGPS service request
@@ -1476,6 +1483,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       gimbal_rotation_sub_;
 
   /* ROS 2 Services */
+  rclcpp::Service<Trigger>::SharedPtr set_local_pose_ref_srv_;
   rclcpp::Service<SetHomeFromGPS>::SharedPtr set_home_from_gps_srv_;
   rclcpp::Service<Trigger>::SharedPtr set_home_from_current_location_srv_;
   rclcpp::Service<SetGoHomeAltitude>::SharedPtr set_go_home_altitude_srv_;
@@ -1657,6 +1665,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   int gps_signal_level_{0};
   float local_altitude_reference_{0};
   bool local_altitude_reference_set_{false};
+  bool set_local_pose_ref_{false};
+  geometry_msgs::msg::Vector3Stamped local_position_reference_;
+  psdk_interfaces::msg::PositionFused current_local_position_;
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 

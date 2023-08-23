@@ -779,6 +779,9 @@ PSDKWrapper::initialize_ros_elements()
                     std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Creating services");
+  set_local_pose_ref_srv_ = create_service<Trigger>(
+      "psdk_ros2/set_local_pose_ref",
+      std::bind(&PSDKWrapper::set_local_pose_ref_cb, this, _1, _2));
   set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
       "psdk_ros2/set_home_from_gps",
       std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
@@ -1084,6 +1087,7 @@ PSDKWrapper::clean_ros_elements()
 
   // Services
   // General
+  set_local_pose_ref_srv_.reset();
   set_home_from_gps_srv_.reset();
   set_home_from_current_location_srv_.reset();
   set_go_home_altitude_srv_.reset();
