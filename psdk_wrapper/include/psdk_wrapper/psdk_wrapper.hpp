@@ -66,7 +66,6 @@
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
 #include "psdk_interfaces/msg/gimbal_status.hpp"
 #include "psdk_interfaces/msg/gps_details.hpp"
-#include "psdk_interfaces/msg/gps_fused.hpp"
 #include "psdk_interfaces/msg/home_position.hpp"
 #include "psdk_interfaces/msg/position_fused.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
@@ -1412,8 +1411,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       imu_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::PositionFused>::SharedPtr position_fused_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      psdk_interfaces::msg::GPSFused>::SharedPtr gps_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
+      gps_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
       gps_position_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
