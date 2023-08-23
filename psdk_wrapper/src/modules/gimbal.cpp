@@ -103,12 +103,21 @@ PSDKWrapper::gimbal_rotation_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(msg->payload_index);
+
+  // Convert ENU [rad] command to NED [deg] which is what DJI expects
+  tf2::Matrix3x3 rotation_ENU;
+  rotation_ENU.setRPY(msg->roll, msg->pitch, msg->yaw);
+  tf2::Matrix3x3 rotation_NED =
+      psdk_utils::R_NED2ENU.transpose() * rotation_ENU;
+  double transformed_roll, transformed_pitch, transformed_yaw;
+  rotation_NED.getRPY(transformed_roll, transformed_pitch, transformed_yaw);
+
   T_DjiGimbalManagerRotation rotation_deg;
   rotation_deg.rotationMode =
       static_cast<E_DjiGimbalRotationMode>(msg->rotation_mode);
-  rotation_deg.pitch = psdk_ros2::psdk_utils::rad_to_deg(msg->pitch);
-  rotation_deg.roll = psdk_ros2::psdk_utils::rad_to_deg(msg->roll);
-  rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(msg->yaw);
+  rotation_deg.pitch = psdk_ros2::psdk_utils::rad_to_deg(transformed_pitch);
+  rotation_deg.roll = psdk_ros2::psdk_utils::rad_to_deg(transformed_roll);
+  rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(transformed_yaw);
   rotation_deg.time = msg->time;
 
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);
