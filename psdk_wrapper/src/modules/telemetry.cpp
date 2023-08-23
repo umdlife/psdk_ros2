@@ -367,7 +367,20 @@ PSDKWrapper::vo_position_callback(const uint8_t *data, uint16_t data_size,
   }
   position_msg.position.z =
       position_msg.position.z - get_local_altitude_reference();
+
+  if (set_local_pose_ref_)
+  {
+    position_msg.position.x =
+        position_msg.position.x - current_local_position_.position.x;
+    position_msg.position.y =
+        position_msg.position.y - current_local_position_.position.y;
+    position_msg.position.z =
+        position_msg.position.z - current_local_position_.position.z;
+  }
   position_fused_pub_->publish(position_msg);
+
+  // Save current local position
+  current_local_position_ = position_msg;
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
