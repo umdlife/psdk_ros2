@@ -47,7 +47,7 @@ PSDKWrapper::deinit_flight_control()
 }
 
 void
-PSDKWrapper::set_local_pose_ref_cb(
+PSDKWrapper::set_local_position_ref_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -62,7 +62,7 @@ PSDKWrapper::set_local_pose_ref_cb(
         get_logger(), "Set local position reference to x:%f, y:%f, z:%f",
         current_local_position_.position.x, current_local_position_.position.y,
         current_local_position_.position.z);
-    set_local_pose_ref_ = true;
+    set_local_position_ref_ = true;
     response->success = true;
     return;
   }
@@ -73,7 +73,7 @@ PSDKWrapper::set_local_pose_ref_cb(
         "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
         current_local_position_.x_health, current_local_position_.y_health,
         current_local_position_.z_health);
-    set_local_pose_ref_ = false;
+    set_local_position_ref_ = false;
     response->success = false;
     return;
   }

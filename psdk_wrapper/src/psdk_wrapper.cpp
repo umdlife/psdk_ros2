@@ -725,6 +725,11 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<psdk_interfaces::msg::Battery>("psdk_ros2/battery", 10);
   height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/height_above_ground", 10);
+  angular_rate_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
+      "psdk_ros2/angular_rate", 10);
+  angular_rate_fused_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/angular_rate_fused", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", 10);
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
@@ -779,9 +784,9 @@ PSDKWrapper::initialize_ros_elements()
                     std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Creating services");
-  set_local_pose_ref_srv_ = create_service<Trigger>(
-      "psdk_ros2/set_local_pose_ref",
-      std::bind(&PSDKWrapper::set_local_pose_ref_cb, this, _1, _2));
+  set_local_position_ref_srv_ = create_service<Trigger>(
+      "psdk_ros2/set_local_position_ref",
+      std::bind(&PSDKWrapper::set_local_position_ref_cb, this, _1, _2));
   set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
       "psdk_ros2/set_home_from_gps",
       std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
@@ -1030,6 +1035,8 @@ PSDKWrapper::activate_ros_elements()
   flight_anomaly_pub_->on_activate();
   battery_pub_->on_activate();
   height_fused_pub_->on_activate();
+  angular_rate_pub_->on_activate();
+  angular_rate_fused_pub_->on_activate();
   main_camera_stream_pub_->on_activate();
   fpv_camera_stream_pub_->on_activate();
   // acceleration_ground_pub_->on_activate();
@@ -1070,6 +1077,8 @@ PSDKWrapper::deactivate_ros_elements()
   flight_anomaly_pub_->on_deactivate();
   battery_pub_->on_deactivate();
   height_fused_pub_->on_deactivate();
+  angular_rate_pub_->on_deactivate();
+  angular_rate_fused_pub_->on_deactivate();
   main_camera_stream_pub_->on_deactivate();
   fpv_camera_stream_pub_->on_deactivate();
   // acceleration_ground_pub_->on_deactivate();
@@ -1087,7 +1096,7 @@ PSDKWrapper::clean_ros_elements()
 
   // Services
   // General
-  set_local_pose_ref_srv_.reset();
+  set_local_position_ref_srv_.reset();
   set_home_from_gps_srv_.reset();
   set_home_from_current_location_srv_.reset();
   set_go_home_altitude_srv_.reset();
@@ -1179,6 +1188,8 @@ PSDKWrapper::clean_ros_elements()
   flight_anomaly_pub_.reset();
   battery_pub_.reset();
   height_fused_pub_.reset();
+  angular_rate_pub_.reset();
+  angular_rate_fused_pub_.reset();
   main_camera_stream_pub_.reset();
   fpv_camera_stream_pub_.reset();
   // acceleration_ground_pub_.reset();
