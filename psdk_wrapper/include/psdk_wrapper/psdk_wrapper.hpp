@@ -446,6 +446,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_height_fused_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_acceleration_ground_fused_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_acceleration_body_fused_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_acceleration_body_raw_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /* Streaming */
   friend void c_publish_main_streaming_callback(CameraRGBImage img,
                                                 void* user_data);
@@ -830,6 +839,45 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode height_fused_callback(const uint8_t* data, uint16_t data_size,
                                         const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Retrieves the copter linear acceleration wrt. a ground-fixed ENU
+   * frame in [m/s^2] up to 200 Hz. This output is the result of a fusion
+   * performed within the flight control system.
+   * @param data pointer to T_DjiFcSubscriptionAccelerationGround data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode acceleration_ground_fused_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Retrieves the copter linear acceleration wrt. a body-fixed FLU
+   * frame in [m/s^2] up to 200 Hz. This output is the result of a fusion
+   * performed within the flight control system.
+   * @param data pointer to T_DjiFcSubscriptionAccelerationBody data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode acceleration_body_fused_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Retrieves the copter linear acceleration wrt. a body-fixed FLU
+   * frame in [m/s^2] up to 400 Hz. This output is the filtered output from the
+   * IMU on-board the flight control system.
+   * @param data pointer to T_DjiFcSubscriptionAccelerationRaw data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode acceleration_body_raw_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
 
   /* ROS 2 Subscriber callbacks */
   /**
@@ -1498,6 +1546,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
+      SharedPtr acceleration_ground_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
+      SharedPtr acceleration_body_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      geometry_msgs::msg::Vector3Stamped>::SharedPtr acceleration_body_raw_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       main_camera_stream_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr

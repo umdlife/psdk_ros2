@@ -248,6 +248,30 @@ c_height_fused_callback(const uint8_t *data, uint16_t data_size,
 }
 
 T_DjiReturnCode
+c_acceleration_ground_fused_callback(const uint8_t *data, uint16_t data_size,
+                                     const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->acceleration_ground_fused_callback(data, data_size,
+                                                         timestamp);
+}
+
+T_DjiReturnCode
+c_acceleration_body_fused_callback(const uint8_t *data, uint16_t data_size,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->acceleration_body_fused_callback(data, data_size,
+                                                       timestamp);
+}
+
+T_DjiReturnCode
+c_acceleration_body_raw_callback(const uint8_t *data, uint16_t data_size,
+                                 const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->acceleration_body_raw_callback(data, data_size,
+                                                     timestamp);
+}
+
+T_DjiReturnCode
 PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t data_size,
                                const T_DjiDataTimestamp *timestamp)
 {
@@ -316,7 +340,7 @@ PSDKWrapper::angular_rate_fused_callback(const uint8_t *data,
               data));
 
   /* Note: The angular rate fused provided by DJI is in NED ground coordinate
-   * frame. Following REP 103, this position is transformed to ENU ground
+   * frame. Following REP 103, these values are transformed to ENU ground
    * coordinate frame
    */
   tf2::Vector3 angular_rate_fused_NED{
@@ -896,6 +920,93 @@ PSDKWrapper::height_fused_callback(const uint8_t *data, uint16_t data_size,
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
+T_DjiReturnCode
+PSDKWrapper::acceleration_ground_fused_callback(
+    const uint8_t *data, uint16_t data_size,
+    const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionAccelerationGround> acc_ground_fused =
+      std::make_unique<T_DjiFcSubscriptionAccelerationGround>(
+          *reinterpret_cast<const T_DjiFcSubscriptionAccelerationGround *>(
+              data));
+
+  /* Note: The angular rate fused provided by DJI is in NEU ground coordinate
+   * frame. Thus, first the sign of z is flipped to transform it to NED, and
+   * then following REP 103, this is transformed to ENU ground coordinate frame
+   */
+  tf2::Vector3 acc_ground_fused_NED{acc_ground_fused->x, acc_ground_fused->y,
+                                    -acc_ground_fused->z};
+  tf2::Vector3 acc_ground_fused_ENU =
+      psdk_utils::R_NED2ENU * acc_ground_fused_NED;
+  geometry_msgs::msg::Vector3Stamped acc_ground_fused_msg;
+  acc_ground_fused_msg.header.stamp = this->get_clock()->now();
+  acc_ground_fused_msg.header.frame_id = params_.map_frame;
+  acc_ground_fused_msg.vector.x = acc_ground_fused_ENU.getX();
+  acc_ground_fused_msg.vector.y = acc_ground_fused_ENU.getY();
+  acc_ground_fused_msg.vector.z = acc_ground_fused_ENU.getZ();
+  acceleration_ground_fused_pub_->publish(acc_ground_fused_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::acceleration_body_fused_callback(
+    const uint8_t *data, uint16_t data_size,
+    const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionAccelerationBody> acc_body_fused =
+      std::make_unique<T_DjiFcSubscriptionAccelerationBody>(
+          *reinterpret_cast<const T_DjiFcSubscriptionAccelerationBody *>(data));
+
+  /* Note: The angular rate fused provided by DJI is in FRU body coordinate
+   * frame. Thus, first the sign of z is flipped to transform it to FRD, and
+   * then following REP 103, this is transformed to FLU body coordinate frame
+   */
+  tf2::Vector3 acc_body_fused_FRD{acc_body_fused->x, acc_body_fused->y,
+                                  -acc_body_fused->z};
+  tf2::Vector3 acc_body_fused_FLU =
+      psdk_utils::R_FLU2FRD.transpose() * acc_body_fused_FRD;
+  geometry_msgs::msg::Vector3Stamped acc_body_fused_msg;
+  acc_body_fused_msg.header.stamp = this->get_clock()->now();
+  acc_body_fused_msg.header.frame_id = params_.map_frame;
+  acc_body_fused_msg.vector.x = acc_body_fused_FLU.getX();
+  acc_body_fused_msg.vector.y = acc_body_fused_FLU.getY();
+  acc_body_fused_msg.vector.z = acc_body_fused_FLU.getZ();
+  acceleration_body_fused_pub_->publish(acc_body_fused_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::acceleration_body_raw_callback(const uint8_t *data,
+                                            uint16_t data_size,
+                                            const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionAccelerationRaw> acc_body_raw =
+      std::make_unique<T_DjiFcSubscriptionAccelerationRaw>(
+          *reinterpret_cast<const T_DjiFcSubscriptionAccelerationRaw *>(data));
+
+  /* Note: The angular rate raw provided by DJI is in FRD body coordinate
+   * frame. Following REP 103, this is transformed to FLU body coordinate frame
+   */
+  tf2::Vector3 acc_body_raw_FRD{acc_body_raw->x, acc_body_raw->y,
+                                acc_body_raw->z};
+  tf2::Vector3 acc_body_raw_FLU =
+      psdk_utils::R_FLU2FRD.transpose() * acc_body_raw_FRD;
+  geometry_msgs::msg::Vector3Stamped acc_body_raw_msg;
+  acc_body_raw_msg.header.stamp = this->get_clock()->now();
+  acc_body_raw_msg.header.frame_id = params_.map_frame;
+  acc_body_raw_msg.vector.x = acc_body_raw_FLU.getX();
+  acc_body_raw_msg.vector.y = acc_body_raw_FLU.getY();
+  acc_body_raw_msg.vector.z = acc_body_raw_FLU.getZ();
+  acceleration_body_raw_pub_->publish(acc_body_raw_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
 void
 PSDKWrapper::subscribe_psdk_topics()
 {
@@ -925,6 +1036,44 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, error %ld",
+                   return_code);
+    }
+  }
+  if (params_.acceleration_frequency > 0)
+  {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_GROUND,
+        get_frequency(params_.acceleration_frequency),
+        c_acceleration_ground_fused_callback);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_GROUND, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_BODY,
+        get_frequency(params_.acceleration_frequency),
+        c_acceleration_body_fused_callback);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_BODY, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_RAW,
+        get_frequency(params_.acceleration_frequency),
+        c_acceleration_body_raw_callback);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_RAW, error %ld",
                    return_code);
     }
   }
