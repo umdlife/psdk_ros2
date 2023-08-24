@@ -370,6 +370,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_velocity_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_angular_rate_fused_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_angular_rate_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_imu_callback(const uint8_t* data, uint16_t data_size,
                                         const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_vo_position_callback(
@@ -474,6 +480,31 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode velocity_callback(const uint8_t* data, uint16_t data_size,
                                     const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Retrieves the copter x, y and z angular velocity fused provided by
+   * DJI PSDK lib and publishes it on a ROS 2 topic. The angular velocity is
+   * given wrt. a ground-fixed ENU frame at up to 200 Hz.
+   * @param data pointer to T_DjiFcSubscriptionAngularRateFusioned data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode angular_rate_fused_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Retrieves the copter x, y and z angular velocity provided by DJI
+   * PSDK lib and publishes it on a ROS 2 topic. The velocity vector is given
+   * in an IMU-centered, body-fixed FLU frame at up to 400 Hz.
+   * @param data pointer to T_DjiFcSubscriptionAngularRateRaw data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode angular_rate_callback(const uint8_t* data, uint16_t data_size,
+                                        const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the IMU data provided by DJI PSDK lib
    * and publishes it on a ROS 2 topic. The quaternion is given wrt. a FLU
@@ -869,8 +900,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param request Trigger service request
    * @param response Trigger service response
    */
-  void set_local_pose_ref_cb(const std::shared_ptr<Trigger::Request> request,
-                             const std::shared_ptr<Trigger::Response> response);
+  void set_local_position_ref_cb(
+      const std::shared_ptr<Trigger::Request> request,
+      const std::shared_ptr<Trigger::Response> response);
   /**
    * @brief Sets the home position from GPS data. The user inputs the latitude
    * and longitude which will represent the new home position.
@@ -1462,6 +1494,10 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       main_camera_stream_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
@@ -1483,7 +1519,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       gimbal_rotation_sub_;
 
   /* ROS 2 Services */
-  rclcpp::Service<Trigger>::SharedPtr set_local_pose_ref_srv_;
+  rclcpp::Service<Trigger>::SharedPtr set_local_position_ref_srv_;
   rclcpp::Service<SetHomeFromGPS>::SharedPtr set_home_from_gps_srv_;
   rclcpp::Service<Trigger>::SharedPtr set_home_from_current_location_srv_;
   rclcpp::Service<SetGoHomeAltitude>::SharedPtr set_go_home_altitude_srv_;
@@ -1665,7 +1701,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   int gps_signal_level_{0};
   float local_altitude_reference_{0};
   bool local_altitude_reference_set_{false};
-  bool set_local_pose_ref_{false};
+  bool set_local_position_ref_{false};
   geometry_msgs::msg::Vector3Stamped local_position_reference_;
   psdk_interfaces::msg::PositionFused current_local_position_;
 
