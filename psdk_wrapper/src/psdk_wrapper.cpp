@@ -730,18 +730,21 @@ PSDKWrapper::initialize_ros_elements()
   angular_rate_fused_pub_ =
       create_publisher<geometry_msgs::msg::Vector3Stamped>(
           "psdk_ros2/angular_rate_fused", 10);
+  acceleration_ground_fused_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/acceleration_ground_fused", 10);
+  acceleration_body_fused_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/acceleration_body_fused", 10);
+  acceleration_body_raw_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/acceleration_body_raw", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", 10);
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/fpv_camera_stream", 10);
 
   /** @todo Implement other useful publishers */
-  // acceleration_ground_pub_ =
-  // create_publisher<geometry_msgs::msg::AccelStamped>(
-  //     "psdk_ros2/acceleration_ground", 10);
-  // acceleration_body_pub_ =
-  // create_publisher<geometry_msgs::msg::AccelStamped>(
-  //     "psdk_ros2/acceleration_body", 10);
   // altitude_pub_ =
   //     create_publisher<psdk_interfaces::msg::Altitude>("psdk_ros2/altitude",
   //     10);
@@ -1037,10 +1040,11 @@ PSDKWrapper::activate_ros_elements()
   height_fused_pub_->on_activate();
   angular_rate_pub_->on_activate();
   angular_rate_fused_pub_->on_activate();
+  acceleration_ground_fused_pub_->on_activate();
+  acceleration_body_fused_pub_->on_activate();
+  acceleration_body_raw_pub_->on_activate();
   main_camera_stream_pub_->on_activate();
   fpv_camera_stream_pub_->on_activate();
-  // acceleration_ground_pub_->on_activate();
-  // acceleration_body_pub_->on_activate();
   // altitude_pub_->on_activate();
   // relative_height_pub_->on_activate();
   // relative_obstacle_info_pub_->on_activate();
@@ -1079,10 +1083,11 @@ PSDKWrapper::deactivate_ros_elements()
   height_fused_pub_->on_deactivate();
   angular_rate_pub_->on_deactivate();
   angular_rate_fused_pub_->on_deactivate();
+  acceleration_ground_fused_pub_->on_deactivate();
+  acceleration_body_fused_pub_->on_deactivate();
+  acceleration_body_raw_pub_->on_deactivate();
   main_camera_stream_pub_->on_deactivate();
   fpv_camera_stream_pub_->on_deactivate();
-  // acceleration_ground_pub_->on_deactivate();
-  // acceleration_body_pub_->on_deactivate();
   // altitude_pub_->on_deactivate();
   // relative_height_pub_->on_deactivate();
   // relative_obstacle_info_pub_->on_deactivate();
@@ -1190,10 +1195,11 @@ PSDKWrapper::clean_ros_elements()
   height_fused_pub_.reset();
   angular_rate_pub_.reset();
   angular_rate_fused_pub_.reset();
+  acceleration_ground_fused_pub_.reset();
+  acceleration_body_fused_pub_.reset();
+  acceleration_body_raw_pub_.reset();
   main_camera_stream_pub_.reset();
   fpv_camera_stream_pub_.reset();
-  // acceleration_ground_pub_.reset();
-  // acceleration_body_pub_.reset();
   // altitude_pub_.reset();
   // relative_height_pub_.reset();
   // relative_obstacle_info_pub_.reset();
