@@ -37,7 +37,6 @@ set(PSDK_PATH ${PROJECT_SOURCE_DIR}/../../Payload-SDK)
 set(CMAKE_MODULE_PATH 
 ${PSDK_PATH}/samples/sample_c++/platform/linux/common/3rdparty)
 
-find_package(OpenCV REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(LIBUSB REQUIRED)
 
@@ -66,17 +65,7 @@ if (PSDK_LIB)
   message(STATUS "PSDK library found: ${PSDK_LIB}")
 else()
   message(FATAL_ERROR "PSDK library NOT found")
-endif()
-
-
-if (OpenCV_FOUND)                                                                                                 
-  message( "\n${PROJECT_NAME}...")                                                                                
-  message( STATUS " - Includes: ${OpenCV_INCLUDE_DIRS}")                                                                                                                                                                             
-  message( STATUS " - Libraries: ${OpenCV_LIBRARIES}")                                                            
-  add_definitions(-DOPEN_CV_INSTALLED)                                                                            
-else()                                                                                                            
-  message( FATAL_ERROR "OpenCV is required for this code to stream")                                 
-endif ()                                                                                                          
+endif()                                                                                                     
 
 if (FFMPEG_FOUND)
     message(STATUS "Found FFMPEG installed in the system")

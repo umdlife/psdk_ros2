@@ -642,12 +642,16 @@ PSDKWrapper::flight_control_position_yaw_cb(
 
   float x_cmd, y_cmd, z_cmd;
   float yaw_cmd;
+
+  /* Note: The position input expected by DJI is ground fixed frame NEU,
+   * Following REP 103, the x and y setpoints are inverted.
+   */
   x_cmd = y_setpoint;
   y_cmd = x_setpoint;
   z_cmd = z_setpoint;
 
-  /* Note: The input yaw is assumed to be following REP 103, thus a FLU rotation
-   wrt to ENU frame. DJI uses FRD rotation with respect to NED.Thus, the
+  /* Note: The input yaw is assumed to be following REP 103, thus a yaw rotation
+   wrt to ENU frame. DJI uses rotation with respect to NED.Thus, the
    rotation needs to be transformed before sending it to the FCU
    */
   tf2::Matrix3x3 rotation_FLU2ENU;
@@ -677,6 +681,10 @@ PSDKWrapper::flight_control_velocity_yawrate_cb(
       DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE};
   DjiFlightController_SetJoystickMode(joystick_mode);
 
+  /**
+   * Note: DJI is expecting velocity commands with a ground-fixed frame NEU.
+   * Input is converted from ENU to NEU.
+   */
   float x_setpoint = msg->axes[0];
   float y_setpoint = msg->axes[1];
   float z_setpoint = msg->axes[2];
@@ -686,6 +694,11 @@ PSDKWrapper::flight_control_velocity_yawrate_cb(
   x_cmd = y_setpoint;
   y_cmd = x_setpoint;
   z_cmd = z_setpoint;
+
+  /**
+   * Note: DJI is expecting yaw rate cmd wrt. FRD frame. Here input is assumed
+   * to be FLU. This is transformed from U -> D.
+   */
   yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
@@ -711,10 +724,16 @@ PSDKWrapper::flight_control_body_velocity_yawrate_cb(
   float yaw_setpoint = msg->axes[3];
 
   float x_cmd, y_cmd, z_cmd, yaw_cmd;
-  // Transform from F-R to F-L
+  // The Horizontal body coordinate frame of DJI is defined as FRU. Here the
+  // input is assumed to be in FLU, transform from FL to FR.
   x_cmd = x_setpoint;
   y_cmd = -y_setpoint;
   z_cmd = z_setpoint;
+
+  /**
+   * Note: DJI is expecting yaw rate cmd wrt. FRD frame. Here input is assumed
+   * to be FLU. This is transformed from U -> D.
+   */
   yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
@@ -723,7 +742,7 @@ PSDKWrapper::flight_control_body_velocity_yawrate_cb(
 }
 
 void
-PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb(
+PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
@@ -740,10 +759,19 @@ PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb(
   float yaw_setpoint = msg->axes[3];
 
   float x_cmd, y_cmd, z_cmd, yaw_cmd;
-  // Transform from F-R to F-L
+  // Transform from FL to FR
   x_cmd = psdk_utils::rad_to_deg(x_setpoint);
   y_cmd = psdk_utils::rad_to_deg(-y_setpoint);
+
+  /**
+   * Note: Thrust input is expected here. Range 0 - 100 %.
+   */
   z_cmd = z_setpoint;
+
+  /**
+   * Note: DJI is expecting yaw rate cmd wrt. FRD frame. Here input is assumed
+   * to be FLU. This is transformed from U -> D.
+   */
   yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,

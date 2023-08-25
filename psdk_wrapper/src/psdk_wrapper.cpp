@@ -436,19 +436,19 @@ PSDKWrapper::load_parameters()
   }
 
   if (!get_parameter("data_frequency.angular_velocity",
-                     params_.angular_velocity_frequency))
+                     params_.angular_rate_frequency))
   {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
     exit(-1);
   }
-  if (params_.angular_velocity_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ)
+  if (params_.angular_rate_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ)
   {
     RCLCPP_WARN(get_logger(),
                 "Frequency defined for the angular velocity topics is higher "
                 "than the maximum "
                 "allowed %d. Tha maximum value is set",
                 ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
-    params_.angular_velocity_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
+    params_.angular_rate_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
   }
 
   if (!get_parameter("data_frequency.position", params_.position_frequency))
@@ -678,8 +678,9 @@ PSDKWrapper::initialize_ros_elements()
   attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
       "psdk_ros2/attitude", 10);
   imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("psdk_ros2/imu", 10);
-  velocity_ground_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
-      "psdk_ros2/velocity_ground_ENU", 10);
+  velocity_ground_fused_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/velocity_ground_fused", 10);
   position_fused_pub_ = create_publisher<psdk_interfaces::msg::PositionFused>(
       "psdk_ros2/position_fused", 10);
   gps_fused_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
@@ -725,11 +726,12 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<psdk_interfaces::msg::Battery>("psdk_ros2/battery", 10);
   height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/height_above_ground", 10);
-  angular_rate_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
-      "psdk_ros2/angular_rate", 10);
-  angular_rate_fused_pub_ =
+  angular_rate_body_raw_pub_ =
       create_publisher<geometry_msgs::msg::Vector3Stamped>(
-          "psdk_ros2/angular_rate_fused", 10);
+          "psdk_ros2/angular_rate_body_raw", 10);
+  angular_rate_ground_fused_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/angular_rate_ground_fused", 10);
   acceleration_ground_fused_pub_ =
       create_publisher<geometry_msgs::msg::Vector3Stamped>(
           "psdk_ros2/acceleration_ground_fused", 10);
@@ -775,10 +777,10 @@ PSDKWrapper::initialize_ros_elements()
           "psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate", 10,
           std::bind(&PSDKWrapper::flight_control_body_velocity_yawrate_cb, this,
                     _1));
-  flight_control_rollpitch_yawrate_vertpos_sub_ =
+  flight_control_rollpitch_yawrate_thrust_sub_ =
       create_subscription<sensor_msgs::msg::Joy>(
-          "psdk_ros2/flight_control_setpoint_rollpitch_yawrate_zposition", 10,
-          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb,
+          "psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust", 10,
+          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb,
                     this, _1));
   gimbal_rotation_sub_ =
       create_subscription<psdk_interfaces::msg::GimbalRotation>(
@@ -1014,7 +1016,7 @@ PSDKWrapper::activate_ros_elements()
   RCLCPP_INFO(get_logger(), "Activating ROS elements");
   attitude_pub_->on_activate();
   imu_pub_->on_activate();
-  velocity_ground_pub_->on_activate();
+  velocity_ground_fused_pub_->on_activate();
   position_fused_pub_->on_activate();
   gps_fused_pub_->on_activate();
   gps_position_pub_->on_activate();
@@ -1038,8 +1040,8 @@ PSDKWrapper::activate_ros_elements()
   flight_anomaly_pub_->on_activate();
   battery_pub_->on_activate();
   height_fused_pub_->on_activate();
-  angular_rate_pub_->on_activate();
-  angular_rate_fused_pub_->on_activate();
+  angular_rate_body_raw_pub_->on_activate();
+  angular_rate_ground_fused_pub_->on_activate();
   acceleration_ground_fused_pub_->on_activate();
   acceleration_body_fused_pub_->on_activate();
   acceleration_body_raw_pub_->on_activate();
@@ -1057,7 +1059,7 @@ PSDKWrapper::deactivate_ros_elements()
   RCLCPP_INFO(get_logger(), "Deactivating ROS elements");
   attitude_pub_->on_deactivate();
   imu_pub_->on_deactivate();
-  velocity_ground_pub_->on_deactivate();
+  velocity_ground_fused_pub_->on_deactivate();
   position_fused_pub_->on_deactivate();
   gps_fused_pub_->on_deactivate();
   gps_position_pub_->on_deactivate();
@@ -1081,8 +1083,8 @@ PSDKWrapper::deactivate_ros_elements()
   flight_anomaly_pub_->on_deactivate();
   battery_pub_->on_deactivate();
   height_fused_pub_->on_deactivate();
-  angular_rate_pub_->on_deactivate();
-  angular_rate_fused_pub_->on_deactivate();
+  angular_rate_body_raw_pub_->on_deactivate();
+  angular_rate_ground_fused_pub_->on_deactivate();
   acceleration_ground_fused_pub_->on_deactivate();
   acceleration_body_fused_pub_->on_deactivate();
   acceleration_body_raw_pub_->on_deactivate();
@@ -1164,12 +1166,12 @@ PSDKWrapper::clean_ros_elements()
   flight_control_position_yaw_sub_.reset();
   flight_control_velocity_yawrate_sub_.reset();
   flight_control_body_velocity_yawrate_sub_.reset();
-  flight_control_rollpitch_yawrate_vertpos_sub_.reset();
+  flight_control_rollpitch_yawrate_thrust_sub_.reset();
 
   // Publishers
   attitude_pub_.reset();
   imu_pub_.reset();
-  velocity_ground_pub_.reset();
+  velocity_ground_fused_pub_.reset();
   position_fused_pub_.reset();
   gps_fused_pub_.reset();
   gps_position_pub_.reset();
@@ -1193,8 +1195,8 @@ PSDKWrapper::clean_ros_elements()
   flight_anomaly_pub_.reset();
   battery_pub_.reset();
   height_fused_pub_.reset();
-  angular_rate_pub_.reset();
-  angular_rate_fused_pub_.reset();
+  angular_rate_body_raw_pub_.reset();
+  angular_rate_ground_fused_pub_.reset();
   acceleration_ground_fused_pub_.reset();
   acceleration_body_fused_pub_.reset();
   acceleration_body_raw_pub_.reset();
