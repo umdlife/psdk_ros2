@@ -14,7 +14,7 @@ cd ~/psdk_ros2_ws
 colcon build --packages-skip entry	# Skip the build corresponding to DJI PSDK sample code
 
 # Launch the node
-ros2 launch psdk_wrapper wrapper.launch
+ros2 launch psdk_wrapper wrapper.launch.py
 
 ```
 
