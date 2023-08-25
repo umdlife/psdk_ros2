@@ -231,7 +231,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     int attitude_frequency;
     int acceleration_frequency;
     int velocity_frequency;
-    int angular_velocity_frequency;
+    int angular_rate_frequency;
     int position_frequency;
     int gps_data_frequency;
     int rtk_data_frequency;
@@ -370,10 +370,10 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_velocity_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_angular_rate_fused_callback(
+  friend T_DjiReturnCode c_angular_rate_ground_fused_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_angular_rate_callback(
+  friend T_DjiReturnCode c_angular_rate_body_raw_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_imu_callback(const uint8_t* data, uint16_t data_size,
@@ -499,7 +499,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return T_DjiReturnCode error code indicating if the subscription has been
    * done correctly
    */
-  T_DjiReturnCode angular_rate_fused_callback(
+  T_DjiReturnCode angular_rate_ground_fused_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   /**
@@ -512,8 +512,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return T_DjiReturnCode error code indicating if the subscription has been
    * done correctly
    */
-  T_DjiReturnCode angular_rate_callback(const uint8_t* data, uint16_t data_size,
-                                        const T_DjiDataTimestamp* timestamp);
+  T_DjiReturnCode angular_rate_body_raw_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the IMU data provided by DJI PSDK lib
    * and publishes it on a ROS 2 topic. The quaternion is given wrt. a FLU
@@ -909,13 +910,13 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const sensor_msgs::msg::Joy::SharedPtr msg);
 
   /**
-   * @brief Callback function to control roll, pitch, yawrate and thrust. This
+   * @brief Callback function to control roll, pitch, yaw rate and thrust. This
    * function expects the commands to be given with respect to a FLU body frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [rad], y [rad], z
-   * [rad] and yaw [rad/s] command.
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [rad], y [rad],
+   * thrust value percentage [0-100%] and yaw rate [rad/s] command.
    * @note This type of control is not implemented at this moment.
    */
-  void flight_control_rollpitch_yawrate_vertpos_cb(
+  void flight_control_rollpitch_yawrate_thrust_cb(
       const sensor_msgs::msg::Joy::SharedPtr msg);
 
   /**
@@ -1493,7 +1494,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::QuaternionStamped>::SharedPtr attitude_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      geometry_msgs::msg::TwistStamped>::SharedPtr velocity_ground_pub_;
+      geometry_msgs::msg::Vector3Stamped>::SharedPtr velocity_ground_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Imu>::SharedPtr
       imu_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
@@ -1543,9 +1544,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_fused_pub_;
+      geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_body_raw_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
+      SharedPtr angular_rate_ground_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
       SharedPtr acceleration_ground_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
@@ -1567,7 +1568,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
       flight_control_body_velocity_yawrate_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
-      flight_control_rollpitch_yawrate_vertpos_sub_;
+      flight_control_rollpitch_yawrate_thrust_sub_;
   // Gimbal
   rclcpp::Subscription<psdk_interfaces::msg::GimbalRotation>::SharedPtr
       gimbal_rotation_sub_;

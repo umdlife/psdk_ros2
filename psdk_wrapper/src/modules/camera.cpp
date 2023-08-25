@@ -49,7 +49,6 @@ PSDKWrapper::camera_get_type_cb(
     const std::shared_ptr<CameraGetType::Request> request,
     const std::shared_ptr<CameraGetType::Response> response)
 {
-  RCLCPP_ERROR(get_logger(), "Get camera type request");
   T_DjiReturnCode return_code;
   E_DjiCameraType camera_type;
   E_DjiMountPosition index =
