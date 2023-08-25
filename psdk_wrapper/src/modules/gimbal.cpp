@@ -103,7 +103,8 @@ PSDKWrapper::gimbal_rotation_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(msg->payload_index);
-
+  RCLCPP_ERROR(get_logger(), "Initial msg x %f. y %f. z %f", msg->roll,
+               msg->pitch, msg->yaw);
   // Convert ENU [rad] command to NED [deg] which is what DJI expects
   tf2::Matrix3x3 rotation_ENU;
   rotation_ENU.setRPY(msg->roll, msg->pitch, msg->yaw);
@@ -111,7 +112,8 @@ PSDKWrapper::gimbal_rotation_cb(
       psdk_utils::R_NED2ENU.transpose() * rotation_ENU;
   double transformed_roll, transformed_pitch, transformed_yaw;
   rotation_NED.getRPY(transformed_roll, transformed_pitch, transformed_yaw);
-
+  RCLCPP_ERROR(get_logger(), "Transformed msg x %f. y %f. z %f",
+               transformed_roll, transformed_pitch, transformed_yaw);
   T_DjiGimbalManagerRotation rotation_deg;
   rotation_deg.rotationMode =
       static_cast<E_DjiGimbalRotationMode>(msg->rotation_mode);

@@ -71,17 +71,19 @@ c_velocity_callback(const uint8_t *data, uint16_t data_size,
 }
 
 T_DjiReturnCode
-c_angular_rate_fused_callback(const uint8_t *data, uint16_t data_size,
-                              const T_DjiDataTimestamp *timestamp)
+c_angular_rate_ground_fused_callback(const uint8_t *data, uint16_t data_size,
+                                     const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->angular_rate_fused_callback(data, data_size, timestamp);
+  return global_ptr_->angular_rate_ground_fused_callback(data, data_size,
+                                                         timestamp);
 }
 
 T_DjiReturnCode
-c_angular_rate_callback(const uint8_t *data, uint16_t data_size,
-                        const T_DjiDataTimestamp *timestamp)
+c_angular_rate_body_raw_callback(const uint8_t *data, uint16_t data_size,
+                                 const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->angular_rate_callback(data, data_size, timestamp);
+  return global_ptr_->angular_rate_body_raw_callback(data, data_size,
+                                                     timestamp);
 }
 
 T_DjiReturnCode
@@ -314,73 +316,77 @@ PSDKWrapper::velocity_callback(const uint8_t *data, uint16_t data_size,
   std::unique_ptr<T_DjiFcSubscriptionVelocity> velocity =
       std::make_unique<T_DjiFcSubscriptionVelocity>(
           *reinterpret_cast<const T_DjiFcSubscriptionVelocity *>(data));
-  geometry_msgs::msg::TwistStamped twist_msg;
+  geometry_msgs::msg::Vector3Stamped twist_msg;
   twist_msg.header.stamp = this->get_clock()->now();
   twist_msg.header.frame_id = params_.map_frame;
   /* Note: The y and x data is swapped to follow the REP103 convention and use
    * ENU representation. Original DJI twist msg is given as NEU.
    */
-  twist_msg.twist.linear.x = velocity->data.y;
-  twist_msg.twist.linear.y = velocity->data.x;
-  twist_msg.twist.linear.z = velocity->data.z;
-  velocity_ground_pub_->publish(twist_msg);
+  twist_msg.vector.x = velocity->data.y;
+  twist_msg.vector.y = velocity->data.x;
+  twist_msg.vector.z = velocity->data.z;
+  velocity_ground_fused_pub_->publish(twist_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
 T_DjiReturnCode
-PSDKWrapper::angular_rate_fused_callback(const uint8_t *data,
-                                         uint16_t data_size,
-                                         const T_DjiDataTimestamp *timestamp)
+PSDKWrapper::angular_rate_ground_fused_callback(
+    const uint8_t *data, uint16_t data_size,
+    const T_DjiDataTimestamp *timestamp)
 {
   (void)data_size;
   (void)timestamp;
-  std::unique_ptr<T_DjiFcSubscriptionAngularRateFusioned> angular_rate_fused =
-      std::make_unique<T_DjiFcSubscriptionAngularRateFusioned>(
-          *reinterpret_cast<const T_DjiFcSubscriptionAngularRateFusioned *>(
-              data));
+  std::unique_ptr<T_DjiFcSubscriptionAngularRateFusioned>
+      angular_rate_ground_fused =
+          std::make_unique<T_DjiFcSubscriptionAngularRateFusioned>(
+              *reinterpret_cast<const T_DjiFcSubscriptionAngularRateFusioned *>(
+                  data));
 
   /* Note: The angular rate fused provided by DJI is in NED ground coordinate
    * frame. Following REP 103, these values are transformed to ENU ground
    * coordinate frame
    */
-  tf2::Vector3 angular_rate_fused_NED{
-      angular_rate_fused->x, angular_rate_fused->y, angular_rate_fused->z};
-  tf2::Vector3 angular_rate_fused_ENU =
-      psdk_utils::R_NED2ENU * angular_rate_fused_NED;
-  geometry_msgs::msg::Vector3Stamped angular_rate_fused_msg;
-  angular_rate_fused_msg.header.stamp = this->get_clock()->now();
-  angular_rate_fused_msg.header.frame_id = params_.map_frame;
-  angular_rate_fused_msg.vector.x = angular_rate_fused_ENU.getX();
-  angular_rate_fused_msg.vector.y = angular_rate_fused_ENU.getY();
-  angular_rate_fused_msg.vector.z = angular_rate_fused_ENU.getZ();
-  angular_rate_fused_pub_->publish(angular_rate_fused_msg);
+  tf2::Vector3 angular_rate_ground_fused_NED{angular_rate_ground_fused->x,
+                                             angular_rate_ground_fused->y,
+                                             angular_rate_ground_fused->z};
+  tf2::Vector3 angular_rate_ground_fused_ENU =
+      psdk_utils::R_NED2ENU * angular_rate_ground_fused_NED;
+  geometry_msgs::msg::Vector3Stamped angular_rate_ground_fused_msg;
+  angular_rate_ground_fused_msg.header.stamp = this->get_clock()->now();
+  angular_rate_ground_fused_msg.header.frame_id = params_.map_frame;
+  angular_rate_ground_fused_msg.vector.x = angular_rate_ground_fused_ENU.getX();
+  angular_rate_ground_fused_msg.vector.y = angular_rate_ground_fused_ENU.getY();
+  angular_rate_ground_fused_msg.vector.z = angular_rate_ground_fused_ENU.getZ();
+  angular_rate_ground_fused_pub_->publish(angular_rate_ground_fused_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
 T_DjiReturnCode
-PSDKWrapper::angular_rate_callback(const uint8_t *data, uint16_t data_size,
-                                   const T_DjiDataTimestamp *timestamp)
+PSDKWrapper::angular_rate_body_raw_callback(const uint8_t *data,
+                                            uint16_t data_size,
+                                            const T_DjiDataTimestamp *timestamp)
 {
   (void)data_size;
   (void)timestamp;
-  std::unique_ptr<T_DjiFcSubscriptionAngularRateRaw> angular_rate =
+  std::unique_ptr<T_DjiFcSubscriptionAngularRateRaw> angular_rate_body_raw =
       std::make_unique<T_DjiFcSubscriptionAngularRateRaw>(
           *reinterpret_cast<const T_DjiFcSubscriptionAngularRateRaw *>(data));
 
   /* Note: The angular rate provided by DJI is in FRD body frame.
    * Following REP 103, this position is transformed to FLU body frame
    */
-  tf2::Vector3 angular_rate_FRD{angular_rate->x, angular_rate->y,
-                                angular_rate->z};
+  tf2::Vector3 angular_rate_FRD{angular_rate_body_raw->x,
+                                angular_rate_body_raw->y,
+                                angular_rate_body_raw->z};
   tf2::Vector3 angular_rate_FLU =
       psdk_utils::R_FLU2FRD.transpose() * angular_rate_FRD;
-  geometry_msgs::msg::Vector3Stamped angular_rate_msg;
-  angular_rate_msg.header.stamp = this->get_clock()->now();
-  angular_rate_msg.header.frame_id = params_.map_frame;
-  angular_rate_msg.vector.x = angular_rate_FLU.getX();
-  angular_rate_msg.vector.y = angular_rate_FLU.getY();
-  angular_rate_msg.vector.z = angular_rate_FLU.getZ();
-  angular_rate_fused_pub_->publish(angular_rate_msg);
+  geometry_msgs::msg::Vector3Stamped angular_rate_body_raw_msg;
+  angular_rate_body_raw_msg.header.stamp = this->get_clock()->now();
+  angular_rate_body_raw_msg.header.frame_id = params_.body_frame;
+  angular_rate_body_raw_msg.vector.x = angular_rate_FLU.getX();
+  angular_rate_body_raw_msg.vector.y = angular_rate_FLU.getY();
+  angular_rate_body_raw_msg.vector.z = angular_rate_FLU.getZ();
+  angular_rate_body_raw_pub_->publish(angular_rate_body_raw_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -642,6 +648,7 @@ T_DjiReturnCode
 PSDKWrapper::rtk_yaw_callback(const uint8_t *data, uint16_t data_size,
                               const T_DjiDataTimestamp *timestamp)
 {
+  /**@todo Convert yaw angle to standard convention*/
   (void)data_size;
   (void)timestamp;
   std::unique_ptr<T_DjiFcSubscriptionRtkYaw> rtk_yaw =
@@ -737,22 +744,16 @@ PSDKWrapper::gimbal_angles_callback(const uint8_t *data, uint16_t data_size,
       std::make_unique<T_DjiFcSubscriptionGimbalAngles>(
           *reinterpret_cast<const T_DjiFcSubscriptionGimbalAngles *>(data));
 
-  tf2::Matrix3x3 rotation_NED;
-  tf2::Quaternion current_quat_FLU2ENU;
-  /* Please note that the output  of T_DjiFcSubscriptionGimbalAngles uses
-   * x -> pitch, y -> roll, z -> yaw. Thus, the order is inverted when using the
-   * function setRPY*/
-  rotation_NED.setRPY(psdk_utils::deg_to_rad(gimbal_angles->y),
-                      psdk_utils::deg_to_rad(gimbal_angles->x),
-                      psdk_utils::deg_to_rad(gimbal_angles->z));
-  double transformed_roll, transformed_pitch, transformed_yaw;
-  tf2::Matrix3x3 rotation_ENU = psdk_utils::R_NED2ENU * rotation_NED;
-  rotation_ENU.getRPY(transformed_roll, transformed_pitch, transformed_yaw);
+  /**
+   * Please note that the output of T_DjiFcSubscriptionGimbalAngles gives
+   * angles wrt to a NED frame attached to the gimbal. Thus the x and y values
+   * are inverted and the z value is negated to tranform it to a ENU frame
+   */
   geometry_msgs::msg::Vector3Stamped gimbal_angles_msg;
   gimbal_angles_msg.header.stamp = this->get_clock()->now();
-  gimbal_angles_msg.vector.x = transformed_roll;
-  gimbal_angles_msg.vector.y = transformed_pitch;
-  gimbal_angles_msg.vector.z = transformed_yaw;
+  gimbal_angles_msg.vector.x = psdk_utils::deg_to_rad(gimbal_angles->y);
+  gimbal_angles_msg.vector.y = psdk_utils::deg_to_rad(gimbal_angles->x);
+  gimbal_angles_msg.vector.z = psdk_utils::deg_to_rad(-gimbal_angles->z);
 
   gimbal_angles_pub_->publish(gimbal_angles_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
@@ -932,7 +933,7 @@ PSDKWrapper::acceleration_ground_fused_callback(
           *reinterpret_cast<const T_DjiFcSubscriptionAccelerationGround *>(
               data));
 
-  /* Note: The angular rate fused provided by DJI is in NEU ground coordinate
+  /* Note: The acceleration provided by DJI is in NEU ground coordinate
    * frame. Thus, first the sign of z is flipped to transform it to NED, and
    * then following REP 103, this is transformed to ENU ground coordinate frame
    */
@@ -961,7 +962,7 @@ PSDKWrapper::acceleration_body_fused_callback(
       std::make_unique<T_DjiFcSubscriptionAccelerationBody>(
           *reinterpret_cast<const T_DjiFcSubscriptionAccelerationBody *>(data));
 
-  /* Note: The angular rate fused provided by DJI is in FRU body coordinate
+  /* Note: The acceleration provided by DJI is in FRU body coordinate
    * frame. Thus, first the sign of z is flipped to transform it to FRD, and
    * then following REP 103, this is transformed to FLU body coordinate frame
    */
@@ -971,7 +972,7 @@ PSDKWrapper::acceleration_body_fused_callback(
       psdk_utils::R_FLU2FRD.transpose() * acc_body_fused_FRD;
   geometry_msgs::msg::Vector3Stamped acc_body_fused_msg;
   acc_body_fused_msg.header.stamp = this->get_clock()->now();
-  acc_body_fused_msg.header.frame_id = params_.map_frame;
+  acc_body_fused_msg.header.frame_id = params_.body_frame;
   acc_body_fused_msg.vector.x = acc_body_fused_FLU.getX();
   acc_body_fused_msg.vector.y = acc_body_fused_FLU.getY();
   acc_body_fused_msg.vector.z = acc_body_fused_FLU.getZ();
@@ -990,7 +991,7 @@ PSDKWrapper::acceleration_body_raw_callback(const uint8_t *data,
       std::make_unique<T_DjiFcSubscriptionAccelerationRaw>(
           *reinterpret_cast<const T_DjiFcSubscriptionAccelerationRaw *>(data));
 
-  /* Note: The angular rate raw provided by DJI is in FRD body coordinate
+  /* Note: The acceleration provided by DJI is in FRD body coordinate
    * frame. Following REP 103, this is transformed to FLU body coordinate frame
    */
   tf2::Vector3 acc_body_raw_FRD{acc_body_raw->x, acc_body_raw->y,
@@ -999,7 +1000,7 @@ PSDKWrapper::acceleration_body_raw_callback(const uint8_t *data,
       psdk_utils::R_FLU2FRD.transpose() * acc_body_raw_FRD;
   geometry_msgs::msg::Vector3Stamped acc_body_raw_msg;
   acc_body_raw_msg.header.stamp = this->get_clock()->now();
-  acc_body_raw_msg.header.frame_id = params_.map_frame;
+  acc_body_raw_msg.header.frame_id = params_.body_frame;
   acc_body_raw_msg.vector.x = acc_body_raw_FLU.getX();
   acc_body_raw_msg.vector.y = acc_body_raw_FLU.getY();
   acc_body_raw_msg.vector.z = acc_body_raw_FLU.getZ();
@@ -1093,12 +1094,12 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
-  if (params_.angular_velocity_frequency > 0)
+  if (params_.angular_rate_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_ANGULAR_RATE_FUSIONED,
-        get_frequency(params_.angular_velocity_frequency),
-        c_angular_rate_fused_callback);
+        get_frequency(params_.angular_rate_frequency),
+        c_angular_rate_ground_fused_callback);
 
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
@@ -1110,8 +1111,8 @@ PSDKWrapper::subscribe_psdk_topics()
 
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_ANGULAR_RATE_RAW,
-        get_frequency(params_.angular_velocity_frequency),
-        c_angular_rate_callback);
+        get_frequency(params_.angular_rate_frequency),
+        c_angular_rate_body_raw_callback);
 
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
