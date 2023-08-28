@@ -36,6 +36,7 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <sensor_msgs/msg/battery_state.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joy.hpp>
@@ -59,7 +60,6 @@
 
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/altitude.hpp"
-#include "psdk_interfaces/msg/battery.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
@@ -815,7 +815,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Retrieves the battery status data provided by DJI PSDK lib
    * and publishes it on a ROS 2 topic. Provides information regarding the
    * battery capacity, current, voltage and percentage. Please refer to the msg
-   * definition psdk_interfaces::msg::Battery for more details.
+   * definition sensor_msgs::msg::BatteryState for more details.
    * @param data pointer to T_DjiFcSubscriptionWholeBatteryInfo data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
@@ -1539,8 +1539,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       psdk_interfaces::msg::DisplayMode>::SharedPtr display_mode_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::Battery>::SharedPtr
-      battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<

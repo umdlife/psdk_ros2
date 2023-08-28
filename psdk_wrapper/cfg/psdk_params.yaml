@@ -23,8 +23,8 @@
         velocity: 50
         angular_velocity: 100
         position: 50
-        gps_data: 1
-        rtk_data: 1
+        gps_data: 10
+        rtk_data: 10
         magnetometer: 50
         rc_channels_data: 1
         gimbal_data: 1
