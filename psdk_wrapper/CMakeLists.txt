@@ -106,8 +106,6 @@ endif ()
 
 # Include PSDK header files
 include_directories(${FFMPEG_INCLUDE_DIR})
-include_directories(include                                                                                       
-                    ${OpenCV_INCLUDE_DIRS})
 include_directories(${DJI_OSAL_PATH})
 include_directories(${DJI_HAL_PATH})
 include_directories(${DJI_STREAMING_PATH})
@@ -160,7 +158,6 @@ target_link_libraries(
 target_link_libraries(
   psdk_wrapper_node
   psdk_wrapper_libs
-  ${OpenCV_LIBRARIES}
   ${FFMPEG_LIBRARIES}
   -lusb-1.0
   -lavcodec
