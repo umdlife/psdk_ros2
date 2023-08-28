@@ -898,11 +898,15 @@ PSDKWrapper::battery_callback(const uint8_t *data, uint16_t data_size,
           *reinterpret_cast<const T_DjiFcSubscriptionWholeBatteryInfo *>(data));
   sensor_msgs::msg::BatteryState battery_info_msg;
   battery_info_msg.header.stamp = this->get_clock()->now();
-  battery_info_msg.capacity = battery_info->capacity / 1000;  // mAh -> Ah
-  battery_info_msg.current = battery_info->current / 1000;    // mA -> A
-  battery_info_msg.voltage = battery_info->voltage / 1000;    // mV -> V
+  battery_info_msg.capacity =
+      static_cast<_Float32>(battery_info->capacity) / 1000;  // mAh -> Ah
+  battery_info_msg.current =
+      static_cast<_Float32>(battery_info->current) / 1000;  // mA -> A
+  battery_info_msg.voltage =
+      static_cast<_Float32>(battery_info->voltage) / 1000;  // mV -> V
   battery_info_msg.percentage =
-      battery_info->percentage / 100;  // convert to 0-1 scale
+      static_cast<_Float32>(battery_info->percentage) /
+      100;  // convert to 0-1 scale
   battery_pub_->publish(battery_info_msg);
 
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
