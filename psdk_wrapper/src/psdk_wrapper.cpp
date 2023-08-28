@@ -733,13 +733,13 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<geometry_msgs::msg::Vector3Stamped>(
           "psdk_ros2/angular_rate_ground_fused", 10);
   acceleration_ground_fused_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+      create_publisher<geometry_msgs::msg::AccelStamped>(
           "psdk_ros2/acceleration_ground_fused", 10);
   acceleration_body_fused_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+      create_publisher<geometry_msgs::msg::AccelStamped>(
           "psdk_ros2/acceleration_body_fused", 10);
   acceleration_body_raw_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+      create_publisher<geometry_msgs::msg::AccelStamped>(
           "psdk_ros2/acceleration_body_raw", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", 10);
