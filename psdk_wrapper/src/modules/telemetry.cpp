@@ -941,12 +941,12 @@ PSDKWrapper::acceleration_ground_fused_callback(
                                     -acc_ground_fused->z};
   tf2::Vector3 acc_ground_fused_ENU =
       psdk_utils::R_NED2ENU * acc_ground_fused_NED;
-  geometry_msgs::msg::Vector3Stamped acc_ground_fused_msg;
+  geometry_msgs::msg::AccelStamped acc_ground_fused_msg;
   acc_ground_fused_msg.header.stamp = this->get_clock()->now();
   acc_ground_fused_msg.header.frame_id = params_.map_frame;
-  acc_ground_fused_msg.vector.x = acc_ground_fused_ENU.getX();
-  acc_ground_fused_msg.vector.y = acc_ground_fused_ENU.getY();
-  acc_ground_fused_msg.vector.z = acc_ground_fused_ENU.getZ();
+  acc_ground_fused_msg.accel.linear.x = acc_ground_fused_ENU.getX();
+  acc_ground_fused_msg.accel.linear.y = acc_ground_fused_ENU.getY();
+  acc_ground_fused_msg.accel.linear.z = acc_ground_fused_ENU.getZ();
   acceleration_ground_fused_pub_->publish(acc_ground_fused_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -970,12 +970,12 @@ PSDKWrapper::acceleration_body_fused_callback(
                                   -acc_body_fused->z};
   tf2::Vector3 acc_body_fused_FLU =
       psdk_utils::R_FLU2FRD.transpose() * acc_body_fused_FRD;
-  geometry_msgs::msg::Vector3Stamped acc_body_fused_msg;
+  geometry_msgs::msg::AccelStamped acc_body_fused_msg;
   acc_body_fused_msg.header.stamp = this->get_clock()->now();
   acc_body_fused_msg.header.frame_id = params_.body_frame;
-  acc_body_fused_msg.vector.x = acc_body_fused_FLU.getX();
-  acc_body_fused_msg.vector.y = acc_body_fused_FLU.getY();
-  acc_body_fused_msg.vector.z = acc_body_fused_FLU.getZ();
+  acc_body_fused_msg.accel.linear.x = acc_body_fused_FLU.getX();
+  acc_body_fused_msg.accel.linear.y = acc_body_fused_FLU.getY();
+  acc_body_fused_msg.accel.linear.z = acc_body_fused_FLU.getZ();
   acceleration_body_fused_pub_->publish(acc_body_fused_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -998,12 +998,12 @@ PSDKWrapper::acceleration_body_raw_callback(const uint8_t *data,
                                 acc_body_raw->z};
   tf2::Vector3 acc_body_raw_FLU =
       psdk_utils::R_FLU2FRD.transpose() * acc_body_raw_FRD;
-  geometry_msgs::msg::Vector3Stamped acc_body_raw_msg;
+  geometry_msgs::msg::AccelStamped acc_body_raw_msg;
   acc_body_raw_msg.header.stamp = this->get_clock()->now();
   acc_body_raw_msg.header.frame_id = params_.body_frame;
-  acc_body_raw_msg.vector.x = acc_body_raw_FLU.getX();
-  acc_body_raw_msg.vector.y = acc_body_raw_FLU.getY();
-  acc_body_raw_msg.vector.z = acc_body_raw_FLU.getZ();
+  acc_body_raw_msg.accel.linear.x = acc_body_raw_FLU.getX();
+  acc_body_raw_msg.accel.linear.y = acc_body_raw_FLU.getY();
+  acc_body_raw_msg.accel.linear.z = acc_body_raw_FLU.getZ();
   acceleration_body_raw_pub_->publish(acc_body_raw_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }

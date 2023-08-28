@@ -1547,12 +1547,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_body_raw_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
       SharedPtr angular_rate_ground_fused_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
+  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::AccelStamped>::
       SharedPtr acceleration_ground_fused_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
-      SharedPtr acceleration_body_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
-      geometry_msgs::msg::Vector3Stamped>::SharedPtr acceleration_body_raw_pub_;
+      geometry_msgs::msg::AccelStamped>::SharedPtr acceleration_body_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      geometry_msgs::msg::AccelStamped>::SharedPtr acceleration_body_raw_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       main_camera_stream_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
