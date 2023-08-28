@@ -723,7 +723,7 @@ PSDKWrapper::initialize_ros_elements()
   flight_anomaly_pub_ = create_publisher<psdk_interfaces::msg::FlightAnomaly>(
       "psdk_ros2/flight_anomaly", 10);
   battery_pub_ =
-      create_publisher<psdk_interfaces::msg::Battery>("psdk_ros2/battery", 10);
+      create_publisher<sensor_msgs::msg::BatteryState>("psdk_ros2/battery", 10);
   height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/height_above_ground", 10);
   angular_rate_body_raw_pub_ =
