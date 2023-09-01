@@ -48,6 +48,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.velocity", 1);
   declare_parameter("data_frequency.angular_velocity", 1);
   declare_parameter("data_frequency.position", 1);
+  declare_parameter("data_frequency.gps_fused_position", 1);
   declare_parameter("data_frequency.gps_data", 1);
   declare_parameter("data_frequency.rtk_data", 1);
   declare_parameter("data_frequency.magnetometer", 1);
@@ -464,6 +465,21 @@ PSDKWrapper::load_parameters()
         "allowed %d. Tha maximum value is set",
         POSITION_TOPICS_MAX_FREQ);
     params_.position_frequency = POSITION_TOPICS_MAX_FREQ;
+  }
+  if (!get_parameter("data_frequency.gps_fused_position",
+                     params_.gps_fused_position_frequency))
+  {
+    RCLCPP_ERROR(get_logger(), "gps_fused_position param not defined");
+    exit(-1);
+  }
+  if (params_.gps_fused_position_frequency > GPS_FUSED_POSITION_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the GPS fused position is higher than "
+                "the maximum "
+                "allowed %d. Tha maximum value is set",
+                GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
+    params_.gps_fused_position_frequency = GPS_DATA_TOPICS_MAX_FREQ;
   }
 
   if (!get_parameter("data_frequency.gps_data", params_.gps_data_frequency))

@@ -1144,11 +1144,12 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
-  if (params_.gps_data_frequency > 0)
+  if (params_.gps_fused_position_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED,
-        get_frequency(params_.gps_data_frequency), c_gps_fused_callback);
+        get_frequency(params_.gps_fused_position_frequency),
+        c_gps_fused_callback);
 
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
@@ -1157,7 +1158,10 @@ PSDKWrapper::subscribe_psdk_topics()
                    "DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED, error %ld",
                    return_code);
     }
+  }
 
+  if (params_.gps_data_frequency > 0)
+  {
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_GPS_POSITION,
         get_frequency(params_.gps_data_frequency), c_gps_position_callback);
