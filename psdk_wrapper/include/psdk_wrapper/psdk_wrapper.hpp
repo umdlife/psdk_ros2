@@ -233,6 +233,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     int velocity_frequency;
     int angular_rate_frequency;
     int position_frequency;
+    int gps_fused_position_frequency;
     int gps_data_frequency;
     int rtk_data_frequency;
     int magnetometer_frequency;
