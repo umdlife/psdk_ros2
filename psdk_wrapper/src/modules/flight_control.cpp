@@ -52,8 +52,9 @@ PSDKWrapper::set_local_position_ref_cb(
     const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
-  if (current_local_position_.x_health && current_local_position_.y_health &&
-      current_local_position_.z_health)
+  /** The check for the z_health flag is temporarly removed as it is always 0 in
+   * real scenarios (not HITL) */
+  if (current_local_position_.x_health && current_local_position_.y_health)
   {
     local_position_reference_.vector.x = current_local_position_.position.x;
     local_position_reference_.vector.y = current_local_position_.position.y;
