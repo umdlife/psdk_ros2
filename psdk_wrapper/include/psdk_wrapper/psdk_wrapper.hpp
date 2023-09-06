@@ -719,8 +719,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   /**
    * @brief Retrieves the gimbal angle data provided by DJI PSDK lib and
    * publishes it on a ROS 2 topic. Provides the roll, pitch and yaw of the
-   * gimbal up to 50Hz. These angles are in [rad] and wrt. an ENU oriented
-   * reference frame attached to the gimbal structure.
+   * gimbal up to 50Hz. These angles are in [rad]. The yaw is given wrt. an ENU
+   * oriented reference frame attached to the gimbal structure.
    * @param data pointer to T_DjiFcSubscriptionGimbalAngles data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
