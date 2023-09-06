@@ -247,7 +247,6 @@ The following services can be called to start shooting photos or record videos w
 #### Camera streaming
 
 
-
 | Name                              | Type      |
 | --------------------------------- | --------- | 
 | psdk_ros2/camera_setup_streaming  | Service   | 
@@ -256,7 +255,7 @@ The following services can be called to start shooting photos or record videos w
 
 #### Camera file management
 
-These services currently not working properly. Future work will address these functionalities. 
+These services currently are not working properly. Future work will address these functionalities. 
 
 | Name                                        | Type      |
 | --------------------------------------------| --------- | 
