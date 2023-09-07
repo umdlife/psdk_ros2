@@ -34,11 +34,10 @@ jobs:
       run: |
         make -C docs html  # This assumes your Sphinx configuration is in a 'docs' folder
 
-    # - name: Deploy to GitHub Pages (optional)
-      # Uncomment the following lines if you want to deploy to GitHub Pages
-      # run: |
-        # git checkout gh-pages
-        # cp -r docs/_build/html/* .
-        # git add .
-        # git commit -m "Update documentation"
-        # git push origin gh-pages
+    - name: Deploy to GitHub Pages (optional)
+      run: |
+        git checkout gh-pages
+        cp -r docs/_build/html/* .
+        git add .
+        git commit -m "Update documentation"
+        git push origin gh-pages
