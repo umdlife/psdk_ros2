@@ -1,14 +1,16 @@
-/* Copyright (C) 2023 Unmanned Life - All Rights Reserved
- *
- * This file is part of the `psdk_wrapper` package and is subject to
- * the terms and conditions defined in the file LICENSE.txt contained therein.
+/*
+ * Copyright (C) 2023 Unmanned Life
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 /**
  * @file psdk_wrapper_utils.hpp
  *
  * @brief Header file containing utility functions and constants
  *
- * @author Bianca Bendris
+ * @authors Bianca Bendris
  * Contact: bianca@unmanned.life
  *
  */
@@ -27,8 +29,9 @@
 #define VELOCITY_TOPICS_MAX_FREQ 50
 #define ANGULAR_VELOCITY_TOPICS_MAX_FREQ 200
 #define POSITION_TOPICS_MAX_FREQ 50
-#define GPS_DATA_TOPICS_MAX_FREQ 50
-#define RTK_DATA_TOPICS_MAX_FREQ 50
+#define GPS_FUSED_POSITION_TOPICS_MAX_FREQ 50
+#define GPS_DATA_TOPICS_MAX_FREQ 5
+#define RTK_DATA_TOPICS_MAX_FREQ 5
 #define MAGNETOMETER_TOPICS_MAX_FREQ 100
 #define RC_CHANNELS_TOPICS_MAX_FREQ 100
 #define GIMBAL_DATA_TOPICS_MAX_FREQ 50
@@ -49,7 +52,7 @@ struct DJITopic
   int max_frequency;
 };
 
-enum AircraftStatus
+enum DisplayMode
 {
   DISPLAY_MODE_MANUAL_CTRL = 0,
   DISPLAY_MODE_ATTITUDE = 1,
@@ -67,20 +70,39 @@ enum AircraftStatus
 
 enum GPSFixState
 {
-  GPS_FIX_STATE_NO_FIX,
-  GPS_FIX_STATE_DEAD_RECKONING_ONLY,
-  GPS_FIX_STATE_2D_FIX,
-  GPS_FIX_STATE_3D_FIX,
-  GPS_FIX_STATE_GPS_PLUS_DEAD_RECKONING,
-  GPS_FIX_STATE_TIME_ONLY_FIX
+  GPS_FIX_STATE_NO_FIX = 0,
+  GPS_FIX_STATE_DEAD_RECKONING_ONLY = 1,
+  GPS_FIX_STATE_2D_FIX = 2,
+  GPS_FIX_STATE_3D_FIX = 3,
+  GPS_FIX_STATE_GPS_PLUS_DEAD_RECKONING = 4,
+  GPS_FIX_STATE_TIME_ONLY_FIX = 5
+};
+
+enum RTKSolutionState
+{
+  RTK_SOLUTION_STATE_NOT_AVAILABLE = 0,
+  RTK_SOLUTION_STATE_FIX_POSITION = 1,
+  RTK_SOLUTION_STATE_FIX_HEIGHT_AUTO = 2,
+  RTK_SOLUTION_STATE_INSTANTANEOUS_DOPPLER_COMPUTE_VELOCITY = 8,
+  RTK_SOLUTION_STATE_SINGLE_PNT_SOLUTION = 16,
+  RTK_SOLUTION_STATE_PSEUDORANGE_DIFFERENTIAL_SOLUTION = 17,
+  RTK_SOLUTION_STATE_SBAS_CORRECTION_CALCULATED = 18,
+  RTK_SOLUTION_STATE_KALMAN_FILTER_WITHOUT_OBSERVATION_PROPAGATED = 19,
+  RTK_SOLUTION_STATE_OMNISTAR_VBS_POSITION = 20,
+  RTK_SOLUTION_STATE_FLOAT_L1_AMBIGUITY = 32,
+  RTK_SOLUTION_STATE_FLOAT_IONOSPHERIC_FREE_AMBIGUITY = 33,
+  RTK_SOLUTION_STATE_FLOAT_SOLUTION = 34,
+  RTK_SOLUTION_STATE_L1_AMBIGUITY_INT = 48,
+  RTK_SOLUTION_STATE_WIDE_LANE_AMBIGUITY_INT = 49,
+  RTK_SOLUTION_STATE_NARROW_INT = 50,
 };
 
 enum FlightStatus
 {
-  FLIGHT_STATUS_STOPED = 0, /*!< Aircraft is on ground and motors are still. */
+  FLIGHT_STATUS_STOPED = 0, /* Aircraft is on ground and motors are still. */
   FLIGHT_STATUS_ON_GROUND =
-      1, /*!< Aircraft is on ground but motors are rotating. */
-  FLIGHT_STATUS_IN_AIR = 2 /*!< Aircraft is in air. */
+      1,                   /* Aircraft is on ground but motors are rotating. */
+  FLIGHT_STATUS_IN_AIR = 2 /* Aircraft is in air. */
 };
 
 /**
@@ -89,20 +111,20 @@ enum FlightStatus
 const std::vector<DJITopic> topics_to_subscribe{
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_HARD_SYNC, IMU_TOPIC_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION, ATTITUDE_TOPICS_MAX_FREQ},
-    // DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_GROUND,
-    //          ACCELERATION_TOPICS_MAX_FREQ},
-    // DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_BODY,
-    //          ACCELERATION_TOPICS_MAX_FREQ},
-    // DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_RAW,
-    //          ACCELERATION_TOPICS_MAX_FREQ},
+    DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_GROUND,
+             ACCELERATION_TOPICS_MAX_FREQ},
+    DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_BODY,
+             ACCELERATION_TOPICS_MAX_FREQ},
+    DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION_RAW,
+             ACCELERATION_TOPICS_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_VELOCITY, VELOCITY_TOPICS_MAX_FREQ},
-    // DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ANGULAR_RATE_FUSIONED,
-    //          ANGULAR_VELOCITY_TOPICS_MAX_FREQ},
-    // DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ANGULAR_RATE_RAW,
-    //          ANGULAR_VELOCITY_TOPICS_MAX_FREQ},
+    DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ANGULAR_RATE_FUSIONED,
+             ANGULAR_VELOCITY_TOPICS_MAX_FREQ},
+    DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ANGULAR_RATE_RAW,
+             ANGULAR_VELOCITY_TOPICS_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_POSITION_VO, POSITION_TOPICS_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_POSITION_FUSED,
-             GPS_DATA_TOPICS_MAX_FREQ},
+             GPS_FUSED_POSITION_TOPICS_MAX_FREQ},
     // DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_GPS_DATE, GPS_DATA_TOPICS_MAX_FREQ},
     // DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_GPS_TIME, GPS_DATA_TOPICS_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_GPS_POSITION, GPS_DATA_TOPICS_MAX_FREQ},
@@ -148,6 +170,11 @@ const float C_PI = 3.141592653589793;
 double inline rad_to_deg(const double radians)
 {
   return (radians * 180) / C_PI;
+};
+
+double inline deg_to_rad(const double degrees)
+{
+  return (degrees * C_PI) / 180;
 };
 };  // namespace psdk_utils
 }  // namespace psdk_ros2

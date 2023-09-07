@@ -35,7 +35,7 @@
 /* Private types -------------------------------------------------------------*/
 typedef struct
 {
-  int uartFd;
+  int32_t uartFd;
 } T_UartHandleStruct;
 
 /* Private values
@@ -48,7 +48,7 @@ T_DjiReturnCode
 HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate,
              T_DjiUartHandle *uartHandle)
 {
-  T_UartHandleStruct *uartHandleStruct;
+  T_UartHandleStruct *uartHandleStruct = NULL;
   struct termios options;
   struct flock lock;
   T_DjiReturnCode returnCode = DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
@@ -63,7 +63,8 @@ HalUart_Init(E_DjiHalUartNum uartNum, uint32_t baudRate,
   {
     return DJI_ERROR_SYSTEM_MODULE_CODE_MEMORY_ALLOC_FAILED;
   }
-
+  // Modification made to 3rdParty software to set the uart device from an env.
+  // variable
   char *linux_uart_dev1 = "UART_DEV_1";
   char *linux_uart_dev2 = "UART_DEV_2";
   if (uartNum == DJI_HAL_UART_NUM_0)

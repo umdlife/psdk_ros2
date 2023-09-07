@@ -1,9 +1,10 @@
-/* Copyright (C) 2023 Unmanned Life - All Rights Reserved
- *
- * This file is part of the `umd_psdk_wrapper` source code package and is
- * subject to the terms and conditions defined in the file LICENSE.txt contained
- * therein.
+/*
+ * Copyright (C) 2023 Unmanned Life
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 /**
  * @file gimbal.cpp
  *
@@ -34,7 +35,7 @@ PSDKWrapper::init_gimbal_manager()
 bool
 PSDKWrapper::deinit_gimbal_manager()
 {
-  RCLCPP_INFO(get_logger(), "Deinitiating gimbal manager...");
+  RCLCPP_INFO(get_logger(), "Deinitializing gimbal manager...");
   if (DjiGimbalManager_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Could not deinitialize gimbal manager");
@@ -48,7 +49,6 @@ PSDKWrapper::gimbal_set_mode_cb(
     const std::shared_ptr<GimbalSetMode::Request> request,
     const std::shared_ptr<GimbalSetMode::Response> response)
 {
-  RCLCPP_INFO(get_logger(), "Set gimbal mode");
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
@@ -57,13 +57,15 @@ PSDKWrapper::gimbal_set_mode_cb(
   return_code = DjiGimbalManager_SetMode(index, gimbal_mode);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: 0x%08X",
-                return_code);
+    RCLCPP_ERROR(get_logger(), "Setting gimbal mode failed, error code: %ld",
+                 return_code);
     response->success = false;
     return;
   }
   else
   {
+    RCLCPP_INFO(get_logger(), "Setting gimbal mode successfully to %d",
+                request->gimbal_mode);
     response->success = true;
     return;
   }
@@ -74,20 +76,20 @@ PSDKWrapper::gimbal_reset_cb(
     const std::shared_ptr<GimbalReset::Request> request,
     const std::shared_ptr<GimbalReset::Response> response)
 {
-  RCLCPP_INFO(get_logger(), "Set gimbal mode");
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
   return_code = DjiGimbalManager_Reset(index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Reset gimbal failed, error code: 0x%08X",
-                return_code);
+    RCLCPP_ERROR(get_logger(), "Reset gimbal failed, error code: %ld",
+                 return_code);
     response->success = false;
     return;
   }
   else
   {
+    RCLCPP_INFO(get_logger(), "Gimbal resetted.");
     response->success = true;
     return;
   }
@@ -104,17 +106,19 @@ PSDKWrapper::gimbal_rotation_cb(
   T_DjiGimbalManagerRotation rotation_deg;
   rotation_deg.rotationMode =
       static_cast<E_DjiGimbalRotationMode>(msg->rotation_mode);
-  rotation_deg.pitch = psdk_ros2::psdk_utils::rad_to_deg(msg->pitch);
+  /** DJI PSDK seems to take roll, pitch and yaw when used in incremental mode
+   * wrt. a FRD frame. Here this is converted to FLU*/
+  rotation_deg.pitch = psdk_ros2::psdk_utils::rad_to_deg(-msg->pitch);
   rotation_deg.roll = psdk_ros2::psdk_utils::rad_to_deg(msg->roll);
-  rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(msg->yaw);
+  rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(-msg->yaw);
   rotation_deg.time = msg->time;
 
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);
 
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_INFO(get_logger(), "Set gimbal mode failed, error code: 0x%08X",
-                return_code);
+    RCLCPP_ERROR(get_logger(), "Set gimbal mode failed, error code: %ld",
+                 return_code);
     return;
   }
 
@@ -123,7 +127,7 @@ PSDKWrapper::gimbal_rotation_cb(
   {
     RCLCPP_INFO(
         get_logger(),
-        "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: 0x%08X",
+        "Target gimbal pry = (%.1f, %.1f, %.1f) failed, error code: %ld",
         rotation_deg.pitch, rotation_deg.roll, rotation_deg.yaw, return_code);
     return;
   }

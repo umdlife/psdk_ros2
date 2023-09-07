@@ -1,9 +1,10 @@
-/* Copyright (C) 2023 Unmanned Life - All Rights Reserved
- *
- * This file is part of the `psdk_wrapper` source code package and is
- * subject to the terms and conditions defined in the file LICENSE.txt contained
- * therein.
+/*
+ * Copyright (C) 2023 Unmanned Life
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 /**
  * @file psdk_wrapper.cpp
  *
@@ -22,7 +23,7 @@ namespace psdk_ros2
 {
 
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
-    : nav2_util::LifecycleNode(node_name, "", rclcpp::NodeOptions())
+    : rclcpp_lifecycle::LifecycleNode(node_name, "", rclcpp::NodeOptions())
 {
   RCLCPP_INFO(get_logger(), "Creating Constructor PSDKWrapper");
   declare_parameter("app_name", rclcpp::ParameterValue(""));
@@ -35,6 +36,11 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("uart_dev_1", rclcpp::ParameterValue(""));
   declare_parameter("uart_dev_2", rclcpp::ParameterValue(""));
 
+  declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
+  declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
+  declare_parameter("map_frame", rclcpp::ParameterValue("psdk_map_enu"));
+  declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
+
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
   declare_parameter("data_frequency.attitude", 1);
@@ -42,6 +48,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.velocity", 1);
   declare_parameter("data_frequency.angular_velocity", 1);
   declare_parameter("data_frequency.position", 1);
+  declare_parameter("data_frequency.gps_fused_position", 1);
   declare_parameter("data_frequency.gps_data", 1);
   declare_parameter("data_frequency.rtk_data", 1);
   declare_parameter("data_frequency.magnetometer", 1);
@@ -53,7 +60,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
 }
 PSDKWrapper::~PSDKWrapper() {}
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
@@ -61,14 +68,14 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   load_parameters();
   if (!set_environment())
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
   initialize_ros_elements();
 
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
@@ -79,27 +86,22 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   if (!init(&user_info))
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
 
   activate_ros_elements();
 
-  if (!init_telemetry() || !init_flight_control())
+  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
+      !init_gimbal_manager() || !init_liveview())
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
 
   subscribe_psdk_topics();
-
-  if (!init_camera_manager() || !init_gimbal_manager())
-  {
-    return nav2_util::CallbackReturn::FAILURE;
-  }
-  createBond();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
@@ -107,36 +109,43 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
   unsubscribe_psdk_topics();
   deactivate_ros_elements();
 
-  destroyBond();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
   clean_ros_elements();
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-nav2_util::CallbackReturn
+PSDKWrapper::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  int deinit_result = DjiFlightController_Deinit() ^
-                      DjiFcSubscription_DeInit() ^ DjiCore_DeInit();
+
+  auto deinit_result = DjiCore_DeInit();
   if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    RCLCPP_ERROR(get_logger(),
+                 "DJI core could not be deinitialized. Error code is: %ld",
+                 deinit_result);
+    return CallbackReturn::FAILURE;
   }
-  if (!deinit_camera_manager() || !deinit_gimbal_manager())
+
+  // Deinitialize all remaining modules
+  if (!deinit_telemetry() || !deinit_flight_control() ||
+      !deinit_camera_manager() || !deinit_gimbal_manager() ||
+      !deinit_liveview())
   {
-    return nav2_util::CallbackReturn::FAILURE;
+    return CallbackReturn::FAILURE;
   }
+
   global_ptr_.reset();
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
-  return nav2_util::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 bool
@@ -144,10 +153,10 @@ PSDKWrapper::set_environment()
 {
   RCLCPP_INFO(get_logger(), "Setting environment");
   T_DjiReturnCode return_code;
-  T_DjiOsalHandler osal_handler;
-  T_DjiHalUartHandler uart_handler;
-  T_DjiFileSystemHandler file_system_handler;
-  T_DjiSocketHandler socket_handler;
+  T_DjiOsalHandler osal_handler = {0};
+  T_DjiHalUartHandler uart_handler = {0};
+  T_DjiFileSystemHandler file_system_handler = {0};
+  T_DjiSocketHandler socket_handler{0};
 
   socket_handler.Socket = Osal_Socket;
   socket_handler.Bind = Osal_Bind;
@@ -176,6 +185,7 @@ PSDKWrapper::set_environment()
   osal_handler.Free = Osal_Free;
   osal_handler.GetTimeMs = Osal_GetTimeMs;
   osal_handler.GetTimeUs = Osal_GetTimeUs;
+  osal_handler.GetRandomNum = Osal_GetRandomNum;
 
   uart_handler.UartInit = HalUart_Init;
   uart_handler.UartDeInit = HalUart_DeInit;
@@ -283,16 +293,19 @@ PSDKWrapper::load_parameters()
     RCLCPP_ERROR(get_logger(), "app_name param not defined");
     exit(-1);
   }
+  RCLCPP_INFO(get_logger(), "App name: %s", params_.app_name.c_str());
   if (!get_parameter("app_id", params_.app_id))
   {
     RCLCPP_ERROR(get_logger(), "app_id param not defined");
     exit(-1);
   }
+  RCLCPP_INFO(get_logger(), "App id: %s", params_.app_id.c_str());
   if (!get_parameter("app_key", params_.app_key))
   {
     RCLCPP_ERROR(get_logger(), "app_key param not defined");
     exit(-1);
   }
+  RCLCPP_INFO(get_logger(), "App key: %s", params_.app_key.c_str());
   if (!get_parameter("app_license", params_.app_license))
   {
     RCLCPP_ERROR(get_logger(), "app_license param not defined");
@@ -335,6 +348,31 @@ PSDKWrapper::load_parameters()
   name = "UART_DEV_2";
   setenv(name, params_.uart_dev_2.c_str(), 1);
   RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
+
+  if (!get_parameter("imu_frame", params_.imu_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "imu_frame param not defined, using default one: %s",
+                params_.imu_frame.c_str());
+  }
+  if (!get_parameter("body_frame", params_.body_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "body_frame param not defined, using default one: %s",
+                params_.body_frame.c_str());
+  }
+  if (!get_parameter("map_frame", params_.map_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "map_frame param not defined, using default one: %s",
+                params_.map_frame.c_str());
+  }
+  if (!get_parameter("gimbal_frame", params_.gimbal_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "gimbal_frame param not defined, using default one: %s",
+                params_.gimbal_frame.c_str());
+  }
 
   // Get data frequency
   if (!get_parameter("data_frequency.imu", params_.imu_frequency))
@@ -399,19 +437,19 @@ PSDKWrapper::load_parameters()
   }
 
   if (!get_parameter("data_frequency.angular_velocity",
-                     params_.angular_velocity_frequency))
+                     params_.angular_rate_frequency))
   {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
     exit(-1);
   }
-  if (params_.angular_velocity_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ)
+  if (params_.angular_rate_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ)
   {
     RCLCPP_WARN(get_logger(),
                 "Frequency defined for the angular velocity topics is higher "
                 "than the maximum "
                 "allowed %d. Tha maximum value is set",
                 ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
-    params_.angular_velocity_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
+    params_.angular_rate_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
   }
 
   if (!get_parameter("data_frequency.position", params_.position_frequency))
@@ -427,6 +465,21 @@ PSDKWrapper::load_parameters()
         "allowed %d. Tha maximum value is set",
         POSITION_TOPICS_MAX_FREQ);
     params_.position_frequency = POSITION_TOPICS_MAX_FREQ;
+  }
+  if (!get_parameter("data_frequency.gps_fused_position",
+                     params_.gps_fused_position_frequency))
+  {
+    RCLCPP_ERROR(get_logger(), "gps_fused_position param not defined");
+    exit(-1);
+  }
+  if (params_.gps_fused_position_frequency > GPS_FUSED_POSITION_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the GPS fused position is higher than "
+                "the maximum "
+                "allowed %d. Tha maximum value is set",
+                GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
+    params_.gps_fused_position_frequency = GPS_DATA_TOPICS_MAX_FREQ;
   }
 
   if (!get_parameter("data_frequency.gps_data", params_.gps_data_frequency))
@@ -639,310 +692,338 @@ PSDKWrapper::initialize_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Initializing ROS publishers");
   attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
-      "dji_psdk_ros/attitude", 10);
-  imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("dji_psdk_ros/imu", 10);
-  velocity_ground_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
-      "dji_psdk_ros/velocity_ground_ENU", 10);
+      "psdk_ros2/attitude", 10);
+  imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("psdk_ros2/imu", 10);
+  velocity_ground_fused_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/velocity_ground_fused", 10);
   position_fused_pub_ = create_publisher<psdk_interfaces::msg::PositionFused>(
-      "dji_psdk_ros/position_fused", 10);
-  gps_fused_pub_ = create_publisher<psdk_interfaces::msg::GPSFused>(
-      "dji_psdk_ros/gps_fused", 10);
+      "psdk_ros2/position_fused", 10);
+  gps_fused_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
+      "psdk_ros2/gps_position_fused", 10);
   gps_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
-      "dji_psdk_ros/gps_position", 10);
+      "psdk_ros2/gps_position", 10);
   gps_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
-      "dji_psdk_ros/gps_velocity", 10);
+      "psdk_ros2/gps_velocity", 10);
   gps_details_pub_ = create_publisher<psdk_interfaces::msg::GPSDetails>(
-      "dji_psdk_ros/gps_details", 10);
-  gps_signal_pub_ = create_publisher<std_msgs::msg::UInt8>(
-      "dji_psdk_ros/gps_signal_level", 10);
-  gps_control_pub_ = create_publisher<std_msgs::msg::UInt8>(
-      "dji_psdk_ros/gps_control_level", 10);
+      "psdk_ros2/gps_details", 10);
+  gps_signal_pub_ =
+      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/gps_signal_level", 10);
+  gps_control_pub_ =
+      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/gps_control_level", 10);
   rtk_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
-      "dji_psdk_ros/rtk_position", 10);
+      "psdk_ros2/rtk_position", 10);
   rtk_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
-      "dji_psdk_ros/rtk_velocity", 10);
-  rtk_yaw_pub_ = create_publisher<psdk_interfaces::msg::RTKYaw>(
-      "dji_psdk_ros/rtk_yaw", 10);
-  rtk_position_info_pub_ = create_publisher<std_msgs::msg::UInt8>(
-      "dji_psdk_ros/rtk_position_info", 10);
-  rtk_yaw_info_pub_ = create_publisher<std_msgs::msg::UInt8>(
-      "dji_psdk_ros/rtk_position_info", 10);
+      "psdk_ros2/rtk_velocity", 10);
+  rtk_yaw_pub_ =
+      create_publisher<psdk_interfaces::msg::RTKYaw>("psdk_ros2/rtk_yaw", 10);
+  rtk_position_info_pub_ =
+      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_position_info", 10);
+  rtk_yaw_info_pub_ =
+      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_yaw_info", 10);
   magnetic_field_pub_ = create_publisher<sensor_msgs::msg::MagneticField>(
-      "dji_psdk_ros/magnetic_field", 10);
-  rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("dji_psdk_ros/rc", 10);
+      "psdk_ros2/magnetic_field", 10);
+  rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("psdk_ros2/rc", 10);
   gimbal_angles_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
-      "dji_psdk_ros/gimbal_angles", 10);
+      "psdk_ros2/gimbal_angles", 10);
   gimbal_status_pub_ = create_publisher<psdk_interfaces::msg::GimbalStatus>(
-      "dji_psdk_ros/gimbal_status", 10);
+      "psdk_ros2/gimbal_status", 10);
   flight_status_pub_ = create_publisher<psdk_interfaces::msg::FlightStatus>(
-      "dji_psdk_ros/flight_status", 10);
-  aircraft_status_pub_ = create_publisher<psdk_interfaces::msg::AircraftStatus>(
-      "dji_psdk_ros/aircraft_status", 10);
+      "psdk_ros2/flight_status", 10);
+  display_mode_pub_ = create_publisher<psdk_interfaces::msg::DisplayMode>(
+      "psdk_ros2/display_mode", 10);
   landing_gear_pub_ = create_publisher<std_msgs::msg::UInt8>(
-      "dji_psdk_ros/landing_gear_status", 10);
+      "psdk_ros2/landing_gear_status", 10);
   motor_start_error_pub_ = create_publisher<std_msgs::msg::UInt16>(
-      "dji_psdk_ros/motor_start_error", 10);
+      "psdk_ros2/motor_start_error", 10);
   flight_anomaly_pub_ = create_publisher<psdk_interfaces::msg::FlightAnomaly>(
-      "dji_psdk_ros/flight_anomaly", 10);
-  battery_pub_ = create_publisher<psdk_interfaces::msg::Battery>(
-      "dji_psdk_ros/battery", 10);
-  height_fused_pub_ =
-      create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/height_fused", 10);
+      "psdk_ros2/flight_anomaly", 10);
+  battery_pub_ =
+      create_publisher<sensor_msgs::msg::BatteryState>("psdk_ros2/battery", 10);
+  height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
+      "psdk_ros2/height_above_ground", 10);
+  angular_rate_body_raw_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/angular_rate_body_raw", 10);
+  angular_rate_ground_fused_pub_ =
+      create_publisher<geometry_msgs::msg::Vector3Stamped>(
+          "psdk_ros2/angular_rate_ground_fused", 10);
+  acceleration_ground_fused_pub_ =
+      create_publisher<geometry_msgs::msg::AccelStamped>(
+          "psdk_ros2/acceleration_ground_fused", 10);
+  acceleration_body_fused_pub_ =
+      create_publisher<geometry_msgs::msg::AccelStamped>(
+          "psdk_ros2/acceleration_body_fused", 10);
+  acceleration_body_raw_pub_ =
+      create_publisher<geometry_msgs::msg::AccelStamped>(
+          "psdk_ros2/acceleration_body_raw", 10);
+  main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
+      "psdk_ros2/main_camera_stream", 10);
+  fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
+      "psdk_ros2/fpv_camera_stream", 10);
 
   /** @todo Implement other useful publishers */
-  // acceleration_ground_pub_ =
-  // create_publisher<geometry_msgs::msg::AccelStamped>(
-  //     "dji_psdk_ros/acceleration_ground", 10);
-  // acceleration_body_pub_ =
-  // create_publisher<geometry_msgs::msg::AccelStamped>(
-  //     "dji_psdk_ros/acceleration_body", 10);
   // altitude_pub_ =
-  //     create_publisher<psdk_interfaces::msg::Altitude>("dji_psdk_ros/altitude",
+  //     create_publisher<psdk_interfaces::msg::Altitude>("psdk_ros2/altitude",
   //     10);
   // relative_height_pub_ =
-  //     create_publisher<std_msgs::msg::Float32>("dji_psdk_ros/relative_height",
+  //     create_publisher<std_msgs::msg::Float32>("psdk_ros2/relative_height",
   //     10);
   // relative_obstacle_info_pub_ =
   //     create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
-  //         "dji_psdk_ros/relative_obstacle_info", 10);
+  //         "psdk_ros2/relative_obstacle_info", 10);
   // home_position_pub_ =
   // create_publisher<psdk_interfaces::msg::HomePosition>(
-  //     "dji_psdk_ros/home_position", 10);
+  //     "psdk_ros2/home_position", 10);
 
   RCLCPP_INFO(get_logger(), "Creating subscribers");
   flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "dji_psdk_ros/flight_control_setpoint_generic", 10,
+      "psdk_ros2/flight_control_setpoint_generic", 10,
       std::bind(&PSDKWrapper::flight_control_generic_cb, this, _1));
   flight_control_position_yaw_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "dji_psdk_ros/flight_control_setpoint_ENUposition_yaw", 10,
+      "psdk_ros2/flight_control_setpoint_ENUposition_yaw", 10,
       std::bind(&PSDKWrapper::flight_control_position_yaw_cb, this, _1));
   flight_control_velocity_yawrate_sub_ =
       create_subscription<sensor_msgs::msg::Joy>(
-          "dji_psdk_ros/flight_control_setpoint_ENUvelocity_yawrate", 10,
+          "psdk_ros2/flight_control_setpoint_ENUvelocity_yawrate", 10,
           std::bind(&PSDKWrapper::flight_control_velocity_yawrate_cb, this,
                     _1));
   flight_control_body_velocity_yawrate_sub_ =
       create_subscription<sensor_msgs::msg::Joy>(
-          "dji_psdk_ros/flight_control_setpoint_FRUvelocity_yawrate", 10,
+          "psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate", 10,
           std::bind(&PSDKWrapper::flight_control_body_velocity_yawrate_cb, this,
                     _1));
-  flight_control_rollpitch_yawrate_vertpos_sub_ =
+  flight_control_rollpitch_yawrate_thrust_sub_ =
       create_subscription<sensor_msgs::msg::Joy>(
-          "dji_psdk_ros/flight_control_setpoint_rollpitch_yawrate_zposition",
-          10,
-          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb,
+          "psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust", 10,
+          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb,
                     this, _1));
   gimbal_rotation_sub_ =
       create_subscription<psdk_interfaces::msg::GimbalRotation>(
-          "dji_psdk_ros/gimbal_rotation", 10,
+          "psdk_ros2/gimbal_rotation", 10,
           std::bind(&PSDKWrapper::gimbal_rotation_cb, this,
                     std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Creating services");
+  set_local_position_ref_srv_ = create_service<Trigger>(
+      "psdk_ros2/set_local_position_ref",
+      std::bind(&PSDKWrapper::set_local_position_ref_cb, this, _1, _2));
   set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
-      "set_home_from_gps",
+      "psdk_ros2/set_home_from_gps",
       std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
   set_home_from_current_location_srv_ = create_service<Trigger>(
-      "set_home_from_current_location",
+      "psdk_ros2/set_home_from_current_location",
       std::bind(&PSDKWrapper::set_home_from_current_location_cb, this, _1, _2));
-  set_home_altitude_srv_ = create_service<SetHomeAltitude>(
-      "set_home_altitude",
-      std::bind(&PSDKWrapper::set_home_altitude_cb, this, _1, _2));
-  get_home_altitude_srv_ = create_service<GetHomeAltitude>(
-      "get_home_altitude",
-      std::bind(&PSDKWrapper::get_home_altitude_cb, this, _1, _2));
+  set_go_home_altitude_srv_ = create_service<SetGoHomeAltitude>(
+      "psdk_ros2/set_go_home_altitude",
+      std::bind(&PSDKWrapper::set_go_home_altitude_cb, this, _1, _2));
+  get_go_home_altitude_srv_ = create_service<GetGoHomeAltitude>(
+      "psdk_ros2/get_go_home_altitude",
+      std::bind(&PSDKWrapper::get_go_home_altitude_cb, this, _1, _2));
   start_go_home_srv_ = create_service<Trigger>(
-      "start_go_home", std::bind(&PSDKWrapper::start_go_home_cb, this, _1, _2));
+      "psdk_ros2/start_go_home",
+      std::bind(&PSDKWrapper::start_go_home_cb, this, _1, _2));
   cancel_go_home_srv_ = create_service<Trigger>(
-      "cancel_go_home",
+      "psdk_ros2/cancel_go_home",
       std::bind(&PSDKWrapper::cancel_go_home_cb, this, _1, _2));
   obtain_ctrl_authority_srv_ = create_service<Trigger>(
-      "obtain_ctrl_authority",
+      "psdk_ros2/obtain_ctrl_authority",
       std::bind(&PSDKWrapper::obtain_ctrl_authority_cb, this, _1, _2));
   release_ctrl_authority_srv_ = create_service<Trigger>(
-      "release_ctrl_authority",
+      "psdk_ros2/release_ctrl_authority",
       std::bind(&PSDKWrapper::release_ctrl_authority_cb, this, _1, _2));
   turn_on_motors_srv_ = create_service<Trigger>(
-      "turn_on_motors",
+      "psdk_ros2/turn_on_motors",
       std::bind(&PSDKWrapper::turn_on_motors_cb, this, _1, _2));
   turn_off_motors_srv_ = create_service<Trigger>(
-      "turn_off_motors",
+      "psdk_ros2/turn_off_motors",
       std::bind(&PSDKWrapper::turn_off_motors_cb, this, _1, _2));
   takeoff_srv_ = create_service<Trigger>(
-      "takeoff", std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
+      "psdk_ros2/takeoff",
+      std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
   land_srv_ = create_service<Trigger>(
-      "land", std::bind(&PSDKWrapper::start_landing_cb, this, _1, _2));
+      "psdk_ros2/land",
+      std::bind(&PSDKWrapper::start_landing_cb, this, _1, _2));
   cancel_landing_srv_ = create_service<Trigger>(
-      "cancel_landing",
+      "psdk_ros2/cancel_landing",
       std::bind(&PSDKWrapper::cancel_landing_cb, this, _1, _2));
   start_confirm_landing_srv_ = create_service<Trigger>(
-      "start_confirm_landing",
+      "psdk_ros2/start_confirm_landing",
       std::bind(&PSDKWrapper::start_confirm_landing_cb, this, _1, _2));
   start_force_landing_srv_ = create_service<Trigger>(
-      "start_force_landing",
+      "psdk_ros2/start_force_landing",
       std::bind(&PSDKWrapper::start_force_landing_cb, this, _1, _2));
   set_horizontal_vo_obstacle_avoidance_srv_ =
       create_service<SetObstacleAvoidance>(
-          "set_horizontal_vo_obstacle_avoidance",
+          "psdk_ros2/set_horizontal_vo_obstacle_avoidance",
           std::bind(&PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb, this,
                     _1, _2));
   set_horizontal_radar_obstacle_avoidance_srv_ =
       create_service<SetObstacleAvoidance>(
-          "set_horizontal_radar_obstacle_avoidance",
+          "psdk_ros2/set_horizontal_radar_obstacle_avoidance",
           std::bind(&PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb,
                     this, _1, _2));
   set_upwards_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
-      "set_upwards_vo_obstacle_avoidance",
+      "psdk_ros2/set_upwards_vo_obstacle_avoidance",
       std::bind(&PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb, this, _1,
                 _2));
   set_upwards_radar_obstacle_avoidance_srv_ =
       create_service<SetObstacleAvoidance>(
-          "set_upwards_radar_obstacle_avoidance",
+          "psdk_ros2/set_upwards_radar_obstacle_avoidance",
           std::bind(&PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb, this,
                     _1, _2));
   set_downwards_vo_obstacle_avoidance_srv_ =
       create_service<SetObstacleAvoidance>(
-          "set_downwards_vo_obstacle_avoidance",
+          "psdk_ros2/set_downwards_vo_obstacle_avoidance",
           std::bind(&PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb, this,
                     _1, _2));
   get_horizontal_vo_obstacle_avoidance_srv_ =
       create_service<GetObstacleAvoidance>(
-          "get_horizontal_vo_obstacle_avoidance",
+          "psdk_ros2/get_horizontal_vo_obstacle_avoidance",
           std::bind(&PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb, this,
                     _1, _2));
   get_upwards_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
-      "get_upwards_vo_obstacle_avoidance",
+      "psdk_ros2/get_upwards_vo_obstacle_avoidance",
       std::bind(&PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb, this, _1,
                 _2));
   get_upwards_radar_obstacle_avoidance_srv_ =
       create_service<GetObstacleAvoidance>(
-          "get_upwards_radar_obstacle_avoidance",
+          "psdk_ros2/get_upwards_radar_obstacle_avoidance",
           std::bind(&PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb, this,
                     _1, _2));
   get_downwards_vo_obstacle_avoidance_srv_ =
       create_service<GetObstacleAvoidance>(
-          "get_downwards_vo_obstacle_avoidance",
+          "psdk_ros2/get_downwards_vo_obstacle_avoidance",
           std::bind(&PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb, this,
                     _1, _2));
   get_horizontal_radar_obstacle_avoidance_srv_ =
       create_service<GetObstacleAvoidance>(
-          "get_horizontal_radar_obstacle_avoidance",
+          "psdk_ros2/get_horizontal_radar_obstacle_avoidance",
           std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb,
                     this, _1, _2));
-  // Camera
-  camera_start_shoot_single_photo_service_ =
-      create_service<CameraStartShootSinglePhoto>(
-          "camera_start_shoot_single_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_single_photo_cb, this, _1,
-                    _2),
-          qos_profile_);
-  camera_start_shoot_burst_photo_service_ =
-      create_service<CameraStartShootBurstPhoto>(
-          "camera_start_shoot_burst_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_burst_photo_cb, this, _1,
-                    _2),
-          qos_profile_);
-  camera_start_shoot_aeb_photo_service_ =
-      create_service<CameraStartShootAEBPhoto>(
-          "camera_start_shoot_aeb_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_aeb_photo_cb, this, _1,
-                    _2),
-          qos_profile_);
-  camera_start_shoot_interval_photo_service_ =
-      create_service<CameraStartShootIntervalPhoto>(
-          "camera_start_shoot_interval_photo",
-          std::bind(&PSDKWrapper::camera_start_shoot_interval_photo_cb, this,
-                    _1, _2),
+  /* Camera */
+  camera_shoot_single_photo_service_ = create_service<CameraShootSinglePhoto>(
+      "psdk_ros2/camera_shoot_single_photo",
+      std::bind(&PSDKWrapper::camera_shoot_single_photo_cb, this, _1, _2),
+      qos_profile_);
+  camera_shoot_burst_photo_service_ = create_service<CameraShootBurstPhoto>(
+      "psdk_ros2/camera_shoot_burst_photo",
+      std::bind(&PSDKWrapper::camera_shoot_burst_photo_cb, this, _1, _2),
+      qos_profile_);
+  camera_shoot_aeb_photo_service_ = create_service<CameraShootAEBPhoto>(
+      "psdk_ros2/camera_shoot_aeb_photo",
+      std::bind(&PSDKWrapper::camera_shoot_aeb_photo_cb, this, _1, _2),
+      qos_profile_);
+  camera_shoot_interval_photo_service_ =
+      create_service<CameraShootIntervalPhoto>(
+          "psdk_ros2/camera_shoot_interval_photo",
+          std::bind(&PSDKWrapper::camera_shoot_interval_photo_cb, this, _1, _2),
           qos_profile_);
   camera_stop_shoot_photo_service_ = create_service<CameraStopShootPhoto>(
-      "camera_stop_shoot_photo",
+      "psdk_ros2/camera_stop_shoot_photo",
       std::bind(&PSDKWrapper::camera_stop_shoot_photo_cb, this, _1, _2),
       qos_profile_);
   camera_record_video_service_ = create_service<CameraRecordVideo>(
-      "camera_record_video",
+      "psdk_ros2/camera_record_video",
       std::bind(&PSDKWrapper::camera_record_video_cb, this, _1, _2),
       qos_profile_);
   camera_get_laser_ranging_info_service_ =
       create_service<CameraGetLaserRangingInfo>(
-          "camera_get_laser_ranging_info",
+          "psdk_ros2/camera_get_laser_ranging_info",
           std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this, _1,
                     _2),
           qos_profile_);
   // TODO(@lidiadltv): Enable these actions once are working properly
   // camera_download_file_list_action_ =
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
-  //           shared_from_this(), "camera_download_file_list",
+  //           shared_from_this(), "psdk_ros2/camera_download_file_list",
   //           std::bind(&PSDKWrapper::camera_download_file_list_cb,
   //           this));
   // camera_download_file_by_index_action_ =
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>>(
-  //           shared_from_this(), "camera_download_file_by_index",
+  //           shared_from_this(), "psdk_ros2/camera_download_file_by_index",
   //           std::bind(&PSDKWrapper::camera_download_file_by_index_cb,
   //           this));
   // camera_delete_file_by_index_action_ =
   //     std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
-  //           shared_from_this(), "camera_delete_file_by_index",
+  //           shared_from_this(), "psdk_ros2/camera_delete_file_by_index",
   //           std::bind(&PSDKWrapper::camera_delete_file_by_index_cb,
   //           this));
   camera_get_type_service_ = create_service<CameraGetType>(
-      "camera_get_type",
+      "psdk_ros2/camera_get_type",
       std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2), qos_profile_);
-  camera_set_ev_service_ = create_service<CameraSetEV>(
-      "camera_set_ev", std::bind(&PSDKWrapper::camera_set_ev_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_ev_service_ = create_service<CameraGetEV>(
-      "camera_get_ev", std::bind(&PSDKWrapper::camera_get_ev_cb, this, _1, _2),
-      qos_profile_);
+  camera_set_exposure_mode_ev_service_ =
+      create_service<CameraSetExposureModeEV>(
+          "psdk_ros2/camera_set_exposure_mode_ev",
+          std::bind(&PSDKWrapper::camera_set_exposure_mode_ev_cb, this, _1, _2),
+          qos_profile_);
+  camera_get_exposure_mode_ev_service_ =
+      create_service<CameraGetExposureModeEV>(
+          "psdk_ros2/camera_get_exposure_mode_ev",
+          std::bind(&PSDKWrapper::camera_get_exposure_mode_ev_cb, this, _1, _2),
+          qos_profile_);
   camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
-      "camera_set_shutter_speed",
+      "psdk_ros2/camera_set_shutter_speed",
       std::bind(&PSDKWrapper::camera_set_shutter_speed_cb, this, _1, _2),
       qos_profile_);
   camera_get_shutter_speed_service_ = create_service<CameraGetShutterSpeed>(
-      "camera_get_shutter_speed",
+      "psdk_ros2/camera_get_shutter_speed",
       std::bind(&PSDKWrapper::camera_get_shutter_speed_cb, this, _1, _2),
       qos_profile_);
   camera_set_iso_service_ = create_service<CameraSetISO>(
-      "camera_set_iso",
+      "psdk_ros2/camera_set_iso",
       std::bind(&PSDKWrapper::camera_set_iso_cb, this, _1, _2), qos_profile_);
   camera_get_iso_service_ = create_service<CameraGetISO>(
-      "camera_get_iso",
+      "psdk_ros2/camera_get_iso",
       std::bind(&PSDKWrapper::camera_get_iso_cb, this, _1, _2), qos_profile_);
   camera_set_focus_target_service_ = create_service<CameraSetFocusTarget>(
-      "camera_set_focus_target",
+      "psdk_ros2/camera_set_focus_target",
       std::bind(&PSDKWrapper::camera_set_focus_target_cb, this, _1, _2),
       qos_profile_);
   camera_get_focus_target_service_ = create_service<CameraGetFocusTarget>(
-      "camera_get_focus_target",
+      "psdk_ros2/camera_get_focus_target",
       std::bind(&PSDKWrapper::camera_get_focus_target_cb, this, _1, _2),
       qos_profile_);
   camera_set_focus_mode_service_ = create_service<CameraSetFocusMode>(
-      "camera_set_focus_mode",
+      "psdk_ros2/camera_set_focus_mode",
       std::bind(&PSDKWrapper::camera_set_focus_mode_cb, this, _1, _2),
       qos_profile_);
   camera_get_focus_mode_service_ = create_service<CameraGetFocusMode>(
-      "camera_get_focus_mode",
+      "psdk_ros2/camera_get_focus_mode",
       std::bind(&PSDKWrapper::camera_get_focus_mode_cb, this, _1, _2),
       qos_profile_);
   camera_set_optical_zoom_service_ = create_service<CameraSetOpticalZoom>(
-      "camera_set_optical_zoom",
+      "psdk_ros2/camera_set_optical_zoom",
       std::bind(&PSDKWrapper::camera_set_optical_zoom_cb, this, _1, _2),
       qos_profile_);
   camera_get_optical_zoom_service_ = create_service<CameraGetOpticalZoom>(
-      "camera_get_optical_zoom",
+      "psdk_ros2/camera_get_optical_zoom",
       std::bind(&PSDKWrapper::camera_get_optical_zoom_cb, this, _1, _2),
       qos_profile_);
   camera_set_infrared_zoom_service_ = create_service<CameraSetInfraredZoom>(
-      "camera_set_infrared_zoom",
+      "psdk_ros2/camera_set_infrared_zoom",
       std::bind(&PSDKWrapper::camera_set_infrared_zoom_cb, this, _1, _2),
       qos_profile_);
-  //// Gimbal
-  // Services
+  camera_set_aperture_service_ = create_service<CameraSetAperture>(
+      "psdk_ros2/camera_set_aperture",
+      std::bind(&PSDKWrapper::camera_set_aperture_cb, this, _1, _2),
+      qos_profile_);
+  camera_get_aperture_service_ = create_service<CameraGetAperture>(
+      "psdk_ros2/camera_get_aperture",
+      std::bind(&PSDKWrapper::camera_get_aperture_cb, this, _1, _2),
+      qos_profile_);
+  /* Streaming */
+  camera_setup_streaming_service_ = create_service<CameraSetupStreaming>(
+      "psdk_ros2/camera_setup_streaming",
+      std::bind(&PSDKWrapper::camera_setup_streaming_cb, this, _1, _2),
+      qos_profile_);
+  /* Gimbal */
   gimbal_set_mode_service_ = create_service<GimbalSetMode>(
-      "gimbal_set_mode",
+      "psdk_ros2/gimbal_set_mode",
       std::bind(&PSDKWrapper::gimbal_set_mode_cb, this, _1, _2), qos_profile_);
   gimbal_reset_service_ = create_service<GimbalReset>(
-      "gimbal_reset", std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2),
-      qos_profile_);
+      "psdk_ros2/gimbal_reset",
+      std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2), qos_profile_);
 }
 
 void
@@ -951,7 +1032,7 @@ PSDKWrapper::activate_ros_elements()
   RCLCPP_INFO(get_logger(), "Activating ROS elements");
   attitude_pub_->on_activate();
   imu_pub_->on_activate();
-  velocity_ground_pub_->on_activate();
+  velocity_ground_fused_pub_->on_activate();
   position_fused_pub_->on_activate();
   gps_fused_pub_->on_activate();
   gps_position_pub_->on_activate();
@@ -969,14 +1050,19 @@ PSDKWrapper::activate_ros_elements()
   gimbal_angles_pub_->on_activate();
   gimbal_status_pub_->on_activate();
   flight_status_pub_->on_activate();
-  aircraft_status_pub_->on_activate();
+  display_mode_pub_->on_activate();
   landing_gear_pub_->on_activate();
   motor_start_error_pub_->on_activate();
   flight_anomaly_pub_->on_activate();
   battery_pub_->on_activate();
   height_fused_pub_->on_activate();
-  // acceleration_ground_pub_->on_activate();
-  // acceleration_body_pub_->on_activate();
+  angular_rate_body_raw_pub_->on_activate();
+  angular_rate_ground_fused_pub_->on_activate();
+  acceleration_ground_fused_pub_->on_activate();
+  acceleration_body_fused_pub_->on_activate();
+  acceleration_body_raw_pub_->on_activate();
+  main_camera_stream_pub_->on_activate();
+  fpv_camera_stream_pub_->on_activate();
   // altitude_pub_->on_activate();
   // relative_height_pub_->on_activate();
   // relative_obstacle_info_pub_->on_activate();
@@ -989,7 +1075,7 @@ PSDKWrapper::deactivate_ros_elements()
   RCLCPP_INFO(get_logger(), "Deactivating ROS elements");
   attitude_pub_->on_deactivate();
   imu_pub_->on_deactivate();
-  velocity_ground_pub_->on_deactivate();
+  velocity_ground_fused_pub_->on_deactivate();
   position_fused_pub_->on_deactivate();
   gps_fused_pub_->on_deactivate();
   gps_position_pub_->on_deactivate();
@@ -1007,14 +1093,19 @@ PSDKWrapper::deactivate_ros_elements()
   gimbal_angles_pub_->on_deactivate();
   gimbal_status_pub_->on_deactivate();
   flight_status_pub_->on_deactivate();
-  aircraft_status_pub_->on_deactivate();
+  display_mode_pub_->on_deactivate();
   motor_start_error_pub_->on_deactivate();
   landing_gear_pub_->on_deactivate();
   flight_anomaly_pub_->on_deactivate();
   battery_pub_->on_deactivate();
   height_fused_pub_->on_deactivate();
-  // acceleration_ground_pub_->on_deactivate();
-  // acceleration_body_pub_->on_deactivate();
+  angular_rate_body_raw_pub_->on_deactivate();
+  angular_rate_ground_fused_pub_->on_deactivate();
+  acceleration_ground_fused_pub_->on_deactivate();
+  acceleration_body_fused_pub_->on_deactivate();
+  acceleration_body_raw_pub_->on_deactivate();
+  main_camera_stream_pub_->on_deactivate();
+  fpv_camera_stream_pub_->on_deactivate();
   // altitude_pub_->on_deactivate();
   // relative_height_pub_->on_deactivate();
   // relative_obstacle_info_pub_->on_deactivate();
@@ -1025,51 +1116,14 @@ void
 PSDKWrapper::clean_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Cleaning ROS elements");
-  attitude_pub_.reset();
-  imu_pub_.reset();
-  velocity_ground_pub_.reset();
-  position_fused_pub_.reset();
-  gps_fused_pub_.reset();
-  gps_position_pub_.reset();
-  gps_velocity_pub_.reset();
-  gps_details_pub_.reset();
-  gps_signal_pub_.reset();
-  gps_control_pub_.reset();
-  rtk_position_pub_.reset();
-  rtk_velocity_pub_.reset();
-  rtk_yaw_pub_.reset();
-  rtk_position_info_pub_.reset();
-  rtk_yaw_info_pub_.reset();
-  magnetic_field_pub_.reset();
-  rc_pub_.reset();
-  gimbal_angles_pub_.reset();
-  gimbal_status_pub_.reset();
-  flight_status_pub_.reset();
-  aircraft_status_pub_.reset();
-  landing_gear_pub_.reset();
-  motor_start_error_pub_.reset();
-  flight_anomaly_pub_.reset();
-  battery_pub_.reset();
-  height_fused_pub_.reset();
-  // acceleration_ground_pub_.reset();
-  // acceleration_body_pub_.reset();
-  // altitude_pub_.reset();
-  // relative_height_pub_.reset();
-  // relative_obstacle_info_pub_.reset();
-  // home_position_pub_.reset();
-
-  // Subscribers
-  flight_control_generic_sub_.reset();
-  flight_control_position_yaw_sub_.reset();
-  flight_control_velocity_yawrate_sub_.reset();
-  flight_control_body_velocity_yawrate_sub_.reset();
-  flight_control_rollpitch_yawrate_vertpos_sub_.reset();
 
   // Services
+  // General
+  set_local_position_ref_srv_.reset();
   set_home_from_gps_srv_.reset();
   set_home_from_current_location_srv_.reset();
-  set_home_altitude_srv_.reset();
-  get_home_altitude_srv_.reset();
+  set_go_home_altitude_srv_.reset();
+  get_go_home_altitude_srv_.reset();
   start_go_home_srv_.reset();
   cancel_go_home_srv_.reset();
   obtain_ctrl_authority_srv_.reset();
@@ -1091,17 +1145,16 @@ PSDKWrapper::clean_ros_elements()
   get_upwards_radar_obstacle_avoidance_srv_.reset();
   get_downwards_vo_obstacle_avoidance_srv_.reset();
   get_horizontal_radar_obstacle_avoidance_srv_.reset();
-
   // Camera
-  camera_start_shoot_single_photo_service_.reset();
-  camera_start_shoot_burst_photo_service_.reset();
-  camera_start_shoot_aeb_photo_service_.reset();
-  camera_start_shoot_interval_photo_service_.reset();
+  camera_shoot_single_photo_service_.reset();
+  camera_shoot_burst_photo_service_.reset();
+  camera_shoot_aeb_photo_service_.reset();
+  camera_shoot_interval_photo_service_.reset();
   camera_stop_shoot_photo_service_.reset();
   camera_record_video_service_.reset();
   camera_get_type_service_.reset();
-  camera_set_ev_service_.reset();
-  camera_get_ev_service_.reset();
+  camera_set_exposure_mode_ev_service_.reset();
+  camera_get_exposure_mode_ev_service_.reset();
   camera_set_shutter_speed_service_.reset();
   camera_get_shutter_speed_service_.reset();
   camera_set_iso_service_.reset();
@@ -1113,13 +1166,62 @@ PSDKWrapper::clean_ros_elements()
   camera_set_optical_zoom_service_.reset();
   camera_get_optical_zoom_service_.reset();
   camera_set_infrared_zoom_service_.reset();
+  camera_set_aperture_service_.reset();
   camera_get_laser_ranging_info_service_.reset();
   camera_download_file_list_service_.reset();
   camera_download_file_by_index_service_.reset();
   camera_delete_file_by_index_service_.reset();
+  // Streaming
+  camera_setup_streaming_service_.reset();
   // Gimbal
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();
+
+  // Subscribers
+  flight_control_generic_sub_.reset();
+  flight_control_position_yaw_sub_.reset();
+  flight_control_velocity_yawrate_sub_.reset();
+  flight_control_body_velocity_yawrate_sub_.reset();
+  flight_control_rollpitch_yawrate_thrust_sub_.reset();
+
+  // Publishers
+  attitude_pub_.reset();
+  imu_pub_.reset();
+  velocity_ground_fused_pub_.reset();
+  position_fused_pub_.reset();
+  gps_fused_pub_.reset();
+  gps_position_pub_.reset();
+  gps_velocity_pub_.reset();
+  gps_details_pub_.reset();
+  gps_signal_pub_.reset();
+  gps_control_pub_.reset();
+  rtk_position_pub_.reset();
+  rtk_velocity_pub_.reset();
+  rtk_yaw_pub_.reset();
+  rtk_position_info_pub_.reset();
+  rtk_yaw_info_pub_.reset();
+  magnetic_field_pub_.reset();
+  rc_pub_.reset();
+  gimbal_angles_pub_.reset();
+  gimbal_status_pub_.reset();
+  flight_status_pub_.reset();
+  display_mode_pub_.reset();
+  landing_gear_pub_.reset();
+  motor_start_error_pub_.reset();
+  flight_anomaly_pub_.reset();
+  battery_pub_.reset();
+  height_fused_pub_.reset();
+  angular_rate_body_raw_pub_.reset();
+  angular_rate_ground_fused_pub_.reset();
+  acceleration_ground_fused_pub_.reset();
+  acceleration_body_fused_pub_.reset();
+  acceleration_body_raw_pub_.reset();
+  main_camera_stream_pub_.reset();
+  fpv_camera_stream_pub_.reset();
+  // altitude_pub_.reset();
+  // relative_height_pub_.reset();
+  // relative_obstacle_info_pub_.reset();
+  // home_position_pub_.reset();
 }
 
 }  // namespace psdk_ros2

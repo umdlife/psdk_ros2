@@ -1,7 +1,6 @@
 #request
-uint8 payload_index 1 # see enum E_DjiMountPosition in dji_typedef.h
-uint8 work_mode # see E_DjiCameraManagerExposureMode in dji_camera_manager.h
-uint8 iso_factor # see enum E_DjiCameraManagerISO in dji_camera_manager.h
+uint8 payload_index 1       # see enum E_DjiMountPosition in dji_typedef.h
+uint8 iso_factor            # see enum E_DjiCameraManagerISO in dji_camera_manager.h
 ---
 #response
 bool success

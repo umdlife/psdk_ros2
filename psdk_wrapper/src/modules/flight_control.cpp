@@ -1,9 +1,10 @@
-/* Copyright (C) 2023 Unmanned Life - All Rights Reserved
- *
- * This file is part of the `psdk_wrapper` source code package and is
- * subject to the terms and conditions defined in the file LICENSE.txt contained
- * therein.
+/*
+ * Copyright (C) 2023 Unmanned Life
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 /**
  * @file flight_control.cpp
  *
@@ -30,6 +31,53 @@ PSDKWrapper::init_flight_control()
     return false;
   }
   return true;
+}
+
+bool
+PSDKWrapper::deinit_flight_control()
+{
+  RCLCPP_INFO(get_logger(), "Deinitializing flight control module...");
+  if (DjiFlightController_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not deinitialze the flight control module.");
+    return false;
+  }
+  return true;
+}
+
+void
+PSDKWrapper::set_local_position_ref_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
+{
+  (void)request;
+  /** The check for the z_health flag is temporarly removed as it is always 0 in
+   * real scenarios (not HITL) */
+  if (current_local_position_.x_health && current_local_position_.y_health)
+  {
+    local_position_reference_.vector.x = current_local_position_.position.x;
+    local_position_reference_.vector.y = current_local_position_.position.y;
+    local_position_reference_.vector.z = current_local_position_.position.z;
+    RCLCPP_INFO(
+        get_logger(), "Set local position reference to x:%f, y:%f, z:%f",
+        current_local_position_.position.x, current_local_position_.position.y,
+        current_local_position_.position.z);
+    set_local_position_ref_ = true;
+    response->success = true;
+    return;
+  }
+  else
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
+        current_local_position_.x_health, current_local_position_.y_health,
+        current_local_position_.z_health);
+    set_local_position_ref_ = false;
+    response->success = false;
+    return;
+  }
 }
 
 void
@@ -65,18 +113,18 @@ PSDKWrapper::set_home_from_current_location_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Could not set the home location using current aicraft location");
+        "Could not set the home location using current aicraft position");
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Home position has been set to current location!");
+  RCLCPP_INFO(get_logger(), "Home location has been set to current position!");
   response->success = true;
 }
 
 void
-PSDKWrapper::set_home_altitude_cb(
-    const std::shared_ptr<SetHomeAltitude::Request> request,
-    const std::shared_ptr<SetHomeAltitude::Response> response)
+PSDKWrapper::set_go_home_altitude_cb(
+    const std::shared_ptr<SetGoHomeAltitude::Request> request,
+    const std::shared_ptr<SetGoHomeAltitude::Response> response)
 {
   E_DjiFlightControllerGoHomeAltitude home_altitude = request->altitude;
   if (DjiFlightController_SetGoHomeAltitude(home_altitude) !=
@@ -84,7 +132,7 @@ PSDKWrapper::set_home_altitude_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Could not set the home location using current aicraft location");
+        "Could not set the home altitude at the current aicraft location");
     response->success = false;
     return;
   }
@@ -94,9 +142,9 @@ PSDKWrapper::set_home_altitude_cb(
 }
 
 void
-PSDKWrapper::get_home_altitude_cb(
-    const std::shared_ptr<GetHomeAltitude::Request> request,
-    const std::shared_ptr<GetHomeAltitude::Response> response)
+PSDKWrapper::get_go_home_altitude_cb(
+    const std::shared_ptr<GetGoHomeAltitude::Request> request,
+    const std::shared_ptr<GetGoHomeAltitude::Response> response)
 {
   (void)request;
   if (DjiFlightController_SetHomeLocationUsingCurrentAircraftLocation() !=
@@ -104,7 +152,7 @@ PSDKWrapper::get_home_altitude_cb(
   {
     RCLCPP_ERROR(
         get_logger(),
-        "Could not set the home location using current aicraft location");
+        "Could not get the home location using current aicraft location");
     response->success = false;
     return;
   }
@@ -595,12 +643,16 @@ PSDKWrapper::flight_control_position_yaw_cb(
 
   float x_cmd, y_cmd, z_cmd;
   float yaw_cmd;
+
+  /* Note: The position input expected by DJI is ground fixed frame NEU,
+   * Following REP 103, the x and y setpoints are inverted.
+   */
   x_cmd = y_setpoint;
   y_cmd = x_setpoint;
   z_cmd = z_setpoint;
 
-  /* Note: The input yaw is assumed to be following REP 103, thus a FLU rotation
-   wrt to ENU frame. DJI uses FRD rotation with respect to NED.Thus, the
+  /* Note: The input yaw is assumed to be following REP 103, thus a yaw rotation
+   wrt to ENU frame. DJI uses rotation with respect to NED.Thus, the
    rotation needs to be transformed before sending it to the FCU
    */
   tf2::Matrix3x3 rotation_FLU2ENU;
@@ -630,6 +682,10 @@ PSDKWrapper::flight_control_velocity_yawrate_cb(
       DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE};
   DjiFlightController_SetJoystickMode(joystick_mode);
 
+  /**
+   * Note: DJI is expecting velocity commands with a ground-fixed frame NEU.
+   * Input is converted from ENU to NEU.
+   */
   float x_setpoint = msg->axes[0];
   float y_setpoint = msg->axes[1];
   float z_setpoint = msg->axes[2];
@@ -639,6 +695,11 @@ PSDKWrapper::flight_control_velocity_yawrate_cb(
   x_cmd = y_setpoint;
   y_cmd = x_setpoint;
   z_cmd = z_setpoint;
+
+  /**
+   * Note: DJI is expecting yaw rate cmd wrt. FRD frame. Here input is assumed
+   * to be FLU. This is transformed from U -> D.
+   */
   yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
@@ -664,10 +725,16 @@ PSDKWrapper::flight_control_body_velocity_yawrate_cb(
   float yaw_setpoint = msg->axes[3];
 
   float x_cmd, y_cmd, z_cmd, yaw_cmd;
-  // Transform from F-R to F-L
+  // The Horizontal body coordinate frame of DJI is defined as FRU. Here the
+  // input is assumed to be in FLU, transform from FL to FR.
   x_cmd = x_setpoint;
   y_cmd = -y_setpoint;
   z_cmd = z_setpoint;
+
+  /**
+   * Note: DJI is expecting yaw rate cmd wrt. FRD frame. Here input is assumed
+   * to be FLU. This is transformed from U -> D.
+   */
   yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
@@ -676,7 +743,7 @@ PSDKWrapper::flight_control_body_velocity_yawrate_cb(
 }
 
 void
-PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb(
+PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
@@ -693,10 +760,19 @@ PSDKWrapper::flight_control_rollpitch_yawrate_vertpos_cb(
   float yaw_setpoint = msg->axes[3];
 
   float x_cmd, y_cmd, z_cmd, yaw_cmd;
-  // Transform from F-R to F-L
+  // Transform from FL to FR
   x_cmd = psdk_utils::rad_to_deg(x_setpoint);
   y_cmd = psdk_utils::rad_to_deg(-y_setpoint);
+
+  /**
+   * Note: Thrust input is expected here. Range 0 - 100 %.
+   */
   z_cmd = z_setpoint;
+
+  /**
+   * Note: DJI is expecting yaw rate cmd wrt. FRD frame. Here input is assumed
+   * to be FLU. This is transformed from U -> D.
+   */
   yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
 
   T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
