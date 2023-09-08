@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library API &mdash; psdk_ros2 wrapper  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Namespace psdk_ros2" href="namespace_psdk_ros2.html" />
+    <link rel="prev" title="Contribute" href="../documentation/Contribute.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            psdk_ros2 wrapper
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../documentation/Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/GettingStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/GettingStarted.html#id1"></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/ThePSDKWrapper.html">The psdk_ros2 wrapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/Contribute.html">Contribute</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Library API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#page-hierarchy">Page Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#class-hierarchy">Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#file-hierarchy">File Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#full-api">Full API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#namespaces">Namespaces</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="namespace_psdk_ros2.html">Namespace psdk_ros2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_psdk_ros2__psdk_utils.html">Namespace psdk_ros2::psdk_utils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_rclcpp_lifecycle.html">Namespace rclcpp_lifecycle</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#classes-and-structs">Classes and Structs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="structpsdk__ros2_1_1psdk__utils_1_1DJITopic.html">Struct DJITopic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structpsdk__ros2_1_1PSDKWrapper_1_1PSDKParams.html">Struct PSDKWrapper::PSDKParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classpsdk__ros2_1_1PSDKWrapper.html">Class PSDKWrapper</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#enums">Enums</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1afc7b73c5ce68bcb204fc5938107fbc35.html">Enum DisplayMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a92f4aaf0d4432a619294998d6b83fc5f.html">Enum FlightStatus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a89ed1f3637656baf570fb7bacdab42d1.html">Enum GPSFixState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2.html">Enum RTKSolutionState</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#functions">Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="function_namespacepsdk__ros2_1_1psdk__utils_1a38b91729bab1f1f18fcb178c240e5996.html">Function psdk_ros2::psdk_utils::deg_to_rad</a></li>
+<li class="toctree-l4"><a class="reference internal" href="function_namespacepsdk__ros2_1_1psdk__utils_1a1cee8eb9089f9cdd6954643fe9ddb8fa.html">Function psdk_ros2::psdk_utils::rad_to_deg</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#variables">Variables</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="variable_namespacepsdk__ros2_1af2c97c9468e6c188f8f95d0b3f021a24.html">Variable psdk_ros2::global_ptr_</a></li>
+<li class="toctree-l4"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a42c4ed557cf13c401fe66a3b8826b771.html">Variable psdk_ros2::psdk_utils::C_GRAVITY_CONSTANT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a056a11560f4058993e731cb606039171.html">Variable psdk_ros2::psdk_utils::C_PI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a963babcfcf8114ccf97f1cc1b1e69214.html">Variable psdk_ros2::psdk_utils::R_FLU2FRD</a></li>
+<li class="toctree-l4"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a19efcbe765814c40659fcb303e19ea80.html">Variable psdk_ros2::psdk_utils::R_NED2ENU</a></li>
+<li class="toctree-l4"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a65928a00e249fdab67d967b5641c0ff5.html">Variable psdk_ros2::psdk_utils::topics_to_subscribe</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#defines">Defines</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ace39a8993de63dc6fe84e5bda03152af.html">Define ACCELERATION_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1aa64d57597f8d524decbd26a340fd276f.html">Define ANGULAR_VELOCITY_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a434b8bbb7de051ce77a5f6b43732b8b6.html">Define ATTITUDE_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1aa8526dc4ab91ca07a3b3c3a4ea85fbc6.html">Define BATTERY_STATUS_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a804716d718d21b16e1f1112978b41100.html">Define CONTROL_DATA_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ae57456a5fca2e24c5d9f7fa05fc2a29a.html">Define FLIGHT_STATUS_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ac178df54baca74a030bdcba4dd98ab58.html">Define GIMBAL_DATA_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a1816a36f3888d09183e5b47530f58094.html">Define GOOD_GPS_SIGNAL_LEVEL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ab4fbedd889d0f20727091061bcd68f2e.html">Define GPS_DATA_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a83cf7c8196bd46f967ef83363daa14f4.html">Define GPS_FUSED_POSITION_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ade5163ec494976ea583183ec2f924a7e.html">Define IMU_TOPIC_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1afd61c263db1b5625781a5f92e7073c9f.html">Define MAGNETOMETER_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a672dc0a6f070eb5ea4881671fb3eacc0.html">Define POSITION_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a216a0f6643f4c894f88676591395b589.html">Define RC_CHANNELS_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a17ca4f6fd2eb12cf64e022939d0900b2.html">Define RTK_DATA_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a3cdb1c583b523f495811dc7d987a7390.html">Define VELOCITY_TOPICS_MAX_FREQ</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">psdk_ros2 wrapper</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Library API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/library_root.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="library-api">
+<h1>Library API<a class="headerlink" href="#library-api" title="Permalink to this headline"></a></h1>
+<section id="page-hierarchy">
+<h2>Page Hierarchy<a class="headerlink" href="#page-hierarchy" title="Permalink to this headline"></a></h2>
+<ul class="treeView" id="page-treeView">
+  <li>
+    <ul class="collapsibleList">
+      <li> <a href="page_Publishers_page.html#page-Publishers-page">Publishers_page</a></li>
+    </ul>
+  </li><!-- only tree view element -->
+</ul><!-- /treeView page-treeView --></section>
+<section id="class-hierarchy">
+<h2>Class Hierarchy<a class="headerlink" href="#class-hierarchy" title="Permalink to this headline"></a></h2>
+<ul class="treeView" id="class-treeView">
+  <li>
+    <ul class="collapsibleList">
+      <li>Namespace <a href="namespace_psdk_ros2.html#namespace-psdk-ros2">psdk_ros2</a><ul><li>Namespace <a href="namespace_psdk_ros2__psdk_utils.html#namespace-psdk-ros2-psdk-utils">psdk_ros2::psdk_utils</a><ul><li>Enum <a href="enum_namespacepsdk__ros2_1_1psdk__utils_1afc7b73c5ce68bcb204fc5938107fbc35.html#exhale-enum-namespacepsdk-ros2-1-1psdk-utils-1afc7b73c5ce68bcb204fc5938107fbc35">DisplayMode</a></li><li>Enum <a href="enum_namespacepsdk__ros2_1_1psdk__utils_1a92f4aaf0d4432a619294998d6b83fc5f.html#exhale-enum-namespacepsdk-ros2-1-1psdk-utils-1a92f4aaf0d4432a619294998d6b83fc5f">FlightStatus</a></li><li>Enum <a href="enum_namespacepsdk__ros2_1_1psdk__utils_1a89ed1f3637656baf570fb7bacdab42d1.html#exhale-enum-namespacepsdk-ros2-1-1psdk-utils-1a89ed1f3637656baf570fb7bacdab42d1">GPSFixState</a></li><li>Enum <a href="enum_namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2.html#exhale-enum-namespacepsdk-ros2-1-1psdk-utils-1a1c1b422ed436f6cd56ed3e85259b1cc2">RTKSolutionState</a></li><li class="lastChild">Struct <a href="structpsdk__ros2_1_1psdk__utils_1_1DJITopic.html#exhale-struct-structpsdk-ros2-1-1psdk-utils-1-1DJITopic">DJITopic</a></li></ul></li><li class="lastChild">Class <a href="classpsdk__ros2_1_1PSDKWrapper.html#exhale-class-classpsdk-ros2-1-1PSDKWrapper">PSDKWrapper</a><ul><li class="lastChild">Struct <a href="structpsdk__ros2_1_1PSDKWrapper_1_1PSDKParams.html#exhale-struct-structpsdk-ros2-1-1PSDKWrapper-1-1PSDKParams">PSDKWrapper::PSDKParams</a></li></ul></li></ul></li>
+    </ul>
+  </li><!-- only tree view element -->
+</ul><!-- /treeView class-treeView --></section>
+<section id="file-hierarchy">
+<h2>File Hierarchy<a class="headerlink" href="#file-hierarchy" title="Permalink to this headline"></a></h2>
+<ul class="treeView" id="file-treeView">
+  <li>
+    <ul class="collapsibleList">
+      <li>File <a href="file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper.hpp.html#file-psdk-wrapper-include-psdk-wrapper-psdk-wrapper.hpp">psdk_wrapper.hpp</a></li><li class="lastChild">File <a href="file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp.html#file-psdk-wrapper-include-psdk-wrapper-psdk-wrapper-utils.hpp">psdk_wrapper_utils.hpp</a></li>
+    </ul>
+  </li><!-- only tree view element -->
+</ul><!-- /treeView file-treeView --></section>
+<section id="full-api">
+<h2>Full API<a class="headerlink" href="#full-api" title="Permalink to this headline"></a></h2>
+<section id="namespaces">
+<h3>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline"></a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="namespace_psdk_ros2.html">Namespace psdk_ros2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="namespace_psdk_ros2.html#namespaces">Namespaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespace_psdk_ros2.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespace_psdk_ros2.html#variables">Variables</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="namespace_psdk_ros2__psdk_utils.html">Namespace psdk_ros2::psdk_utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="namespace_psdk_ros2__psdk_utils.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespace_psdk_ros2__psdk_utils.html#enums">Enums</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespace_psdk_ros2__psdk_utils.html#functions">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespace_psdk_ros2__psdk_utils.html#variables">Variables</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="namespace_rclcpp_lifecycle.html">Namespace rclcpp_lifecycle</a></li>
+</ul>
+</div>
+</section>
+<section id="classes-and-structs">
+<h3>Classes and Structs<a class="headerlink" href="#classes-and-structs" title="Permalink to this headline"></a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="structpsdk__ros2_1_1psdk__utils_1_1DJITopic.html">Struct DJITopic</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="structpsdk__ros2_1_1psdk__utils_1_1DJITopic.html#struct-documentation">Struct Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="structpsdk__ros2_1_1PSDKWrapper_1_1PSDKParams.html">Struct PSDKWrapper::PSDKParams</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="structpsdk__ros2_1_1PSDKWrapper_1_1PSDKParams.html#nested-relationships">Nested Relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structpsdk__ros2_1_1PSDKWrapper_1_1PSDKParams.html#struct-documentation">Struct Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="classpsdk__ros2_1_1PSDKWrapper.html">Class PSDKWrapper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="classpsdk__ros2_1_1PSDKWrapper.html#nested-relationships">Nested Relationships</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="classpsdk__ros2_1_1PSDKWrapper.html#nested-types">Nested Types</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="classpsdk__ros2_1_1PSDKWrapper.html#inheritance-relationships">Inheritance Relationships</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="classpsdk__ros2_1_1PSDKWrapper.html#base-type">Base Type</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="classpsdk__ros2_1_1PSDKWrapper.html#class-documentation">Class Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="enums">
+<h3>Enums<a class="headerlink" href="#enums" title="Permalink to this headline"></a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1afc7b73c5ce68bcb204fc5938107fbc35.html">Enum DisplayMode</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1afc7b73c5ce68bcb204fc5938107fbc35.html#enum-documentation">Enum Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a92f4aaf0d4432a619294998d6b83fc5f.html">Enum FlightStatus</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a92f4aaf0d4432a619294998d6b83fc5f.html#enum-documentation">Enum Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a89ed1f3637656baf570fb7bacdab42d1.html">Enum GPSFixState</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a89ed1f3637656baf570fb7bacdab42d1.html#enum-documentation">Enum Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2.html">Enum RTKSolutionState</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2.html#enum-documentation">Enum Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="function_namespacepsdk__ros2_1_1psdk__utils_1a38b91729bab1f1f18fcb178c240e5996.html">Function psdk_ros2::psdk_utils::deg_to_rad</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="function_namespacepsdk__ros2_1_1psdk__utils_1a38b91729bab1f1f18fcb178c240e5996.html#function-documentation">Function Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="function_namespacepsdk__ros2_1_1psdk__utils_1a1cee8eb9089f9cdd6954643fe9ddb8fa.html">Function psdk_ros2::psdk_utils::rad_to_deg</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="function_namespacepsdk__ros2_1_1psdk__utils_1a1cee8eb9089f9cdd6954643fe9ddb8fa.html#function-documentation">Function Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Permalink to this headline"></a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="variable_namespacepsdk__ros2_1af2c97c9468e6c188f8f95d0b3f021a24.html">Variable psdk_ros2::global_ptr_</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="variable_namespacepsdk__ros2_1af2c97c9468e6c188f8f95d0b3f021a24.html#variable-documentation">Variable Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a42c4ed557cf13c401fe66a3b8826b771.html">Variable psdk_ros2::psdk_utils::C_GRAVITY_CONSTANT</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a42c4ed557cf13c401fe66a3b8826b771.html#variable-documentation">Variable Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a056a11560f4058993e731cb606039171.html">Variable psdk_ros2::psdk_utils::C_PI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a056a11560f4058993e731cb606039171.html#variable-documentation">Variable Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a963babcfcf8114ccf97f1cc1b1e69214.html">Variable psdk_ros2::psdk_utils::R_FLU2FRD</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a963babcfcf8114ccf97f1cc1b1e69214.html#variable-documentation">Variable Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a19efcbe765814c40659fcb303e19ea80.html">Variable psdk_ros2::psdk_utils::R_NED2ENU</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a19efcbe765814c40659fcb303e19ea80.html#variable-documentation">Variable Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a65928a00e249fdab67d967b5641c0ff5.html">Variable psdk_ros2::psdk_utils::topics_to_subscribe</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="variable_namespacepsdk__ros2_1_1psdk__utils_1a65928a00e249fdab67d967b5641c0ff5.html#variable-documentation">Variable Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="defines">
+<h3>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ace39a8993de63dc6fe84e5bda03152af.html">Define ACCELERATION_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ace39a8993de63dc6fe84e5bda03152af.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1aa64d57597f8d524decbd26a340fd276f.html">Define ANGULAR_VELOCITY_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1aa64d57597f8d524decbd26a340fd276f.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a434b8bbb7de051ce77a5f6b43732b8b6.html">Define ATTITUDE_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a434b8bbb7de051ce77a5f6b43732b8b6.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1aa8526dc4ab91ca07a3b3c3a4ea85fbc6.html">Define BATTERY_STATUS_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1aa8526dc4ab91ca07a3b3c3a4ea85fbc6.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a804716d718d21b16e1f1112978b41100.html">Define CONTROL_DATA_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a804716d718d21b16e1f1112978b41100.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ae57456a5fca2e24c5d9f7fa05fc2a29a.html">Define FLIGHT_STATUS_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ae57456a5fca2e24c5d9f7fa05fc2a29a.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ac178df54baca74a030bdcba4dd98ab58.html">Define GIMBAL_DATA_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ac178df54baca74a030bdcba4dd98ab58.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a1816a36f3888d09183e5b47530f58094.html">Define GOOD_GPS_SIGNAL_LEVEL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a1816a36f3888d09183e5b47530f58094.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ab4fbedd889d0f20727091061bcd68f2e.html">Define GPS_DATA_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ab4fbedd889d0f20727091061bcd68f2e.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a83cf7c8196bd46f967ef83363daa14f4.html">Define GPS_FUSED_POSITION_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a83cf7c8196bd46f967ef83363daa14f4.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ade5163ec494976ea583183ec2f924a7e.html">Define IMU_TOPIC_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ade5163ec494976ea583183ec2f924a7e.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1afd61c263db1b5625781a5f92e7073c9f.html">Define MAGNETOMETER_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1afd61c263db1b5625781a5f92e7073c9f.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a672dc0a6f070eb5ea4881671fb3eacc0.html">Define POSITION_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a672dc0a6f070eb5ea4881671fb3eacc0.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a216a0f6643f4c894f88676591395b589.html">Define RC_CHANNELS_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a216a0f6643f4c894f88676591395b589.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a17ca4f6fd2eb12cf64e022939d0900b2.html">Define RTK_DATA_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a17ca4f6fd2eb12cf64e022939d0900b2.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a3cdb1c583b523f495811dc7d987a7390.html">Define VELOCITY_TOPICS_MAX_FREQ</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a3cdb1c583b523f495811dc7d987a7390.html#define-documentation">Define Documentation</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../documentation/Contribute.html" class="btn btn-neutral float-left" title="Contribute" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="namespace_psdk_ros2.html" class="btn btn-neutral float-right" title="Namespace psdk_ros2" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Unmanned Life.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

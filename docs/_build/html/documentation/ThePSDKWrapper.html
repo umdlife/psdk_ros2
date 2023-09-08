@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The psdk_ros2 wrapper &mdash; psdk_ros2 wrapper  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Contribute" href="Contribute.html" />
+    <link rel="prev" title="Getting started" href="GettingStarted.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            psdk_ros2 wrapper
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html#id1"></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The psdk_ros2 wrapper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#modules">Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#telemetry">Telemetry</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#available-topics">Available topics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#coordinate-frames">Coordinate frames</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#flight-control">Flight control</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#psdk-ros2-flight-control-setpoint-enuposition-yaw"><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_ENUposition_yaw</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#psdk-ros2-flight-control-setpoint-enuvelocity-yawrate"><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_ENUvelocity_yawrate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#psdk-ros2-flight-control-setpoint-fluvelocity-yawrate"><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#psdk-ros2-flight-control-setpoint-generic"><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_generic</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#psdk-ros2-flight-control-setpoint-rollpitch-yawrate-thrust"><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#camera">Camera</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#camera-settings">Camera settings</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera-commands">Camera commands</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera-streaming">Camera streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera-file-management">Camera file management</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#gimbal">Gimbal</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Contribute.html">Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">Library API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">psdk_ros2 wrapper</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">The psdk_ros2 wrapper</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/ThePSDKWrapper.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-psdk-ros2-wrapper">
+<h1>The psdk_ros2 wrapper<a class="headerlink" href="#the-psdk-ros2-wrapper" title="Permalink to this headline"></a></h1>
+<p>This brief overview highlights the primary components and their roles within the <code class="docutils literal notranslate"><span class="pre">psdk_ros2</span></code> wrapper’s code structure.</p>
+<p>├── <strong>psdk_interfaces</strong> : <em>provides the main interfaces (msg, srv)</em> <br />
+├── <strong>psdk_wrapper</strong> : <em>main wrapper code</em></p>
+<p>Within the <code class="docutils literal notranslate"><span class="pre">psdk_wrapper</span></code> folder you can find:</p>
+<ul class="simple">
+<li><p><strong>3rdparty</strong>: folder contains essential libraries sourced from DJI Payload-SDK for FCU interaction</p></li>
+<li><p><strong>psdk_wrapper.cpp:</strong> main lifecycle node which set-up and initializes the psdk application</p></li>
+<li><p><strong>modules</strong>: encapsulates specific functionalities of the wrapper</p></li>
+</ul>
+<section id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline"></a></h2>
+<section id="telemetry">
+<h3>Telemetry<a class="headerlink" href="#telemetry" title="Permalink to this headline"></a></h3>
+<p>This module subscribes to the main data exposed by the PSDK libraries and publishes it on ROS 2 topics.</p>
+<section id="available-topics">
+<h4>Available topics<a class="headerlink" href="#available-topics" title="Permalink to this headline"></a></h4>
+<p>Given the high number of topics available, these have been grouped under different categories  mimicking the options from DJI Assistant 2:</p>
+<ul class="simple">
+<li><p><strong>IMU</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/imu</p></td>
+<td><p>400 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Attitude</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/attitude</p></td>
+<td><p>n.a</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Acceleration</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/acceleration_ground_fused</p></td>
+<td><p>200 Hz</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/acceleration_body_fused</p></td>
+<td><p>200 Hz</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/acceleration_body_raw</p></td>
+<td><p>400 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Velocity</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/velocity_ground_fused</p></td>
+<td><p>n.a</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Angular Velocity</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/angular_rate_ground_fused</p></td>
+<td><p>200 Hz</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/angular_rate_body_raw</p></td>
+<td><p>400 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Position</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/position_fused</p></td>
+<td><p>50 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>GPS Data</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/gps_position_fused</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/gps_position</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/gps_velocity</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/gps_details</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/gps_signal_level</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/gps_control_level</p></td>
+<td><p>n.a</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>RTK Data</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/rtk_position</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/rtk_velocity</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/rtk_yaw</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/rtk_position_info</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/rtk_yaw_info</p></td>
+<td><p>n.a</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Magnetometer</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/magnetic_field</p></td>
+<td><p>100 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>RC Channels Data</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/rc</p></td>
+<td><p>100 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Gimbal Data</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/gimbal_angles</p></td>
+<td><p>50 Hz</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/gimbal_status</p></td>
+<td><p>50 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Flight Status</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/flight_status</p></td>
+<td><p>n.a</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/display_mode</p></td>
+<td><p>50 Hz</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/landing_gear_status</p></td>
+<td><p>50 Hz</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/motor_start_error</p></td>
+<td><p>50 Hz</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/flight_anomaly</p></td>
+<td><p>50 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Battery Level</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/battery</p></td>
+<td><p>n.a</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Control Information</strong></p></li>
+</ul>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>ROS 2 Topic</p></th>
+<th class="head"><p>Max. freq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/height_above_ground</p></td>
+<td><p>100 Hz</p></td>
+</tr>
+</tbody>
+</table>
+<p>The user can set a specific publishing frequency to each category within the <code class="docutils literal notranslate"><span class="pre">psdk_params.yaml</span></code> file and this will be applied to all topics contained within it. The possible frequencies that can be set for any given category are: 1, 5, 10, 50, 100, 200, 400 Hz.  If the frequency set by the user is higher than the maximum one handled internally by the PSDK libraries, an error message will appear.</p>
+<div style="background-color: #D6EAF8; padding: 10px; border: 1px solid ##FBFAFA;">
+    <p style="margin: 0;"><strong> Note:</strong>  If 0 Hz frequency is set, the publisher of that topic will be disabled.</p>
+</div>
+<div style="margin-bottom: 20px;"></div>
+</section>
+<section id="coordinate-frames">
+<h4>Coordinate frames<a class="headerlink" href="#coordinate-frames" title="Permalink to this headline"></a></h4>
+<p>This wrapper is using the ROS standard convention <a class="reference external" href="https://www.ros.org/reps/rep-0103.html">REP 103</a> and <a class="reference external" href="https://www.ros.org/reps/rep-0105.html">REP 105</a>. Thus, it transforms the FCU typical coordinate frames NED/FRD to ROS standards ENU/FLU. It is known, that there is room for improvement in the current implementation, thus users of this repo are asked to report any issue encountered and open PRs to improve the quality and robustness of the code.</p>
+</section>
+</section>
+<section id="flight-control">
+<h3>Flight control<a class="headerlink" href="#flight-control" title="Permalink to this headline"></a></h3>
+<p>The following topics are exposed to send commands to the FCU of the aircraft:</p>
+<section id="psdk-ros2-flight-control-setpoint-enuposition-yaw">
+<h4><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_ENUposition_yaw</span></code><a class="headerlink" href="#psdk-ros2-flight-control-setpoint-enuposition-yaw" title="Permalink to this headline"></a></h4>
+<ul>
+<li><p><strong>Message Type</strong>: <code class="docutils literal notranslate"><span class="pre">sensor_msgs::msg::Joy</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[0]</span></code>: x command [m]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[1]</span></code>: y command [m]</p>
+ <div style="background-color: #FFDDB8; padding: 10px; border: 1px solid #c3d9ff;">
+     <p style="margin: 0;font-size: 12px"><strong> Warning:</strong> </p> <p style="font-size: 12px;">These commands are relative. Thus, the aircraft does not stop upon reaching the provided X/Y commands!! The low-level implementation of this functionality lacks a position controller for these axes. If this is desired, the user should implement his/hers own way of sending an XY command and stopping once the aircraft reaches it. 
+ </div>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[2]</span></code>: z command [m]</p>
+<ul class="simple">
+<li><p>This command is relative to the global Cartesian frame where the aircraft has been initialized.</p></li>
+<li><p>The aircraft will stop at the designated z command once it reaches it.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[3]</span></code>: yaw command [rad]</p>
+<ul class="simple">
+<li><p>The commanded yaw is assumed to be following REP 103, thus a FLU rotation wrt to ENU frame</p></li>
+<li><p>The aircraft will stop at the designated yaw command once it reaches it.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="psdk-ros2-flight-control-setpoint-enuvelocity-yawrate">
+<h4><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_ENUvelocity_yawrate</span></code><a class="headerlink" href="#psdk-ros2-flight-control-setpoint-enuvelocity-yawrate" title="Permalink to this headline"></a></h4>
+<p>These commands are with respect to a ENU oriented global Cartesian frame where the aircraft has been initialized.</p>
+<ul class="simple">
+<li><p><strong>Message Type</strong>: <code class="docutils literal notranslate"><span class="pre">sensor_msgs::msg::Joy</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[0]</span></code>: x velocity command [m/s]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[1]</span></code>: y velocity command [m/s]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[2]</span></code>: z velocity command [m/s]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[3]</span></code>: yaw rate command [rad/s]</p></li>
+</ul>
+</section>
+<section id="psdk-ros2-flight-control-setpoint-fluvelocity-yawrate">
+<h4><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate</span></code><a class="headerlink" href="#psdk-ros2-flight-control-setpoint-fluvelocity-yawrate" title="Permalink to this headline"></a></h4>
+<p>These commands are with respect to a body frame (FLU).</p>
+<ul class="simple">
+<li><p><strong>Message Type</strong>: <code class="docutils literal notranslate"><span class="pre">sensor_msgs::msg::Joy</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[0]</span></code>: x velocity command [m/s]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[1]</span></code>: y velocity command [m/s]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[2]</span></code>: z velocity command [m/s]</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">axes[3]</span></code>: yaw rate command [rad/s]</p></li>
+</ul>
+</section>
+<section id="psdk-ros2-flight-control-setpoint-generic">
+<h4><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_generic</span></code><a class="headerlink" href="#psdk-ros2-flight-control-setpoint-generic" title="Permalink to this headline"></a></h4>
+<ul class="simple">
+<li><p>WIP: currently not implemented</p></li>
+</ul>
+</section>
+<section id="psdk-ros2-flight-control-setpoint-rollpitch-yawrate-thrust">
+<h4><code class="docutils literal notranslate"><span class="pre">/psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust</span></code><a class="headerlink" href="#psdk-ros2-flight-control-setpoint-rollpitch-yawrate-thrust" title="Permalink to this headline"></a></h4>
+<ul class="simple">
+<li><p>WIP: currently not implemented</p></li>
+</ul>
+</section>
+</section>
+<section id="camera">
+<h3>Camera<a class="headerlink" href="#camera" title="Permalink to this headline"></a></h3>
+<p>This module implements the main functionalities related with different camera payloads that can be mounted on-board the copter.
+The PSDK libraries define a payload index for each camera mounted on-board a copter as follows:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">DJI_MOUNT_POSITION_UNKNOWN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="n">DJI_MOUNT_POSITION_PAYLOAD_PORT_NO1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">DJI_MOUNT_POSITION_PAYLOAD_PORT_NO2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">    </span><span class="n">DJI_MOUNT_POSITION_PAYLOAD_PORT_NO3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="n">DJI_MOUNT_POSITION_EXTENSION_PORT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="p">}</span><span class="w"> </span><span class="n">E_DjiMountPosition</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Thus, when calling any of the services explained below, first the payload index or mount position needs to be specified so that the proper camera is selected. By default, the payload index is set to 1 in many services.</p>
+<section id="camera-settings">
+<h4>Camera settings<a class="headerlink" href="#camera-settings" title="Permalink to this headline"></a></h4>
+<p>The following camera parameters can be set/get. Please note, that some of these are not available for all camera types or need the camera to be put in a particular mode before the parameter can be set. Check the API Documentation for more information regaring the inputs and outputs of these ROS 2 services.</p>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/camera_get_type</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_set_exposure_mode_ev</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_get_exposure_mode_ev</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_set_shutter_speed</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_get_shutter_speed</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_set_iso</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_get_iso</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_set_focus_target</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_get_focus_target</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_set_focus_mode</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_get_focus_mode</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_set_optical_zoom</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_get_optical_zoom</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_set_infrared_zoom</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_set_aperture</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_get_aperture</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_get_laser_ranging_info</p></td>
+<td><p>Service</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="camera-commands">
+<h4>Camera commands<a class="headerlink" href="#camera-commands" title="Permalink to this headline"></a></h4>
+<p>The following services can be called to start shooting photos or record videos with the payload installed on-board the copter. heck the API Documentation for more information regaring the inputs and outputs of these ROS 2 services.</p>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/camera_shoot_single_photo</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_shoot_burst_photo</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_shoot_aeb_photo</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_shoot_interval_photo</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_stop_shoot_photo</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_record_video</p></td>
+<td><p>Service</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="camera-streaming">
+<h4>Camera streaming<a class="headerlink" href="#camera-streaming" title="Permalink to this headline"></a></h4>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/camera_setup_streaming</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/main_camera_stream</p></td>
+<td><p>Topic</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/fpv_camera_stream</p></td>
+<td><p>Topic</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="camera-file-management">
+<h4>Camera file management<a class="headerlink" href="#camera-file-management" title="Permalink to this headline"></a></h4>
+<p>These services currently are not working properly. Future work will address these functionalities.</p>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/camera_download_file_list</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/camera_download_file_by_index</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/camera_delete_file_by_index</p></td>
+<td><p>Service</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="gimbal">
+<h3>Gimbal<a class="headerlink" href="#gimbal" title="Permalink to this headline"></a></h3>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>psdk_ros2/gimbal_set_mode</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/gimbal_reset</p></td>
+<td><p>Service</p></td>
+</tr>
+<tr class="row-even"><td><p>psdk_ros2/gimbal_rotation</p></td>
+<td><p>Publisher</p></td>
+</tr>
+<tr class="row-odd"><td><p>psdk_ros2/gimbal_angles</p></td>
+<td><p>Topic</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="GettingStarted.html" class="btn btn-neutral float-left" title="Getting started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Contribute.html" class="btn btn-neutral float-right" title="Contribute" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Unmanned Life.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

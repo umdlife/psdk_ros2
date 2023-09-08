@@ -1,0 +1,14 @@
+.. _exhale_define_psdk__wrapper__utils_8hpp_1a1816a36f3888d09183e5b47530f58094:
+
+Define GOOD_GPS_SIGNAL_LEVEL
+============================
+
+- Defined in :ref:`file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: GOOD_GPS_SIGNAL_LEVEL
+   :project: C++ API Documentation

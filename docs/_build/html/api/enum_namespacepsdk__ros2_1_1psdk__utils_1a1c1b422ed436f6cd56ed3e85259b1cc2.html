@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enum RTKSolutionState &mdash; psdk_ros2 wrapper  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Function psdk_ros2::psdk_utils::deg_to_rad" href="function_namespacepsdk__ros2_1_1psdk__utils_1a38b91729bab1f1f18fcb178c240e5996.html" />
+    <link rel="prev" title="Enum GPSFixState" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a89ed1f3637656baf570fb7bacdab42d1.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            psdk_ros2 wrapper
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../documentation/Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/GettingStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/GettingStarted.html#id1"></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/ThePSDKWrapper.html">The psdk_ros2 wrapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/Contribute.html">Contribute</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">Library API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#page-hierarchy">Page Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#class-hierarchy">Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#file-hierarchy">File Hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="library_root.html#full-api">Full API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#namespaces">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#classes-and-structs">Classes and Structs</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="library_root.html#enums">Enums</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1afc7b73c5ce68bcb204fc5938107fbc35.html">Enum DisplayMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a92f4aaf0d4432a619294998d6b83fc5f.html">Enum FlightStatus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_namespacepsdk__ros2_1_1psdk__utils_1a89ed1f3637656baf570fb7bacdab42d1.html">Enum GPSFixState</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Enum RTKSolutionState</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#variables">Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#defines">Defines</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">psdk_ros2 wrapper</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="library_root.html">Library API</a></li>
+      <li class="breadcrumb-item active">Enum RTKSolutionState</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/enum_namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="enum-rtksolutionstate">
+<span id="exhale-enum-namespacepsdk-ros2-1-1psdk-utils-1a1c1b422ed436f6cd56ed3e85259b1cc2"></span><h1>Enum RTKSolutionState<a class="headerlink" href="#enum-rtksolutionstate" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp.html#file-psdk-wrapper-include-psdk-wrapper-psdk-wrapper-utils-hpp"><span class="std std-ref">File psdk_wrapper_utils.hpp</span></a></p></li>
+</ul>
+<section id="enum-documentation">
+<h2>Enum Documentation<a class="headerlink" href="#enum-documentation" title="Permalink to this headline"></a></h2>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionStateE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionStateE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionStateE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">psdk_ros2</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">psdk_utils</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">RTKSolutionState</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionStateE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState32RTK_SOLUTION_STATE_NOT_AVAILABLEE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState32RTK_SOLUTION_STATE_NOT_AVAILABLEE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState32RTK_SOLUTION_STATE_NOT_AVAILABLEE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2aab6e86998c614e43d8c104c04c7ce945"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_NOT_AVAILABLE</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState32RTK_SOLUTION_STATE_NOT_AVAILABLEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState31RTK_SOLUTION_STATE_FIX_POSITIONE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState31RTK_SOLUTION_STATE_FIX_POSITIONE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState31RTK_SOLUTION_STATE_FIX_POSITIONE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a77fb2fd7490da04e009cf3398d9785c5"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_FIX_POSITION</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState31RTK_SOLUTION_STATE_FIX_POSITIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState34RTK_SOLUTION_STATE_FIX_HEIGHT_AUTOE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState34RTK_SOLUTION_STATE_FIX_HEIGHT_AUTOE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState34RTK_SOLUTION_STATE_FIX_HEIGHT_AUTOE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a31c3d5c1b5b961abfb65a0c2b9b69b1d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_FIX_HEIGHT_AUTO</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState34RTK_SOLUTION_STATE_FIX_HEIGHT_AUTOE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState57RTK_SOLUTION_STATE_INSTANTANEOUS_DOPPLER_COMPUTE_VELOCITYE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState57RTK_SOLUTION_STATE_INSTANTANEOUS_DOPPLER_COMPUTE_VELOCITYE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState57RTK_SOLUTION_STATE_INSTANTANEOUS_DOPPLER_COMPUTE_VELOCITYE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a949dff1e4f18cd2e50ee3e98aa777170"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_INSTANTANEOUS_DOPPLER_COMPUTE_VELOCITY</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState57RTK_SOLUTION_STATE_INSTANTANEOUS_DOPPLER_COMPUTE_VELOCITYE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState38RTK_SOLUTION_STATE_SINGLE_PNT_SOLUTIONE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState38RTK_SOLUTION_STATE_SINGLE_PNT_SOLUTIONE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState38RTK_SOLUTION_STATE_SINGLE_PNT_SOLUTIONE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2af69cdc4e00123ee6a8afa934d656df1b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_SINGLE_PNT_SOLUTION</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState38RTK_SOLUTION_STATE_SINGLE_PNT_SOLUTIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState52RTK_SOLUTION_STATE_PSEUDORANGE_DIFFERENTIAL_SOLUTIONE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState52RTK_SOLUTION_STATE_PSEUDORANGE_DIFFERENTIAL_SOLUTIONE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState52RTK_SOLUTION_STATE_PSEUDORANGE_DIFFERENTIAL_SOLUTIONE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a948ef69f80ac6b714212ca8146822173"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_PSEUDORANGE_DIFFERENTIAL_SOLUTION</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState52RTK_SOLUTION_STATE_PSEUDORANGE_DIFFERENTIAL_SOLUTIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState45RTK_SOLUTION_STATE_SBAS_CORRECTION_CALCULATEDE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState45RTK_SOLUTION_STATE_SBAS_CORRECTION_CALCULATEDE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState45RTK_SOLUTION_STATE_SBAS_CORRECTION_CALCULATEDE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a7421456ef4ca8a9b52f4dae1a2c7c88e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_SBAS_CORRECTION_CALCULATED</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState45RTK_SOLUTION_STATE_SBAS_CORRECTION_CALCULATEDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState63RTK_SOLUTION_STATE_KALMAN_FILTER_WITHOUT_OBSERVATION_PROPAGATEDE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState63RTK_SOLUTION_STATE_KALMAN_FILTER_WITHOUT_OBSERVATION_PROPAGATEDE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState63RTK_SOLUTION_STATE_KALMAN_FILTER_WITHOUT_OBSERVATION_PROPAGATEDE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2acd0e59d5d75280bd6ec1756023c358a2"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_KALMAN_FILTER_WITHOUT_OBSERVATION_PROPAGATED</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState63RTK_SOLUTION_STATE_KALMAN_FILTER_WITHOUT_OBSERVATION_PROPAGATEDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState40RTK_SOLUTION_STATE_OMNISTAR_VBS_POSITIONE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState40RTK_SOLUTION_STATE_OMNISTAR_VBS_POSITIONE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState40RTK_SOLUTION_STATE_OMNISTAR_VBS_POSITIONE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2abd1b9ec436158c86de1491275c741471"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_OMNISTAR_VBS_POSITION</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState40RTK_SOLUTION_STATE_OMNISTAR_VBS_POSITIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState37RTK_SOLUTION_STATE_FLOAT_L1_AMBIGUITYE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState37RTK_SOLUTION_STATE_FLOAT_L1_AMBIGUITYE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState37RTK_SOLUTION_STATE_FLOAT_L1_AMBIGUITYE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2ae18ef82bd1663462cd90d9027595bd23"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_FLOAT_L1_AMBIGUITY</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState37RTK_SOLUTION_STATE_FLOAT_L1_AMBIGUITYE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState51RTK_SOLUTION_STATE_FLOAT_IONOSPHERIC_FREE_AMBIGUITYE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState51RTK_SOLUTION_STATE_FLOAT_IONOSPHERIC_FREE_AMBIGUITYE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState51RTK_SOLUTION_STATE_FLOAT_IONOSPHERIC_FREE_AMBIGUITYE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a2bed873d8e89c46e8e145a688d881383"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_FLOAT_IONOSPHERIC_FREE_AMBIGUITY</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState51RTK_SOLUTION_STATE_FLOAT_IONOSPHERIC_FREE_AMBIGUITYE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState33RTK_SOLUTION_STATE_FLOAT_SOLUTIONE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState33RTK_SOLUTION_STATE_FLOAT_SOLUTIONE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState33RTK_SOLUTION_STATE_FLOAT_SOLUTIONE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a161ed7a844b0020e0467a97e4fab7575"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_FLOAT_SOLUTION</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState33RTK_SOLUTION_STATE_FLOAT_SOLUTIONE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState35RTK_SOLUTION_STATE_L1_AMBIGUITY_INTE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState35RTK_SOLUTION_STATE_L1_AMBIGUITY_INTE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState35RTK_SOLUTION_STATE_L1_AMBIGUITY_INTE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a3a7e97414b9f466b705c2467df9a3593"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_L1_AMBIGUITY_INT</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState35RTK_SOLUTION_STATE_L1_AMBIGUITY_INTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState42RTK_SOLUTION_STATE_WIDE_LANE_AMBIGUITY_INTE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState42RTK_SOLUTION_STATE_WIDE_LANE_AMBIGUITY_INTE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState42RTK_SOLUTION_STATE_WIDE_LANE_AMBIGUITY_INTE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2adb974ff3780b87c3938df67a42319c64"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_WIDE_LANE_AMBIGUITY_INT</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState42RTK_SOLUTION_STATE_WIDE_LANE_AMBIGUITY_INTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState29RTK_SOLUTION_STATE_NARROW_INTE">
+<span id="_CPPv3N9psdk_ros210psdk_utils16RTKSolutionState29RTK_SOLUTION_STATE_NARROW_INTE"></span><span id="_CPPv2N9psdk_ros210psdk_utils16RTKSolutionState29RTK_SOLUTION_STATE_NARROW_INTE"></span><span class="target" id="namespacepsdk__ros2_1_1psdk__utils_1a1c1b422ed436f6cd56ed3e85259b1cc2a336f226d2facaf396bf8e3b97acefc76"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RTK_SOLUTION_STATE_NARROW_INT</span></span></span><a class="headerlink" href="#_CPPv4N9psdk_ros210psdk_utils16RTKSolutionState29RTK_SOLUTION_STATE_NARROW_INTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="enum_namespacepsdk__ros2_1_1psdk__utils_1a89ed1f3637656baf570fb7bacdab42d1.html" class="btn btn-neutral float-left" title="Enum GPSFixState" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="function_namespacepsdk__ros2_1_1psdk__utils_1a38b91729bab1f1f18fcb178c240e5996.html" class="btn btn-neutral float-right" title="Function psdk_ros2::psdk_utils::deg_to_rad" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Unmanned Life.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

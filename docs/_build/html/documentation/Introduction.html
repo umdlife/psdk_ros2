@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; psdk_ros2 wrapper  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Getting started" href="GettingStarted.html" />
+    <link rel="prev" title="psdk_ros2 wrapper" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            psdk_ros2 wrapper
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#key-features">Key features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compatibility">Compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#important-notice">Important Notice</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html#id1"></a></li>
+<li class="toctree-l1"><a class="reference internal" href="ThePSDKWrapper.html">The psdk_ros2 wrapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Contribute.html">Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">Library API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">psdk_ros2 wrapper</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/documentation/Introduction.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">psdk_ros2</span></code> wrapper is an open-source project that integrates the DJI’s <a class="reference external" href="https://github.com/dji-sdk/Payload-SDK">Payload-SDK libraries</a> with ROS2 (Robot Operating System 2) ecosystem.</p>
+<section id="key-features">
+<h2>Key features<a class="headerlink" href="#key-features" title="Permalink to this headline"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">psdk_ros2</span></code> wrapper currently supports the following features:</p>
+<ol class="arabic simple">
+<li><p><strong>Starting and Initializing PSDK Applications</strong>: <code class="docutils literal notranslate"><span class="pre">psdk_ros2</span></code> allows you to initiate and configure a PSDK application from within ROS 2.</p></li>
+<li><p><strong>Subscription to DJI Main Topics</strong>: You can easily subscribe to the main topics provided by DJI, getting access to essential data and information.</p></li>
+<li><p><strong>Frequency Control for Topic Subscription</strong>: <code class="docutils literal notranslate"><span class="pre">psdk_ros2</span></code> offers the capability to set the frequency of topic subscriptions, allowing you to tailor data retrieval as per your requirements.</p></li>
+<li><p><strong>Copter Position and Velocity Commands</strong>: With <code class="docutils literal notranslate"><span class="pre">psdk_ros2</span></code>, you can conveniently send position and velocity commands to control a copter’s movement.</p></li>
+<li><p><strong>Camera Parameters Management</strong>: <code class="docutils literal notranslate"><span class="pre">psdk_ros2</span></code> provides functionalities to retrieve and update the main parameters of a mounted camera, giving you control over the camera settings.</p></li>
+<li><p><strong>Gimbal Parameters Control</strong>: You can manipulate gimbal parameters, adjusting the gimbal’s orientation and behavior.</p></li>
+</ol>
+<div style="background-color: #D6EAF8; padding: 10px; border: 1px solid ##FBFAFA;">
+    <p style="margin: 0;"><strong> Note:</strong>  The PSDK libraries offer many other capabilities. If you are interested in enhancing the wrapper and adding further functionalities, please visit our Contribute page to discover how you can contribute to the community.</p>
+</div>
+<div style="margin-bottom: 20px;"></div>
+</section>
+<section id="compatibility">
+<h2>Compatibility<a class="headerlink" href="#compatibility" title="Permalink to this headline"></a></h2>
+<p>The current version supports <strong>PSDK v3.5</strong> and it has been tested and built for <strong>ROS 2 Humble</strong>. For firmware and product compatibility, please check the page <a class="reference external" href="https://developer.dji.com/doc/payload-sdk-tutorial/en/">DJI Developer - PSDK</a>.</p>
+</section>
+<section id="important-notice">
+<h2>Important Notice<a class="headerlink" href="#important-notice" title="Permalink to this headline"></a></h2>
+<div style="background-color: #FFDDB8; padding: 10px; border: 0.2px solid ##FBFAFA;">
+    <p style="margin: 0;"><strong> Caution:</strong>  This code has not undergone extensive testing with real hardware. Users are advised to exercise caution when using this repository.</p>
+</div>
+<div style="margin-bottom: 20px;"></div>
+<p>While we strive to provide reliable and functional code, it’s important to note that the code in this repository is still a work in progress. As a result, potential bugs or compatibility issues might arise when using this code with specific hardware configurations.</p>
+<p>We encourage users to:</p>
+<ul class="simple">
+<li><p>Test the code in controlled environments before deploying it in critical or real-world scenarios.</p></li>
+<li><p>Proceed with caution and monitor the system closely if integrating this code into operational hardware.</p></li>
+<li><p>Provide feedback, report issues and open pull requests. Your input will help improve the reliability of this repository.</p></li>
+</ul>
+<p>Remember that all users assume the responsibility for assessing the code’s suitability for their own applications and hardware.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="psdk_ros2 wrapper" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="GettingStarted.html" class="btn btn-neutral float-right" title="Getting started" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Unmanned Life.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

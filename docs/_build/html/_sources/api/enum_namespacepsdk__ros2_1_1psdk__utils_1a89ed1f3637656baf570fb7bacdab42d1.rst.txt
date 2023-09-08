@@ -1,0 +1,14 @@
+.. _exhale_enum_namespacepsdk__ros2_1_1psdk__utils_1a89ed1f3637656baf570fb7bacdab42d1:
+
+Enum GPSFixState
+================
+
+- Defined in :ref:`file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp`
+
+
+Enum Documentation
+------------------
+
+
+.. doxygenenum:: psdk_ros2::psdk_utils::GPSFixState
+   :project: C++ API Documentation

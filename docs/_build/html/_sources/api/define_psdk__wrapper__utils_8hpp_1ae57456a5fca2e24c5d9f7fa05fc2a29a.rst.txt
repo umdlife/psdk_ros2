@@ -1,0 +1,14 @@
+.. _exhale_define_psdk__wrapper__utils_8hpp_1ae57456a5fca2e24c5d9f7fa05fc2a29a:
+
+Define FLIGHT_STATUS_TOPICS_MAX_FREQ
+====================================
+
+- Defined in :ref:`file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: FLIGHT_STATUS_TOPICS_MAX_FREQ
+   :project: C++ API Documentation

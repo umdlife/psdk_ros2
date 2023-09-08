@@ -1,0 +1,14 @@
+.. _exhale_define_psdk__wrapper__utils_8hpp_1aa8526dc4ab91ca07a3b3c3a4ea85fbc6:
+
+Define BATTERY_STATUS_TOPICS_MAX_FREQ
+=====================================
+
+- Defined in :ref:`file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp`
+
+
+Define Documentation
+--------------------
+
+
+.. doxygendefine:: BATTERY_STATUS_TOPICS_MAX_FREQ
+   :project: C++ API Documentation

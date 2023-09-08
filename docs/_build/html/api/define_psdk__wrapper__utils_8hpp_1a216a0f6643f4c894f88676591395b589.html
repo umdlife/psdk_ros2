@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Define RC_CHANNELS_TOPICS_MAX_FREQ &mdash; psdk_ros2 wrapper  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists/css/tree_view.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/collapsible-lists/js/CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists/js/apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Define RTK_DATA_TOPICS_MAX_FREQ" href="define_psdk__wrapper__utils_8hpp_1a17ca4f6fd2eb12cf64e022939d0900b2.html" />
+    <link rel="prev" title="Define POSITION_TOPICS_MAX_FREQ" href="define_psdk__wrapper__utils_8hpp_1a672dc0a6f070eb5ea4881671fb3eacc0.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            psdk_ros2 wrapper
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../documentation/Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/GettingStarted.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/GettingStarted.html#id1"></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/ThePSDKWrapper.html">The psdk_ros2 wrapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation/Contribute.html">Contribute</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="library_root.html">Library API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#page-hierarchy">Page Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#class-hierarchy">Class Hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library_root.html#file-hierarchy">File Hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="library_root.html#full-api">Full API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#namespaces">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#classes-and-structs">Classes and Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#enums">Enums</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="library_root.html#variables">Variables</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="library_root.html#defines">Defines</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ace39a8993de63dc6fe84e5bda03152af.html">Define ACCELERATION_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1aa64d57597f8d524decbd26a340fd276f.html">Define ANGULAR_VELOCITY_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a434b8bbb7de051ce77a5f6b43732b8b6.html">Define ATTITUDE_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1aa8526dc4ab91ca07a3b3c3a4ea85fbc6.html">Define BATTERY_STATUS_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a804716d718d21b16e1f1112978b41100.html">Define CONTROL_DATA_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ae57456a5fca2e24c5d9f7fa05fc2a29a.html">Define FLIGHT_STATUS_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ac178df54baca74a030bdcba4dd98ab58.html">Define GIMBAL_DATA_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a1816a36f3888d09183e5b47530f58094.html">Define GOOD_GPS_SIGNAL_LEVEL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ab4fbedd889d0f20727091061bcd68f2e.html">Define GPS_DATA_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a83cf7c8196bd46f967ef83363daa14f4.html">Define GPS_FUSED_POSITION_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1ade5163ec494976ea583183ec2f924a7e.html">Define IMU_TOPIC_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1afd61c263db1b5625781a5f92e7073c9f.html">Define MAGNETOMETER_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a672dc0a6f070eb5ea4881671fb3eacc0.html">Define POSITION_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Define RC_CHANNELS_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a17ca4f6fd2eb12cf64e022939d0900b2.html">Define RTK_DATA_TOPICS_MAX_FREQ</a></li>
+<li class="toctree-l4"><a class="reference internal" href="define_psdk__wrapper__utils_8hpp_1a3cdb1c583b523f495811dc7d987a7390.html">Define VELOCITY_TOPICS_MAX_FREQ</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">psdk_ros2 wrapper</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="library_root.html">Library API</a></li>
+      <li class="breadcrumb-item active">Define RC_CHANNELS_TOPICS_MAX_FREQ</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/define_psdk__wrapper__utils_8hpp_1a216a0f6643f4c894f88676591395b589.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="define-rc-channels-topics-max-freq">
+<span id="exhale-define-psdk-wrapper-utils-8hpp-1a216a0f6643f4c894f88676591395b589"></span><h1>Define RC_CHANNELS_TOPICS_MAX_FREQ<a class="headerlink" href="#define-rc-channels-topics-max-freq" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p>Defined in <a class="reference internal" href="file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp.html#file-psdk-wrapper-include-psdk-wrapper-psdk-wrapper-utils-hpp"><span class="std std-ref">File psdk_wrapper_utils.hpp</span></a></p></li>
+</ul>
+<section id="define-documentation">
+<h2>Define Documentation<a class="headerlink" href="#define-documentation" title="Permalink to this headline"></a></h2>
+<dl class="cpp macro">
+<dt class="sig sig-object cpp" id="c.RC_CHANNELS_TOPICS_MAX_FREQ">
+<span class="target" id="psdk__wrapper__utils_8hpp_1a216a0f6643f4c894f88676591395b589"></span><span class="sig-name descname"><span class="n"><span class="pre">RC_CHANNELS_TOPICS_MAX_FREQ</span></span></span><a class="headerlink" href="#c.RC_CHANNELS_TOPICS_MAX_FREQ" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="define_psdk__wrapper__utils_8hpp_1a672dc0a6f070eb5ea4881671fb3eacc0.html" class="btn btn-neutral float-left" title="Define POSITION_TOPICS_MAX_FREQ" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="define_psdk__wrapper__utils_8hpp_1a17ca4f6fd2eb12cf64e022939d0900b2.html" class="btn btn-neutral float-right" title="Define RTK_DATA_TOPICS_MAX_FREQ" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Unmanned Life.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

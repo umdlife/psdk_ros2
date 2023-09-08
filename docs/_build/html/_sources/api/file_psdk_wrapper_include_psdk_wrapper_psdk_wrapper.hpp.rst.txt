@@ -1,0 +1,226 @@
+
+.. _file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper.hpp:
+
+File psdk_wrapper.hpp
+=====================
+
+
+Header file for the psdk_wrapper class. 
+
+
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``psdk_wrapper/include/psdk_wrapper/psdk_wrapper.hpp``)
+-------------------------------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper.hpp.rst
+
+
+
+Detailed Description
+--------------------
+
+Bianca Bendris, Lidia de la Torre Vazquez Contact: bianca@unmanned.life 
+
+
+
+
+
+
+Includes
+--------
+
+
+- ``cmath``
+
+- ``dji_aircraft_info.h``
+
+- ``dji_camera_manager.h``
+
+- ``dji_camera_stream_decoder.hpp``
+
+- ``dji_core.h``
+
+- ``dji_flight_controller.h``
+
+- ``dji_gimbal_manager.h``
+
+- ``dji_liveview.h``
+
+- ``dji_logger.h``
+
+- ``dji_platform.h``
+
+- ``dji_typedef.h``
+
+- ``geometry_msgs/msg/accel_stamped.hpp``
+
+- ``geometry_msgs/msg/quaternion_stamped.hpp``
+
+- ``geometry_msgs/msg/twist_stamped.hpp``
+
+- ``geometry_msgs/msg/vector3_stamped.hpp``
+
+- ``hal_network.h``
+
+- ``hal_uart.h``
+
+- ``hal_usb_bulk.h``
+
+- ``map``
+
+- ``memory``
+
+- ``nav_msgs/msg/odometry.hpp``
+
+- ``osal.h``
+
+- ``osal_fs.h``
+
+- ``osal_socket.h``
+
+- ``psdk_interfaces/msg/altitude.hpp``
+
+- ``psdk_interfaces/msg/display_mode.hpp``
+
+- ``psdk_interfaces/msg/flight_anomaly.hpp``
+
+- ``psdk_interfaces/msg/flight_status.hpp``
+
+- ``psdk_interfaces/msg/gimbal_rotation.hpp``
+
+- ``psdk_interfaces/msg/gimbal_status.hpp``
+
+- ``psdk_interfaces/msg/gps_details.hpp``
+
+- ``psdk_interfaces/msg/home_position.hpp``
+
+- ``psdk_interfaces/msg/position_fused.hpp``
+
+- ``psdk_interfaces/msg/relative_obstacle_info.hpp``
+
+- ``psdk_interfaces/msg/rtk_yaw.hpp``
+
+- ``psdk_interfaces/srv/camera_delete_file_by_index.hpp``
+
+- ``psdk_interfaces/srv/camera_download_file_by_index.hpp``
+
+- ``psdk_interfaces/srv/camera_download_file_list.hpp``
+
+- ``psdk_interfaces/srv/camera_get_aperture.hpp``
+
+- ``psdk_interfaces/srv/camera_get_exposure_mode_ev.hpp``
+
+- ``psdk_interfaces/srv/camera_get_focus_mode.hpp``
+
+- ``psdk_interfaces/srv/camera_get_focus_target.hpp``
+
+- ``psdk_interfaces/srv/camera_get_iso.hpp``
+
+- ``psdk_interfaces/srv/camera_get_laser_ranging_info.hpp``
+
+- ``psdk_interfaces/srv/camera_get_optical_zoom.hpp``
+
+- ``psdk_interfaces/srv/camera_get_shutter_speed.hpp``
+
+- ``psdk_interfaces/srv/camera_get_type.hpp``
+
+- ``psdk_interfaces/srv/camera_record_video.hpp``
+
+- ``psdk_interfaces/srv/camera_set_aperture.hpp``
+
+- ``psdk_interfaces/srv/camera_set_exposure_mode_ev.hpp``
+
+- ``psdk_interfaces/srv/camera_set_focus_mode.hpp``
+
+- ``psdk_interfaces/srv/camera_set_focus_target.hpp``
+
+- ``psdk_interfaces/srv/camera_set_infrared_zoom.hpp``
+
+- ``psdk_interfaces/srv/camera_set_iso.hpp``
+
+- ``psdk_interfaces/srv/camera_set_optical_zoom.hpp``
+
+- ``psdk_interfaces/srv/camera_set_shutter_speed.hpp``
+
+- ``psdk_interfaces/srv/camera_setup_streaming.hpp``
+
+- ``psdk_interfaces/srv/camera_shoot_aeb_photo.hpp``
+
+- ``psdk_interfaces/srv/camera_shoot_burst_photo.hpp``
+
+- ``psdk_interfaces/srv/camera_shoot_interval_photo.hpp``
+
+- ``psdk_interfaces/srv/camera_shoot_single_photo.hpp``
+
+- ``psdk_interfaces/srv/camera_stop_shoot_photo.hpp``
+
+- ``psdk_interfaces/srv/get_go_home_altitude.hpp``
+
+- ``psdk_interfaces/srv/get_obstacle_avoidance.hpp``
+
+- ``psdk_interfaces/srv/gimbal_reset.hpp``
+
+- ``psdk_interfaces/srv/gimbal_set_mode.hpp``
+
+- ``psdk_interfaces/srv/set_go_home_altitude.hpp``
+
+- ``psdk_interfaces/srv/set_home_from_gps.hpp``
+
+- ``psdk_interfaces/srv/set_obstacle_avoidance.hpp``
+
+- ``psdk_wrapper/psdk_wrapper_utils.hpp`` (:ref:`file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp`)
+
+- ``rclcpp/rclcpp.hpp``
+
+- ``rclcpp_lifecycle/lifecycle_node.hpp``
+
+- ``sensor_msgs/msg/battery_state.hpp``
+
+- ``sensor_msgs/msg/image.hpp``
+
+- ``sensor_msgs/msg/imu.hpp``
+
+- ``sensor_msgs/msg/joy.hpp``
+
+- ``sensor_msgs/msg/magnetic_field.hpp``
+
+- ``sensor_msgs/msg/nav_sat_fix.hpp``
+
+- ``std_msgs/msg/float32.hpp``
+
+- ``std_msgs/msg/u_int16.hpp``
+
+- ``std_msgs/msg/u_int8.hpp``
+
+- ``std_srvs/srv/trigger.hpp``
+
+- ``string``
+
+
+
+
+
+
+Namespaces
+----------
+
+
+- :ref:`namespace_psdk_ros2`
+
+
+Classes
+-------
+
+
+- :ref:`exhale_struct_structpsdk__ros2_1_1PSDKWrapper_1_1PSDKParams`
+
+- :ref:`exhale_class_classpsdk__ros2_1_1PSDKWrapper`
+

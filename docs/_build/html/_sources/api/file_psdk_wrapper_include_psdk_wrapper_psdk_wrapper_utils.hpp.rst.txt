@@ -1,0 +1,113 @@
+
+.. _file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp:
+
+File psdk_wrapper_utils.hpp
+===========================
+
+
+Header file containing utility functions and constants. 
+
+
+
+.. contents:: Contents
+   :local:
+   :backlinks: none
+
+Definition (``psdk_wrapper/include/psdk_wrapper/psdk_wrapper_utils.hpp``)
+-------------------------------------------------------------------------
+
+
+.. toctree::
+   :maxdepth: 1
+
+   program_listing_file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper_utils.hpp.rst
+
+
+
+Detailed Description
+--------------------
+
+Bianca Bendris Contact: bianca@unmanned.life 
+
+
+
+
+
+
+Includes
+--------
+
+
+- ``dji_fc_subscription.h``
+
+- ``dji_flight_controller.h``
+
+- ``tf2/LinearMath/Matrix3x3.h``
+
+- ``tf2/LinearMath/Quaternion.h``
+
+- ``vector``
+
+
+
+Included By
+-----------
+
+
+- :ref:`file_psdk_wrapper_include_psdk_wrapper_psdk_wrapper.hpp`
+
+
+
+
+Namespaces
+----------
+
+
+- :ref:`namespace_psdk_ros2`
+
+- :ref:`namespace_psdk_ros2__psdk_utils`
+
+
+Classes
+-------
+
+
+- :ref:`exhale_struct_structpsdk__ros2_1_1psdk__utils_1_1DJITopic`
+
+
+Defines
+-------
+
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1ace39a8993de63dc6fe84e5bda03152af`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1aa64d57597f8d524decbd26a340fd276f`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1a434b8bbb7de051ce77a5f6b43732b8b6`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1aa8526dc4ab91ca07a3b3c3a4ea85fbc6`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1a804716d718d21b16e1f1112978b41100`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1ae57456a5fca2e24c5d9f7fa05fc2a29a`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1ac178df54baca74a030bdcba4dd98ab58`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1a1816a36f3888d09183e5b47530f58094`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1ab4fbedd889d0f20727091061bcd68f2e`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1a83cf7c8196bd46f967ef83363daa14f4`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1ade5163ec494976ea583183ec2f924a7e`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1afd61c263db1b5625781a5f92e7073c9f`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1a672dc0a6f070eb5ea4881671fb3eacc0`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1a216a0f6643f4c894f88676591395b589`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1a17ca4f6fd2eb12cf64e022939d0900b2`
+
+- :ref:`exhale_define_psdk__wrapper__utils_8hpp_1a3cdb1c583b523f495811dc7d987a7390`
+

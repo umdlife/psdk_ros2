@@ -1,0 +1,7 @@
+.. _page_Publishers_page:
+
+Publishers_page
+===============
+
+.. doxygenpage:: Publishers_page
+   :project: C++ API Documentation
