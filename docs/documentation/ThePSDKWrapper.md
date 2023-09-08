@@ -7,7 +7,7 @@ This brief overview highlights the primary components and their roles within the
 
 Within the `psdk_wrapper` folder you can find:
 
-* **3rdparty**: folder contains essential libraries sourced from DJI Payload-SDK for FCU interaction
+* **3rdparty**: folder contains essential libraries sourced from DJI Payload-SDK for FCU interaction which had required small modifications
 * **psdk_wrapper.cpp:** main lifecycle node which set-up and initializes the psdk application 
 * **modules**: encapsulates specific functionalities of the wrapper
       		
@@ -233,7 +233,7 @@ The following camera parameters can be set/get. Please note, that some of these 
 | psdk_ros2/camera_get_laser_ranging_info     | Service   |
 #### Camera commands
 
-The following services can be called to start shooting photos or record videos with the payload installed on-board the copter. heck the API Documentation for more information regaring the inputs and outputs of these ROS 2 services. 
+The following services can be called to start shooting photos or record videos with the payload installed on-board the copter. Check the API Documentation for more information regarding the inputs and outputs of these ROS 2 services. 
 
 | Name                                    | Type      |
 | ----------------------------------------| --------- | 
@@ -246,6 +246,9 @@ The following services can be called to start shooting photos or record videos w
 
 #### Camera streaming
 
+The camera streaming is managed by a ROS 2 service. Calling the `psdk_ros2/camera_setup_streaming` you can select the payload index of the camera you want to stream, the camera source (e.g. zoom camera/wide camera) and whether to start or stop the streaming with a boolean. Once the streaming is started, you can see the images either on the `psdk_ros2/main_camera_stream`  if the main camera has been selected or the `psdk_ros2/fpv_camera_stream`  if the FPV camera has been selected. 
+
+Please notice that the frequency of the streaming will depend on the computational resources available on the board where the `psdk_ros2 wrapper` is launched. 
 
 | Name                              | Type      |
 | --------------------------------- | --------- | 

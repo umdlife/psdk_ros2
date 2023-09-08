@@ -111,7 +111,7 @@
 ├── <strong>psdk_wrapper</strong> : <em>main wrapper code</em></p>
 <p>Within the <code class="docutils literal notranslate"><span class="pre">psdk_wrapper</span></code> folder you can find:</p>
 <ul class="simple">
-<li><p><strong>3rdparty</strong>: folder contains essential libraries sourced from DJI Payload-SDK for FCU interaction</p></li>
+<li><p><strong>3rdparty</strong>: folder contains essential libraries sourced from DJI Payload-SDK for FCU interaction which had required small modifications</p></li>
 <li><p><strong>psdk_wrapper.cpp:</strong> main lifecycle node which set-up and initializes the psdk application</p></li>
 <li><p><strong>modules</strong>: encapsulates specific functionalities of the wrapper</p></li>
 </ul>
@@ -537,7 +537,7 @@ The PSDK libraries define a payload index for each camera mounted on-board a cop
 </section>
 <section id="camera-commands">
 <h4>Camera commands<a class="headerlink" href="#camera-commands" title="Permalink to this headline"></a></h4>
-<p>The following services can be called to start shooting photos or record videos with the payload installed on-board the copter. heck the API Documentation for more information regaring the inputs and outputs of these ROS 2 services.</p>
+<p>The following services can be called to start shooting photos or record videos with the payload installed on-board the copter. Check the API Documentation for more information regarding the inputs and outputs of these ROS 2 services.</p>
 <table class="colwidths-auto docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Name</p></th>
@@ -568,6 +568,8 @@ The PSDK libraries define a payload index for each camera mounted on-board a cop
 </section>
 <section id="camera-streaming">
 <h4>Camera streaming<a class="headerlink" href="#camera-streaming" title="Permalink to this headline"></a></h4>
+<p>The camera streaming is managed by a ROS 2 service. Calling the <code class="docutils literal notranslate"><span class="pre">psdk_ros2/camera_setup_streaming</span></code> you can select the payload index of the camera you want to stream, the camera source (e.g. zoom camera/wide camera) and whether to start or stop the streaming with a boolean. Once the streaming is started, you can see the images either on the <code class="docutils literal notranslate"><span class="pre">psdk_ros2/main_camera_stream</span></code>  if the main camera has been selected or the <code class="docutils literal notranslate"><span class="pre">psdk_ros2/fpv_camera_stream</span></code>  if the FPV camera has been selected.</p>
+<p>Please notice that the frequency of the streaming will depend on the computational resources available on the board where the <code class="docutils literal notranslate"><span class="pre">psdk_ros2</span> <span class="pre">wrapper</span></code> is launched.</p>
 <table class="colwidths-auto docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Name</p></th>

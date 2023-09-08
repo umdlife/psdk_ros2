@@ -1,6 +1,6 @@
 # Introduction
 
-`psdk_ros2` wrapper is an open-source project that integrates the DJI's [Payload-SDK libraries](https://github.com/dji-sdk/Payload-SDK) with ROS2 (Robot Operating System 2) ecosystem. 
+`psdk_ros2` wrapper is an open-source project that integrates the DJI's [Payload-SDK libraries](https://github.com/dji-sdk/Payload-SDK) with ROS 2 (Robot Operating System 2) ecosystem. 
 
 ## Key features
 
@@ -14,9 +14,9 @@ The `psdk_ros2` wrapper currently supports the following features:
 
 4. **Copter Position and Velocity Commands**: With `psdk_ros2`, you can conveniently send position and velocity commands to control a copter's movement.
 
-5. **Camera Parameters Management**: `psdk_ros2` provides functionalities to retrieve and update the main parameters of a mounted camera, giving you control over the camera settings.
+5. **Camera Management**: `psdk_ros2` provides functionalities to retrieve and update the main parameters of a mounted camera, giving you control over the camera settings. Moreover, you can take photos, videos and obtain the stream on a ROS 2 topic. 
 
-6. **Gimbal Parameters Control**: You can manipulate gimbal parameters, adjusting the gimbal's orientation and behavior.
+6. **Gimbal Control**: You can manipulate gimbal parameters, adjusting the gimbal's orientation and behavior.
 
 
 

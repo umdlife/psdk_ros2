@@ -4,7 +4,7 @@
 
 ## Licensing Information
 
-The `psdk_ros2` wrapper is released under the [Mozilla Public License version 2.0 (MPL v2.0)](add_link_to_license). This open-source license grants you the freedom to use, modify, and distribute the `psdk_ros2` wrapper while complying with the terms of the license. Please refer to the provided license link for a comprehensive understanding of your rights and responsibilities.
+The `psdk_ros2` wrapper is released under the [Mozilla Public License version 2.0 (MPL v2.0)](https://github.com/umdlife/psdk_ros2/blob/main/LICENSE.md). This open-source license grants you the freedom to use, modify, and distribute the `psdk_ros2` wrapper while complying with the terms of the license. Please refer to the provided license link for a comprehensive understanding of your rights and responsibilities.
 
 ### 3rd Party Source Code
 
