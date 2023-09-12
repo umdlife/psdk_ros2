@@ -9,6 +9,11 @@ cd ~/psdk_ros2_ws/src
 git clone https://github.com/umdlife/psdk_ros2.git
 git clone https://github.com/dji-sdk/Payload-SDK.git
 
+# Checkout the proper version of the Payload-SDK (currently the wrapper is compatible with the latest release v3.5)
+cd Payload-SDK
+git checkout release/v3.5
+
+# Before building, check the Dependencies section and make sure you have everything installed
 # Build the code
 cd ~/psdk_ros2_ws
 colcon build --packages-skip entry	# Skip the build corresponding to DJI PSDK sample code
@@ -72,12 +77,27 @@ SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="YourVendor", ATTRS{idProd
 
 ## Dependencies 
 
-* DJI Payload-SDK
+### ROS 2 packages
 
-  The libraries responsible for facilitating the direct interaction between the `psdk_ros2` wrapper and the real Flight Control Unit (FCU) of a DJI drone have been sourced from the DJI Payload-SDK's original codebase.  These libraries has been contained within the `3rdparty` folder. 
+The following ROS 2 packages are needed to successfully build the wrapper:
 
-  The main reason to include these libraries within the wrapper source code is t is to facilitate the dynamic configuration of UART device names used to establish the connection between the PSDK code and the FCU.  In the standard PSDK sample code, these device names are defined within a header file. However, this wrapper introduces the capability to configure these devices via a configuration file.
+* rclcpp
+* rclcpp_lifecycle
+* tf2
+* sensor_msgs
+* geometry_msgs
+* std_msgs
+* nav_msgs
+* std_srvs
 
+### Other libraries
 
+The following libraries are needded to enable the access to USB devices and handling the video streaming:
 
-# 
+* libusb-1.0-0-dev
+* libopus-dev 
+* ffmpeg 
+* libavcodec-dev 
+* libavformat-dev 
+* libavfilter-dev
+

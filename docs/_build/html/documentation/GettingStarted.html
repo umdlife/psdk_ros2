@@ -50,10 +50,13 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#udev-rules">Udev rules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ros-2-packages">ROS 2 packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-libraries">Other libraries</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="#id1"></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="ThePSDKWrapper.html">The psdk_ros2 wrapper</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Contribute.html">Contribute</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/library_root.html">Library API</a></li>
@@ -92,6 +95,11 @@
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/umdlife/psdk_ros2.git
 git<span class="w"> </span>clone<span class="w"> </span>https://github.com/dji-sdk/Payload-SDK.git
 
+<span class="c1"># Checkout the proper version of the Payload-SDK (currently the wrapper is compatible with the latest release v3.5)</span>
+<span class="nb">cd</span><span class="w"> </span>Payload-SDK
+git<span class="w"> </span>checkout<span class="w"> </span>release/v3.5
+
+<span class="c1"># Before building, check the Dependencies section and make sure you have everything installed</span>
 <span class="c1"># Build the code</span>
 <span class="nb">cd</span><span class="w"> </span>~/psdk_ros2_ws
 colcon<span class="w"> </span>build<span class="w"> </span>--packages-skip<span class="w"> </span>entry<span class="w">	</span><span class="c1"># Skip the build corresponding to DJI PSDK sample code</span>
@@ -267,16 +275,33 @@ ros2<span class="w"> </span>launch<span class="w"> </span>psdk_wrapper<span clas
 </section>
 <section id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline"></a></h2>
-<ul>
-<li><p>DJI Payload-SDK</p>
-<p>The libraries responsible for facilitating the direct interaction between the <code class="docutils literal notranslate"><span class="pre">psdk_ros2</span></code> wrapper and the real Flight Control Unit (FCU) of a DJI drone have been sourced from the DJI Payload-SDK’s original codebase.  These libraries has been contained within the <code class="docutils literal notranslate"><span class="pre">3rdparty</span></code> folder.</p>
-<p>The main reason to include these libraries within the wrapper source code is t is to facilitate the dynamic configuration of UART device names used to establish the connection between the PSDK code and the FCU.  In the standard PSDK sample code, these device names are defined within a header file. However, this wrapper introduces the capability to configure these devices via a configuration file.</p>
-</li>
+<section id="ros-2-packages">
+<h3>ROS 2 packages<a class="headerlink" href="#ros-2-packages" title="Permalink to this headline"></a></h3>
+<p>The following ROS 2 packages are needed to successfully build the wrapper:</p>
+<ul class="simple">
+<li><p>rclcpp</p></li>
+<li><p>rclcpp_lifecycle</p></li>
+<li><p>tf2</p></li>
+<li><p>sensor_msgs</p></li>
+<li><p>geometry_msgs</p></li>
+<li><p>std_msgs</p></li>
+<li><p>nav_msgs</p></li>
+<li><p>std_srvs</p></li>
+</ul>
+</section>
+<section id="other-libraries">
+<h3>Other libraries<a class="headerlink" href="#other-libraries" title="Permalink to this headline"></a></h3>
+<p>The following libraries are needded to enable the access to USB devices and handling the video streaming:</p>
+<ul class="simple">
+<li><p>libusb-1.0-0-dev</p></li>
+<li><p>libopus-dev</p></li>
+<li><p>ffmpeg</p></li>
+<li><p>libavcodec-dev</p></li>
+<li><p>libavformat-dev</p></li>
+<li><p>libavfilter-dev</p></li>
 </ul>
 </section>
 </section>
-<section id="id1">
-<h1><a class="headerlink" href="#id1" title="Permalink to this headline"></a></h1>
 </section>
 
 
