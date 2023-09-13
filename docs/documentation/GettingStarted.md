@@ -84,6 +84,7 @@ The following ROS 2 packages are needed to successfully build the wrapper:
 * rclcpp
 * rclcpp_lifecycle
 * tf2
+* tf2_ros
 * sensor_msgs
 * geometry_msgs
 * std_msgs

@@ -167,6 +167,13 @@ const tf2::Matrix3x3 R_FLU2FRD{1, 0, 0, 0, -1, 0, 0, 0, -1};
 const float C_GRAVITY_CONSTANT = 9.8;
 const float C_PI = 3.141592653589793;
 
+// Transforms
+// @todo Add transforms for other aircraft/payloads
+const tf2::Vector3 T_M300_BASE_GIMBAL{0.1262, 0.0, -0.146};
+const tf2::Vector3 T_M300_GIMBAL_H20{0.0466, 0.0, -0.1037};
+const tf2::Vector3 T_H20_ZOOM{0.0, 0.0, 0.0};
+const tf2::Vector3 T_H20_WIDE{0.0, -0.0187, -0.0244};
+const tf2::Quaternion Q_NO_ROTATION{0.0, 0.0, 0.0, 1.0};
 double inline rad_to_deg(const double radians)
 {
   return (radians * 180) / C_PI;

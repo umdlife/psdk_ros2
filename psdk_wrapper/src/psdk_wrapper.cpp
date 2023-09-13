@@ -40,6 +40,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
   declare_parameter("map_frame", rclcpp::ParameterValue("psdk_map_enu"));
   declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
+  declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
+  declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
 
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
@@ -97,6 +99,10 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
+  if (params_.publish_transforms)
+  {
+    publish_static_transforms();
+  }
   subscribe_psdk_topics();
   return CallbackReturn::SUCCESS;
 }
@@ -372,6 +378,18 @@ PSDKWrapper::load_parameters()
     RCLCPP_WARN(get_logger(),
                 "gimbal_frame param not defined, using default one: %s",
                 params_.gimbal_frame.c_str());
+  }
+  if (!get_parameter("camera_frame", params_.camera_frame))
+  {
+    RCLCPP_WARN(get_logger(),
+                "camera_frame param not defined, using default one: %s",
+                params_.camera_frame.c_str());
+  }
+  if (!get_parameter("publish_transforms", params_.publish_transforms))
+  {
+    RCLCPP_WARN(get_logger(),
+                "publish_transforms param not defined, using default one: %d",
+                params_.publish_transforms);
   }
 
   // Get data frequency
@@ -659,21 +677,20 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
     return false;
   }
 
-  T_DjiAircraftInfoBaseInfo aircraft_base_info;
-  if (DjiAircraftInfo_GetBaseInfo(&aircraft_base_info) !=
+  if (DjiAircraftInfo_GetBaseInfo(&aircraft_base_info_) !=
       DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Could not get aircraft information.");
     return false;
   }
 
-  if (aircraft_base_info.mountPosition != DJI_MOUNT_POSITION_EXTENSION_PORT)
+  if (aircraft_base_info_.mountPosition != DJI_MOUNT_POSITION_EXTENSION_PORT)
   {
     RCLCPP_ERROR(get_logger(), "Please use the extension port");
     return false;
   }
 
-  if (DjiCore_SetAlias("PSDK_UMD") != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  if (DjiCore_SetAlias("PSDK_App") != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Could not set alias.");
     return false;
@@ -691,6 +708,11 @@ void
 PSDKWrapper::initialize_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Initializing ROS publishers");
+
+  // Create static broadcaster
+  tf_static_broadcaster_ =
+      std::make_shared<tf2_ros::StaticTransformBroadcaster>(shared_from_this());
+
   attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
       "psdk_ros2/attitude", 10);
   imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("psdk_ros2/imu", 10);
@@ -1184,6 +1206,9 @@ PSDKWrapper::clean_ros_elements()
   flight_control_body_velocity_yawrate_sub_.reset();
   flight_control_rollpitch_yawrate_thrust_sub_.reset();
 
+  // TF
+  tf_static_broadcaster_.reset();
+
   // Publishers
   attitude_pub_.reset();
   imu_pub_.reset();
@@ -1222,6 +1247,79 @@ PSDKWrapper::clean_ros_elements()
   // relative_height_pub_.reset();
   // relative_obstacle_info_pub_.reset();
   // home_position_pub_.reset();
+}
+
+//@todo Generalize this function for different a/c types, gimbal types, payload
+// types
+void
+PSDKWrapper::publish_static_transforms()
+{
+  RCLCPP_INFO(get_logger(), "Publishing static transforms");
+
+  if (aircraft_base_info_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK)
+  {
+    geometry_msgs::msg::TransformStamped tf_base_link_gimbal;
+    tf_base_link_gimbal.header.stamp = this->get_clock()->now();
+    tf_base_link_gimbal.header.frame_id = params_.body_frame;
+    tf_base_link_gimbal.child_frame_id = params_.gimbal_frame;
+    tf_base_link_gimbal.transform.translation.x =
+        psdk_utils::T_M300_BASE_GIMBAL[0];
+    tf_base_link_gimbal.transform.translation.y =
+        psdk_utils::T_M300_BASE_GIMBAL[1];
+    tf_base_link_gimbal.transform.translation.z =
+        psdk_utils::T_M300_BASE_GIMBAL[2];
+    tf_base_link_gimbal.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
+    tf_base_link_gimbal.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
+    tf_base_link_gimbal.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
+    tf_base_link_gimbal.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+    tf_static_broadcaster_->sendTransform(tf_base_link_gimbal);
+  }
+
+  if (publish_camera_transforms_)
+  {
+    if (attached_camera_type_ == DJI_CAMERA_TYPE_H20)
+    {
+      // Publish TF between Gimbal - H20
+      geometry_msgs::msg::TransformStamped tf_gimbal_H20;
+      tf_gimbal_H20.header.stamp = this->get_clock()->now();
+      tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
+      tf_gimbal_H20.child_frame_id = params_.camera_frame;
+      tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
+      tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
+      tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
+      tf_gimbal_H20.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
+      tf_gimbal_H20.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
+      tf_gimbal_H20.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
+      tf_gimbal_H20.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+      tf_static_broadcaster_->sendTransform(tf_gimbal_H20);
+      // Publish TF between H20 - Zoom lens
+      geometry_msgs::msg::TransformStamped tf_H20_zoom;
+      tf_H20_zoom.header.stamp = this->get_clock()->now();
+      tf_H20_zoom.header.frame_id = params_.camera_frame;
+      tf_H20_zoom.child_frame_id = 'h20_zoom_link';
+      tf_H20_zoom.transform.translation.x = psdk_utils::T_H20_ZOOM[0];
+      tf_H20_zoom.transform.translation.y = psdk_utils::T_H20_ZOOM[1];
+      tf_H20_zoom.transform.translation.z = psdk_utils::T_H20_ZOOM[2];
+      tf_H20_zoom.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
+      tf_H20_zoom.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
+      tf_H20_zoom.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
+      tf_H20_zoom.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+      tf_static_broadcaster_->sendTransform(tf_H20_zoom);
+      // Publish TF between H20 - Wide lens
+      geometry_msgs::msg::TransformStamped tf_H20_wide;
+      tf_H20_wide.header.stamp = this->get_clock()->now();
+      tf_H20_wide.header.frame_id = params_.camera_frame;
+      tf_H20_wide.child_frame_id = 'h20_wide_link';
+      tf_H20_wide.transform.translation.x = psdk_utils::T_H20_WIDE[0];
+      tf_H20_wide.transform.translation.y = psdk_utils::T_H20_WIDE[1];
+      tf_H20_wide.transform.translation.z = psdk_utils::T_H20_WIDE[2];
+      tf_H20_wide.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
+      tf_H20_wide.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
+      tf_H20_wide.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
+      tf_H20_wide.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+      tf_static_broadcaster_->sendTransform(tf_H20_wide);
+    }
+  }
 }
 
 }  // namespace psdk_ros2

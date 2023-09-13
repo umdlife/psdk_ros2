@@ -25,6 +25,7 @@
 #include <dji_logger.h>
 #include <dji_platform.h>
 #include <dji_typedef.h>
+#include <tf2_ros/static_transform_broadcaster.h>
 
 #include <cmath>
 #include <geometry_msgs/msg/accel_stamped.hpp>
@@ -227,6 +228,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string body_frame;
     std::string map_frame;
     std::string gimbal_frame;
+    std::string camera_frame;
+    bool publish_transforms;
     int imu_frequency;
     int attitude_frequency;
     int acceleration_frequency;
@@ -1490,6 +1493,18 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   void gimbal_reset_cb(const std::shared_ptr<GimbalReset::Request> request,
                        const std::shared_ptr<GimbalReset::Response> response);
+  /**
+   * @brief Get camera type for a given payload index
+   * @param camera_type pointer to be filled if camera is detected
+   * @param index payload index to be checked
+   * @return true - if camera has been found, false - otherwise
+   */
+  bool get_camera_type(std::string* camera_type,
+                       const E_DjiMountPosition index);
+  /**
+   * @brief Publish all static transforms for a given copter
+   */
+  void publish_static_transforms();
 
   /* ROS 2 publishers */
   rclcpp_lifecycle::LifecyclePublisher<
@@ -1754,6 +1769,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
 
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+
   int gps_signal_level_{0};
   float local_altitude_reference_{0};
   bool local_altitude_reference_set_{false};
@@ -1779,6 +1796,10 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
       {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
   };
+
+  T_DjiAircraftInfoBaseInfo aircraft_base_info_;
+  E_DjiCameraType attached_camera_type_;
+  bool publish_camera_transforms_{false};
 };
 
 /**

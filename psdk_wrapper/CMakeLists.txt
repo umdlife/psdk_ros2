@@ -27,6 +27,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 
@@ -115,6 +116,7 @@ set(dependencies
   rclcpp
   rclcpp_lifecycle
   tf2
+  tf2_ros
   sensor_msgs
   geometry_msgs
   std_msgs

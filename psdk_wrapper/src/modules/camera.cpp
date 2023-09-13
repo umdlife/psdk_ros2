@@ -29,6 +29,15 @@ PSDKWrapper::init_camera_manager()
     RCLCPP_ERROR(get_logger(), "Could not initialize camera manager.");
     return false;
   }
+
+  RCLCPP_INFO(get_logger(), "Checking connected payloads...");
+  std::string camera_type;
+  E_DjiMountPosition main_payload_index = DJI_MOUNT_POSITION_PAYLOAD_PORT_NO1;
+  if (get_camera_type(&camera_type, main_payload_index))
+  {
+    RCLCPP_INFO(get_logger(), "Camera type %s detected", camera_type.c_str());
+    publish_camera_transforms_ = true;
+  }
   return true;
 }
 
@@ -44,37 +53,52 @@ PSDKWrapper::deinit_camera_manager()
   return true;
 }
 
-void
-PSDKWrapper::camera_get_type_cb(
-    const std::shared_ptr<CameraGetType::Request> request,
-    const std::shared_ptr<CameraGetType::Response> response)
+bool
+PSDKWrapper::get_camera_type(std::string *camera_type,
+                             const E_DjiMountPosition index)
 {
-  T_DjiReturnCode return_code;
-  E_DjiCameraType camera_type;
-  E_DjiMountPosition index =
-      static_cast<E_DjiMountPosition>(request->payload_index);
-  return_code = DjiCameraManager_GetCameraType(index, &camera_type);
+  T_DjiReturnCode return_code =
+      DjiCameraManager_GetCameraType(index, &attached_camera_type_);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
         get_logger(),
         "Get mounted position %d camera's type failed, error code: %ld", index,
         return_code);
-    response->success = false;
-    return;
+    return false;
   }
   else
   {  // TODO(@lidiadltv): Remove this map
     for (auto &it : camera_type_str)
     {
-      if (it.first == camera_type)
+      if (it.first == attached_camera_type_)
       {
-        response->camera_type = it.second;
-        break;
+        camera_type = &it.second;
+        return true;
       }
     }
+    RCLCPP_ERROR(get_logger(), "Could not locate camera type");
+    return false;
+  }
+}
+
+void
+PSDKWrapper::camera_get_type_cb(
+    const std::shared_ptr<CameraGetType::Request> request,
+    const std::shared_ptr<CameraGetType::Response> response)
+{
+  std::string camera_type;
+  E_DjiMountPosition index =
+      static_cast<E_DjiMountPosition>(request->payload_index);
+
+  if (get_camera_type(&camera_type, index))
+  {
+    response->camera_type = camera_type;
     response->success = true;
-    return;
+  }
+  else
+  {
+    response->success = false;
   }
 }
 
