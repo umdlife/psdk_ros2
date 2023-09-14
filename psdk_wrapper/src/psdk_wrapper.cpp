@@ -709,9 +709,11 @@ PSDKWrapper::initialize_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Initializing ROS publishers");
 
-  // Create static broadcaster
+  // Create TF broadcasters
   tf_static_broadcaster_ =
       std::make_shared<tf2_ros::StaticTransformBroadcaster>(shared_from_this());
+  tf_broadcaster_ =
+      std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
 
   attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
       "psdk_ros2/attitude", 10);
@@ -1206,8 +1208,9 @@ PSDKWrapper::clean_ros_elements()
   flight_control_body_velocity_yawrate_sub_.reset();
   flight_control_rollpitch_yawrate_thrust_sub_.reset();
 
-  // TF
+  // TF broadcasters
   tf_static_broadcaster_.reset();
+  tf_broadcaster_.reset();
 
   // Publishers
   attitude_pub_.reset();
@@ -1249,8 +1252,9 @@ PSDKWrapper::clean_ros_elements()
   // home_position_pub_.reset();
 }
 
-//@todo Generalize this function for different a/c types, gimbal types, payload
-// types
+/*@todo Generalize the functions related to TFs for different copter, gimbal
+ * and payload types and move it to a separate dedicated file
+ */
 void
 PSDKWrapper::publish_static_transforms()
 {
@@ -1279,47 +1283,74 @@ PSDKWrapper::publish_static_transforms()
   {
     if (attached_camera_type_ == DJI_CAMERA_TYPE_H20)
     {
-      // Publish TF between Gimbal - H20
-      geometry_msgs::msg::TransformStamped tf_gimbal_H20;
-      tf_gimbal_H20.header.stamp = this->get_clock()->now();
-      tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
-      tf_gimbal_H20.child_frame_id = params_.camera_frame;
-      tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
-      tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
-      tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
-      tf_gimbal_H20.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
-      tf_gimbal_H20.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
-      tf_gimbal_H20.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
-      tf_gimbal_H20.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
-      tf_static_broadcaster_->sendTransform(tf_gimbal_H20);
       // Publish TF between H20 - Zoom lens
       geometry_msgs::msg::TransformStamped tf_H20_zoom;
       tf_H20_zoom.header.stamp = this->get_clock()->now();
       tf_H20_zoom.header.frame_id = params_.camera_frame;
-      tf_H20_zoom.child_frame_id = 'h20_zoom_link';
+      tf_H20_zoom.child_frame_id = "h20_zoom_optical_link";
       tf_H20_zoom.transform.translation.x = psdk_utils::T_H20_ZOOM[0];
       tf_H20_zoom.transform.translation.y = psdk_utils::T_H20_ZOOM[1];
       tf_H20_zoom.transform.translation.z = psdk_utils::T_H20_ZOOM[2];
-      tf_H20_zoom.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
-      tf_H20_zoom.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
-      tf_H20_zoom.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
-      tf_H20_zoom.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+      tf_H20_zoom.transform.rotation.x = psdk_utils::Q_FLU2OPTIC.getX();
+      tf_H20_zoom.transform.rotation.y = psdk_utils::Q_FLU2OPTIC.getY();
+      tf_H20_zoom.transform.rotation.z = psdk_utils::Q_FLU2OPTIC.getZ();
+      tf_H20_zoom.transform.rotation.w = psdk_utils::Q_FLU2OPTIC.getW();
       tf_static_broadcaster_->sendTransform(tf_H20_zoom);
       // Publish TF between H20 - Wide lens
       geometry_msgs::msg::TransformStamped tf_H20_wide;
       tf_H20_wide.header.stamp = this->get_clock()->now();
       tf_H20_wide.header.frame_id = params_.camera_frame;
-      tf_H20_wide.child_frame_id = 'h20_wide_link';
+      tf_H20_wide.child_frame_id = "h20_wide_optical_link";
       tf_H20_wide.transform.translation.x = psdk_utils::T_H20_WIDE[0];
       tf_H20_wide.transform.translation.y = psdk_utils::T_H20_WIDE[1];
       tf_H20_wide.transform.translation.z = psdk_utils::T_H20_WIDE[2];
-      tf_H20_wide.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
-      tf_H20_wide.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
-      tf_H20_wide.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
-      tf_H20_wide.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+      tf_H20_wide.transform.rotation.x = psdk_utils::Q_FLU2OPTIC.getX();
+      tf_H20_wide.transform.rotation.y = psdk_utils::Q_FLU2OPTIC.getY();
+      tf_H20_wide.transform.rotation.z = psdk_utils::Q_FLU2OPTIC.getZ();
+      tf_H20_wide.transform.rotation.w = psdk_utils::Q_FLU2OPTIC.getW();
       tf_static_broadcaster_->sendTransform(tf_H20_wide);
     }
   }
+}
+
+void
+PSDKWrapper::publish_dynamic_transforms()
+{
+  if (attached_camera_type_ == DJI_CAMERA_TYPE_H20)
+  {
+    // Publish TF between Gimbal - H20
+    geometry_msgs::msg::TransformStamped tf_gimbal_H20;
+    tf_gimbal_H20.header.stamp = this->get_clock()->now();
+    tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
+    tf_gimbal_H20.child_frame_id = params_.camera_frame;
+    tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
+    tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
+    tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
+
+    tf2::Quaternion q_gimbal_h20;
+    q_gimbal_h20.setRPY(gimbal_angles_.vector.x, gimbal_angles_.vector.y,
+                        get_yaw_gimbal_camera());
+    tf_gimbal_H20.transform.rotation.x = q_gimbal_h20.getX();
+    tf_gimbal_H20.transform.rotation.y = q_gimbal_h20.getY();
+    tf_gimbal_H20.transform.rotation.z = q_gimbal_h20.getZ();
+    tf_gimbal_H20.transform.rotation.w = q_gimbal_h20.getW();
+    tf_broadcaster_->sendTransform(tf_gimbal_H20);
+  }
+}
+
+double
+PSDKWrapper::get_yaw_gimbal_camera()
+{
+  /* Get current copter yaw wrt. to East */
+  tf2::Matrix3x3 rotation_mat(current_attitude_);
+  double current_roll;
+  double current_pitch;
+  double current_yaw;
+  rotation_mat.getRPY(current_roll, current_pitch, current_yaw);
+
+  /* Get current gimbal yaw wrt to East */
+  double current_gimbal_yaw = gimbal_angles_.vector.z;
+  return current_gimbal_yaw - current_yaw;
 }
 
 }  // namespace psdk_ros2

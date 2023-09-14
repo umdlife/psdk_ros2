@@ -221,7 +221,7 @@ PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
   img.data = rgb_img.rawData;
 
   img.header.stamp = this->get_clock()->now();
-  img.header.frame_id = "MAIN_CAMERA";
+  img.header.frame_id = params_.camera_frame;
   main_camera_stream_pub_->publish(img);
 }
 
@@ -237,7 +237,7 @@ PSDKWrapper::publish_fpv_camera_images(CameraRGBImage rgb_img, void *user_data)
   img.data = rgb_img.rawData;
 
   img.header.stamp = this->get_clock()->now();
-  img.header.frame_id = "FPV_CAMERA";
+  img.header.frame_id = "fpv_camera_link";
   fpv_camera_stream_pub_->publish(img);
 }
 }  // namespace psdk_ros2

@@ -164,8 +164,10 @@ const std::vector<DJITopic> topics_to_subscribe{
 
 const tf2::Matrix3x3 R_NED2ENU{0, 1, 0, 1, 0, 0, 0, 0, -1};
 const tf2::Matrix3x3 R_FLU2FRD{1, 0, 0, 0, -1, 0, 0, 0, -1};
+const tf2::Quaternion Q_FLU2OPTIC{-0.500000, 0.500000, -0.500000, 0.500000};
 const float C_GRAVITY_CONSTANT = 9.8;
 const float C_PI = 3.141592653589793;
+const float SHIFT_N2E = 1.571;
 
 // Transforms
 // @todo Add transforms for other aircraft/payloads

@@ -26,6 +26,7 @@
 #include <dji_platform.h>
 #include <dji_typedef.h>
 #include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <cmath>
 #include <geometry_msgs/msg/accel_stamped.hpp>
@@ -722,8 +723,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   /**
    * @brief Retrieves the gimbal angle data provided by DJI PSDK lib and
    * publishes it on a ROS 2 topic. Provides the roll, pitch and yaw of the
-   * gimbal up to 50Hz. These angles are in [rad]. The yaw is given wrt. an ENU
-   * oriented reference frame attached to the gimbal structure.
+   * gimbal up to 50Hz. These angles are in [rad]. The roll and pitch are wrt.
+   * to a FLU frame while the yaw is given wrt. an ENU oriented reference frame
+   * attached to the gimbal structure.
    * @param data pointer to T_DjiFcSubscriptionGimbalAngles data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
@@ -1505,6 +1507,17 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Publish all static transforms for a given copter
    */
   void publish_static_transforms();
+  /**
+   * @brief Method which publishes the dynamic transforms for a given copter
+   */
+  void publish_dynamic_transforms();
+  /**
+   * @brief Method which computes the yaw angle difference between the gimbal
+   * (static frame attached to the robot) and a given camera payload attached to
+   * the gimbal
+   * @return the yaw angle difference between these two frames.
+   */
+  double get_yaw_gimbal_camera();
 
   /* ROS 2 publishers */
   rclcpp_lifecycle::LifecyclePublisher<
@@ -1765,11 +1778,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   void publish_fpv_camera_images(CameraRGBImage rgb_img, void* user_data);
 
-  /* Global variables*/
+  /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
 
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   int gps_signal_level_{0};
   float local_altitude_reference_{0};
@@ -1777,6 +1791,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool set_local_position_ref_{false};
   geometry_msgs::msg::Vector3Stamped local_position_reference_;
   psdk_interfaces::msg::PositionFused current_local_position_;
+  tf2::Quaternion current_attitude_;
+  geometry_msgs::msg::Vector3Stamped gimbal_angles_;
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 
