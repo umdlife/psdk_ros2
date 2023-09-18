@@ -1777,6 +1777,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param user_data unused parameter
    */
   void publish_fpv_camera_images(CameraRGBImage rgb_img, void* user_data);
+  /**
+   * @brief Get the optical frame id for a certain lens
+   * @return string with the optical frame id name
+   */
+  std::string get_optical_frame_id();
 
   /* Global variables */
   PSDKParams params_;
@@ -1796,25 +1801,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 
-  std::map<E_DjiCameraType, std::string> camera_type_str = {
-      {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
-      {DJI_CAMERA_TYPE_Z30, "Zenmuse Z30"},
-      {DJI_CAMERA_TYPE_XT2, "Zenmuse XT2"},
-      {DJI_CAMERA_TYPE_PSDK, "Payload Camera"},
-      {DJI_CAMERA_TYPE_XTS, "Zenmuse XTS"},
-      {DJI_CAMERA_TYPE_H20, "Zenmuse H20"},
-      {DJI_CAMERA_TYPE_H20T, "Zenmuse H20T"},
-      {DJI_CAMERA_TYPE_P1, "Zenmuse P1"},
-      {DJI_CAMERA_TYPE_L1, "Zenmuse L1"},
-      {DJI_CAMERA_TYPE_H20N, "Zenmuse H20N"},
-      {DJI_CAMERA_TYPE_M30, "M30 Camera"},
-      {DJI_CAMERA_TYPE_M30T, "M30T Camera"},
-      {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
-      {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
-  };
-
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
   E_DjiCameraType attached_camera_type_;
+  E_DjiLiveViewCameraSource selected_camera_source_;
   bool publish_camera_transforms_{false};
 };
 

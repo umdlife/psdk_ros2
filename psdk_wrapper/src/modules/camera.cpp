@@ -69,11 +69,12 @@ PSDKWrapper::get_camera_type(std::string *camera_type,
   }
   else
   {  // TODO(@lidiadltv): Remove this map
-    for (auto &it : camera_type_str)
+    for (auto &it : psdk_utils::camera_type_str)
     {
       if (it.first == attached_camera_type_)
       {
-        camera_type = &it.second;
+        std::string camera_type_copy = it.second;
+        camera_type = &camera_type_copy;
         return true;
       }
     }
@@ -1210,6 +1211,18 @@ PSDKWrapper::camera_delete_file_by_index_cb(
     RCLCPP_INFO(get_logger(), "Deleted file by index successfully.");
     response->success = true;
     return;
+  }
+}
+
+std::string
+PSDKWrapper::get_optical_frame_id()
+{
+  for (auto &it : psdk_utils::camera_source_str)
+  {
+    if (it.first == selected_camera_source_)
+    {
+      return it.second;
+    }
   }
 }
 

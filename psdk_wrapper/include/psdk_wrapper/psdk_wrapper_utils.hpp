@@ -162,6 +162,43 @@ const std::vector<DJITopic> topics_to_subscribe{
              CONTROL_DATA_TOPICS_MAX_FREQ},
 };
 
+const std::map<E_DjiCameraType, std::string> camera_type_str = {
+    {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
+    {DJI_CAMERA_TYPE_Z30, "Zenmuse Z30"},
+    {DJI_CAMERA_TYPE_XT2, "Zenmuse XT2"},
+    {DJI_CAMERA_TYPE_PSDK, "Payload Camera"},
+    {DJI_CAMERA_TYPE_XTS, "Zenmuse XTS"},
+    {DJI_CAMERA_TYPE_H20, "Zenmuse H20"},
+    {DJI_CAMERA_TYPE_H20T, "Zenmuse H20T"},
+    {DJI_CAMERA_TYPE_P1, "Zenmuse P1"},
+    {DJI_CAMERA_TYPE_L1, "Zenmuse L1"},
+    {DJI_CAMERA_TYPE_H20N, "Zenmuse H20N"},
+    {DJI_CAMERA_TYPE_M30, "M30 Camera"},
+    {DJI_CAMERA_TYPE_M30T, "M30T Camera"},
+    {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
+    {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
+};
+
+const std::map<E_DjiLiveViewCameraSource, std::string> camera_source_str = {
+    {DJI_LIVEVIEW_CAMERA_SOURCE_DEFAULT, "default_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_H20_WIDE, "h20_wide_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_H20_ZOOM, "h20_zoom_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_H20T_WIDE, "h20t_wide_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_H20T_ZOOM, "h20t_zoom_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_H20T_IR, "h20t_ir_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_H20N_WIDE, "h20n_wide_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_H20N_ZOOM, "h20n_zoom_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_H20N_IR, "h20n_ir_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_M30_ZOOM, "m30_zoom_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_M30_WIDE, "m30_wide_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_M30T_ZOOM, "m30t_zoom_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_M30T_WIDE, "m30t_wide_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_M30T_IR, "m30t_ir_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_M3E_VIS, "m3e_vis_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_M3T_VIS, "m3t_vis_optical_link"},
+    {DJI_LIVEVIEW_CAMERA_SOURCE_M3T_IR, "m3t_ir_optical_link"},
+};
+
 const tf2::Matrix3x3 R_NED2ENU{0, 1, 0, 1, 0, 0, 0, 0, -1};
 const tf2::Matrix3x3 R_FLU2FRD{1, 0, 0, 0, -1, 0, 0, 0, -1};
 const tf2::Quaternion Q_FLU2OPTIC{-0.500000, 0.500000, -0.500000, 0.500000};

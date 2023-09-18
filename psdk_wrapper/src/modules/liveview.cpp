@@ -93,12 +93,12 @@ PSDKWrapper::camera_setup_streaming_cb(
 {
   E_DjiLiveViewCameraPosition payload_index =
       static_cast<E_DjiLiveViewCameraPosition>(request->payload_index);
-  E_DjiLiveViewCameraSource camera_source =
+  E_DjiLiveViewCameraSource selected_camera_source_ =
       static_cast<E_DjiLiveViewCameraSource>(request->camera_source);
   RCLCPP_INFO(
       get_logger(),
       "Setting up camera streaming for payload index %d and camera source %d",
-      payload_index, camera_source);
+      payload_index, selected_camera_source_);
 
   if (request->start_stop)
   {
@@ -109,14 +109,14 @@ PSDKWrapper::camera_setup_streaming_cb(
       char main_camera_name[] = "MAIN_CAMERA";
       streaming_result = start_main_camera_stream(
           &c_publish_main_streaming_callback, &main_camera_name, payload_index,
-          camera_source);
+          selected_camera_source_);
     }
     else if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
     {
       char fpv_camera_name[] = "FPV_CAMERA";
       streaming_result = start_main_camera_stream(
           &c_publish_fpv_streaming_callback, &fpv_camera_name, payload_index,
-          camera_source);
+          selected_camera_source_);
     }
 
     if (streaming_result)
@@ -133,7 +133,7 @@ PSDKWrapper::camera_setup_streaming_cb(
   else
   {
     RCLCPP_INFO(get_logger(), "Stopping camera streaming...");
-    if (stop_main_camera_stream(payload_index, camera_source))
+    if (stop_main_camera_stream(payload_index, selected_camera_source_))
     {
       response->success = true;
       return;
@@ -221,7 +221,7 @@ PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
   img.data = rgb_img.rawData;
 
   img.header.stamp = this->get_clock()->now();
-  img.header.frame_id = params_.camera_frame;
+  img.header.frame_id = get_optical_frame_id();
   main_camera_stream_pub_->publish(img);
 }
 
