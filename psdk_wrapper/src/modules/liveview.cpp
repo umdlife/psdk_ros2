@@ -93,7 +93,7 @@ PSDKWrapper::camera_setup_streaming_cb(
 {
   E_DjiLiveViewCameraPosition payload_index =
       static_cast<E_DjiLiveViewCameraPosition>(request->payload_index);
-  E_DjiLiveViewCameraSource selected_camera_source_ =
+  selected_camera_source_ =
       static_cast<E_DjiLiveViewCameraSource>(request->camera_source);
   RCLCPP_INFO(
       get_logger(),
