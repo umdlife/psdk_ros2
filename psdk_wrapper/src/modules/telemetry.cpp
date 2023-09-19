@@ -404,7 +404,8 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t data_size,
           *reinterpret_cast<const T_DjiFcSubscriptionHardSync *>(data));
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header.stamp = this->get_clock()->now();
-  imu_msg.header.frame_id = params_.imu_frame;
+  /* Temporarly use body frame as the location of the imu frame is unknown*/
+  imu_msg.header.frame_id = params_.body_frame;
   /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt.
    * to a NED ground coordinate frame. Following REP 103, this quaternion is
    * transformed in FLU in body frame wrt. to a ENU ground coordinate frame
