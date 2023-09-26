@@ -110,7 +110,16 @@ PSDKWrapper::gimbal_rotation_cb(
    * wrt. a FRD frame. Here this is converted to FLU*/
   rotation_deg.pitch = psdk_ros2::psdk_utils::rad_to_deg(-msg->pitch);
   rotation_deg.roll = psdk_ros2::psdk_utils::rad_to_deg(msg->roll);
-  rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(-msg->yaw);
+  if (msg->rotation_mode == DJI_GIMBAL_ROTATION_MODE_RELATIVE_ANGLE)
+  {
+    rotation_deg.yaw = psdk_ros2::psdk_utils::rad_to_deg(-msg->yaw);
+  }
+  else
+  {
+    rotation_deg.yaw =
+        psdk_ros2::psdk_utils::rad_to_deg(psdk_utils::SHIFT_N2E - msg->yaw);
+  }
+
   rotation_deg.time = msg->time;
 
   return_code = DjiGimbalManager_SetMode(index, DJI_GIMBAL_MODE_FREE);

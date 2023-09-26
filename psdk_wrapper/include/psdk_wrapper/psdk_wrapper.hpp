@@ -25,6 +25,8 @@
 #include <dji_logger.h>
 #include <dji_platform.h>
 #include <dji_typedef.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <cmath>
 #include <geometry_msgs/msg/accel_stamped.hpp>
@@ -227,6 +229,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string body_frame;
     std::string map_frame;
     std::string gimbal_frame;
+    std::string camera_frame;
+    bool publish_transforms;
     int imu_frequency;
     int attitude_frequency;
     int acceleration_frequency;
@@ -719,8 +723,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   /**
    * @brief Retrieves the gimbal angle data provided by DJI PSDK lib and
    * publishes it on a ROS 2 topic. Provides the roll, pitch and yaw of the
-   * gimbal up to 50Hz. These angles are in [rad]. The yaw is given wrt. an ENU
-   * oriented reference frame attached to the gimbal structure.
+   * gimbal up to 50Hz. These angles are in [rad]. The roll and pitch are wrt.
+   * to a FLU frame while the yaw is given wrt. an ENU oriented reference frame
+   * attached to the gimbal structure.
    * @param data pointer to T_DjiFcSubscriptionGimbalAngles data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
@@ -1490,6 +1495,29 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   void gimbal_reset_cb(const std::shared_ptr<GimbalReset::Request> request,
                        const std::shared_ptr<GimbalReset::Response> response);
+  /**
+   * @brief Get camera type for a given payload index
+   * @param camera_type pointer to be filled if camera is detected
+   * @param index payload index to be checked
+   * @return true - if camera has been found, false - otherwise
+   */
+  bool get_camera_type(std::string* camera_type,
+                       const E_DjiMountPosition index);
+  /**
+   * @brief Publish all static transforms for a given copter
+   */
+  void publish_static_transforms();
+  /**
+   * @brief Method which publishes the dynamic transforms for a given copter
+   */
+  void publish_dynamic_transforms();
+  /**
+   * @brief Method which computes the yaw angle difference between the gimbal
+   * (static frame attached to the robot) and a given camera payload attached to
+   * the gimbal
+   * @return the yaw angle difference between these two frames.
+   */
+  double get_yaw_gimbal_camera();
 
   /* ROS 2 publishers */
   rclcpp_lifecycle::LifecyclePublisher<
@@ -1749,10 +1777,18 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param user_data unused parameter
    */
   void publish_fpv_camera_images(CameraRGBImage rgb_img, void* user_data);
+  /**
+   * @brief Get the optical frame id for a certain lens
+   * @return string with the optical frame id name
+   */
+  std::string get_optical_frame_id();
 
-  /* Global variables*/
+  /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
+
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   int gps_signal_level_{0};
   float local_altitude_reference_{0};
@@ -1760,25 +1796,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool set_local_position_ref_{false};
   geometry_msgs::msg::Vector3Stamped local_position_reference_;
   psdk_interfaces::msg::PositionFused current_local_position_;
+  tf2::Quaternion current_attitude_;
+  geometry_msgs::msg::Vector3Stamped gimbal_angles_;
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 
-  std::map<E_DjiCameraType, std::string> camera_type_str = {
-      {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},
-      {DJI_CAMERA_TYPE_Z30, "Zenmuse Z30"},
-      {DJI_CAMERA_TYPE_XT2, "Zenmuse XT2"},
-      {DJI_CAMERA_TYPE_PSDK, "Payload Camera"},
-      {DJI_CAMERA_TYPE_XTS, "Zenmuse XTS"},
-      {DJI_CAMERA_TYPE_H20, "Zenmuse H20"},
-      {DJI_CAMERA_TYPE_H20T, "Zenmuse H20T"},
-      {DJI_CAMERA_TYPE_P1, "Zenmuse P1"},
-      {DJI_CAMERA_TYPE_L1, "Zenmuse L1"},
-      {DJI_CAMERA_TYPE_H20N, "Zenmuse H20N"},
-      {DJI_CAMERA_TYPE_M30, "M30 Camera"},
-      {DJI_CAMERA_TYPE_M30T, "M30T Camera"},
-      {DJI_CAMERA_TYPE_M3E, "M3E Camera"},
-      {DJI_CAMERA_TYPE_M3T, "M3T Camera"},
-  };
+  T_DjiAircraftInfoBaseInfo aircraft_base_info_;
+  E_DjiCameraType attached_camera_type_;
+  E_DjiLiveViewCameraSource selected_camera_source_;
+  bool publish_camera_transforms_{false};
 };
 
 /**

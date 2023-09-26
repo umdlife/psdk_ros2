@@ -304,6 +304,9 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t data_size,
   quaternion_msg.quaternion.y = current_quat_FLU2ENU.getY();
   quaternion_msg.quaternion.z = current_quat_FLU2ENU.getZ();
   attitude_pub_->publish(quaternion_msg);
+
+  /* Save current attitude */
+  current_attitude_ = current_quat_FLU2ENU;
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -401,7 +404,8 @@ PSDKWrapper::imu_callback(const uint8_t *data, uint16_t data_size,
           *reinterpret_cast<const T_DjiFcSubscriptionHardSync *>(data));
   sensor_msgs::msg::Imu imu_msg;
   imu_msg.header.stamp = this->get_clock()->now();
-  imu_msg.header.frame_id = params_.imu_frame;
+  /* Temporarly use body frame as the location of the imu frame is unknown*/
+  imu_msg.header.frame_id = params_.body_frame;
   /* Note: The quaternion provided by DJI is in FRD body coordinate frame wrt.
    * to a NED ground coordinate frame. Following REP 103, this quaternion is
    * transformed in FLU in body frame wrt. to a ENU ground coordinate frame
@@ -745,17 +749,36 @@ PSDKWrapper::gimbal_angles_callback(const uint8_t *data, uint16_t data_size,
           *reinterpret_cast<const T_DjiFcSubscriptionGimbalAngles *>(data));
 
   /**
-   * Please note that the output of T_DjiFcSubscriptionGimbalAngles gives
-   * angles wrt to a NED frame attached to the gimbal. Thus the x and y values
-   * are inverted and the z value is negated to tranform it to a ENU frame
+   * Please note that x and y angles represent roll and pitch wrt. to a FLU
+   * coordinate frame. Z angle represents the yaw wrt to global ENU frame. As
+   * DJI uses NED coordinate frame, we shift it 90 deg to obtain the angle wrt.
+   * to East
    */
   geometry_msgs::msg::Vector3Stamped gimbal_angles_msg;
   gimbal_angles_msg.header.stamp = this->get_clock()->now();
+  gimbal_angles_msg.header.frame_id = params_.gimbal_frame;
   gimbal_angles_msg.vector.x = psdk_utils::deg_to_rad(gimbal_angles->y);
-  gimbal_angles_msg.vector.y = psdk_utils::deg_to_rad(gimbal_angles->x);
-  gimbal_angles_msg.vector.z = psdk_utils::deg_to_rad(-gimbal_angles->z);
+  gimbal_angles_msg.vector.y = psdk_utils::deg_to_rad(-gimbal_angles->x);
+  gimbal_angles_msg.vector.z =
+      psdk_utils::SHIFT_N2E - psdk_utils::deg_to_rad(gimbal_angles->z);
+
+  /* Keep the yaw angle bounded within PI, - PI*/
+  if (gimbal_angles_msg.vector.z < -psdk_utils::C_PI)
+  {
+    gimbal_angles_msg.vector.z += 2 * psdk_utils::C_PI;
+  }
+  else if (gimbal_angles_msg.vector.z > psdk_utils::C_PI)
+  {
+    gimbal_angles_msg.vector.z -= 2 * psdk_utils::C_PI;
+  }
 
   gimbal_angles_pub_->publish(gimbal_angles_msg);
+  if (params_.publish_transforms)
+  {
+    /* Save gimbal angles for TF publishing and publish dynamic transform */
+    gimbal_angles_ = gimbal_angles_msg;
+    publish_dynamic_transforms();
+  }
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
