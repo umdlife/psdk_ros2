@@ -44,6 +44,7 @@
 #include <sensor_msgs/msg/joy.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/u_int16.hpp>
 #include <std_msgs/msg/u_int8.hpp>
@@ -62,6 +63,7 @@
 
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/altitude.hpp"
+#include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
@@ -456,6 +458,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_height_fused_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_control_mode_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_home_point_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_home_point_status_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_acceleration_ground_fused_callback(
@@ -884,6 +895,37 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode height_fused_callback(const uint8_t* data, uint16_t data_size,
                                         const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Provides the control mode of the aircraft related to SDK/RC control
+   * @param data pointer to T_DjiFcSubscriptionControlDevice data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode control_mode_callback(const uint8_t* data, uint16_t data_size,
+                                        const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Provides the latitude and longitude of the home point
+   * @param data pointer to T_DjiFcSubscriptionHomePointInfo data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode home_point_callback(const uint8_t* data, uint16_t data_size,
+                                      const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Provides status of whether the home point was set or not
+   * @param data pointer to T_DjiFcSubscriptionHomePointSetStatus data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode home_point_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the copter linear acceleration wrt. a ground-fixed ENU
    * frame in [m/s^2] up to 200 Hz. This output is the result of a fusion
@@ -1615,6 +1657,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::ControlMode>::SharedPtr control_mode_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
+      home_point_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr
+      home_point_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_body_raw_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::
