@@ -187,6 +187,13 @@ c_rc_callback(const uint8_t *data, uint16_t data_size,
 }
 
 T_DjiReturnCode
+c_rc_connection_status_callback(const uint8_t *data, uint16_t data_size,
+                                const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rc_connection_status_callback(data, data_size, timestamp);
+}
+
+T_DjiReturnCode
 c_gimbal_angles_callback(const uint8_t *data, uint16_t data_size,
                          const T_DjiDataTimestamp *timestamp)
 {
@@ -735,6 +742,27 @@ PSDKWrapper::rc_callback(const uint8_t *data, uint16_t data_size,
   rc_msg.buttons[0] = rc_data->mode;   // [-10000,10000]
   rc_msg.buttons[1] = rc_data->gear;   // [-10000,10000]
   rc_pub_->publish(rc_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::rc_connection_status_callback(const uint8_t *data,
+                                           uint16_t data_size,
+                                           const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionRCWithFlagData> rc_data =
+      std::make_unique<T_DjiFcSubscriptionRCWithFlagData>(
+          *reinterpret_cast<const T_DjiFcSubscriptionRCWithFlagData *>(data));
+  psdk_interfaces::msg::RCConnectionStatus connection_status_msg;
+  connection_status_msg.header.stamp = this->get_clock()->now();
+  connection_status_msg.air_connection = rc_data->flag.skyConnected;
+  connection_status_msg.ground_connection = rc_data->flag.groundConnected;
+  connection_status_msg.app_connection = rc_data->flag.appConnected;
+  connection_status_msg.air_or_ground_disconnected =
+      rc_data->flag.logicConnected;
+  rc_connection_status_pub_->publish(connection_status_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -1334,6 +1362,18 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RC, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RC_WITH_FLAG_DATA,
+        get_frequency(params_.rc_channels_data_frequency),
+        c_rc_connection_status_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RC_WITH_FLAG_DATA, error %ld",
                    return_code);
     }
   }

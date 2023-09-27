@@ -70,6 +70,7 @@
 #include "psdk_interfaces/msg/gps_details.hpp"
 #include "psdk_interfaces/msg/home_position.hpp"
 #include "psdk_interfaces/msg/position_fused.hpp"
+#include "psdk_interfaces/msg/rc_connection_status.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
 #include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
@@ -424,6 +425,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_rc_callback(const uint8_t* data, uint16_t data_size,
                                        const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rc_connection_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_gimbal_angles_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
@@ -720,6 +724,22 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode rc_callback(const uint8_t* data, uint16_t data_size,
                               const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Retrieves the RC connection status provided by DJI PSDK lib and
+   * publishes it on a ROS 2 topic.This topic provides connection status for air
+   * system, ground system and MSDK apps. The connection status also includes a
+   * logicConnected element, which will change to false if either the air system
+   * or the ground system radios are disconnected for >3s. (up to 50Hz)
+   * @param data pointer to T_DjiFcSubscriptionRCWithFlagData data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode rc_connection_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the gimbal angle data provided by DJI PSDK lib and
    * publishes it on a ROS 2 topic. Provides the roll, pitch and yaw of the
@@ -1554,6 +1574,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       sensor_msgs::msg::MagneticField>::SharedPtr magnetic_field_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Joy>::SharedPtr
       rc_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::RCConnectionStatus>::SharedPtr
+      rc_connection_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr gimbal_angles_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
