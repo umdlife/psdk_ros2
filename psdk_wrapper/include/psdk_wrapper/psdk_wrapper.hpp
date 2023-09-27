@@ -420,6 +420,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_rtk_yaw_info_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_connection_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_magnetometer_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
@@ -700,6 +703,21 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode rtk_yaw_info_callback(const uint8_t* data, uint16_t data_size,
                                         const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Provides RTK connection status. This topic will update in real time
+   * whether the RTK GPS system is connected or not; typical uses include
+   * app-level logic to switch between GPS and RTK sources of positioning based
+   * on this flag.
+   * @param data pointer to T_DjiFcSubscriptionRTKConnectStatus data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode rtk_connection_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the magnetometer data provided by DJI PSDK lib and
    * publishes it on a ROS 2 topic. Provides magnetometer readings in x, y, z,
@@ -1570,6 +1588,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       rtk_position_info_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       rtk_yaw_info_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt16>::SharedPtr
+      rtk_connection_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       sensor_msgs::msg::MagneticField>::SharedPtr magnetic_field_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Joy>::SharedPtr

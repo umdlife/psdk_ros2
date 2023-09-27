@@ -745,6 +745,8 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_position_info", 10);
   rtk_yaw_info_pub_ =
       create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_yaw_info", 10);
+  rtk_connection_status_pub_ = create_publisher<std_msgs::msg::UInt16>(
+      "psdk_ros2/rtk_connection_status", 10);
   magnetic_field_pub_ = create_publisher<sensor_msgs::msg::MagneticField>(
       "psdk_ros2/magnetic_field", 10);
   rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("psdk_ros2/rc", 10);
@@ -1072,6 +1074,7 @@ PSDKWrapper::activate_ros_elements()
   rtk_yaw_pub_->on_activate();
   rtk_position_info_pub_->on_activate();
   rtk_yaw_info_pub_->on_activate();
+  rtk_connection_status_pub_->on_activate();
   magnetic_field_pub_->on_activate();
   rc_pub_->on_activate();
   rc_connection_status_pub_->on_activate();
@@ -1116,6 +1119,7 @@ PSDKWrapper::deactivate_ros_elements()
   rtk_yaw_pub_->on_deactivate();
   rtk_position_info_pub_->on_deactivate();
   rtk_yaw_info_pub_->on_deactivate();
+  rtk_connection_status_pub_->on_deactivate();
   magnetic_field_pub_->on_deactivate();
   rc_pub_->on_deactivate();
   rc_connection_status_pub_->on_deactivate();
@@ -1233,6 +1237,7 @@ PSDKWrapper::clean_ros_elements()
   rtk_yaw_pub_.reset();
   rtk_position_info_pub_.reset();
   rtk_yaw_info_pub_.reset();
+  rtk_connection_status_pub_.reset();
   magnetic_field_pub_.reset();
   rc_pub_.reset();
   rc_connection_status_pub_.reset();

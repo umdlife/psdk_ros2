@@ -172,7 +172,13 @@ c_rtk_yaw_info_callback(const uint8_t *data, uint16_t data_size,
 {
   return global_ptr_->rtk_yaw_info_callback(data, data_size, timestamp);
 }
-
+T_DjiReturnCode
+c_rtk_connection_status_callback(const uint8_t *data, uint16_t data_size,
+                                 const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rtk_connection_status_callback(data, data_size,
+                                                     timestamp);
+}
 T_DjiReturnCode
 c_magnetometer_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
@@ -703,6 +709,22 @@ PSDKWrapper::rtk_yaw_info_callback(const uint8_t *data, uint16_t data_size,
 }
 
 T_DjiReturnCode
+PSDKWrapper::rtk_connection_status_callback(const uint8_t *data,
+                                            uint16_t data_size,
+                                            const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionRTKConnectStatus> rtk_connection_status =
+      std::make_unique<T_DjiFcSubscriptionRTKConnectStatus>(
+          *reinterpret_cast<const T_DjiFcSubscriptionRTKConnectStatus *>(data));
+  std_msgs::msg::UInt16 rtk_connection_status_msg;
+  rtk_connection_status_msg.data = rtk_connection_status->rtkConnected;
+  rtk_connection_status_pub_->publish(rtk_connection_status_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
 PSDKWrapper::magnetometer_callback(const uint8_t *data, uint16_t data_size,
                                    const T_DjiDataTimestamp *timestamp)
 {
@@ -752,16 +774,17 @@ PSDKWrapper::rc_connection_status_callback(const uint8_t *data,
 {
   (void)data_size;
   (void)timestamp;
-  std::unique_ptr<T_DjiFcSubscriptionRCWithFlagData> rc_data =
+  std::unique_ptr<T_DjiFcSubscriptionRCWithFlagData> rc_connection_data =
       std::make_unique<T_DjiFcSubscriptionRCWithFlagData>(
           *reinterpret_cast<const T_DjiFcSubscriptionRCWithFlagData *>(data));
   psdk_interfaces::msg::RCConnectionStatus connection_status_msg;
   connection_status_msg.header.stamp = this->get_clock()->now();
-  connection_status_msg.air_connection = rc_data->flag.skyConnected;
-  connection_status_msg.ground_connection = rc_data->flag.groundConnected;
-  connection_status_msg.app_connection = rc_data->flag.appConnected;
+  connection_status_msg.air_connection = rc_connection_data->flag.skyConnected;
+  connection_status_msg.ground_connection =
+      rc_connection_data->flag.groundConnected;
+  connection_status_msg.app_connection = rc_connection_data->flag.appConnected;
   connection_status_msg.air_or_ground_disconnected =
-      rc_data->flag.logicConnected;
+      rc_connection_data->flag.logicConnected;
   rc_connection_status_pub_->publish(connection_status_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -1334,6 +1357,18 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW_INFO, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RTK_CONNECT_STATUS,
+        get_frequency(params_.rtk_data_frequency),
+        c_rtk_connection_status_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RTK_CONNECT_STATUS, error %ld",
                    return_code);
     }
   }
