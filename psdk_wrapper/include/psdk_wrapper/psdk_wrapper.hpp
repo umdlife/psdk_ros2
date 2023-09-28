@@ -44,6 +44,7 @@
 #include <sensor_msgs/msg/joy.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/u_int16.hpp>
 #include <std_msgs/msg/u_int8.hpp>
@@ -62,6 +63,7 @@
 
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/altitude.hpp"
+#include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
@@ -70,6 +72,7 @@
 #include "psdk_interfaces/msg/gps_details.hpp"
 #include "psdk_interfaces/msg/home_position.hpp"
 #include "psdk_interfaces/msg/position_fused.hpp"
+#include "psdk_interfaces/msg/rc_connection_status.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
 #include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
@@ -419,11 +422,17 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_rtk_yaw_info_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rtk_connection_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_magnetometer_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_rc_callback(const uint8_t* data, uint16_t data_size,
                                        const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_rc_connection_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_gimbal_angles_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
@@ -449,6 +458,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_height_fused_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_control_mode_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_home_point_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_home_point_status_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_acceleration_ground_fused_callback(
@@ -696,6 +714,21 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode rtk_yaw_info_callback(const uint8_t* data, uint16_t data_size,
                                         const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Provides RTK connection status. This topic will update in real time
+   * whether the RTK GPS system is connected or not; typical uses include
+   * app-level logic to switch between GPS and RTK sources of positioning based
+   * on this flag.
+   * @param data pointer to T_DjiFcSubscriptionRTKConnectStatus data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode rtk_connection_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the magnetometer data provided by DJI PSDK lib and
    * publishes it on a ROS 2 topic. Provides magnetometer readings in x, y, z,
@@ -720,6 +753,22 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode rc_callback(const uint8_t* data, uint16_t data_size,
                               const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Retrieves the RC connection status provided by DJI PSDK lib and
+   * publishes it on a ROS 2 topic.This topic provides connection status for air
+   * system, ground system and MSDK apps. The connection status also includes a
+   * logicConnected element, which will change to false if either the air system
+   * or the ground system radios are disconnected for >3s. (up to 50Hz)
+   * @param data pointer to T_DjiFcSubscriptionRCWithFlagData data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode rc_connection_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the gimbal angle data provided by DJI PSDK lib and
    * publishes it on a ROS 2 topic. Provides the roll, pitch and yaw of the
@@ -846,6 +895,37 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode height_fused_callback(const uint8_t* data, uint16_t data_size,
                                         const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Provides the control mode of the aircraft related to SDK/RC control
+   * @param data pointer to T_DjiFcSubscriptionControlDevice data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode control_mode_callback(const uint8_t* data, uint16_t data_size,
+                                        const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Provides the latitude and longitude of the home point
+   * @param data pointer to T_DjiFcSubscriptionHomePointInfo data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode home_point_callback(const uint8_t* data, uint16_t data_size,
+                                      const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Provides status of whether the home point was set or not
+   * @param data pointer to T_DjiFcSubscriptionHomePointSetStatus data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode home_point_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the copter linear acceleration wrt. a ground-fixed ENU
    * frame in [m/s^2] up to 200 Hz. This output is the result of a fusion
@@ -1550,10 +1630,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       rtk_position_info_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt8>::SharedPtr
       rtk_yaw_info_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::UInt16>::SharedPtr
+      rtk_connection_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       sensor_msgs::msg::MagneticField>::SharedPtr magnetic_field_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Joy>::SharedPtr
       rc_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::RCConnectionStatus>::SharedPtr
+      rc_connection_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr gimbal_angles_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
@@ -1572,6 +1657,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::ControlMode>::SharedPtr control_mode_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::NavSatFix>::SharedPtr
+      home_point_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Bool>::SharedPtr
+      home_point_status_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr angular_rate_body_raw_pub_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Vector3Stamped>::

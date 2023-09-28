@@ -172,7 +172,13 @@ c_rtk_yaw_info_callback(const uint8_t *data, uint16_t data_size,
 {
   return global_ptr_->rtk_yaw_info_callback(data, data_size, timestamp);
 }
-
+T_DjiReturnCode
+c_rtk_connection_status_callback(const uint8_t *data, uint16_t data_size,
+                                 const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rtk_connection_status_callback(data, data_size,
+                                                     timestamp);
+}
 T_DjiReturnCode
 c_magnetometer_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
@@ -184,6 +190,13 @@ c_rc_callback(const uint8_t *data, uint16_t data_size,
               const T_DjiDataTimestamp *timestamp)
 {
   return global_ptr_->rc_callback(data, data_size, timestamp);
+}
+
+T_DjiReturnCode
+c_rc_connection_status_callback(const uint8_t *data, uint16_t data_size,
+                                const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->rc_connection_status_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
@@ -247,6 +260,24 @@ c_height_fused_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
   return global_ptr_->height_fused_callback(data, data_size, timestamp);
+}
+T_DjiReturnCode
+c_control_mode_callback(const uint8_t *data, uint16_t data_size,
+                        const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->control_mode_callback(data, data_size, timestamp);
+}
+T_DjiReturnCode
+c_home_point_callback(const uint8_t *data, uint16_t data_size,
+                      const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->home_point_callback(data, data_size, timestamp);
+}
+T_DjiReturnCode
+c_home_point_status_callback(const uint8_t *data, uint16_t data_size,
+                             const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->home_point_status_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
@@ -696,6 +727,22 @@ PSDKWrapper::rtk_yaw_info_callback(const uint8_t *data, uint16_t data_size,
 }
 
 T_DjiReturnCode
+PSDKWrapper::rtk_connection_status_callback(const uint8_t *data,
+                                            uint16_t data_size,
+                                            const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionRTKConnectStatus> rtk_connection_status =
+      std::make_unique<T_DjiFcSubscriptionRTKConnectStatus>(
+          *reinterpret_cast<const T_DjiFcSubscriptionRTKConnectStatus *>(data));
+  std_msgs::msg::UInt16 rtk_connection_status_msg;
+  rtk_connection_status_msg.data = rtk_connection_status->rtkConnected;
+  rtk_connection_status_pub_->publish(rtk_connection_status_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
 PSDKWrapper::magnetometer_callback(const uint8_t *data, uint16_t data_size,
                                    const T_DjiDataTimestamp *timestamp)
 {
@@ -735,6 +782,28 @@ PSDKWrapper::rc_callback(const uint8_t *data, uint16_t data_size,
   rc_msg.buttons[0] = rc_data->mode;   // [-10000,10000]
   rc_msg.buttons[1] = rc_data->gear;   // [-10000,10000]
   rc_pub_->publish(rc_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::rc_connection_status_callback(const uint8_t *data,
+                                           uint16_t data_size,
+                                           const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionRCWithFlagData> rc_connection_data =
+      std::make_unique<T_DjiFcSubscriptionRCWithFlagData>(
+          *reinterpret_cast<const T_DjiFcSubscriptionRCWithFlagData *>(data));
+  psdk_interfaces::msg::RCConnectionStatus connection_status_msg;
+  connection_status_msg.header.stamp = this->get_clock()->now();
+  connection_status_msg.air_connection = rc_connection_data->flag.skyConnected;
+  connection_status_msg.ground_connection =
+      rc_connection_data->flag.groundConnected;
+  connection_status_msg.app_connection = rc_connection_data->flag.appConnected;
+  connection_status_msg.air_or_ground_disconnected =
+      rc_connection_data->flag.logicConnected;
+  rc_connection_status_pub_->publish(connection_status_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -947,6 +1016,65 @@ PSDKWrapper::height_fused_callback(const uint8_t *data, uint16_t data_size,
   std_msgs::msg::Float32 height_fused_msg;
   height_fused_msg.data = *height_fused;
   height_fused_pub_->publish(height_fused_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::control_mode_callback(const uint8_t *data, uint16_t data_size,
+                                   const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionControlDevice> control_mode =
+      std::make_unique<T_DjiFcSubscriptionControlDevice>(
+          *reinterpret_cast<const T_DjiFcSubscriptionControlDevice *>(data));
+  psdk_interfaces::msg::ControlMode control_mode_msg;
+  control_mode_msg.header.stamp = this->get_clock()->now();
+  control_mode_msg.control_mode = control_mode->controlMode;
+  control_mode_msg.device_mode = control_mode->deviceStatus;
+  control_mode_msg.control_auth = control_mode->flightStatus;
+  control_mode_pub_->publish(control_mode_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::home_point_callback(const uint8_t *data, uint16_t data_size,
+                                 const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionHomePointInfo> home_point =
+      std::make_unique<T_DjiFcSubscriptionHomePointInfo>(
+          *reinterpret_cast<const T_DjiFcSubscriptionHomePointInfo *>(data));
+  sensor_msgs::msg::NavSatFix home_point_msg;
+  home_point_msg.header.stamp = this->get_clock()->now();
+  home_point_msg.longitude = home_point->longitude;
+  home_point_msg.latitude = home_point->latitude;
+  home_point_pub_->publish(home_point_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::home_point_status_callback(const uint8_t *data, uint16_t data_size,
+                                        const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionHomePointSetStatus> home_point_status =
+      std::make_unique<T_DjiFcSubscriptionHomePointSetStatus>(
+          *reinterpret_cast<const T_DjiFcSubscriptionHomePointSetStatus *>(
+              data));
+  std_msgs::msg::Bool home_point_status_msg;
+  if (*home_point_status == DJI_FC_SUBSCRIPTION_HOME_POINT_SET_STATUS_FAILED)
+  {
+    home_point_status_msg.data = 0;
+  }
+  else if (*home_point_status ==
+           DJI_FC_SUBSCRIPTION_HOME_POINT_SET_STATUS_SUCCESS)
+  {
+    home_point_status_msg.data = 1;
+  }
+  home_point_status_pub_->publish(home_point_status_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -1308,6 +1436,18 @@ PSDKWrapper::subscribe_psdk_topics()
                    "DJI_FC_SUBSCRIPTION_TOPIC_RTK_YAW_INFO, error %ld",
                    return_code);
     }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RTK_CONNECT_STATUS,
+        get_frequency(params_.rtk_data_frequency),
+        c_rtk_connection_status_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RTK_CONNECT_STATUS, error %ld",
+                   return_code);
+    }
   }
   if (params_.magnetometer_frequency > 0)
   {
@@ -1334,6 +1474,18 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RC, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_RC_WITH_FLAG_DATA,
+        get_frequency(params_.rc_channels_data_frequency),
+        c_rc_connection_status_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_RC_WITH_FLAG_DATA, error %ld",
                    return_code);
     }
   }
@@ -1454,6 +1606,42 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_HEIGHT_FUSION, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_CONTROL_DEVICE,
+        get_frequency(params_.control_information_frequency),
+        c_height_fused_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_CONTROL_DEVICE, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_HOME_POINT_INFO,
+        get_frequency(params_.control_information_frequency),
+        c_height_fused_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_HOME_POINT_INFO, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_HOME_POINT_SET_STATUS,
+        get_frequency(params_.control_information_frequency),
+        c_height_fused_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_HOME_POINT_SET_STATUS, error %ld",
                    return_code);
     }
   }
