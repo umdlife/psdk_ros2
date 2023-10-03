@@ -213,16 +213,16 @@ void
 PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
 {
   (void)user_data;
-  sensor_msgs::msg::Image img;
-  img.height = rgb_img.height;
-  img.width = rgb_img.width;
-  img.step = rgb_img.width * 3;
-  img.encoding = "rgb8";
-  img.data = rgb_img.rawData;
+  sensor_msgs::msg::Image::UniquePtr img(new sensor_msgs::msg::Image());
+  img->height = rgb_img.height;
+  img->width = rgb_img.width;
+  img->step = rgb_img.width * 3;
+  img->encoding = "rgb8";
+  img->data = rgb_img.rawData;
 
-  img.header.stamp = this->get_clock()->now();
-  img.header.frame_id = get_optical_frame_id();
-  main_camera_stream_pub_->publish(img);
+  img->header.stamp = this->get_clock()->now();
+  img->header.frame_id = get_optical_frame_id();
+  main_camera_stream_pub_->publish(std::move(img));
 }
 
 void
