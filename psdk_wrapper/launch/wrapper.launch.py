@@ -43,6 +43,7 @@ def generate_launch_description():
         executable="psdk_wrapper_node",
         name="psdk_wrapper_node",
         output="screen",
+        emulate_tty=True,
         namespace=namespace,
         parameters=[wrapper_params],
     )
