@@ -58,8 +58,10 @@ c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
                                    const uint8_t *buffer,
                                    uint32_t buffer_length)
 {
-  return global_ptr_->LiveviewConvertH264ToRgbCallback(position, buffer,
-                                                       buffer_length);
+  // return global_ptr_->LiveviewConvertH264ToRgbCallback(position, buffer,
+                                                      //  buffer_length);
+  
+  return global_ptr_->publish_main_camera_images(buffer, buffer_length);
 }
 
 void
@@ -72,6 +74,7 @@ PSDKWrapper::LiveviewConvertH264ToRgbCallback(
   {
     decoder->second->decodeBuffer(buffer, buffer_length);
   }
+
 }
 
 void
@@ -152,12 +155,12 @@ PSDKWrapper::start_main_camera_stream(CameraImageCallback callback,
                                       E_DjiLiveViewCameraPosition payload_index,
                                       E_DjiLiveViewCameraSource camera_source)
 {
-  auto decoder = stream_decoder.find(payload_index);
+  // auto decoder = stream_decoder.find(payload_index);
 
-  if ((decoder != stream_decoder.end()) && decoder->second)
-  {
-    decoder->second->init();
-    decoder->second->registerCallback(callback, user_data);
+  // if ((decoder != stream_decoder.end()) && decoder->second)
+  // {
+  //   decoder->second->init();
+  //   decoder->second->registerCallback(callback, user_data);
 
     T_DjiReturnCode return_code = DjiLiveview_StartH264Stream(
         payload_index, camera_source, c_LiveviewConvertH264ToRgbCallback);
@@ -174,13 +177,13 @@ PSDKWrapper::start_main_camera_stream(CameraImageCallback callback,
       RCLCPP_INFO(get_logger(), "Successfully started the camera streaming.");
       return true;
     }
-  }
-  else
-  {
-    RCLCPP_ERROR(get_logger(), "Failed to decode streaming, error code: %ld",
-                 DJI_ERROR_SYSTEM_MODULE_CODE_NOT_FOUND);
-    return false;
-  }
+  // }
+  // else
+  // {
+  //   RCLCPP_ERROR(get_logger(), "Failed to decode streaming, error code: %ld",
+  //                DJI_ERROR_SYSTEM_MODULE_CODE_NOT_FOUND);
+  //   return false;
+  // }
 }
 
 bool
@@ -207,6 +210,17 @@ PSDKWrapper::stop_main_camera_stream(
     RCLCPP_INFO(get_logger(), "Successfully stopped camera streaming.");
     return true;
   }
+}
+
+void
+PSDKWrapper::publish_main_camera_images(const uint8_t *buffer, uint32_t buffer_length)
+{
+  sensor_msgs::msg::Image img;
+  img.encoding = "h264";
+  img.data = std::vector<uint8_t>(buffer, buffer+buffer_length);
+  img.header.stamp = this->get_clock()->now();
+  img.header.frame_id = get_optical_frame_id();
+  main_camera_stream_pub_->publish(img);
 }
 
 void

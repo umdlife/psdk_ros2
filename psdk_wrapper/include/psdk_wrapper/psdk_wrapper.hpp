@@ -1862,6 +1862,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param user_data unused parameter
    */
   void publish_main_camera_images(CameraRGBImage rgb_img, void* user_data);
+  void publish_main_camera_images(const uint8_t *buffer, uint32_t buffer_length);
+
   /**
    * @brief Publishes the FPV camera streaming to a ROS 2 topic
    * @param rgb_img  decoded RGB frame retrieved from the camera

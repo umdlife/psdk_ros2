@@ -787,7 +787,7 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<geometry_msgs::msg::AccelStamped>(
           "psdk_ros2/acceleration_body_raw", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/main_camera_stream", 1);
+      "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/fpv_camera_stream", 10);
   control_mode_pub_ = create_publisher<psdk_interfaces::msg::ControlMode>(
