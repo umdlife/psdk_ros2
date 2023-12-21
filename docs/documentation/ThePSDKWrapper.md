@@ -32,7 +32,7 @@ Given the high number of topics available, these have been grouped under differe
 
 | ROS 2 Topic          | Max. freq |
 | -------------------- |-----------|
-| psdk_ros2/attitude   |  n.a      |
+| psdk_ros2/attitude   |  unknown  |
 
 * **Acceleration**
 
@@ -46,7 +46,7 @@ Given the high number of topics available, these have been grouped under differe
 
 | ROS 2 Topic                     | Max. freq |
 | --------------------------------|-----------|
-| psdk_ros2/velocity_ground_fused |  n.a      |
+| psdk_ros2/velocity_ground_fused |  unknown  |
 
 
 * **Angular Velocity**
@@ -62,26 +62,33 @@ Given the high number of topics available, these have been grouped under differe
 | -------------------------|-----------|
 | psdk_ros2/position_fused |  50 Hz    |
 
+* **Altitude**
+
+| ROS 2 Topic                   | Max. freq |
+| ------------------------------|-----------|
+| psdk_ros2/altitude_sea_level  |  unknown  |
+| psdk_ros2/altitude_barometric |  200 Hz   |
+
 * **GPS Data**
 
 | ROS 2 Topic                  | Max. freq |
 | -----------------------------|-----------|
-| psdk_ros2/gps_position_fused |  n.a      |
-| psdk_ros2/gps_position       |  n.a      |
-| psdk_ros2/gps_velocity       |  n.a      |
-| psdk_ros2/gps_details        |  n.a      |
-| psdk_ros2/gps_signal_level   |  n.a      |
-| psdk_ros2/gps_control_level  |  n.a      |
+| psdk_ros2/gps_position_fused |  unknown  |
+| psdk_ros2/gps_position       |  unknown  |
+| psdk_ros2/gps_velocity       |  unknown  |
+| psdk_ros2/gps_details        |  unknown  |
+| psdk_ros2/gps_signal_level   |  unknown  |
+| psdk_ros2/gps_control_level  |  unknown  |
 
 * **RTK Data**
 
 | ROS 2 Topic                 | Max. freq |
 | ----------------------------|-----------| 
-| psdk_ros2/rtk_position      |  n.a      |
-| psdk_ros2/rtk_velocity      |  n.a      |
-| psdk_ros2/rtk_yaw           |  n.a      |     
-| psdk_ros2/rtk_position_info |  n.a      |
-| psdk_ros2/rtk_yaw_info      |  n.a      |
+| psdk_ros2/rtk_position      |  unknown  |
+| psdk_ros2/rtk_velocity      |  unknown  |
+| psdk_ros2/rtk_yaw           |  unknown  |     
+| psdk_ros2/rtk_position_info |  unknown  |
+| psdk_ros2/rtk_yaw_info      |  unknown  |
 
 * **Magnetometer**
 
@@ -106,7 +113,7 @@ Given the high number of topics available, these have been grouped under differe
 
 | ROS 2 Topic                   | Max. freq |
 | ------------------------------|-----------| 
-| psdk_ros2/flight_status       |  n.a      |
+| psdk_ros2/flight_status       |  unknown  |
 | psdk_ros2/display_mode        |  50 Hz    |
 | psdk_ros2/landing_gear_status |  50 Hz    |     
 | psdk_ros2/motor_start_error   |  50 Hz    |
@@ -116,13 +123,18 @@ Given the high number of topics available, these have been grouped under differe
 
 | ROS 2 Topic          | Max. freq |
 | -------------------- |-----------| 
-| psdk_ros2/battery    |  n.a      |
+| psdk_ros2/battery    |  unknown  |
 
 * **Control Information**
 
-| ROS 2 Topic                   | Max. freq |
-| ------------------------------|-----------| 
-| psdk_ros2/height_above_ground |  100 Hz   |
+| ROS 2 Topic                      | Max. freq |
+| ---------------------------------|-----------| 
+| psdk_ros2/height_above_ground    |  100 Hz   |
+| psdk_ros2/control_mode           |  unknown  |
+| psdk_ros2/home_point             |  unknown  |
+| psdk_ros2/home_point_status      |  unknown  |
+| psdk_ros2/home_point_altitude    |  unknown  |
+| psdk_ros2/relative_obstacle_info |  100 Hz   |
 
 
 The user can set a specific publishing frequency to each category within the `psdk_params.yaml` file and this will be applied to all topics contained within it. The possible frequencies that can be set for any given category are: 1, 5, 10, 50, 100, 200, 400 Hz.  If the frequency set by the user is higher than the maximum one handled internally by the PSDK libraries, an error message will appear. 
@@ -231,6 +243,7 @@ The following camera parameters can be set/get. Please note, that some of these 
 | psdk_ros2/camera_set_aperture               | Service   | 
 | psdk_ros2/camera_get_aperture               | Service   | 
 | psdk_ros2/camera_get_laser_ranging_info     | Service   |
+
 #### Camera commands
 
 The following services can be called to start shooting photos or record videos with the payload installed on-board the copter. Check the API Documentation for more information regarding the inputs and outputs of these ROS 2 services. 

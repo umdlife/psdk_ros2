@@ -484,6 +484,20 @@ PSDKWrapper::load_parameters()
         POSITION_TOPICS_MAX_FREQ);
     params_.position_frequency = POSITION_TOPICS_MAX_FREQ;
   }
+  if (!get_parameter("data_frequency.altitude", params_.altitude_frequency))
+  {
+    RCLCPP_ERROR(get_logger(), "altitude frequency param not defined");
+    exit(-1);
+  }
+  if (params_.altitude_frequency > ALTITUDE_TOPICS_MAX_FREQ)
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "Frequency defined for the altitude topics is higher than the maximum "
+        "allowed %d. Tha maximum value is set",
+        ALTITUDE_TOPICS_MAX_FREQ);
+    params_.altitude_frequency = ALTITUDE_TOPICS_MAX_FREQ;
+  }
   if (!get_parameter("data_frequency.gps_fused_position",
                      params_.gps_fused_position_frequency))
   {
@@ -674,10 +688,10 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
   while (number_retries < MAX_NUMBER_OF_RETRIES)
   {
     result = DjiCore_Init(user_info);
-  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-  {
+    if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
       number_retries++;
-    RCLCPP_ERROR(get_logger(),
+      RCLCPP_ERROR(get_logger(),
                    "DJI core could not be initiated. Error code is: %ld. "
                    "Retrying for %d time. ",
                    result, number_retries);
@@ -814,17 +828,12 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<sensor_msgs::msg::NavSatFix>("psdk_ros2/home_point", 10);
   home_point_status_pub_ =
       create_publisher<std_msgs::msg::Bool>("psdk_ros2/home_point_status", 10);
-
-  /** @todo Implement other useful publishers */
-  // altitude_pub_ =
-  //     create_publisher<psdk_interfaces::msg::Altitude>("psdk_ros2/altitude",
-  //     10);
-  // relative_height_pub_ =
-  //     create_publisher<std_msgs::msg::Float32>("psdk_ros2/relative_height",
-  //     10);
-  // relative_obstacle_info_pub_ =
-  //     create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
-  //         "psdk_ros2/relative_obstacle_info", 10);
+  home_point_altitude_pub_ = create_publisher<std_msgs::msg::Float32>(
+      "psdk_ros2/home_point_altitude", 10);
+  altitude_sl_pub_ = create_publisher<std_msgs::msg::Float32>(
+      "psdk_ros2/altitude_sea_level", 10);
+  altitude_barometric_pub_ = create_publisher<std_msgs::msg::Float32>(
+      "psdk_ros2/altitude_barometric", 10);
 
   RCLCPP_INFO(get_logger(), "Creating subscribers");
   flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
@@ -1119,9 +1128,9 @@ PSDKWrapper::activate_ros_elements()
   home_point_pub_->on_activate();
   home_point_status_pub_->on_activate();
   relative_obstacle_info_pub_->on_activate();
-  // altitude_pub_->on_activate();
-  // relative_height_pub_->on_activate();
-
+  home_point_altitude_pub_->on_activate();
+  altitude_sl_pub_->on_activate();
+  altitude_barometric_pub_->on_activate();
 }
 
 void
@@ -1167,8 +1176,9 @@ PSDKWrapper::deactivate_ros_elements()
   home_point_pub_->on_deactivate();
   home_point_status_pub_->on_deactivate();
   relative_obstacle_info_pub_->on_deactivate();
-  // altitude_pub_->on_deactivate();
-  // relative_height_pub_->on_deactivate();
+  home_point_altitude_pub_->on_deactivate();
+  altitude_sl_pub_->on_deactivate();
+  altitude_barometric_pub_->on_deactivate();
 }
 
 void
@@ -1287,8 +1297,9 @@ PSDKWrapper::clean_ros_elements()
   home_point_pub_.reset();
   home_point_status_pub_.reset();
   relative_obstacle_info_pub_.reset();
-  // altitude_pub_.reset();
-  // relative_height_pub_.reset();
+  home_point_altitude_pub_.reset();
+  altitude_sl_pub_.reset();
+  altitude_barometric_pub_.reset();
 }
 
 /*@todo Generalize the functions related to TFs for different copter, gimbal

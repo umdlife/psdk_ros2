@@ -24,7 +24,6 @@ find_package(std_srvs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DisplayMode.msg"
-  "msg/Altitude.msg"
   "msg/FlightAnomaly.msg"
   "msg/GimbalStatus.msg"
   "msg/HomePosition.msg"
