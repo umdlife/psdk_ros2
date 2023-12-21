@@ -669,11 +669,26 @@ bool
 PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
-  auto result = DjiCore_Init(user_info);
+  int number_retries = 0;
+  T_DjiReturnCode result;
+  while (number_retries < MAX_NUMBER_OF_RETRIES)
+  {
+    result = DjiCore_Init(user_info);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
+      number_retries++;
     RCLCPP_ERROR(get_logger(),
-                 "DJI core could not be initiated. Error code is: %ld", result);
+                   "DJI core could not be initiated. Error code is: %ld. "
+                   "Retrying for %d time. ",
+                   result, number_retries);
+      std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+      continue;
+    }
+    break;
+  }
+
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
     return false;
   }
 
@@ -786,6 +801,9 @@ PSDKWrapper::initialize_ros_elements()
   acceleration_body_raw_pub_ =
       create_publisher<geometry_msgs::msg::AccelStamped>(
           "psdk_ros2/acceleration_body_raw", 10);
+  relative_obstacle_info_pub_ =
+      create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
+          "psdk_ros2/relative_obstacle_info", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", 10);
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
@@ -1100,9 +1118,10 @@ PSDKWrapper::activate_ros_elements()
   control_mode_pub_->on_activate();
   home_point_pub_->on_activate();
   home_point_status_pub_->on_activate();
+  relative_obstacle_info_pub_->on_activate();
   // altitude_pub_->on_activate();
   // relative_height_pub_->on_activate();
-  // relative_obstacle_info_pub_->on_activate();
+
 }
 
 void
@@ -1147,9 +1166,9 @@ PSDKWrapper::deactivate_ros_elements()
   control_mode_pub_->on_deactivate();
   home_point_pub_->on_deactivate();
   home_point_status_pub_->on_deactivate();
+  relative_obstacle_info_pub_->on_deactivate();
   // altitude_pub_->on_deactivate();
   // relative_height_pub_->on_deactivate();
-  // relative_obstacle_info_pub_->on_deactivate();
 }
 
 void
@@ -1267,9 +1286,9 @@ PSDKWrapper::clean_ros_elements()
   control_mode_pub_.reset();
   home_point_pub_.reset();
   home_point_status_pub_.reset();
+  relative_obstacle_info_pub_.reset();
   // altitude_pub_.reset();
   // relative_height_pub_.reset();
-  // relative_obstacle_info_pub_.reset();
 }
 
 /*@todo Generalize the functions related to TFs for different copter, gimbal

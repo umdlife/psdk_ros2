@@ -478,6 +478,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_acceleration_body_raw_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_avoid_data_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   /* Streaming */
   friend void c_publish_main_streaming_callback(CameraRGBImage img,
                                                 void* user_data);
@@ -965,6 +968,19 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiReturnCode acceleration_body_raw_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Retrieves the obstacle avoidance data around the vehicle at a
+   * frequency up to 100 Hz. It also provides a health flag for each sensor
+   * direction. Please refer to the msg
+   * definition sensor_msgs::msg::RelativeObstacleInfo for more details.
+   * @param data pointer to T_DjiFcSubscriptionAvoidData data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode avoid_data_callback(const uint8_t* data, uint16_t data_size,
+                                      const T_DjiDataTimestamp* timestamp);
 
   /* ROS 2 Subscriber callbacks */
   /**
@@ -1673,6 +1689,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       geometry_msgs::msg::AccelStamped>::SharedPtr acceleration_body_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::AccelStamped>::SharedPtr acceleration_body_raw_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::RelativeObstacleInfo>::SharedPtr
+      relative_obstacle_info_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       main_camera_stream_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr

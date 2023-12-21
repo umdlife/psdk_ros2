@@ -170,6 +170,8 @@ const std::vector<DJITopic> topics_to_subscribe{
              CONTROL_DATA_TOPICS_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_HOME_POINT_SET_STATUS,
              CONTROL_DATA_TOPICS_MAX_FREQ},
+    DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_AVOID_DATA,
+             CONTROL_DATA_TOPICS_MAX_FREQ},
 };
 
 const std::map<E_DjiCameraType, std::string> camera_type_str = {
