@@ -7,9 +7,6 @@
       app_license: "YourAppLicense"
       developer_account: "YourDeveloperAccount"
       baudrate: "921600"
-      hardware_connection: "DJI_USE_UART_AND_USB_BULK_DEVICE"
-      uart_dev_1: "/dev/dji_serial"
-      uart_dev_2: "/dev/dji_advanced_sensing"
 
       imu_frame: "psdk_imu_link"
       body_frame: "psdk_base_link"
