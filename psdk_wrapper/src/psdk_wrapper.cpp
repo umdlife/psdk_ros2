@@ -1270,6 +1270,7 @@ PSDKWrapper::clean_ros_elements()
   // altitude_pub_.reset();
   // relative_height_pub_.reset();
   // relative_obstacle_info_pub_.reset();
+
 }
 
 /*@todo Generalize the functions related to TFs for different copter, gimbal
