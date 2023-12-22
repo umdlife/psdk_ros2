@@ -505,7 +505,7 @@ PSDKWrapper::vo_position_callback(const uint8_t *data, uint16_t data_size,
       position_msg.position.z - get_local_altitude_reference();
 
   // Save current local position
-  current_local_position_ = position_msg;
+  current_state_.local_position = position_msg;
 
   if (set_local_position_ref_)
   {
@@ -845,7 +845,7 @@ PSDKWrapper::gimbal_angles_callback(const uint8_t *data, uint16_t data_size,
   if (params_.publish_transforms)
   {
     /* Save gimbal angles for TF publishing and publish dynamic transform */
-    gimbal_angles_ = gimbal_angles_msg;
+    current_state_.gimbal_angles = gimbal_angles_msg;
     publish_dynamic_transforms();
   }
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;

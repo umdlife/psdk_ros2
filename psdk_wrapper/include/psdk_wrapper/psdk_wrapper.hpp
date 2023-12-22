@@ -225,9 +225,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string app_license;
     std::string developer_account;
     std::string baudrate;
-    std::string hardware_connection;
-    std::string uart_dev_1;
-    std::string uart_dev_2;
+    std::string link_config_file_path;
     std::string imu_frame;
     std::string body_frame;
     std::string map_frame;
@@ -293,7 +291,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   bool deinit_telemetry();
   /**
-   * @brief Initialize the flight control module
+   * @brief Initialize the flight control module. It needs the RID information
+   * to be passed to the native flight control initialization function from DJI.
    * @return true/false
    */
   bool init_flight_control();
@@ -1500,7 +1499,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraRecordVideo::Request> request,
       const std::shared_ptr<CameraRecordVideo::Response> response);
   /**
-   * @brief Request laser ranging info for specific camera.
+   * @brief Request laser ranging info for specific camera. Unit (m).
    * @param request CameraGetLaserRangingInfo service request. The camera
    * mounted position for which the request is made needs to be specified.
    * @param response CameraGetLaserRangingInfo service response.
@@ -1886,9 +1885,33 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool local_altitude_reference_set_{false};
   bool set_local_position_ref_{false};
   geometry_msgs::msg::Vector3Stamped local_position_reference_;
-  psdk_interfaces::msg::PositionFused current_local_position_;
-  tf2::Quaternion current_attitude_;
-  geometry_msgs::msg::Vector3Stamped gimbal_angles_;
+  struct CopterState
+  {
+    psdk_interfaces::msg::PositionFused local_position;
+    sensor_msgs::msg::NavSatFix gps_position;
+    tf2::Quaternion attitude;
+    geometry_msgs::msg::Vector3Stamped gimbal_angles;
+
+    void
+    initialize_state()
+    {
+      local_position.position.x = 0.0;
+      local_position.position.y = 0.0;
+      local_position.position.z = 0.0;
+
+      gps_position.latitude = 40.0;
+      gps_position.longitude = 2.0;
+      gps_position.altitude = 100.0;
+
+      attitude.setRPY(0.0, 0.0, 0.0);
+
+      gimbal_angles.vector.x = 0.0;
+      gimbal_angles.vector.y = 0.0;
+      gimbal_angles.vector.z = 0.0;
+    }
+  };
+
+  CopterState current_state_;
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 

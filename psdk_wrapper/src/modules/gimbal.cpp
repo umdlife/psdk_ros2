@@ -79,7 +79,9 @@ PSDKWrapper::gimbal_reset_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  return_code = DjiGimbalManager_Reset(index);
+  E_DjiGimbalResetMode reset_mode =
+      static_cast<E_DjiGimbalResetMode>(request->reset_mode);
+  return_code = DjiGimbalManager_Reset(index, reset_mode);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Reset gimbal failed, error code: %ld",

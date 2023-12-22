@@ -32,9 +32,11 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("app_license", rclcpp::ParameterValue(""));
   declare_parameter("developer_account", rclcpp::ParameterValue(""));
   declare_parameter("baudrate", rclcpp::ParameterValue(""));
-  declare_parameter("hardware_connection", rclcpp::ParameterValue(""));
-  declare_parameter("uart_dev_1", rclcpp::ParameterValue(""));
-  declare_parameter("uart_dev_2", rclcpp::ParameterValue(""));
+  std::string ros_pkg_path =
+      ament_index_cpp::get_package_share_directory("psdk_wrapper");
+  std::string default_config_file = ros_pkg_path + "/cfg/hw_connection.json";
+  declare_parameter("link_config_file_path",
+                    rclcpp::ParameterValue(default_config_file));
 
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
@@ -73,6 +75,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
   initialize_ros_elements();
+  current_state_.initialize_state();
 
   return CallbackReturn::SUCCESS;
 }
@@ -163,6 +166,7 @@ PSDKWrapper::set_environment()
   T_DjiHalUartHandler uart_handler = {0};
   T_DjiFileSystemHandler file_system_handler = {0};
   T_DjiSocketHandler socket_handler{0};
+  T_DjiUserLinkConfig linkConfig;
 
   socket_handler.Socket = Osal_Socket;
   socket_handler.Bind = Osal_Bind;
@@ -233,7 +237,20 @@ PSDKWrapper::set_environment()
   RCLCPP_INFO(get_logger(), "Registered HAL handler");
 
 #if (HARDWARE_CONNECTION == DJI_USE_UART_AND_USB_BULK_DEVICE)
-  RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_USB_BULK_DEVICE");
+  return_code = DjiUserConfigManager_LoadConfiguration(
+      params_.link_config_file_path.c_str());
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Configuration file could not be loaded. Error code is: %ld",
+                 return_code);
+    return false;
+  }
+  RCLCPP_INFO(get_logger(), "Loaded configuration file");
+  DjiUserConfigManager_GetLinkConfig(&linkConfig);
+  if (linkConfig.type == DJI_USER_LINK_CONFIG_USE_UART_AND_USB_BULK_DEVICE)
+  {
+    RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_USB_BULK_DEVICE");
   T_DjiHalUsbBulkHandler usb_bulk_handler;
   usb_bulk_handler.UsbBulkInit = HalUsbBulk_Init;
   usb_bulk_handler.UsbBulkDeInit = HalUsbBulk_DeInit;
@@ -249,6 +266,9 @@ PSDKWrapper::set_environment()
     return false;
   }
 #elif (HARDWARE_CONNECTION == DJI_USE_UART_AND_NETWORK_DEVICE)
+  }
+  else if (linkConfig.type == DJI_USER_LINK_CONFIG_USE_UART_AND_NETWORK_DEVICE)
+  {
   RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_NETWORK_DEVICE");
   T_DjiHalNetworkHandler network_handler;
   network_handler.NetworkInit = HalNetWork_Init;
@@ -262,9 +282,11 @@ PSDKWrapper::set_environment()
                  return_code);
   }
 #elif (HARDWARE_CONNECTION == DJI_USE_ONLY_UART)
+  }
+  else
+  {
   RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
-  /*!< Attention: Only use uart hardware connection.
-   */
+  }
 #endif
 
   // Attention: if you want to use camera stream view function, please uncomment
@@ -328,32 +350,14 @@ PSDKWrapper::load_parameters()
     exit(-1);
   }
   RCLCPP_INFO(get_logger(), "Baudrate: %s", params_.baudrate.c_str());
-  if (!get_parameter("hardware_connection", params_.hardware_connection))
+  if (!get_parameter("link_config_file_path", params_.link_config_file_path))
   {
-    RCLCPP_ERROR(get_logger(), "hardware_connection param not defined");
-    exit(-1);
+    RCLCPP_WARN(get_logger(),
+                "link_config_file_path param not defined, using default %s",
+                params_.link_config_file_path.c_str());
   }
-#define HARDWARE_CONNECTION params_.hardware_connection;
-  RCLCPP_INFO(get_logger(), "Hardware connection: %s",
-              params_.hardware_connection.c_str());
-
-  if (!get_parameter("uart_dev_1", params_.uart_dev_1))
-  {
-    RCLCPP_ERROR(get_logger(), "uart_dev_1 param not defined");
-    exit(-1);
-  }
-  const char *name = "UART_DEV_1";
-  setenv(name, params_.uart_dev_1.c_str(), 1);
-  RCLCPP_INFO(get_logger(), "Uart dev 1: %s", params_.uart_dev_1.c_str());
-
-  if (!get_parameter("uart_dev_2", params_.uart_dev_2))
-  {
-    RCLCPP_ERROR(get_logger(), "uart_dev_2 param not defined");
-    exit(-1);
-  }
-  name = "UART_DEV_2";
-  setenv(name, params_.uart_dev_2.c_str(), 1);
-  RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
+  RCLCPP_INFO(get_logger(), "Using connection configuration file: %s",
+              params_.link_config_file_path.c_str());
 
   if (!get_parameter("imu_frame", params_.imu_frame))
   {
@@ -1348,7 +1352,8 @@ PSDKWrapper::publish_dynamic_transforms()
     tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
 
     tf2::Quaternion q_gimbal_h20;
-    q_gimbal_h20.setRPY(gimbal_angles_.vector.x, gimbal_angles_.vector.y,
+    q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
+                        current_state_.gimbal_angles.vector.y,
                         get_yaw_gimbal_camera());
     tf_gimbal_H20.transform.rotation.x = q_gimbal_h20.getX();
     tf_gimbal_H20.transform.rotation.y = q_gimbal_h20.getY();
@@ -1362,14 +1367,14 @@ double
 PSDKWrapper::get_yaw_gimbal_camera()
 {
   /* Get current copter yaw wrt. to East */
-  tf2::Matrix3x3 rotation_mat(current_attitude_);
+  tf2::Matrix3x3 rotation_mat(current_state_.attitude);
   double current_roll;
   double current_pitch;
   double current_yaw;
   rotation_mat.getRPY(current_roll, current_pitch, current_yaw);
 
   /* Get current gimbal yaw wrt to East */
-  double current_gimbal_yaw = gimbal_angles_.vector.z;
+  double current_gimbal_yaw = current_state_.gimbal_angles.vector.z;
   return current_gimbal_yaw - current_yaw;
 }
 
