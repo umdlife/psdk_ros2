@@ -9,9 +9,9 @@ cd ~/psdk_ros2_ws/src
 git clone https://github.com/umdlife/psdk_ros2.git
 git clone https://github.com/dji-sdk/Payload-SDK.git
 
-# Checkout the proper version of the Payload-SDK (currently the wrapper is compatible with the latest release v3.5)
+# Checkout the proper version of the Payload-SDK (currently the wrapper is compatible with the latest release v3.8)
 cd Payload-SDK
-git checkout release/v3.5
+git checkout release/v3.8
 
 # Before building, check the Dependencies section and make sure you have everything installed
 # Build the code
