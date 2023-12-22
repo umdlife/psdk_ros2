@@ -37,9 +37,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | app_license           | String    | -                                  | Add your App license                        |
 | developer_account     | String    | -                                  | Add your developer account (not mandatory)  |
 | baudrate              | String    | 921600                             | -                                           |
-| hardware_connection   | String    | "DJI_USE_UART_AND_USB_BULK_DEVICE" | Depends on your connection method           |
-| uart_dev_1            | String    | "/dev/dji_serial"                  | As defined in udev rules                    |
-| uart_dev_2            | String    | "/dev/dji_advanced_sensing"        | As defined in udev rules                    |
+| link_config_file_path | String    | "absolute/path/to/config.json"     | (Optional) Default: cfg/link_config.json    |
 | imu_frame             | String    | "psdk_imu_link"                    | -                                           |
 | body_frame            | String    | "psdk_base_link"                   | -                                           |
 | map_frame             | String    | "psdk_map_enu"                     | -                                           |
@@ -61,6 +59,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - control_information | Integer   | 50                                 | -                                           |
 
 
+To configure the hardware connection type and to specify the exact ports that need to be used, please use the *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Thus, for simplicity, the psdk_ros2 wrapper follows the same approach. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file. 
 
 ## Udev rules
 

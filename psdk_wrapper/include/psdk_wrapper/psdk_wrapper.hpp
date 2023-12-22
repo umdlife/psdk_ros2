@@ -28,6 +28,7 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <cmath>
 #include <geometry_msgs/msg/accel_stamped.hpp>
 #include <geometry_msgs/msg/quaternion_stamped.hpp>
@@ -53,6 +54,7 @@
 
 #include "dji_camera_manager.h"           //NOLINT
 #include "dji_camera_stream_decoder.hpp"  //NOLINT
+#include "dji_config_manager.h"           //NOLINT
 #include "dji_gimbal_manager.h"           //NOLINT
 #include "hal_network.h"                  //NOLINT
 #include "hal_uart.h"                     //NOLINT

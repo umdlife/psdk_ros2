@@ -337,7 +337,7 @@ PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t data_size,
   attitude_pub_->publish(quaternion_msg);
 
   /* Save current attitude */
-  current_attitude_ = current_quat_FLU2ENU;
+  current_state_.attitude = current_quat_FLU2ENU;
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 

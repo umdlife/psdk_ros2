@@ -236,7 +236,6 @@ PSDKWrapper::set_environment()
   }
   RCLCPP_INFO(get_logger(), "Registered HAL handler");
 
-#if (HARDWARE_CONNECTION == DJI_USE_UART_AND_USB_BULK_DEVICE)
   return_code = DjiUserConfigManager_LoadConfiguration(
       params_.link_config_file_path.c_str());
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -265,7 +264,6 @@ PSDKWrapper::set_environment()
                  return_code);
     return false;
   }
-#elif (HARDWARE_CONNECTION == DJI_USE_UART_AND_NETWORK_DEVICE)
   }
   else if (linkConfig.type == DJI_USER_LINK_CONFIG_USE_UART_AND_NETWORK_DEVICE)
   {
@@ -281,13 +279,11 @@ PSDKWrapper::set_environment()
                  "Register HAL Network handler error. Error code is: %ld",
                  return_code);
   }
-#elif (HARDWARE_CONNECTION == DJI_USE_ONLY_UART)
   }
   else
   {
   RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
   }
-#endif
 
   // Attention: if you want to use camera stream view function, please uncomment
   // it.
