@@ -981,7 +981,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Retrieves the obstacle avoidance data around the vehicle at a
    * frequency up to 100 Hz. It also provides a health flag for each sensor
    * direction. Please refer to the msg
-   * definition sensor_msgs::msg::RelativeObstacleInfo for more details.
+   * definition psdk_interfaces::msg::RelativeObstacleInfo for more details.
    * @param data pointer to T_DjiFcSubscriptionAvoidData data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
@@ -993,7 +993,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   /**
    * @brief Retrieves the fused sea level altitude in meters.
-   * @param data pointer to T_DjiFcSubscriptionAvoidData data
+   * @param data pointer to T_DjiFcSubscriptionAltitudeFused data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
    * @return T_DjiReturnCode error code indicating if the subscription has been
@@ -1006,7 +1006,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Retrieves the barometric altitude from sea level using the ICAO
    * model @ up to 200Hz. More information about this topic can be found in the
    * dji_fc_subscription.h.
-   * @param data pointer to T_DjiFcSubscriptionAvoidData data
+   * @param data pointer to T_DjiFcSubscriptionAltitudeBarometer data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
    * @return T_DjiReturnCode error code indicating if the subscription has been
@@ -1020,7 +1020,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Retrieves the altitude from sea level when the aircraft last took
    * off. This is a fused value. More information about this topic can be found
    * in dji_fc_subscription.h.
-   * @param data pointer to T_DjiFcSubscriptionAvoidData data
+   * @param data pointer to T_DjiFcSubscriptionAltitudeOfHomePoint data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
    * @return T_DjiReturnCode error code indicating if the subscription has been
