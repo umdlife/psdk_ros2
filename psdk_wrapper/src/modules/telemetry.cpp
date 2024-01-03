@@ -303,6 +303,33 @@ c_acceleration_body_raw_callback(const uint8_t *data, uint16_t data_size,
   return global_ptr_->acceleration_body_raw_callback(data, data_size,
                                                      timestamp);
 }
+T_DjiReturnCode
+c_avoid_data_callback(const uint8_t *data, uint16_t data_size,
+                      const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->avoid_data_callback(data, data_size, timestamp);
+}
+
+T_DjiReturnCode
+c_altitude_sl_callback(const uint8_t *data, uint16_t data_size,
+                       const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->altitude_sl_callback(data, data_size, timestamp);
+}
+
+T_DjiReturnCode
+c_altitude_barometric_callback(const uint8_t *data, uint16_t data_size,
+                               const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->altitude_barometric_callback(data, data_size, timestamp);
+}
+
+T_DjiReturnCode
+c_home_point_altitude_callback(const uint8_t *data, uint16_t data_size,
+                               const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->home_point_altitude_callback(data, data_size, timestamp);
+}
 
 T_DjiReturnCode
 PSDKWrapper::attitude_callback(const uint8_t *data, uint16_t data_size,
@@ -1165,6 +1192,85 @@ PSDKWrapper::acceleration_body_raw_callback(const uint8_t *data,
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
+T_DjiReturnCode
+PSDKWrapper::avoid_data_callback(const uint8_t *data, uint16_t data_size,
+                                 const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionAvoidData> relative_obstacle_data =
+      std::make_unique<T_DjiFcSubscriptionAvoidData>(
+          *reinterpret_cast<const T_DjiFcSubscriptionAvoidData *>(data));
+
+  psdk_interfaces::msg::RelativeObstacleInfo relative_obstacle_msg;
+  relative_obstacle_msg.down = relative_obstacle_data->down;
+  relative_obstacle_msg.front = relative_obstacle_data->front;
+  relative_obstacle_msg.right = relative_obstacle_data->right;
+  relative_obstacle_msg.back = relative_obstacle_data->back;
+  relative_obstacle_msg.left = relative_obstacle_data->left;
+  relative_obstacle_msg.up = relative_obstacle_data->up;
+  relative_obstacle_msg.down_health = relative_obstacle_data->downHealth;
+  relative_obstacle_msg.front_health = relative_obstacle_data->frontHealth;
+  relative_obstacle_msg.right_health = relative_obstacle_data->rightHealth;
+  relative_obstacle_msg.back_health = relative_obstacle_data->backHealth;
+  relative_obstacle_msg.left_health = relative_obstacle_data->leftHealth;
+  relative_obstacle_msg.up_health = relative_obstacle_data->upHealth;
+  relative_obstacle_info_pub_->publish(relative_obstacle_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::altitude_sl_callback(const uint8_t *data, uint16_t data_size,
+                                  const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionAltitudeFused> altitude_sl_fused =
+      std::make_unique<T_DjiFcSubscriptionAltitudeFused>(
+          *reinterpret_cast<const T_DjiFcSubscriptionAltitudeFused *>(data));
+
+  std_msgs::msg::Float32 altitude_sl_fused_msg;
+  altitude_sl_fused_msg.data = *altitude_sl_fused;
+  altitude_sl_pub_->publish(altitude_sl_fused_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::altitude_barometric_callback(const uint8_t *data,
+                                          uint16_t data_size,
+                                          const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionAltitudeBarometer> altitude_barometric =
+      std::make_unique<T_DjiFcSubscriptionAltitudeBarometer>(
+          *reinterpret_cast<const T_DjiFcSubscriptionAltitudeBarometer *>(
+              data));
+
+  std_msgs::msg::Float32 altitude_barometric_msg;
+  altitude_barometric_msg.data = *altitude_barometric;
+  altitude_barometric_pub_->publish(altitude_barometric_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::home_point_altitude_callback(const uint8_t *data,
+                                          uint16_t data_size,
+                                          const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionAltitudeOfHomePoint> home_point_altitude =
+      std::make_unique<T_DjiFcSubscriptionAltitudeOfHomePoint>(
+          *reinterpret_cast<const T_DjiFcSubscriptionAltitudeOfHomePoint *>(
+              data));
+
+  std_msgs::msg::Float32 home_point_altitude_msg;
+  home_point_altitude_msg.data = *home_point_altitude;
+  home_point_altitude_pub_->publish(home_point_altitude_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
 void
 PSDKWrapper::subscribe_psdk_topics()
 {
@@ -1291,6 +1397,33 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_POSITION_VO, error %ld",
+                   return_code);
+    }
+  }
+
+  if (params_.altitude_frequency > 0)
+  {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_ALTITUDE_FUSED,
+        get_frequency(params_.altitude_frequency), c_altitude_sl_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_ALTITUDE_FUSED, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_ALTITUDE_BAROMETER,
+        get_frequency(params_.altitude_frequency),
+        c_altitude_barometric_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_ALTITUDE_BAROMETER, error %ld",
                    return_code);
     }
   }
@@ -1611,7 +1744,7 @@ PSDKWrapper::subscribe_psdk_topics()
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_CONTROL_DEVICE,
         get_frequency(params_.control_information_frequency),
-        c_height_fused_callback);
+        c_control_mode_callback);
 
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
@@ -1623,7 +1756,7 @@ PSDKWrapper::subscribe_psdk_topics()
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_HOME_POINT_INFO,
         get_frequency(params_.control_information_frequency),
-        c_height_fused_callback);
+        c_home_point_callback);
 
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
@@ -1635,13 +1768,38 @@ PSDKWrapper::subscribe_psdk_topics()
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_HOME_POINT_SET_STATUS,
         get_frequency(params_.control_information_frequency),
-        c_height_fused_callback);
+        c_home_point_status_callback);
 
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_HOME_POINT_SET_STATUS, error %ld",
+                   return_code);
+    }
+
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_AVOID_DATA,
+        get_frequency(params_.control_information_frequency),
+        c_avoid_data_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_AVOID_DATA, error %ld",
+                   return_code);
+    }
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_ALTITUDE_OF_HOMEPOINT,
+        get_frequency(params_.control_information_frequency),
+        c_home_point_altitude_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_ALTITUDE_OF_HOMEPOINT, error %ld",
                    return_code);
     }
   }
