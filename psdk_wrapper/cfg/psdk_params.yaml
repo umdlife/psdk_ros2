@@ -22,6 +22,7 @@
         velocity: 50
         angular_velocity: 100
         position: 50
+        altitude: 50
         gps_fused_position: 10
         gps_data: 5
         rtk_data: 5

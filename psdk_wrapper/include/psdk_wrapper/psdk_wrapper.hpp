@@ -64,7 +64,6 @@
 #include "osal_socket.h"                  //NOLINT
 
 // PSDK wrapper interfaces
-#include "psdk_interfaces/msg/altitude.hpp"
 #include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
@@ -240,6 +239,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     int velocity_frequency;
     int angular_rate_frequency;
     int position_frequency;
+    int altitude_frequency;
     int gps_fused_position_frequency;
     int gps_data_frequency;
     int rtk_data_frequency;
@@ -477,6 +477,18 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_acceleration_body_raw_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_avoid_data_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_altitude_sl_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_altitude_barometric_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_home_point_altitude_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   /* Streaming */
@@ -964,6 +976,58 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * done correctly
    */
   T_DjiReturnCode acceleration_body_raw_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Retrieves the obstacle avoidance data around the vehicle at a
+   * frequency up to 100 Hz. It also provides a health flag for each sensor
+   * direction. Please refer to the msg
+   * definition psdk_interfaces::msg::RelativeObstacleInfo for more details.
+   * @param data pointer to T_DjiFcSubscriptionAvoidData data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode avoid_data_callback(const uint8_t* data, uint16_t data_size,
+                                      const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Retrieves the fused sea level altitude in meters.
+   * @param data pointer to T_DjiFcSubscriptionAltitudeFused data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode altitude_sl_callback(const uint8_t* data, uint16_t data_size,
+                                       const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Retrieves the barometric altitude from sea level using the ICAO
+   * model @ up to 200Hz. More information about this topic can be found in the
+   * dji_fc_subscription.h.
+   * @param data pointer to T_DjiFcSubscriptionAltitudeBarometer data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode altitude_barometric_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Retrieves the altitude from sea level when the aircraft last took
+   * off. This is a fused value. More information about this topic can be found
+   * in dji_fc_subscription.h.
+   * @param data pointer to T_DjiFcSubscriptionAltitudeOfHomePoint data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode home_point_altitude_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
 
@@ -1674,6 +1738,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       geometry_msgs::msg::AccelStamped>::SharedPtr acceleration_body_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::AccelStamped>::SharedPtr acceleration_body_raw_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::RelativeObstacleInfo>::SharedPtr
+      relative_obstacle_info_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
+      altitude_sl_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
+      altitude_barometric_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
+      home_point_altitude_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       main_camera_stream_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
