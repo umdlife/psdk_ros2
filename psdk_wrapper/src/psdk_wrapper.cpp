@@ -52,6 +52,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.velocity", 1);
   declare_parameter("data_frequency.angular_velocity", 1);
   declare_parameter("data_frequency.position", 1);
+  declare_parameter("data_frequency.altitude", 1);
   declare_parameter("data_frequency.gps_fused_position", 1);
   declare_parameter("data_frequency.gps_data", 1);
   declare_parameter("data_frequency.rtk_data", 1);
@@ -74,6 +75,13 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   {
     return CallbackReturn::FAILURE;
   }
+  T_DjiUserInfo user_info;
+  set_user_info(&user_info);
+
+  if (!init(&user_info))
+  {
+    return CallbackReturn::FAILURE;
+  }
   if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
       !init_gimbal_manager() || !init_liveview())
   {
@@ -90,14 +98,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Activating PSDKWrapper");
-
-  T_DjiUserInfo user_info;
-  set_user_info(&user_info);
-
-  if (!init(&user_info))
-  {
-    return CallbackReturn::FAILURE;
-  }
 
   activate_ros_elements();
 
