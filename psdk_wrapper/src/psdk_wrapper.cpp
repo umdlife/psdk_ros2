@@ -74,6 +74,11 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   {
     return CallbackReturn::FAILURE;
   }
+  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
+      !init_gimbal_manager() || !init_liveview())
+  {
+    return CallbackReturn::FAILURE;
+  }
   initialize_ros_elements();
   current_state_.initialize_state();
 
@@ -96,16 +101,11 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   activate_ros_elements();
 
-  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
-      !init_gimbal_manager() || !init_liveview())
-  {
-    return CallbackReturn::FAILURE;
-  }
-
   if (params_.publish_transforms)
   {
     publish_static_transforms();
   }
+
   subscribe_psdk_topics();
   return CallbackReturn::SUCCESS;
 }
@@ -250,39 +250,39 @@ PSDKWrapper::set_environment()
   if (linkConfig.type == DJI_USER_LINK_CONFIG_USE_UART_AND_USB_BULK_DEVICE)
   {
     RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_USB_BULK_DEVICE");
-  T_DjiHalUsbBulkHandler usb_bulk_handler;
-  usb_bulk_handler.UsbBulkInit = HalUsbBulk_Init;
-  usb_bulk_handler.UsbBulkDeInit = HalUsbBulk_DeInit;
-  usb_bulk_handler.UsbBulkWriteData = HalUsbBulk_WriteData;
-  usb_bulk_handler.UsbBulkReadData = HalUsbBulk_ReadData;
-  usb_bulk_handler.UsbBulkGetDeviceInfo = HalUsbBulk_GetDeviceInfo;
-  return_code = DjiPlatform_RegHalUsbBulkHandler(&usb_bulk_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-  {
-    RCLCPP_ERROR(get_logger(),
-                 "Register HAL USB BULK handler error. Error code is: %ld",
-                 return_code);
-    return false;
-  }
+    T_DjiHalUsbBulkHandler usb_bulk_handler;
+    usb_bulk_handler.UsbBulkInit = HalUsbBulk_Init;
+    usb_bulk_handler.UsbBulkDeInit = HalUsbBulk_DeInit;
+    usb_bulk_handler.UsbBulkWriteData = HalUsbBulk_WriteData;
+    usb_bulk_handler.UsbBulkReadData = HalUsbBulk_ReadData;
+    usb_bulk_handler.UsbBulkGetDeviceInfo = HalUsbBulk_GetDeviceInfo;
+    return_code = DjiPlatform_RegHalUsbBulkHandler(&usb_bulk_handler);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Register HAL USB BULK handler error. Error code is: %ld",
+                   return_code);
+      return false;
+    }
   }
   else if (linkConfig.type == DJI_USER_LINK_CONFIG_USE_UART_AND_NETWORK_DEVICE)
   {
-  RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_NETWORK_DEVICE");
-  T_DjiHalNetworkHandler network_handler;
-  network_handler.NetworkInit = HalNetWork_Init;
-  network_handler.NetworkDeInit = HalNetWork_DeInit;
-  network_handler.NetworkGetDeviceInfo = HalNetWork_GetDeviceInfo;
-  return_code = DjiPlatform_RegHalNetworkHandler(&network_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-  {
-    RCLCPP_ERROR(get_logger(),
-                 "Register HAL Network handler error. Error code is: %ld",
-                 return_code);
-  }
+    RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_NETWORK_DEVICE");
+    T_DjiHalNetworkHandler network_handler;
+    network_handler.NetworkInit = HalNetWork_Init;
+    network_handler.NetworkDeInit = HalNetWork_DeInit;
+    network_handler.NetworkGetDeviceInfo = HalNetWork_GetDeviceInfo;
+    return_code = DjiPlatform_RegHalNetworkHandler(&network_handler);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Register HAL Network handler error. Error code is: %ld",
+                   return_code);
+    }
   }
   else
   {
-  RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
+    RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
   }
 
   // Attention: if you want to use camera stream view function, please uncomment
