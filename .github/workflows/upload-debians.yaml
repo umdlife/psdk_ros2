@@ -22,5 +22,6 @@ jobs:
          sudo rosdep init
          echo "yaml file:///rosdep.yaml" >> 50-my-packages.list
          sudo mv 50-my-packages.list /etc/ros/rosdep/sources.list.d
-         sudo echo "psdk_interfaces:\n  ubuntu: [ros-humble-psdk-interfaces]" >> /rosdep.yaml
+         echo "psdk_interfaces:\n  ubuntu: [ros-humble-psdk-interfaces]" >> rosdep.yaml
+         sudo mv rosdep.yaml /
          sudo rosdep update
