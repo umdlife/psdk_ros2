@@ -28,6 +28,6 @@ jobs:
          sudo mv rosdep.yaml /
          sudo rosdep update
          cd psdk_ros2/psdk_interfaces 
-         bloom-generate rosdebian --ros-distro humble
-         debian/rules "binary --parallel --dpkg-shlibdeps-params=--ignore-missing-info"
+         sudo bloom-generate rosdebian --ros-distro humble
+         sudo debian/rules "binary --parallel --dpkg-shlibdeps-params=--ignore-missing-info"
          ls ..
