@@ -18,16 +18,5 @@ jobs:
           path: Payload-SDK
       - name: ROS 2 Build Debian Package
         run: |
-         sudo apt update && sudo apt install -y python3-pip dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev
-         sudo ln -snf /usr/lib/x86_64-linux-gnu/libopus.a /usr/local/lib
-         sudo pip3 install rosdep bloom
-         sudo rosdep init
-         echo "yaml file:///rosdep.yaml" >> 50-my-packages.list
-         sudo mv 50-my-packages.list /etc/ros/rosdep/sources.list.d
-         echo "psdk_interfaces:\n  ubuntu: [ros-humble-psdk-interfaces]" >> rosdep.yaml
-         sudo mv rosdep.yaml /
-         sudo rosdep update
-         cd psdk_ros2/psdk_interfaces 
-         sudo bloom-generate rosdebian --ros-distro humble
-         sudo debian/rules "binary --parallel --dpkg-shlibdeps-params=--ignore-missing-info"
-         ls ..
+         mv psdk_ros2/debians/create_debians.sh .
+         sudo ./create_debians.sh

@@ -1,0 +1,4 @@
+psdk_wrapper:
+  ubuntu: [ros-humble-psdk-wrapper]
+psdk_interfaces:
+  ubuntu: [ros-humble-psdk-interfaces]
