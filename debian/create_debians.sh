@@ -4,8 +4,8 @@ sudo apt update && sudo apt install -y python3-pip dpkg-dev debhelper dh-python 
 sudo ln -snf /usr/lib/x86_64-linux-gnu/libopus.a /usr/local/lib
 sudo pip3 install rosdep bloom
 sudo rosdep init
-sudo mv psdk_ros2/psdk/debians/50-my-packages.list /etc/ros/rosdep/sources.list.d
-sudo mv psdk_ros2/psdk/debians/rosdep.yaml /
+sudo mv psdk_ros2/psdk/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d
+sudo mv psdk_ros2/psdk/debian/rosdep.yaml /
 
 # store the current dir
 CUR_DIR=$(pwd)
