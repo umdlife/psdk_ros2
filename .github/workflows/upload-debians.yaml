@@ -17,6 +17,11 @@ jobs:
           ref: 3.5
           path: Payload-SDK
       - name: ROS 2 Build Debian Package
-        uses: ichiro-its/ros2-build-debian-action@v0.1.0
-        with:
-          ros2-distro: humble
+        run: |
+         echo "yaml file:///rosdep.yaml" >> /etc/ros/rosdep/sources.list.d/50-my-packages.list
+         echo "psdk_interfaces:\n  ubuntu: [ros-humble-psdk-interfaces]" >> /rosdep.yaml
+         apt update && apt install -y python3-pip dpkg-dev debhelper dh-python && pip3 install bloom
+         rosdep update
+         
+
+
