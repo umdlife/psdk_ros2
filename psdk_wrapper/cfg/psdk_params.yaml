@@ -34,6 +34,6 @@
         gimbal_data: 1
         flight_status: 1
         battery_level: 1
-        control_information: 50
+        control_information: 1
 
 

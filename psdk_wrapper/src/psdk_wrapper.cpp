@@ -50,6 +50,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.velocity", 1);
   declare_parameter("data_frequency.angular_velocity", 1);
   declare_parameter("data_frequency.position", 1);
+  declare_parameter("data_frequency.altitude", 1);
   declare_parameter("data_frequency.gps_fused_position", 1);
   declare_parameter("data_frequency.gps_data", 1);
   declare_parameter("data_frequency.rtk_data", 1);
