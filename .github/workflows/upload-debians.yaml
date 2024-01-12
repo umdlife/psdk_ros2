@@ -19,7 +19,7 @@ jobs:
       - name: ROS 2 Build Debian Package
         run: |
          sudo apt update && sudo apt install -y python3-pip dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev
-         ln -snf /usr/lib/x86_64-linux-gnu/libopus.a /usr/local/lib
+         sudo ln -snf /usr/lib/x86_64-linux-gnu/libopus.a /usr/local/lib
          sudo pip3 install rosdep bloom
          sudo rosdep init
          echo "yaml file:///rosdep.yaml" >> 50-my-packages.list
@@ -31,4 +31,3 @@ jobs:
          bloom-generate rosdebian --ros-distro humble
          debian/rules "binary --parallel --dpkg-shlibdeps-params=--ignore-missing-info"
          ls ..
-         
