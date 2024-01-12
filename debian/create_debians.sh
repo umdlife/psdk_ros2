@@ -25,7 +25,7 @@ for PACKAGE in ${PACKAGE_LIST[@]}; do
     # We have to go to the ROS package parent directory
     cd $PACKAGE;
     sudo bloom-generate rosdebian --ros-distro humble
-    ls
+    ls debian
     debian/rules "binary --parallel --dpkg-shlibdeps-params=--ignore-missing-info"
 
     cd ..
