@@ -19,7 +19,7 @@ jobs:
       - name: ROS 2 Build Debian Package
         run: |
          sudo apt update && sudo apt install -y python3-pip dpkg-dev debhelper dh-python && pip3 install rosdep bloom
-         rosdep update
+         sudo rosdep init
          echo "yaml file:///rosdep.yaml" >> /etc/ros/rosdep/sources.list.d/50-my-packages.list
          echo "psdk_interfaces:\n  ubuntu: [ros-humble-psdk-interfaces]" >> /rosdep.yaml
-
+         sudo rosdep update
