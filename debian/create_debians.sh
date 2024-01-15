@@ -16,9 +16,9 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-a
 
 
 apt update
-apt install -y --no-install-recommends python3-pip dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev
+apt install -y --no-install-recommends python3-pip python3-bloom python3-catkin-pkg dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev
 ln -snf /usr/lib/x86_64-linux-gnu/libopus.a /usr/local/lib
-pip3 install rosdep bloom
+pip3 install rosdep
 rosdep init
 mv psdk_ros2/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d
 mv psdk_ros2/debian/rosdep.yaml /
@@ -46,7 +46,6 @@ for PACKAGE in ${PACKAGE_LIST[@]}; do
     # We have to go to the ROS package parent directory
     cd $PACKAGE;
     bloom-generate rosdebian --ros-distro humble
-    ls debian
     debian/rules "binary --parallel --dpkg-shlibdeps-params=--ignore-missing-info"
 
     cd ..
