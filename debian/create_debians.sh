@@ -1,11 +1,17 @@
 #!/bin/bash
 
-sudo apt update && sudo apt install -y python3-pip dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev
+apt update
+apt install -y --no-install-recommends python3-pip dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev
 sudo ln -snf /usr/lib/x86_64-linux-gnu/libopus.a /usr/local/lib
 sudo pip3 install rosdep bloom
 sudo rosdep init
 sudo mv psdk_ros2/psdk/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d
 sudo mv psdk_ros2/psdk/debian/rosdep.yaml /
+
+rosdep keys --from-paths . --ignore-src --rosdistro humble | \
+  xargs rosdep resolve --rosdistro humble | \
+  awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
+apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt)
 
 # store the current dir
 CUR_DIR=$(pwd)
@@ -14,8 +20,8 @@ CUR_DIR=$(pwd)
 sudo rosdep update
 
 PACKAGE_LIST=(
-            psdk_ros2/psdk_interfaces \
-            psdk_ros2/psdk_wrapper
+  psdk_ros2/psdk_interfaces \
+  psdk_ros2/psdk_wrapper
 )
 
 for PACKAGE in ${PACKAGE_LIST[@]}; do
@@ -24,7 +30,7 @@ for PACKAGE in ${PACKAGE_LIST[@]}; do
 
     # We have to go to the ROS package parent directory
     cd $PACKAGE;
-    sudo bloom-generate rosdebian --ros-distro humble
+    bloom-generate rosdebian --ros-distro humble
     ls debian
     debian/rules "binary --parallel --dpkg-shlibdeps-params=--ignore-missing-info"
 
