@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>psdk_wrapper</name>
-  <version>1.0.0</version>
+  <version>0.0.2</version>
   <description>ROS2 wrapper for the DJI PSDK</description>
   <maintainer email="bianca@unmanned.life">Bianca Bendris</maintainer>
   <license>TODO: License declaration</license>
