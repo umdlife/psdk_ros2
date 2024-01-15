@@ -16,7 +16,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-a
 
 
 apt update
-apt install -y --no-install-recommends python3-pip python3-bloom python3-catkin-pkg dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev
+apt install -y --no-install-recommends python3-pip python3-bloom python3-catkin-pkg dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev libusb-1.0-0-dev
 ln -snf /usr/lib/x86_64-linux-gnu/libopus.a /usr/local/lib
 pip3 install rosdep
 rosdep init
