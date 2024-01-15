@@ -29,5 +29,5 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            ${{ steps.build.outputs.INTERFACES_DEB }}
-            ${{ steps.build.outputs.WRAPPER_DEB }}
+            ${{ env.INTERFACES_DEB }}
+            ${{ env.WRAPPER_DEB }}
