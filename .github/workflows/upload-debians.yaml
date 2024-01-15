@@ -1,0 +1,30 @@
+name: Build Debians
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build_debians:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: psdk_ros2
+      - uses: actions/checkout@v4
+        with:
+          repository: dji-sdk/Payload-SDK
+          ref: 3.5
+          path: Payload-SDK
+      - name: ROS 2 Build Debian Package
+        id: build 
+        run: |
+         mv psdk_ros2/debian/create_debians.sh .
+         sudo ./create_debians.sh
+         ls .
+      - uses: d1ceward/draft-assets-release-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            ${{ steps.build.outputs.INTERFACES_DEB }}
+            ${{ steps.build.outputs.WRAPPER_DEB }}
