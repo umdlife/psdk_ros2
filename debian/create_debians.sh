@@ -60,7 +60,4 @@ for PACKAGE in ${PACKAGE_LIST[@]}; do
 
 done
 
-echo "INTERFACES_DEB=$(find *interfaces*.deb)" >> $GITHUB_OUTPUT
-echo "WRAPPER_DEB=$(find *wrapper*.deb)" >> $GITHUB_OUTPUT
-
 echo "Complete!"

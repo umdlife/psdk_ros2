@@ -23,7 +23,8 @@ jobs:
         run: |
          mv psdk_ros2/debian/create_debians.sh .
          sudo ./create_debians.sh
-         ls .
+         echo "INTERFACES_DEB=$(find *interfaces*.deb)" >> $GITHUB_ENV
+         echo "WRAPPER_DEB=$(find *wrapper*.deb)" >> $GITHUB_ENV
       - uses: d1ceward/draft-assets-release-action@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
