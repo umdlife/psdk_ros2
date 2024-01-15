@@ -54,9 +54,13 @@ for PACKAGE in ${PACKAGE_LIST[@]}; do
         exit 1
     fi
     dpkg -i $DEB_FILE
+    cp $DEB_FILE $CUR_DIR
     rm *.deb *.ddeb
     cd $CUR_DIR
 
 done
+
+echo "INTERFACES_DEB=$(find *interfaces*.deb)" >> $GITHUB_OUTPUT
+echo "WRAPPER_DEB=$(find *wrapper*.deb)" >> $GITHUB_OUTPUT
 
 echo "Complete!"
