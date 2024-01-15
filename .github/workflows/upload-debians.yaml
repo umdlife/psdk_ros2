@@ -16,7 +16,14 @@ jobs:
           repository: dji-sdk/Payload-SDK
           ref: 3.5
           path: Payload-SDK
-      - name: ROS 2 Build Debian Package
-        run: |
-         mv psdk_ros2/debian/create_debians.sh .
-         sudo ./create_debians.sh
+      - name: Generate debians
+        uses: umdlife/umd_workflows/create-debian-action@feat/debians
+        with:
+          ros_distro: "humble"
+          path_custom_resources: "psdk_ros2/debian/rosdep.yaml"
+          list_packages: "psdk_ros2/psdk_interfaces \npsdk_ros2/psdk_wrapper"
+          list_binaries: "libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev"
+      # - name: ROS 2 Build Debian Package
+      #   run: |
+      #    mv psdk_ros2/debian/create_debians.sh .
+      #    sudo ./create_debians.sh
