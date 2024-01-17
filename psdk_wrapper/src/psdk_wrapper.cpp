@@ -789,7 +789,7 @@ PSDKWrapper::initialize_ros_elements()
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/fpv_camera_stream", 10);
+      "psdk_ros2/fpv_camera_stream", rclcpp::SensorDataQoS());
   control_mode_pub_ = create_publisher<psdk_interfaces::msg::ControlMode>(
       "psdk_ros2/control_mode", 10);
   home_point_pub_ =
@@ -1270,7 +1270,6 @@ PSDKWrapper::clean_ros_elements()
   // altitude_pub_.reset();
   // relative_height_pub_.reset();
   // relative_obstacle_info_pub_.reset();
-
 }
 
 /*@todo Generalize the functions related to TFs for different copter, gimbal
