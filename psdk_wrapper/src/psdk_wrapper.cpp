@@ -21,9 +21,9 @@ using namespace std::placeholders;  // NOLINT
 
 namespace psdk_ros2
 {
-
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
-    : rclcpp_lifecycle::LifecycleNode(node_name, "", rclcpp::NodeOptions())
+    : rclcpp_lifecycle::LifecycleNode(
+          node_name, "", rclcpp::NodeOptions().use_intra_process_comms(true))
 {
   RCLCPP_INFO(get_logger(), "Creating Constructor PSDKWrapper");
   declare_parameter("app_name", rclcpp::ParameterValue(""));
@@ -820,9 +820,9 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
           "psdk_ros2/relative_obstacle_info", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/main_camera_stream", 10);
+      "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/fpv_camera_stream", 10);
+      "psdk_ros2/fpv_camera_stream", rclcpp::SensorDataQoS());
   control_mode_pub_ = create_publisher<psdk_interfaces::msg::ControlMode>(
       "psdk_ros2/control_mode", 10);
   home_point_pub_ =

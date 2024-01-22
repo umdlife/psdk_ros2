@@ -38,6 +38,7 @@ PSDKWrapper::init_liveview()
       {DJI_LIVEVIEW_CAMERA_POSITION_NO_2, (new DJICameraStreamDecoder())},
       {DJI_LIVEVIEW_CAMERA_POSITION_NO_3, (new DJICameraStreamDecoder())},
   };
+  decode_stream_ = true;
   return true;
 }
 
@@ -58,8 +59,12 @@ c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
                                    const uint8_t *buffer,
                                    uint32_t buffer_length)
 {
-  return global_ptr_->LiveviewConvertH264ToRgbCallback(position, buffer,
-                                                       buffer_length);
+  if (global_ptr_->decode_stream_)
+  {
+    return global_ptr_->LiveviewConvertH264ToRgbCallback(position, buffer,
+                                                         buffer_length);
+  }
+  return global_ptr_->publish_main_camera_images(buffer, buffer_length);
 }
 
 void
@@ -95,10 +100,12 @@ PSDKWrapper::camera_setup_streaming_cb(
       static_cast<E_DjiLiveViewCameraPosition>(request->payload_index);
   selected_camera_source_ =
       static_cast<E_DjiLiveViewCameraSource>(request->camera_source);
-  RCLCPP_INFO(
-      get_logger(),
-      "Setting up camera streaming for payload index %d and camera source %d",
-      payload_index, selected_camera_source_);
+  decode_stream_ = request->decoded_output;
+
+  RCLCPP_INFO(get_logger(),
+              "Setting up camera streaming for payload index %d and camera "
+              "source %d. Output decoded: %d",
+              payload_index, selected_camera_source_);
 
   if (request->start_stop)
   {
@@ -107,15 +114,15 @@ PSDKWrapper::camera_setup_streaming_cb(
     if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_NO_1)
     {
       char main_camera_name[] = "MAIN_CAMERA";
-      streaming_result = start_main_camera_stream(
-          &c_publish_main_streaming_callback, &main_camera_name, payload_index,
+      streaming_result = start_camera_stream(&c_publish_main_streaming_callback,
+                                             &main_camera_name, payload_index,
           selected_camera_source_);
     }
     else if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
     {
       char fpv_camera_name[] = "FPV_CAMERA";
-      streaming_result = start_main_camera_stream(
-          &c_publish_fpv_streaming_callback, &fpv_camera_name, payload_index,
+      streaming_result = start_camera_stream(&c_publish_fpv_streaming_callback,
+                                             &fpv_camera_name, payload_index,
           selected_camera_source_);
     }
 
@@ -147,39 +154,38 @@ PSDKWrapper::camera_setup_streaming_cb(
 }
 
 bool
-PSDKWrapper::start_main_camera_stream(CameraImageCallback callback,
-                                      void *user_data,
+PSDKWrapper::start_camera_stream(CameraImageCallback callback, void *user_data,
                                       E_DjiLiveViewCameraPosition payload_index,
                                       E_DjiLiveViewCameraSource camera_source)
 {
-  auto decoder = stream_decoder.find(payload_index);
-
-  if ((decoder != stream_decoder.end()) && decoder->second)
+  if (decode_stream_)
   {
-    decoder->second->init();
-    decoder->second->registerCallback(callback, user_data);
-
-    T_DjiReturnCode return_code = DjiLiveview_StartH264Stream(
-        payload_index, camera_source, c_LiveviewConvertH264ToRgbCallback);
-
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    auto decoder = stream_decoder.find(payload_index);
+    if ((decoder != stream_decoder.end()) && decoder->second)
     {
-      RCLCPP_ERROR(get_logger(),
-                   "Failed to start camera streaming, error code: %ld.",
-                   return_code);
-      return false;
+      decoder->second->init();
+      decoder->second->registerCallback(callback, user_data);
     }
     else
     {
-      RCLCPP_INFO(get_logger(), "Successfully started the camera streaming.");
-      return true;
+      RCLCPP_ERROR(get_logger(), "Failed to set-up the decoder");
+      return false;
     }
+  }
+
+  T_DjiReturnCode return_code = DjiLiveview_StartH264Stream(
+      payload_index, camera_source, c_LiveviewConvertH264ToRgbCallback);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Failed to start camera streaming, error code: %ld.",
+                 return_code);
+    return false;
   }
   else
   {
-    RCLCPP_ERROR(get_logger(), "Failed to decode streaming, error code: %ld",
-                 DJI_ERROR_SYSTEM_MODULE_CODE_NOT_FOUND);
-    return false;
+    RCLCPP_INFO(get_logger(), "Successfully started the camera streaming.");
+    return true;
   }
 }
 
@@ -210,34 +216,58 @@ PSDKWrapper::stop_main_camera_stream(
 }
 
 void
+PSDKWrapper::publish_main_camera_images(const uint8_t *buffer,
+                                        uint32_t buffer_length)
+{
+  auto img = std::make_unique<sensor_msgs::msg::Image>();
+  img->encoding = "h264";
+  img->data = std::vector<uint8_t>(buffer, buffer + buffer_length);
+  img->header.stamp = this->get_clock()->now();
+  img->header.frame_id = get_optical_frame_id();
+  main_camera_stream_pub_->publish(std::move(img));
+}
+
+void
+PSDKWrapper::publish_fpv_camera_images(const uint8_t *buffer,
+                                       uint32_t buffer_length)
+{
+  auto img = std::make_unique<sensor_msgs::msg::Image>();
+  img->encoding = "h264";
+  img->data = std::vector<uint8_t>(buffer, buffer + buffer_length);
+  img->header.stamp = this->get_clock()->now();
+  img->header.frame_id = "fpv_camera_link";
+  main_camera_stream_pub_->publish(std::move(img));
+}
+
+void
 PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
 {
   (void)user_data;
-  sensor_msgs::msg::Image img;
-  img.height = rgb_img.height;
-  img.width = rgb_img.width;
-  img.step = rgb_img.width * 3;
-  img.encoding = "rgb8";
-  img.data = rgb_img.rawData;
+  auto img = std::make_unique<sensor_msgs::msg::Image>();
+  img->height = rgb_img.height;
+  img->width = rgb_img.width;
+  img->step = rgb_img.width * 3;
+  img->encoding = "rgb8";
+  img->data = rgb_img.rawData;
 
-  img.header.stamp = this->get_clock()->now();
-  img.header.frame_id = get_optical_frame_id();
-  main_camera_stream_pub_->publish(img);
+  img->header.stamp = this->get_clock()->now();
+  img->header.frame_id = get_optical_frame_id();
+  main_camera_stream_pub_->publish(std::move(img));
 }
 
 void
 PSDKWrapper::publish_fpv_camera_images(CameraRGBImage rgb_img, void *user_data)
 {
   (void)user_data;
-  sensor_msgs::msg::Image img;
-  img.height = rgb_img.height;
-  img.width = rgb_img.width;
-  img.step = rgb_img.width * 3;
-  img.encoding = "rgb8";
-  img.data = rgb_img.rawData;
+  auto img = std::make_unique<sensor_msgs::msg::Image>();
+  img->height = rgb_img.height;
+  img->width = rgb_img.width;
+  img->step = rgb_img.width * 3;
+  img->encoding = "rgb8";
+  img->data = rgb_img.rawData;
 
-  img.header.stamp = this->get_clock()->now();
-  img.header.frame_id = "fpv_camera_link";
-  fpv_camera_stream_pub_->publish(img);
+  img->header.stamp = this->get_clock()->now();
+  img->header.frame_id = "fpv_camera_link";
+  fpv_camera_stream_pub_->publish(std::move(img));
 }
 }  // namespace psdk_ros2
