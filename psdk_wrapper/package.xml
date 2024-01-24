@@ -5,6 +5,7 @@
   <version>0.0.3</version>
   <description>ROS2 wrapper for the DJI PSDK</description>
   <maintainer email="bianca@unmanned.life">Bianca Bendris</maintainer>
+  <maintainer email="victor@unmanned.life">Victor Massague Respall</maintainer>
   <license>MPL</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
