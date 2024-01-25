@@ -29,10 +29,14 @@ PSDKWrapper::init_flight_control()
   rid_info.latitude = current_state_.gps_position.latitude;
   rid_info.longitude = current_state_.gps_position.longitude;
   rid_info.altitude = current_state_.gps_position.altitude;
-  if (DjiFlightController_Init(rid_info) !=
-      DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+
+  T_DjiReturnCode return_code = DjiFlightController_Init(rid_info);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not initialize flight control module.");
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not initialize flight control module. Error code is: %ld",
+        return_code);
     return false;
   }
   return true;
@@ -42,10 +46,13 @@ bool
 PSDKWrapper::deinit_flight_control()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing flight control module...");
-  if (DjiFlightController_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiFlightController_DeInit();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
-                 "Could not deinitialze the flight control module.");
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not deinitialze the flight control module. Error code: %ld",
+        return_code);
     return false;
   }
   return true;

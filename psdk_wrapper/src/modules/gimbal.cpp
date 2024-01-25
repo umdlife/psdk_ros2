@@ -24,9 +24,12 @@ bool
 PSDKWrapper::init_gimbal_manager()
 {
   RCLCPP_INFO(get_logger(), "Initiating gimbal manager...");
-  if (DjiGimbalManager_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiGimbalManager_Init();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not initialize gimbal manager");
+    RCLCPP_ERROR(get_logger(),
+                 "Could not initialize gimbal manager. Error code: %ld",
+                 return_code);
     return false;
   }
   return true;
@@ -36,9 +39,12 @@ bool
 PSDKWrapper::deinit_gimbal_manager()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing gimbal manager...");
-  if (DjiGimbalManager_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiGimbalManager_Deinit();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not deinitialize gimbal manager");
+    RCLCPP_ERROR(get_logger(),
+                 "Could not deinitialize gimbal manager. Error code: %ld",
+                 return_code);
     return false;
   }
   return true;

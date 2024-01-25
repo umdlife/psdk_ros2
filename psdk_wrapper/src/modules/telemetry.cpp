@@ -27,9 +27,12 @@ bool
 PSDKWrapper::init_telemetry()
 {
   RCLCPP_INFO(get_logger(), "Initiating telemetry...");
-  if (DjiFcSubscription_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiFcSubscription_Init();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not initialize the telemetry module.");
+    RCLCPP_ERROR(get_logger(),
+                 "Could not initialize the telemetry module. Error code:  %ld",
+                 return_code);
     return false;
   }
   return true;
@@ -39,9 +42,12 @@ bool
 PSDKWrapper::deinit_telemetry()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing telemetry...");
-  if (DjiFcSubscription_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiFcSubscription_DeInit();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not deinitialize the telemetry module.");
+    RCLCPP_ERROR(get_logger(),
+                 "Could not deinitialize the telemetry module. Error code: %ld",
+                 return_code);
     return false;
   }
   return true;

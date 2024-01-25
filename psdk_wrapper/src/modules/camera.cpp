@@ -24,9 +24,12 @@ bool
 PSDKWrapper::init_camera_manager()
 {
   RCLCPP_INFO(get_logger(), "Initiating camera manager...");
-  if (DjiCameraManager_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiCameraManager_Init();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not initialize camera manager.");
+    RCLCPP_ERROR(get_logger(),
+                 "Could not initialize camera manager. Error code: %ld",
+                 return_code);
     return false;
   }
 
@@ -45,9 +48,12 @@ bool
 PSDKWrapper::deinit_camera_manager()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing camera manager...");
-  if (DjiCameraManager_DeInit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiCameraManager_DeInit();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not deinitialize camera manager.");
+    RCLCPP_ERROR(get_logger(),
+                 "Could not deinitialize camera manager. Error code: %ld",
+                 return_code);
     return false;
   }
   return true;
