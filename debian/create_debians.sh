@@ -14,14 +14,12 @@ curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr
 
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
-
 apt update
-apt install -y --no-install-recommends python3-pip python3-bloom python3-catkin-pkg dpkg-dev debhelper dh-python libopus-dev ffmpeg libavcodec-dev libavformat-dev libavfilter-dev libusb-1.0-0-dev
-ln -snf /usr/lib/x86_64-linux-gnu/libopus.a /usr/local/lib
+apt install -y --no-install-recommends python3-pip python3-bloom python3-catkin-pkg dpkg-dev debhelper dh-python
 pip3 install rosdep
 rosdep init
-mv psdk_ros2/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d
-mv psdk_ros2/debian/rosdep.yaml /
+cp psdk_ros2/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d
+cp psdk_ros2/debian/rosdep.yaml /
 
 # store the current dir
 CUR_DIR=$(pwd)
