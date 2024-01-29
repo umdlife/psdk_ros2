@@ -1,19 +1,21 @@
-name: Build
+name: ROS2 Build
 
 on: 
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
-  industrial_ci:
+  ros2_build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           path: psdk_ros2
-      - uses: 'ros-industrial/industrial_ci@master'
-        env:
-          ROS_DISTRO: humble
-          ROS_REPO: main
-          ADDITIONAL_DEBS: git
-          NOT_TEST_BUILD: true
+      - uses: ros-tooling/setup-ros@0.7.1
+        with:
+          required-ros-distributions: humble
+      - uses: ros-tooling/action-ros-ci@0.3.6
+        with:
+          package-name: psdk_interfaces psdk_wrapper
+          target-ros2-distro: humble
+          skip-tests: true
