@@ -2,8 +2,8 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.4 (2024-01-29)
+------------------
 * Update maintainers
 * Contributors: vicmassy
 

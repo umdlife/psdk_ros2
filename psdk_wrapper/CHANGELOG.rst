@@ -2,8 +2,8 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.4 (2024-01-29)
+------------------
 * Merge pull request `#45 <https://github.com/umdlife/psdk_ros2/issues/45>`_ from umdlife/feat/prepare-ros-index
   Prepare for ROS Index
 * Reorder method call in lifecycle to avoid node crashes + increase nr. of retries for psdk init
