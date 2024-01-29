@@ -5,18 +5,20 @@ To use the psdk_ros2 wrapper you will need to create a new workspace in which yo
 ```bash
 mkdir -p ~/psdk_ros2_ws/src
 cd ~/psdk_ros2_ws/src
-# Clone the psdk_ros2 wrapper and the Payload-SDK 
+# Clone the psdk_ros2 wrapper
 git clone https://github.com/umdlife/psdk_ros2.git
-git clone https://github.com/dji-sdk/Payload-SDK.git
-
-# Checkout the proper version of the Payload-SDK (currently the wrapper is compatible with the latest release v3.5)
-cd Payload-SDK
-git checkout release/v3.5
 
 # Before building, check the Dependencies section and make sure you have everything installed
+# You can also run rosdep to automatically install the dependencies
+rosdep update
+rosdep keys --from-paths . --ignore-src --rosdistro humble | \
+  xargs rosdep resolve --rosdistro humble | \
+  awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
+sudo apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt) 
+
 # Build the code
 cd ~/psdk_ros2_ws
-colcon build --packages-skip entry	# Skip the build corresponding to DJI PSDK sample code
+colcon build
 
 # Launch the node
 ros2 launch psdk_wrapper wrapper.launch.py
