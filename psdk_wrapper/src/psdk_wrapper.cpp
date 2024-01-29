@@ -73,7 +73,6 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   {
     return CallbackReturn::FAILURE;
   }
-  initialize_ros_elements();
 
   return CallbackReturn::SUCCESS;
 }
@@ -89,16 +88,21 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   if (!init(&user_info))
   {
+    rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
-
-  activate_ros_elements();
 
   if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
       !init_gimbal_manager() || !init_liveview())
   {
+    rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
+
+  // Initialize and activate ROS elements only after the DJI modules are
+  // initialized
+  initialize_ros_elements();
+  activate_ros_elements();
 
   if (params_.publish_transforms)
   {
