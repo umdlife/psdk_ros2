@@ -4,10 +4,7 @@ on:
   # Runs when PR is closed and merged
   pull_request:
     types:
-      - closed
-
-# Allows you to run this workflow manually from the Actions tab
-workflow_dispatch:
+      types: [opened, synchronize, closed]
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -17,8 +14,7 @@ concurrency:
     
 jobs:
   build-documentation:
-    if_merged:
-      if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -51,14 +47,12 @@ jobs:
       run: |
         make -C docs html  # This assumes your Sphinx configuration is in a 'docs' folder
 
-    - name: Add and commit
-      uses: EndBug/add-and-commit@v9.1.4
-      secrets:
-        PAT: ${{ secrets.UMDLIFEDEV_TOKEN }}
-      with:
-        author_name: UMLDev Robot
-        author_email: dev@unmanned.life
-        message: 'Update documentation'
+    # - name: Add and commit
+    #   uses: EndBug/add-and-commit@v9.1.4
+    #   with:
+    #     author_name: UMLDev Robot
+    #     author_email: dev@unmanned.life
+    #     message: 'Update documentation'
 
   # Single deploy job since we're just deploying
   deploy-documentation:
