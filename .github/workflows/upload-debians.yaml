@@ -2,7 +2,7 @@ name: Build Debians
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
 
 jobs:
   build_debians:

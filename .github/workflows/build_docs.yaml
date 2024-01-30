@@ -1,16 +1,20 @@
 name: Build Documentation
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+    
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.ref }}
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -25,6 +29,7 @@ jobs:
 
     - name: Install Doxygen 
       run: |
+        cd ..
         wget https://www.doxygen.nl/files/doxygen-1.9.7.linux.bin.tar.gz
         tar -xzvf doxygen-1.9.7.linux.bin.tar.gz
         cd doxygen-1.9.7
@@ -34,11 +39,9 @@ jobs:
       run: |
         make -C docs html  # This assumes your Sphinx configuration is in a 'docs' folder
 
-    # - name: Deploy to GitHub Pages (optional)
-      # Uncomment the following lines if you want to deploy to GitHub Pages
-      # run: |
-        # git checkout gh-pages
-        # cp -r docs/_build/html/* .
-        # git add .
-        # git commit -m "Update documentation"
-        # git push origin gh-pages
+    - name: Add and commit
+      uses: EndBug/add-and-commit@v9.1.4
+      with:
+        author_name: UMLDev Clang Robot
+        author_email: dev@unmanned.life
+        message: 'Update documentation'
