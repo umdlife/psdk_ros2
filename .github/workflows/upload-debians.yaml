@@ -2,7 +2,7 @@ name: Build Debians
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
 
 jobs:
   build_debians:
@@ -13,11 +13,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: psdk_ros2
-      - uses: actions/checkout@v4
-        with:
-          repository: dji-sdk/Payload-SDK
-          ref: 3.5
-          path: Payload-SDK
       - name: ROS 2 Build Debian Package
         id: build 
         run: |
