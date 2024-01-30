@@ -1,0 +1,87 @@
+name: Build and Deploy Documentation on Github Pages
+
+on:
+  # Runs when PR is closed and merged
+  pull_request:
+    types:
+      - closed
+
+# Allows you to run this workflow manually from the Actions tab
+workflow_dispatch:
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+    
+jobs:
+  build-documentation:
+    if_merged:
+      if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: main
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.x  # Change this to the Python version your Sphinx project requires
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        cd docs
+        pip install -r requirements.txt  # Adjust this if your dependencies are in a different file
+
+    - name: Install Doxygen 
+      run: |
+        cd ..
+        wget https://www.doxygen.nl/files/doxygen-1.9.7.linux.bin.tar.gz
+        tar -xzvf doxygen-1.9.7.linux.bin.tar.gz
+        cd doxygen-1.9.7
+        sudo make install
+
+    - name: Build Documentation
+      run: |
+        make -C docs html  # This assumes your Sphinx configuration is in a 'docs' folder
+
+    - name: Add and commit
+      uses: EndBug/add-and-commit@v9.1.4
+      secrets:
+        PAT: ${{ secrets.UMDLIFEDEV_TOKEN }}
+      with:
+        author_name: UMLDev Robot
+        author_email: dev@unmanned.life
+        message: 'Update documentation'
+
+  # Single deploy job since we're just deploying
+  deploy-documentation:
+    needs: build-documentation
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: 'docs/_build/html'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
