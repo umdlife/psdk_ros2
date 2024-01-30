@@ -179,7 +179,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   ~PSDKWrapper();
 
- protected:
   /**
    * @brief Configures member variable and sets the environment
    * @param state Reference to Lifecycle state
