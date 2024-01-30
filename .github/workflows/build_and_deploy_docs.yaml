@@ -1,7 +1,7 @@
 name: Build and Deploy Documentation on Github Pages
 
+# Runs when PR is closed and merged
 on:
-  # Runs when PR is closed and merged
   pull_request:
     types:
       types: [opened, synchronize, closed]
