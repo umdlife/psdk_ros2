@@ -34,7 +34,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("baudrate", rclcpp::ParameterValue(""));
   std::string ros_pkg_path =
       ament_index_cpp::get_package_share_directory("psdk_wrapper");
-  std::string default_config_file = ros_pkg_path + "/cfg/hw_connection.json";
+  std::string default_config_file = ros_pkg_path + "/cfg/link_config.json";
   declare_parameter("link_config_file_path",
                     rclcpp::ParameterValue(default_config_file));
 
