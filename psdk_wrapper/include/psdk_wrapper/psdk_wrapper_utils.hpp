@@ -41,7 +41,6 @@
 #define CONTROL_DATA_TOPICS_MAX_FREQ 50
 
 #define GOOD_GPS_SIGNAL_LEVEL 5
-#define MAX_NUMBER_OF_RETRIES 5
 
 namespace psdk_ros2
 {

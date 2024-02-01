@@ -23,7 +23,8 @@ namespace psdk_ros2
 {
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : rclcpp_lifecycle::LifecycleNode(
-          node_name, "", rclcpp::NodeOptions().use_intra_process_comms(true).arguments(
+          node_name, "",
+          rclcpp::NodeOptions().use_intra_process_comms(true).arguments(
               {"--ros-args", "-r",
                node_name + ":" + std::string("__node:=") + node_name}))
 {
@@ -62,6 +63,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.flight_status", 1);
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
+
+  declare_parameter("num_of_initialization_retries", 1);
 }
 PSDKWrapper::~PSDKWrapper() {}
 
@@ -647,6 +650,9 @@ PSDKWrapper::load_parameters()
         CONTROL_DATA_TOPICS_MAX_FREQ);
     params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
   }
+
+  get_parameter("num_of_initialization_retries",
+                num_of_initialization_retries_);
 }
 
 bool
@@ -693,7 +699,7 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
   int number_retries = 0;
   T_DjiReturnCode result;
-  while (number_retries < MAX_NUMBER_OF_RETRIES)
+  while (number_retries < num_of_initialization_retries_)
   {
     result = DjiCore_Init(user_info);
     if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)

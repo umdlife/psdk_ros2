@@ -1915,8 +1915,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * correctly and False otherwise.
    */
   bool start_camera_stream(CameraImageCallback callback, void* user_data,
-                                const E_DjiLiveViewCameraPosition payload_index,
-                                const E_DjiLiveViewCameraSource camera_source);
+                           const E_DjiLiveViewCameraPosition payload_index,
+                           const E_DjiLiveViewCameraSource camera_source);
   /**
    * @brief Stops the main camera streaming.
    * @param payload_index select which camera to use to retrieve the streaming.
@@ -1989,6 +1989,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   E_DjiLiveViewCameraSource selected_camera_source_;
   bool publish_camera_transforms_{false};
   bool decode_stream_{true};
+  int num_of_initialization_retries_{0};
 };
 
 /**
