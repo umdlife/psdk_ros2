@@ -2,6 +2,11 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Move lifecycle interfaces to be public, also add rclcpp::shutdown() to finish cleanly the node when shutting down
+* Contributors: Victor Massagué Respall, biancabnd, sergigraum
+
 0.0.4 (2024-01-29)
 ------------------
 * Merge pull request `#45 <https://github.com/umdlife/psdk_ros2/issues/45>`_ from umdlife/feat/prepare-ros-index

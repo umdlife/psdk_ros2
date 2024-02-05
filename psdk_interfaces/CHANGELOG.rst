@@ -2,6 +2,12 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#48 <https://github.com/umdlife/psdk_ros2/issues/48>`_ from umdlife/hotfix/update_documentation
+  Unify build and deploy documentation workflow
+* Contributors: biancabnd
+
 0.0.4 (2024-01-29)
 ------------------
 * Update maintainers
