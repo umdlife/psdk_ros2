@@ -2,8 +2,8 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.5 (2024-02-05)
+------------------
 * Move lifecycle interfaces to be public, also add rclcpp::shutdown() to finish cleanly the node when shutting down
 * Contributors: Victor Massagué Respall, biancabnd, sergigraum
 
