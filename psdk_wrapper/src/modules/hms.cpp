@@ -22,6 +22,12 @@
 
 namespace psdk_ros2
 {
+T_DjiReturnCode
+c_hms_callback(T_DjiHmsInfoTable hms_info_table)
+{
+  return global_ptr_->hms_callback(hms_info_table);
+}
+
 bool
 PSDKWrapper::init_hms()
 {
@@ -34,8 +40,8 @@ PSDKWrapper::init_hms()
                  return_code);
     return false;
   }
-  returnCode = DjiHmsManager_RegHmsInfoCallback(c_hms_callback);
-  if (returnCode != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  return_code = DjiHmsManager_RegHmsInfoCallback(c_hms_callback);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(),
                  "Could not register HMS callback. Error code:  %ld",
@@ -61,18 +67,12 @@ PSDKWrapper::deinit_hms()
 }
 
 T_DjiReturnCode
-c_hms_callback(T_DjiHmsInfoTable hms_info_table)
-{
-  return global_ptr_->hms_callback(hms_info_table);
-}
-
-T_DjiReturnCode
 PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
 {
   // Only process the data when the ROS2 publisher is active
-  if (hms_info_table_pub_.is_activated())
+  if (hms_info_table_pub_->is_activated())
   {
-    if (!hms_info_table)
+    if (!hms_info_table.hmsInfo)
     {
       RCLCPP_ERROR(get_logger(), "Pointer to HMS info table is NULL");
       return DJI_ERROR_SYSTEM_MODULE_CODE_OUT_OF_RANGE;
@@ -104,10 +104,12 @@ PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
         }
       }
 
-      RCLCPP_WARN_EXPRESSION(
-          get_logger(),
-          "Error code %ld could not be matched with any known error codes.",
-          is_error_code_unmatched);
+      if (is_error_code_unmatched)
+      {
+        RCLCPP_WARN(
+            get_logger(),
+            "Error code %ld could not be matched with any known error codes.");
+      }
     }
     hms_info_table_pub_->publish(ros2_hms);
   }
