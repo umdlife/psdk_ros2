@@ -21,7 +21,6 @@ using namespace std::placeholders;  // NOLINT
 
 namespace psdk_ros2
 {
-
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
     : rclcpp_lifecycle::LifecycleNode(node_name, "", rclcpp::NodeOptions())
 {
@@ -83,7 +82,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
   if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
-      !init_gimbal_manager() || !init_liveview())
+      !init_gimbal_manager() || !init_liveview() || !init_hms())
   {
     return CallbackReturn::FAILURE;
   }
@@ -147,7 +146,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   // Deinitialize all remaining modules
   if (!deinit_telemetry() || !deinit_flight_control() ||
       !deinit_camera_manager() || !deinit_gimbal_manager() ||
-      !deinit_liveview())
+      !deinit_liveview() || !deinit_hms())
   {
     return CallbackReturn::FAILURE;
   }
@@ -834,6 +833,8 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/altitude_sea_level", 10);
   altitude_barometric_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/altitude_barometric", 10);
+  hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
+      "psdk_ros2/hms_info_table", 10);
 
   RCLCPP_INFO(get_logger(), "Creating subscribers");
   flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
@@ -1131,6 +1132,7 @@ PSDKWrapper::activate_ros_elements()
   home_point_altitude_pub_->on_activate();
   altitude_sl_pub_->on_activate();
   altitude_barometric_pub_->on_activate();
+  hms_info_table_pub_->on_activate();
 }
 
 void
@@ -1179,6 +1181,7 @@ PSDKWrapper::deactivate_ros_elements()
   home_point_altitude_pub_->on_deactivate();
   altitude_sl_pub_->on_deactivate();
   altitude_barometric_pub_->on_deactivate();
+  hms_info_table_pub_->on_deactivate();
 }
 
 void
@@ -1300,6 +1303,7 @@ PSDKWrapper::clean_ros_elements()
   home_point_altitude_pub_.reset();
   altitude_sl_pub_.reset();
   altitude_barometric_pub_.reset();
+  hms_info_table_pub_.reset();
 }
 
 /*@todo Generalize the functions related to TFs for different copter, gimbal
