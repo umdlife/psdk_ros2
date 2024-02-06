@@ -72,6 +72,8 @@
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
 #include "psdk_interfaces/msg/gimbal_status.hpp"
 #include "psdk_interfaces/msg/gps_details.hpp"
+#include "psdk_interfaces/msg/hms_info_msg.hpp"
+#include "psdk_interfaces/msg/hms_info_table.hpp"
 #include "psdk_interfaces/msg/home_position.hpp"
 #include "psdk_interfaces/msg/position_fused.hpp"
 #include "psdk_interfaces/msg/rc_connection_status.hpp"
