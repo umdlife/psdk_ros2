@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.14)
 project(psdk_wrapper)
 
 SET(BUILD_SHARED_LIBS ON)
@@ -12,7 +12,6 @@ endif()
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
-
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -32,10 +31,30 @@ find_package(tf2_ros REQUIRED)
 find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 
+# FetchContent module
+include(FetchContent)
+
+# Declare the content to fetch
+FetchContent_Declare(
+  Payload_SDK
+  GIT_REPOSITORY https://github.com/dji-sdk/Payload-SDK.git
+  GIT_TAG 3.5
+)
+
+FetchContent_GetProperties(Payload_SDK)
+
+if(NOT Payload_SDK_POPULATED)
+  FetchContent_Populate(Payload_SDK)
+  message(STATUS "Payload_SDK_SOURCE_DIR: ${payload_sdk_SOURCE_DIR}")
+endif()
+
+# Set the path to the fetched content
+set(PSDK_PATH ${payload_sdk_SOURCE_DIR})
+
+message(STATUS "PSDK_PATH: ${PSDK_PATH}")
+
 # Add path to FindFFMPEG.cmake and FindLIBUSB.cmake files
-set(PSDK_PATH ${PROJECT_SOURCE_DIR}/../../Payload-SDK)
-set(CMAKE_MODULE_PATH 
-${PSDK_PATH}/samples/sample_c++/platform/linux/common/3rdparty)
+set(CMAKE_MODULE_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/common/3rdparty)
 
 find_package(FFMPEG REQUIRED)
 find_package(LIBUSB REQUIRED)
@@ -63,48 +82,50 @@ endif()
 # Check if PSDK lib is found
 set(PSDK_LIB_PATH ${PSDK_PATH}/psdk_lib/lib/${TOOLCHAIN_NAME})
 find_library(PSDK_LIB NAMES libpayloadsdk.a PATHS ${PSDK_LIB_PATH})
-if (PSDK_LIB)
+
+if(PSDK_LIB)
   message(STATUS "PSDK library found: ${PSDK_LIB}")
 else()
   message(FATAL_ERROR "PSDK library NOT found")
-endif()                                                                                                     
+endif()
 
-if (FFMPEG_FOUND)
-    message(STATUS "Found FFMPEG installed in the system")
-    message(STATUS " - Includes: ${FFMPEG_INCLUDE_DIR}")
-    message(STATUS " - Libraries: ${FFMPEG_LIBRARIES}")
+if(FFMPEG_FOUND)
+  message(STATUS "Found FFMPEG installed in the system")
+  message(STATUS " - Includes: ${FFMPEG_INCLUDE_DIR}")
+  message(STATUS " - Libraries: ${FFMPEG_LIBRARIES}")
 
-    EXECUTE_PROCESS(COMMAND ffmpeg -version
-            OUTPUT_VARIABLE ffmpeg_version_psdk_libput
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-    string(REGEX MATCH "version.*Copyright" ffmpeg_version_line ${ffmpeg_version_psdk_libput})
-    string(REGEX MATCH " .* " ffmpeg_version ${ffmpeg_version_line})
-    string(REGEX MATCH "^ 5.*$" ffmpeg_major_version ${ffmpeg_version})
+  EXECUTE_PROCESS(COMMAND ffmpeg -version
+    OUTPUT_VARIABLE ffmpeg_version_psdk_libput
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  string(REGEX MATCH "version.*Copyright" ffmpeg_version_line "${ffmpeg_version_psdk_libput}")
+  string(REGEX MATCH " .* " ffmpeg_version "${ffmpeg_version_line}")
+  string(REGEX MATCH "^ 5.*$" ffmpeg_major_version "${ffmpeg_version}")
 
-    if (HEAD${ffmpeg_major_version} STREQUAL "HEAD")
-        message(STATUS " - Version: ${ffmpeg_version}")
-    else ()
-        message(FATAL_ERROR " - Not support FFMPEG version: ${ffmpeg_major_version}, please install 4.x.x instead.")
-    endif ()
-    add_definitions(-DFFMPEG_INSTALLED)
-else ()
-    message(STATUS "Cannot Find FFMPEG")
-endif (FFMPEG_FOUND)
+  if(HEAD${ffmpeg_major_version} STREQUAL "HEAD")
+    message(STATUS " - Version: ${ffmpeg_version}")
+  else()
+    message(FATAL_ERROR " - Not support FFMPEG version: ${ffmpeg_major_version}, please install 4.x.x instead.")
+  endif()
 
-if (LIBUSB_FOUND)
-    message(STATUS "Found LIBUSB installed in the system")
-    message(STATUS " - Includes: ${LIBUSB_INCLUDE_DIR}")
-    message(STATUS " - Libraries: ${LIBUSB_LIBRARY}")
+  add_definitions(-DFFMPEG_INSTALLED)
+else()
+  message(STATUS "Cannot Find FFMPEG")
+endif(FFMPEG_FOUND)
 
-    add_definitions(-DLIBUSB_INSTALLED)
-else ()
-    message(STATUS "Cannot Find LIBUSB")
-endif (LIBUSB_FOUND)
+if(LIBUSB_FOUND)
+  message(STATUS "Found LIBUSB installed in the system")
+  message(STATUS " - Includes: ${LIBUSB_INCLUDE_DIR}")
+  message(STATUS " - Libraries: ${LIBUSB_LIBRARY}")
 
-if (NOT EXECUTABLE_OUTPUT_PATH)
-    set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-endif ()
+  add_definitions(-DLIBUSB_INSTALLED)
+else()
+  message(STATUS "Cannot Find LIBUSB")
+endif(LIBUSB_FOUND)
+
+if(NOT EXECUTABLE_OUTPUT_PATH)
+  set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+endif()
 
 # Include PSDK header files
 include_directories(${FFMPEG_INCLUDE_DIR})
@@ -113,7 +134,7 @@ include_directories(${DJI_HAL_PATH})
 include_directories(${DJI_STREAMING_PATH})
 include_directories(${DJI_UTILS_PATH})
 include_directories(${DJI_CONFIG_MANAGER_PATH})
-include_directories(${PROJECT_SOURCE_DIR}/../../Payload-SDK/psdk_lib/include)
+include_directories(${PSDK_PATH}/psdk_lib/include)
 include_directories(include)
 
 set(dependencies

@@ -8,6 +8,8 @@
       developer_account: "YourDeveloperAccount"
       baudrate: "921600"
 
+      num_of_initialization_retries: 3
+
       imu_frame: "psdk_imu_link"
       body_frame: "psdk_base_link"
       map_frame: "psdk_map_enu"

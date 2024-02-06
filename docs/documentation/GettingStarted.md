@@ -5,18 +5,20 @@ To use the psdk_ros2 wrapper you will need to create a new workspace in which yo
 ```bash
 mkdir -p ~/psdk_ros2_ws/src
 cd ~/psdk_ros2_ws/src
-# Clone the psdk_ros2 wrapper and the Payload-SDK 
+# Clone the psdk_ros2 wrapper
 git clone https://github.com/umdlife/psdk_ros2.git
-git clone https://github.com/dji-sdk/Payload-SDK.git
-
-# Checkout the proper version of the Payload-SDK (currently the wrapper is compatible with the latest release v3.8)
-cd Payload-SDK
-git checkout release/v3.8
 
 # Before building, check the Dependencies section and make sure you have everything installed
+# You can also run rosdep to automatically install the dependencies
+rosdep update
+rosdep keys --from-paths . --ignore-src --rosdistro humble | \
+  xargs rosdep resolve --rosdistro humble | \
+  awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
+sudo apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt) 
+
 # Build the code
 cd ~/psdk_ros2_ws
-colcon build --packages-skip entry	# Skip the build corresponding to DJI PSDK sample code
+colcon build
 
 # Launch the node
 ros2 launch psdk_wrapper wrapper.launch.py
@@ -29,34 +31,39 @@ ros2 launch psdk_wrapper wrapper.launch.py
 
 The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.yaml* file:
 
-| Parameter             | Data Type | Default Value                      | Comments                                    |
-| --------------------- | --------- | ---------------------------------- | ------------------------------------------- |
-| app_name              | String    | -                                  | Add your App name                           |
-| app_id                | String    | -                                  | Add your App id                             |
-| app_key               | String    | -                                  | Add your App key                            |
-| app_license           | String    | -                                  | Add your App license                        |
-| developer_account     | String    | -                                  | Add your developer account (not mandatory)  |
-| baudrate              | String    | 921600                             | -                                           |
-| link_config_file_path | String    | "absolute/path/to/config.json"     | (Optional) Default: cfg/link_config.json    |
-| imu_frame             | String    | "psdk_imu_link"                    | -                                           |
-| body_frame            | String    | "psdk_base_link"                   | -                                           |
-| map_frame             | String    | "psdk_map_enu"                     | -                                           |
-| gimbal_frame          | String    | "psdk_gimbal_link"                 | -                                           |
-| data_frequency        | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
-| - imu                 | Integer   | 100                                | -                                           |
-| - attitude            | Integer   | 100                                | -                                           |
-| - acceleration        | Integer   | 50                                 | -                                           |
-| - velocity            | Integer   | 50                                 | -                                           |
-| - angular_velocity    | Integer   | 100                                | -                                           |
-| - position            | Integer   | 50                                 | -                                           |
-| - gps_data            | Integer   | 1                                  | -                                           |
-| - rtk_data            | Integer   | 1                                  | -                                           |
-| - magnetometer        | Integer   | 50                                 | -                                           |
-| - rc_channels_data    | Integer   | 1                                  | -                                           |
-| - gimbal_data         | Integer   | 1                                  | -                                           |
-| - flight_status       | Integer   | 1                                  | -                                           |
-| - battery_level       | Integer   | 1                                  | -                                           |
-| - control_information | Integer   | 50                                 | -                                           |
+| Parameter                     | Data Type | Default Value                      | Comments                                    |
+| ------------------------------| --------- | ---------------------------------- | ------------------------------------------- |
+| app_name                      | String    | -                                  | Add your App name                           |
+| app_id                        | String    | -                                  | Add your App id                             |
+| app_key                       | String    | -                                  | Add your App key                            |
+| app_license                   | String    | -                                  | Add your App license                        |
+| developer_account             | String    | -                                  | Add your developer account (not mandatory)  |
+| baudrate                      | String    | 921600                             | -                                           |
+| hardware_connection           | String    | "DJI_USE_UART_AND_USB_BULK_DEVICE" | Depends on your connection method           |
+| uart_dev_1                    | String    | "/dev/dji_serial"                  | As defined in udev rules                    |
+| num_of_initialization_retries | Int       | 1                                  | Num of retries to init the PSDK app         |
+| imu_frame                     | String    | "psdk_imu_link"                    | -                                           |
+| body_frame                    | String    | "psdk_base_link"                   | -                                           |
+| map_frame                     | String    | "psdk_map_enu"                     | -                                           |
+| gimbal_frame                  | String    | "psdk_gimbal_link"                 | -                                           |
+| camera_frame                  | String    | "psdk_camera_link"                 | -                                           |
+| publish_transforms            | Bool      |  True                              | Whether to publish transforms or not        |
+| data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
+| - imu                         | Integer   | 100                                | -                                           |
+| - attitude                    | Integer   | 100                                | -                                           |
+| - acceleration                | Integer   | 50                                 | -                                           |
+| - velocity                    | Integer   | 50                                 | -                                           |
+| - angular_velocity            | Integer   | 100                                | -                                           |
+| - position                    | Integer   | 50                                 | -                                           |
+| - altitude                    | Integer   | 50                                 | -                                           |
+| - gps_data                    | Integer   | 1                                  | -                                           |
+| - rtk_data                    | Integer   | 1                                  | -                                           |
+| - magnetometer                | Integer   | 50                                 | -                                           |
+| - rc_channels_data            | Integer   | 1                                  | -                                           |
+| - gimbal_data                 | Integer   | 1                                  | -                                           |
+| - flight_status               | Integer   | 1                                  | -                                           |
+| - battery_level               | Integer   | 1                                  | -                                           |
+| - control_information         | Integer   | 1                                  | -                                           |
 
 
 To configure the hardware connection type and to specify the exact ports that need to be used, please use the *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Thus, for simplicity, the psdk_ros2 wrapper follows the same approach. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file. 

@@ -22,7 +22,11 @@ using namespace std::placeholders;  // NOLINT
 namespace psdk_ros2
 {
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
-    : rclcpp_lifecycle::LifecycleNode(node_name, "", rclcpp::NodeOptions())
+    : rclcpp_lifecycle::LifecycleNode(
+          node_name, "",
+          rclcpp::NodeOptions().use_intra_process_comms(true).arguments(
+              {"--ros-args", "-r",
+               node_name + ":" + std::string("__node:=") + node_name}))
 {
   RCLCPP_INFO(get_logger(), "Creating Constructor PSDKWrapper");
   declare_parameter("app_name", rclcpp::ParameterValue(""));
@@ -61,6 +65,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.flight_status", 1);
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
+
+  declare_parameter("num_of_initialization_retries", 1);
 }
 PSDKWrapper::~PSDKWrapper() {}
 
@@ -74,20 +80,6 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   {
     return CallbackReturn::FAILURE;
   }
-  T_DjiUserInfo user_info;
-  set_user_info(&user_info);
-
-  if (!init(&user_info))
-  {
-    return CallbackReturn::FAILURE;
-  }
-  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
-      !init_gimbal_manager() || !init_liveview() || !init_hms())
-  {
-    return CallbackReturn::FAILURE;
-  }
-  initialize_ros_elements();
-  current_state_.initialize_state();
 
   return CallbackReturn::SUCCESS;
 }
@@ -98,6 +90,26 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   (void)state;
   RCLCPP_INFO(get_logger(), "Activating PSDKWrapper");
 
+  T_DjiUserInfo user_info;
+  set_user_info(&user_info);
+
+  if (!init(&user_info))
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
+
+  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
+      !init_gimbal_manager() || !init_liveview() || !init_hms())
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
+
+  // Initialize and activate ROS elements only after the DJI modules are
+  // initialized
+  initialize_ros_elements();
+  current_state_.initialize_state();
   activate_ros_elements();
 
   if (params_.publish_transforms)
@@ -153,6 +165,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 
   global_ptr_.reset();
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
+  rclcpp::shutdown();
   return CallbackReturn::SUCCESS;
 }
 
@@ -638,6 +651,9 @@ PSDKWrapper::load_parameters()
         CONTROL_DATA_TOPICS_MAX_FREQ);
     params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
   }
+
+  get_parameter("num_of_initialization_retries",
+                num_of_initialization_retries_);
 }
 
 bool
@@ -684,7 +700,7 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
   int number_retries = 0;
   T_DjiReturnCode result;
-  while (number_retries < MAX_NUMBER_OF_RETRIES)
+  while (number_retries < num_of_initialization_retries_)
   {
     result = DjiCore_Init(user_info);
     if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -818,9 +834,9 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
           "psdk_ros2/relative_obstacle_info", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/main_camera_stream", 10);
+      "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/fpv_camera_stream", 10);
+      "psdk_ros2/fpv_camera_stream", rclcpp::SensorDataQoS());
   control_mode_pub_ = create_publisher<psdk_interfaces::msg::ControlMode>(
       "psdk_ros2/control_mode", 10);
   home_point_pub_ =
