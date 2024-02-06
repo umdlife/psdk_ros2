@@ -326,7 +326,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
    */
   bool deinit_gimbal_manager();
-
   /**
    * @brief Initialize the liveview streaming module
    * @return true/false
@@ -337,6 +336,16 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
    */
   bool deinit_liveview();
+  /**
+   * @brief Initialize the health monitoring system (HMS) module
+   * @return true/false
+   */
+  bool init_hms();
+  /**
+   * @brief Deinitialize the health monitoring system (HMS) module
+   * @return true/false
+   */
+  bool deinit_hms();
 
   /**
    * @brief Get the DJI frequency object associated with a certain frequency
