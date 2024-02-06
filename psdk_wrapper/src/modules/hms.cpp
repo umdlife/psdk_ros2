@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2023 Unmanned Life
+ * Copyright (C) 2024 Unmanned Life
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
 /**
- * @file telemetry.cpp
+ * @file hms.cpp
  *
- * @brief
+ * @brief Implementation of HMS module
  *
- * @author Bianca Bendris
- * Contact: bianca@unmanned.life
+ * @author Alejandro Mora
+ * Contact: alejandro@unmanned.life
  *
  */
 
@@ -109,6 +109,7 @@ PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
           "Error code %ld could not be matched with any known error codes.",
           is_error_code_unmatched);
     }
+    hms_info_table_pub_->publish(ros2_hms);
   }
 
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
