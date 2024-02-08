@@ -1440,9 +1440,9 @@ PSDKWrapper::initialize_psdk_modules()
       {std::bind(&PSDKWrapper::init_flight_control, this),
        is_flight_control_module_mandatory_},
       {std::bind(&PSDKWrapper::init_camera_manager, this),
-       is_camera_manager_module_mandatory_},
+       is_camera_module_mandatory_},
       {std::bind(&PSDKWrapper::init_gimbal_manager, this),
-       is_gimbal_manager_module_mandatory_},
+       is_gimbal_module_mandatory_},
       {std::bind(&PSDKWrapper::init_liveview, this),
        is_liveview_module_mandatory_}};
 

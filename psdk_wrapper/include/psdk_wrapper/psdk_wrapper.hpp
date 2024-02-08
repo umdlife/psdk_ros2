@@ -2026,7 +2026,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool is_telemetry_module_mandatory_{true};
   bool is_camera_module_mandatory_{true};
   bool is_gimbal_module_mandatory_{true};
-  bool is_flight_controller_module_mandatory_{true};
+  bool is_flight_control_module_mandatory_{true};
   bool is_liveview_module_mandatory_{true};
 };
 
