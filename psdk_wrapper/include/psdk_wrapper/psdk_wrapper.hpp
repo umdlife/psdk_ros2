@@ -1967,6 +1967,13 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   std::string get_optical_frame_id();
 
+  /**
+   * @brief Method to initialize all psdk modules
+   * @return true if all mandatory modules have been correctly initialized,
+   * false otherwise
+   */
+  bool initialize_psdk_modules();
+
   /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
@@ -2015,6 +2022,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool publish_camera_transforms_{false};
   bool decode_stream_{true};
   int num_of_initialization_retries_{0};
+
+  bool is_telemetry_module_mandatory_{true};
+  bool is_camera_module_mandatory_{true};
+  bool is_gimbal_module_mandatory_{true};
+  bool is_flight_controller_module_mandatory_{true};
+  bool is_liveview_module_mandatory_{true};
 };
 
 /**

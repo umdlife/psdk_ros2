@@ -46,7 +46,12 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | map_frame                     | String    | "psdk_map_enu"                     | -                                           |
 | gimbal_frame                  | String    | "psdk_gimbal_link"                 | -                                           |
 | camera_frame                  | String    | "psdk_camera_link"                 | -                                           |
-| publish_transforms            | Bool      |  True                              | Whether to publish transforms or not        |
+| mandatory_modules             |           |                                    |                                             |
+| - telemetry                   | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - flight_control              | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - camera                      | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - gimbal                      | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - liveview                    | Bool      |  True                              | Trigger node failure, if module not loaded  |
 | data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
 | - imu                         | Integer   | 100                                | -                                           |
 | - attitude                    | Integer   | 100                                | -                                           |
