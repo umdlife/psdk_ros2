@@ -18,6 +18,9 @@
 #include <dji_hms_info_table.h>
 #include <math.h>
 
+#include <fstream>
+
+#include "psdk_wrapper/cjson_utils.h"
 #include "psdk_wrapper/psdk_wrapper.hpp"
 
 namespace psdk_ros2
@@ -28,10 +31,26 @@ c_hms_callback(T_DjiHmsInfoTable hms_info_table)
   return global_ptr_->hms_callback(hms_info_table);
 }
 
+std::string inline file_to_string(const std::string& path)
+{
+  std::ifstream file(path);
+  std::ostringstream tmp;
+  tmp << file.rdbuf();
+  return tmp.str();
+}
+
 bool
 PSDKWrapper::init_hms()
 {
   RCLCPP_INFO(get_logger(), "Initiating HMS...");
+
+  // Read JSON file with known HMS error codes
+  std::string return_code_path =
+      ament_index_cpp::get_package_share_directory("psdk_wrapper") +
+      "/cfg/hms_return_codes.json";
+
+  hms_return_codes_json_ = psdk_utils::file_to_string(return_code_path);
+
   T_DjiReturnCode return_code = DjiHmsManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -78,40 +97,8 @@ PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
       return DJI_ERROR_SYSTEM_MODULE_CODE_OUT_OF_RANGE;
     }
 
-    psdk_interfaces::msg::HmsInfoTable ros2_hms;
-    ros2_hms.num_msg = hms_info_table.hmsInfoNum;
-    ros2_hms.table.resize(hms_info_table.hmsInfoNum);
-    for (uint32_t i = 0; i < hms_info_table.hmsInfoNum; i++)
-    {
-      ros2_hms.table[i].error_code = hms_info_table.hmsInfo[i].errorCode;
-      ros2_hms.table[i].component_index =
-          hms_info_table.hmsInfo[i].componentIndex + 1;
-      ros2_hms.table[i].error_level = hms_info_table.hmsInfo[i].errorLevel;
-      ros2_hms.table[i].ground_info = "";
-      ros2_hms.table[i].fly_info = "";
-
-      // Iterate over known error codes (refer to "dji_hms_info_table.h")
-      bool is_error_code_unmatched = true;
-      for (uint32_t j = 0;
-           j < sizeof(hmsErrCodeInfoTbl) / sizeof(T_DjiHmsErrCodeInfo); j++)
-      {
-        if (ros2_hms.table[i].error_code == hmsErrCodeInfoTbl[j].alarmId)
-        {
-          is_error_code_unmatched = false;
-          ros2_hms.table[i].ground_info = hmsErrCodeInfoTbl[j].groundAlarmInfo;
-          ros2_hms.table[i].fly_info = hmsErrCodeInfoTbl[j].flyAlarmInfo;
-          break;
-        }
-      }
-
-      if (is_error_code_unmatched)
-      {
-        RCLCPP_WARN(
-            get_logger(),
-            "Error code %ld could not be matched with any known error codes.",
-            ros2_hms.table[i].error_code);
-      }
-    }
+    psdk_interfaces::msg::HmsInfoTable ros2_hms =
+        cjson_utils::to_ros2_msg(hms_info_table, hms_return_codes_json_.data());
     hms_info_table_pub_->publish(ros2_hms);
   }
 

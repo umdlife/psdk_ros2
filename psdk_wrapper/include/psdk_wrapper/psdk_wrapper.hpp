@@ -2036,6 +2036,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
   E_DjiCameraType attached_camera_type_;
   E_DjiLiveViewCameraSource selected_camera_source_;
+  std::string hms_return_codes_json_;
   bool publish_camera_transforms_{false};
   bool decode_stream_{true};
   int num_of_initialization_retries_{0};
