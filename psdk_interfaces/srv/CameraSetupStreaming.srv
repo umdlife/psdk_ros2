@@ -2,6 +2,7 @@
 uint8 payload_index 1       # please refer to enum E_DjiLiveViewCameraPosition in dji_liveview.h
 uint8 camera_source 0       # please refer to enum E_DjiLiveViewCameraSource in dji_liveview.h
 bool start_stop             # 0 for stop and 1 for start
+bool decoded_output 1       # 0 for encoded output and 1 for decoded output
 ---
 #response
 bool success

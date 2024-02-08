@@ -1,4 +1,11 @@
-exhale
+sphinx==4.5.0
+breathe==4.32.0
+exhale==0.3.6
 myst_parser
-breathe
 sphinx_rtd_theme
+sphinxcontrib-applehelp<=1.0.7
+sphinxcontrib-devhelp<=1.0.5
+sphinxcontrib-jsmath<=1.0.1
+sphinxcontrib_htmlhelp<=2.0.4
+sphinxcontrib-serializinghtml<=1.1.9
+sphinxcontrib-qthelp<=1.0.6

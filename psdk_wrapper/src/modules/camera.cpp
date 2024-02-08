@@ -1127,10 +1127,8 @@ PSDKWrapper::camera_get_laser_ranging_info_cb(
                 index);
     response->longitude = laser_ranging_info.longitude;
     response->latitude = laser_ranging_info.latitude;
-    response->altitude =
-        laser_ranging_info.altitude * 10;  // Transform unit from 0.1 m to m
-    response->distance =
-        laser_ranging_info.distance * 10;  // Transform unit from 0.1 m to m
+    response->altitude = laser_ranging_info.altitude;
+    response->distance = laser_ranging_info.distance;
     response->screen_x = laser_ranging_info.screenX;
     response->screen_y = laser_ranging_info.screenY;
     response->enable_lidar = laser_ranging_info.enable_lidar;
