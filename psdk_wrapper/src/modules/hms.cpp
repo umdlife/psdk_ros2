@@ -80,8 +80,8 @@ PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
 
     psdk_interfaces::msg::HmsInfoTable ros2_hms;
     ros2_hms.num_msg = hms_info_table.hmsInfoNum;
-    ros2_hms.table.reserve(hms_info_table.hmsInfoNum);
-    for (int i = 0; i < hms_info_table.hmsInfoNum; i++)
+    ros2_hms.table.resize(hms_info_table.hmsInfoNum);
+    for (uint32_t i = 0; i < hms_info_table.hmsInfoNum; i++)
     {
       ros2_hms.table[i].error_code = hms_info_table.hmsInfo[i].errorCode;
       ros2_hms.table[i].component_index =
@@ -92,7 +92,7 @@ PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
 
       // Iterate over known error codes (refer to "dji_hms_info_table.h")
       bool is_error_code_unmatched = true;
-      for (int j = 0;
+      for (uint32_t j = 0;
            j < sizeof(hmsErrCodeInfoTbl) / sizeof(T_DjiHmsErrCodeInfo); j++)
       {
         if (ros2_hms.table[i].error_code == hmsErrCodeInfoTbl[j].alarmId)
@@ -108,7 +108,8 @@ PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
       {
         RCLCPP_WARN(
             get_logger(),
-            "Error code %ld could not be matched with any known error codes.");
+            "Error code %ld could not be matched with any known error codes.",
+            ros2_hms.table[i].error_code);
       }
     }
     hms_info_table_pub_->publish(ros2_hms);

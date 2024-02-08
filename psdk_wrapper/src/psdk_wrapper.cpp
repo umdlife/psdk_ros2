@@ -100,7 +100,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   }
 
   if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
-      !init_gimbal_manager() || !init_liveview() || !init_hms())
+      !init_gimbal_manager() || !init_liveview())
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
@@ -115,6 +115,12 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if (params_.publish_transforms)
   {
     publish_static_transforms();
+  }
+
+  if (!init_hms())
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
   }
 
   subscribe_psdk_topics();

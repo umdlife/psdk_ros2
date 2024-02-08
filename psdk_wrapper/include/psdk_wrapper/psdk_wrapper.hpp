@@ -502,7 +502,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_home_point_altitude_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_hms_callback(const T_DjiHmsInfoTable hms_info_table);
+  friend T_DjiReturnCode c_hms_callback(T_DjiHmsInfoTable hms_info_table);
   /* Streaming */
   friend void c_publish_main_streaming_callback(CameraRGBImage img,
                                                 void* user_data);
