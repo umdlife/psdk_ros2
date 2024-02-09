@@ -49,7 +49,7 @@ PSDKWrapper::init_hms()
       ament_index_cpp::get_package_share_directory("psdk_wrapper") +
       "/cfg/hms_return_codes.json";
 
-  hms_return_codes_json_ = psdk_utils::file_to_string(return_code_path);
+  hms_return_codes_json_ = file_to_string(return_code_path);
 
   T_DjiReturnCode return_code = DjiHmsManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
