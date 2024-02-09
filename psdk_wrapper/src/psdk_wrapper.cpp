@@ -40,7 +40,13 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   std::string default_config_file = ros_pkg_path + "/cfg/link_config.json";
   declare_parameter("link_config_file_path",
                     rclcpp::ParameterValue(default_config_file));
-
+  declare_parameter("mandatory_modules.telemetry",
+                    rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.flight_control",
+                    rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
   declare_parameter("map_frame", rclcpp::ParameterValue("psdk_map_enu"));
@@ -55,6 +61,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.velocity", 1);
   declare_parameter("data_frequency.angular_velocity", 1);
   declare_parameter("data_frequency.position", 1);
+  declare_parameter("data_frequency.altitude", 1);
   declare_parameter("data_frequency.altitude", 1);
   declare_parameter("data_frequency.gps_fused_position", 1);
   declare_parameter("data_frequency.gps_data", 1);
@@ -99,8 +106,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
-      !init_gimbal_manager() || !init_liveview())
+  if (!initialize_psdk_modules())
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
@@ -296,6 +302,7 @@ PSDKWrapper::set_environment()
       RCLCPP_ERROR(get_logger(),
                    "Register HAL Network handler error. Error code is: %ld",
                    return_code);
+      return false;
     }
   }
   else
@@ -303,8 +310,6 @@ PSDKWrapper::set_environment()
     RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
   }
 
-  // Attention: if you want to use camera stream view function, please uncomment
-  // it.
   return_code = DjiPlatform_RegSocketHandler(&socket_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -372,6 +377,13 @@ PSDKWrapper::load_parameters()
   }
   RCLCPP_INFO(get_logger(), "Using connection configuration file: %s",
               params_.link_config_file_path.c_str());
+
+  get_parameter("mandatory_modules.telemetry", is_telemetry_module_mandatory_);
+  get_parameter("mandatory_modules.flight_control",
+                is_flight_control_module_mandatory_);
+  get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
+  get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
+  get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
 
   if (!get_parameter("imu_frame", params_.imu_frame))
   {
@@ -1428,6 +1440,33 @@ PSDKWrapper::get_yaw_gimbal_camera()
   /* Get current gimbal yaw wrt to East */
   double current_gimbal_yaw = current_state_.gimbal_angles.vector.z;
   return current_gimbal_yaw - current_yaw;
+}
+
+bool
+PSDKWrapper::initialize_psdk_modules()
+{
+  using ModuleInitializer = std::pair<std::function<bool()>, bool>;
+  std::vector<ModuleInitializer> module_initializers = {
+      {std::bind(&PSDKWrapper::init_telemetry, this),
+       is_telemetry_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_flight_control, this),
+       is_flight_control_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_camera_manager, this),
+       is_camera_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_gimbal_manager, this),
+       is_gimbal_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_liveview, this),
+       is_liveview_module_mandatory_}};
+
+  for (const auto &initializer : module_initializers)
+  {
+    if (!initializer.first() && initializer.second)
+    {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }  // namespace psdk_ros2
