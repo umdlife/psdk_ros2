@@ -34,7 +34,7 @@ find_package(std_srvs REQUIRED)
 
 # Add path to FindFFMPEG.cmake and FindLIBUSB.cmake files
 set(PSDK_PATH ${PROJECT_SOURCE_DIR}/../../Payload-SDK)
-set(CMAKE_MODULE_PATH 
+set(CMAKE_MODULE_PATH
 ${PSDK_PATH}/samples/sample_c++/platform/linux/common/3rdparty)
 
 find_package(FFMPEG REQUIRED)
@@ -67,7 +67,7 @@ if (PSDK_LIB)
   message(STATUS "PSDK library found: ${PSDK_LIB}")
 else()
   message(FATAL_ERROR "PSDK library NOT found")
-endif()                                                                                                     
+endif()
 
 if (FFMPEG_FOUND)
     message(STATUS "Found FFMPEG installed in the system")
