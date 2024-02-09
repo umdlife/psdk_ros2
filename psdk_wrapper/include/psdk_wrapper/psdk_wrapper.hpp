@@ -25,6 +25,7 @@
 #include <dji_logger.h>
 #include <dji_platform.h>
 #include <dji_typedef.h>
+#include <dji_low_speed_data_channel.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 
@@ -76,6 +77,7 @@
 #include "psdk_interfaces/msg/rc_connection_status.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
+#include "psdk_interfaces/msg/transmission_data.hpp"
 #include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_list.hpp"
@@ -334,6 +336,16 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
    */
   bool deinit_liveview();
+  /**
+   * @brief Initialize the data transmisison module
+   * @return true/false
+  */
+  bool init_data_transmission();
+  /**
+   * @brief Deinitialize the data transmisison module
+   * @return true/false
+  */
+  bool deinit_data_transmission();
 
   /**
    * @brief Get the DJI frequency object associated with a certain frequency
@@ -499,6 +511,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend void c_LiveviewConvertH264ToRgbCallback(
       E_DjiLiveViewCameraPosition position, const uint8_t* buffer,
       uint32_t buffer_length);
+
+  friend T_DjiReturnCode c_ReceiveDataFromMobileCallback(const uint8_t* data,
+                                              uint16_t len);
 
   /*C++ type DJI topic subscriber callbacks*/
   /**
@@ -1751,6 +1766,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       main_camera_stream_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       fpv_camera_stream_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::TransmissionData>::SharedPtr
+      low_speed_transmission_data_pub_;
 
   /* ROS 2 Subscribers */
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
@@ -1942,6 +1959,14 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param user_data unused parameter
    */
   void publish_fpv_camera_images(CameraRGBImage rgb_img, void* user_data);
+  /**
+   * @brief Publishes the raw (not decoded) data received over the
+   * LowSpeedDataChannel from the RC MSDK app.
+   * @param data  raw data retrieved from the RC
+   * @param len length of the data
+   */
+  T_DjiReturnCode publish_data_from_mobile(const uint8_t* data, uint16_t len);
+
   /**
    * @brief Get the optical frame id for a certain lens
    * @return string with the optical frame id name

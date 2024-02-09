@@ -83,7 +83,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
   if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
-      !init_gimbal_manager() || !init_liveview())
+      !init_gimbal_manager() || !init_liveview() || !init_data_transmission())
   {
     return CallbackReturn::FAILURE;
   }
@@ -834,6 +834,8 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/altitude_sea_level", 10);
   altitude_barometric_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/altitude_barometric", 10);
+  low_speed_transmission_data_pub_ = create_publisher<psdk_interfaces::msg::TransmissionData>(
+      "psdk_ros2/low_speed_transmission_data", 10);
 
   RCLCPP_INFO(get_logger(), "Creating subscribers");
   flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
@@ -1131,6 +1133,7 @@ PSDKWrapper::activate_ros_elements()
   home_point_altitude_pub_->on_activate();
   altitude_sl_pub_->on_activate();
   altitude_barometric_pub_->on_activate();
+  low_speed_transmission_data_pub_->on_activate();
 }
 
 void
