@@ -83,50 +83,49 @@ endif()
 # Check if PSDK lib is found
 set(PSDK_LIB_PATH ${PSDK_PATH}/psdk_lib/lib/${TOOLCHAIN_NAME})
 find_library(PSDK_LIB NAMES libpayloadsdk.a PATHS ${PSDK_LIB_PATH})
-
 if(PSDK_LIB)
   message(STATUS "PSDK library found: ${PSDK_LIB}")
 else()
   message(FATAL_ERROR "PSDK library NOT found")
 endif()
 
-if(FFMPEG_FOUND)
-  message(STATUS "Found FFMPEG installed in the system")
-  message(STATUS " - Includes: ${FFMPEG_INCLUDE_DIR}")
-  message(STATUS " - Libraries: ${FFMPEG_LIBRARIES}")
+if (FFMPEG_FOUND)
+    message(STATUS "Found FFMPEG installed in the system")
+    message(STATUS " - Includes: ${FFMPEG_INCLUDE_DIR}")
+    message(STATUS " - Libraries: ${FFMPEG_LIBRARIES}")
 
-  EXECUTE_PROCESS(COMMAND ffmpeg -version
-    OUTPUT_VARIABLE ffmpeg_version_psdk_libput
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  string(REGEX MATCH "version.*Copyright" ffmpeg_version_line "${ffmpeg_version_psdk_libput}")
-  string(REGEX MATCH " .* " ffmpeg_version "${ffmpeg_version_line}")
-  string(REGEX MATCH "^ 5.*$" ffmpeg_major_version "${ffmpeg_version}")
+    EXECUTE_PROCESS(COMMAND ffmpeg -version
+            OUTPUT_VARIABLE ffmpeg_version_psdk_libput
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+    string(REGEX MATCH "version.*Copyright" ffmpeg_version_line "${ffmpeg_version_psdk_libput}")
+    string(REGEX MATCH " .* " ffmpeg_version "${ffmpeg_version_line}")
+    string(REGEX MATCH "^ 5.*$" ffmpeg_major_version "${ffmpeg_version}")
 
-  if(HEAD${ffmpeg_major_version} STREQUAL "HEAD")
-    message(STATUS " - Version: ${ffmpeg_version}")
-  else()
-    message(FATAL_ERROR " - Not support FFMPEG version: ${ffmpeg_major_version}, please install 4.x.x instead.")
-  endif()
+    if(HEAD${ffmpeg_major_version} STREQUAL "HEAD")
+        message(STATUS " - Version: ${ffmpeg_version}")
+    else ()
+        message(FATAL_ERROR " - Not support FFMPEG version: ${ffmpeg_major_version}, please install 4.x.x instead.")
+    endif ()
 
-  add_definitions(-DFFMPEG_INSTALLED)
-else()
-  message(STATUS "Cannot Find FFMPEG")
-endif(FFMPEG_FOUND)
+    add_definitions(-DFFMPEG_INSTALLED)
+else ()
+    message(STATUS "Cannot Find FFMPEG")
+endif (FFMPEG_FOUND)
 
-if(LIBUSB_FOUND)
-  message(STATUS "Found LIBUSB installed in the system")
-  message(STATUS " - Includes: ${LIBUSB_INCLUDE_DIR}")
-  message(STATUS " - Libraries: ${LIBUSB_LIBRARY}")
+if (LIBUSB_FOUND)
+    message(STATUS "Found LIBUSB installed in the system")
+    message(STATUS " - Includes: ${LIBUSB_INCLUDE_DIR}")
+    message(STATUS " - Libraries: ${LIBUSB_LIBRARY}")
 
-  add_definitions(-DLIBUSB_INSTALLED)
-else()
-  message(STATUS "Cannot Find LIBUSB")
+    add_definitions(-DLIBUSB_INSTALLED)
+else ()
+    message(STATUS "Cannot Find LIBUSB")
 endif(LIBUSB_FOUND)
 
-if(NOT EXECUTABLE_OUTPUT_PATH)
-  set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-endif()
+if (NOT EXECUTABLE_OUTPUT_PATH)
+    set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+endif ()
 
 # Include PSDK header files
 include_directories(${FFMPEG_INCLUDE_DIR})
