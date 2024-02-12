@@ -212,12 +212,10 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/
 )
 
-# Copy HMS return codes from PSDK samples
-file(GLOB ${DJI_HMS_RETURN_CODES_FILES}
-  "${DJI_HMS_RETURN_CODES_PATH}/*.json"
+install(DIRECTORY
+  ${DJI_HMS_RETURN_CODES_PATH}/
+  DESTINATION share/${PROJECT_NAME}/cfg
 )
-file(COPY ${DJI_HMS_RETURN_CODES_FILES}
-  DESTINATION share/${PROJECT_NAME}/cfg)
 
 ament_export_dependencies(
   "rclcpp"
