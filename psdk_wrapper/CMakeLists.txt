@@ -190,8 +190,17 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-install(DIRECTORY include/
+
+install(DIRECTORY 
+  include/
+  ${PSDK_PATH}/psdk_lib/include/
+  ${DJI_STREAMING_PATH}/
+  ${DJI_HAL_PATH}/
+  ${DJI_OSAL_PATH}/
   DESTINATION include/
+  FILES_MATCHING 
+    PATTERN "*.h"
+    PATTERN "*.hpp"
 )
 
 install(DIRECTORY
