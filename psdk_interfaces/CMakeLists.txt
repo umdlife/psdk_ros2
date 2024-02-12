@@ -36,6 +36,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FlightStatus.msg"
   "msg/RCConnectionStatus.msg"
   "msg/ControlMode.msg"
+  "msg/SingleBatteryInfo.msg"
   "srv/CameraGetType.srv"
   "srv/CameraSetExposureModeEV.srv"
   "srv/CameraGetExposureModeEV.srv"

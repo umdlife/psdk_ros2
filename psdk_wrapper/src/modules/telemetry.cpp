@@ -325,6 +325,14 @@ c_altitude_barometric_callback(const uint8_t *data, uint16_t data_size,
 }
 
 T_DjiReturnCode
+c_single_battery_index1_callback(const uint8_t *data, uint16_t data_size,
+                               const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->single_battery_index1_callback(data, data_size, timestamp);
+}
+
+
+T_DjiReturnCode
 c_home_point_altitude_callback(const uint8_t *data, uint16_t data_size,
                                const T_DjiDataTimestamp *timestamp)
 {
@@ -1254,6 +1262,33 @@ PSDKWrapper::altitude_barometric_callback(const uint8_t *data,
 }
 
 T_DjiReturnCode
+PSDKWrapper::single_battery_index1_callback(const uint8_t *data,
+                                          uint16_t data_size,
+                                          const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionSingleBatteryInfo> single_battery_info =
+      std::make_unique<T_DjiFcSubscriptionSingleBatteryInfo>(
+          *reinterpret_cast<const T_DjiFcSubscriptionSingleBatteryInfo *>(
+              data));
+
+  psdk_interfaces::msg::SingleBatteryInfo single_battery_info_msg;
+  single_battery_info_msg.header.stamp = this->get_clock()->now();
+
+  single_battery_info_msg.batteryindex = static_cast<_Float32>(single_battery_info->batteryIndex);
+  single_battery_info_msg.voltage = static_cast<_Float32>(single_battery_info->currentVoltage) / 1000; // mV -> V
+  single_battery_info_msg.current = static_cast<_Float32>(single_battery_info->currentElectric) / 1000; // mA -> A
+  single_battery_info_msg.capacityremain = static_cast<_Float32>(single_battery_info->remainedCapacity); // mAh -> Ah
+  single_battery_info_msg.percentage = static_cast<_Float32>(single_battery_info->batteryCapacityPercent);
+  single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature);
+  single_battery_info_msg.cellcount = static_cast<_Float32>(single_battery_info->cellCount); // 0.1℃.
+  single_battery_pub_->publish(single_battery_info_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+
+}
+
+T_DjiReturnCode
 PSDKWrapper::home_point_altitude_callback(const uint8_t *data,
                                           uint16_t data_size,
                                           const T_DjiDataTimestamp *timestamp)
@@ -1727,6 +1762,22 @@ PSDKWrapper::subscribe_psdk_topics()
                    return_code);
     }
   }
+
+  if (params_.battery_level_frequency > 0)
+  {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_SINGLE_INFO_INDEX1,
+        get_frequency(params_.battery_level_frequency), c_single_battery_index1_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_INFO, error %ld",
+                   return_code);
+    }
+  }
+
   if (params_.control_information_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(

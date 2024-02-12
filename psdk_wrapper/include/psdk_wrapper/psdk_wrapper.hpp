@@ -74,6 +74,7 @@
 #include "psdk_interfaces/msg/rc_connection_status.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
+#include "psdk_interfaces/msg/single_battery_info.hpp"
 #include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_list.hpp"
@@ -484,6 +485,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_altitude_barometric_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_single_battery_index1_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_home_point_altitude_callback(
@@ -1012,6 +1016,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * done correctly
    */
   T_DjiReturnCode altitude_barometric_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+
+  /** retrieving single battery data cb -to be filled properly*/
+  T_DjiReturnCode single_battery_index1_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
 
@@ -1717,8 +1726,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       psdk_interfaces::msg::DisplayMode>::SharedPtr display_mode_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
