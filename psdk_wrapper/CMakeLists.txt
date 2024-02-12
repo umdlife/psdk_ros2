@@ -13,6 +13,7 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
 
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -42,7 +43,6 @@ FetchContent_Declare(
 )
 
 FetchContent_GetProperties(Payload_SDK)
-
 if(NOT Payload_SDK_POPULATED)
   FetchContent_Populate(Payload_SDK)
   message(STATUS "Payload_SDK_SOURCE_DIR: ${payload_sdk_SOURCE_DIR}")
@@ -83,7 +83,7 @@ endif()
 # Check if PSDK lib is found
 set(PSDK_LIB_PATH ${PSDK_PATH}/psdk_lib/lib/${TOOLCHAIN_NAME})
 find_library(PSDK_LIB NAMES libpayloadsdk.a PATHS ${PSDK_LIB_PATH})
-if(PSDK_LIB)
+if (PSDK_LIB)
   message(STATUS "PSDK library found: ${PSDK_LIB}")
 else()
   message(FATAL_ERROR "PSDK library NOT found")
@@ -102,12 +102,11 @@ if (FFMPEG_FOUND)
     string(REGEX MATCH " .* " ffmpeg_version "${ffmpeg_version_line}")
     string(REGEX MATCH "^ 5.*$" ffmpeg_major_version "${ffmpeg_version}")
 
-    if(HEAD${ffmpeg_major_version} STREQUAL "HEAD")
+    if (HEAD${ffmpeg_major_version} STREQUAL "HEAD")
         message(STATUS " - Version: ${ffmpeg_version}")
     else ()
         message(FATAL_ERROR " - Not support FFMPEG version: ${ffmpeg_major_version}, please install 4.x.x instead.")
     endif ()
-
     add_definitions(-DFFMPEG_INSTALLED)
 else ()
     message(STATUS "Cannot Find FFMPEG")
@@ -121,7 +120,7 @@ if (LIBUSB_FOUND)
     add_definitions(-DLIBUSB_INSTALLED)
 else ()
     message(STATUS "Cannot Find LIBUSB")
-endif(LIBUSB_FOUND)
+endif (LIBUSB_FOUND)
 
 if (NOT EXECUTABLE_OUTPUT_PATH)
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
