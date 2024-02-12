@@ -490,6 +490,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_single_battery_index1_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_single_battery_index2_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_home_point_altitude_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
@@ -1021,6 +1024,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   /** retrieving single battery data cb -to be filled properly*/
   T_DjiReturnCode single_battery_index1_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+
+  /** retrieving single battery data cb -to be filled properly*/
+  T_DjiReturnCode single_battery_index2_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
 
@@ -1727,7 +1735,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_index1_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_index2_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
