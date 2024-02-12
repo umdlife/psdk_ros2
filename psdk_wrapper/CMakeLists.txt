@@ -64,6 +64,7 @@ set(DJI_HAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/hal)
 set(DJI_STREAMING_PATH ${PSDK_PATH}/samples/sample_c++/module_sample/liveview)
 set(DJI_CONFIG_MANAGER_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/application)
 set(DJI_UTILS_PATH ${PSDK_PATH}/samples/sample_c/module_sample)
+set(DJI_HMS_RETURN_CODES_PATH ${PSDK_PATH}/samples/sample_c/module_sample/hms/data)
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -210,6 +211,13 @@ install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
+
+# Copy HMS return codes from PSDK samples
+file(GLOB ${DJI_HMS_RETURN_CODES_FILES}
+  "${DJI_HMS_RETURN_CODES_PATH}/*.json"
+)
+file(COPY ${DJI_HMS_RETURN_CODES_FILES}
+  DESTINATION share/${PROJECT_NAME}/cfg)
 
 ament_export_dependencies(
   "rclcpp"

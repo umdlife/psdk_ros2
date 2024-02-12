@@ -46,8 +46,8 @@ PSDKWrapper::init_hms()
 
   // Read JSON file with known HMS error codes
   std::string return_code_path =
-      ament_index_cpp::get_package_share_directory("psdk_wrapper") +
-      "/cfg/hms_return_codes.json";
+      ament_index_cpp::get_package_share_directory("psdk_wrapper") + "/cfg/" +
+      params_.hms_return_codes_file;
 
   hms_return_codes_json_ = file_to_string(return_code_path);
 

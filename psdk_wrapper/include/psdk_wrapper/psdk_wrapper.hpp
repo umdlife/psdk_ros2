@@ -234,6 +234,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string map_frame;
     std::string gimbal_frame;
     std::string camera_frame;
+    std::string hms_return_codes_file;
     bool publish_transforms;
     int imu_frequency;
     int attitude_frequency;
