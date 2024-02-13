@@ -708,18 +708,18 @@ bool
 PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
-  int number_retries = 0;
+  int current_num_retries = 0;
   T_DjiReturnCode result;
-  while (number_retries < num_of_initialization_retries_)
+  while (current_num_retries <= num_of_initialization_retries_)
   {
     result = DjiCore_Init(user_info);
     if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
-      number_retries++;
       RCLCPP_ERROR(get_logger(),
                    "DJI core could not be initiated. Error code is: %ld. "
                    "Retrying for %d time. ",
-                   result, number_retries);
+                   result, current_num_retries);
+      current_num_retries++;
       std::this_thread::sleep_for(std::chrono::milliseconds(5000));
       continue;
     }
