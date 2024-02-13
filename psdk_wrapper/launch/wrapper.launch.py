@@ -20,6 +20,12 @@ import launch
 
 def generate_launch_description():
     """Launch the psdk_wrapper_node."""
+
+    # Create LaunchConfiguration variables
+    namespace = LaunchConfiguration("namespace")
+    link_config_file_path = LaunchConfiguration("link_config_file_path")
+    psdk_params_file_path = LaunchConfiguration("psdk_params_file_path")
+
     # Declare the namespace launch argument
     declare_namespace_cmd = DeclareLaunchArgument(
         "namespace",
@@ -28,21 +34,19 @@ def generate_launch_description():
     )
 
     # Declare wrapper parameters
-    psdk_params_default_value = PathJoinSubstitution([
-        FindPackageShare('psdk_wrapper'),
-        'cfg', 'psdk_params.yaml'
-    ])
+    psdk_params_default_value = PathJoinSubstitution(
+        [FindPackageShare("psdk_wrapper"), "cfg", "psdk_params.yaml"]
+    )
     declare_psdk_params_cmd = DeclareLaunchArgument(
-        "psdk_params",
+        "psdk_params_file_path",
         default_value=psdk_params_default_value,
-        description="DJI PSDK parameters",
+        description="DJI PSDK ROS2 parameters",
     )
 
     # Declare link configuration file path
-    link_config_default_value = PathJoinSubstitution([
-        FindPackageShare('psdk_wrapper'),
-        'cfg', 'link_config.json'
-    ])
+    link_config_default_value = PathJoinSubstitution(
+        [FindPackageShare("psdk_wrapper"), "cfg", "link_config.json"]
+    )
 
     declare_link_config_cmd = DeclareLaunchArgument(
         "link_config_file_path",
@@ -56,13 +60,12 @@ def generate_launch_description():
         executable="psdk_wrapper_node",
         name="psdk_wrapper_node",
         output="screen",
-        namespace=LaunchConfiguration("namespace"),
+        namespace=namespace,
         parameters=[
             {
-                "link_config_file_path": LaunchConfiguration('link_config_file_path'),
+                "link_config_file_path": link_config_file_path,
             },
-            LaunchConfiguration("psdk_params")
-
+            psdk_params_file_path,
         ],
     )
 

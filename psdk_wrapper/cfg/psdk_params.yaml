@@ -17,9 +17,6 @@
       camera_frame: "psdk_camera_link"
       publish_transforms: true
 
-      # Set the path to the link_config file if different from the default
-      # link_config_file_path: "/absolute/path/to/your/file.json"
-
       # Mandatory modules to be initialized. Mark with a true those which you 
       # consider mandatory for your application, false otherwise. Be aware that 
       # some modules might have inter-dependencies. Non mandatory modules will
