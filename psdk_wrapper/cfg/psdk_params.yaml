@@ -1,5 +1,4 @@
 /**:
-  psdk_wrapper_node:
     ros__parameters:
       app_name: "YourPSDK"
       app_id: "YourID"
