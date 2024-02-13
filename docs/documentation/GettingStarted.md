@@ -24,9 +24,9 @@ colcon build
 ros2 launch psdk_wrapper wrapper.launch.py
 
 # Default link_config_file_path = psdk_wrapper/cfg/link_config.json
-# Default psdk_params_file_path = psdk_wrapper/cfg/psdk_params.yaml
+# Default psdk_params_file_path = psdk_wrapper/cfg/psdk_params.yml
 # If using parameter and config files different than the default ones, you can point to them as:
-ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yaml
+ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
 
 ```
 
