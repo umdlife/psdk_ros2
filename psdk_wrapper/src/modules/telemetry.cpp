@@ -1283,13 +1283,18 @@ PSDKWrapper::single_battery_index1_callback(const uint8_t *data,
   psdk_interfaces::msg::SingleBatteryInfo single_battery_info_msg;
   single_battery_info_msg.header.stamp = this->get_clock()->now();
 
-  single_battery_info_msg.batteryindex = static_cast<_Float32>(single_battery_info->batteryIndex);
+  single_battery_info_msg.batteryindex = single_battery_info->batteryIndex;
   single_battery_info_msg.voltage = static_cast<_Float32>(single_battery_info->currentVoltage) / 1000; // mV -> V
   single_battery_info_msg.current = static_cast<_Float32>(single_battery_info->currentElectric) / 1000; // mA -> A
-  single_battery_info_msg.capacityremain = static_cast<_Float32>(single_battery_info->remainedCapacity); // mAh -> Ah
-  single_battery_info_msg.percentage = static_cast<_Float32>(single_battery_info->batteryCapacityPercent);
-  single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature);
-  single_battery_info_msg.cellcount = static_cast<_Float32>(single_battery_info->cellCount); // 0.1℃.
+  single_battery_info_msg.fullcapacity = static_cast<_Float32>(single_battery_info->fullCapacity) / 1000; // mAh -> Ah
+  single_battery_info_msg.capacityremain = static_cast<_Float32>(single_battery_info->remainedCapacity) /1000; // mAh -> Ah
+  single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature) / 10; // 0.1℃ -> ℃
+  single_battery_info_msg.cellcount = single_battery_info->cellCount;
+  single_battery_info_msg.maxcycles = single_battery_info->batteryState.maxCycleLimit;
+  single_battery_info_msg.selfcheckerror = single_battery_info->batteryState.selfCheckError;
+  single_battery_info_msg.closedreason = single_battery_info->batteryState.batteryClosedReason;
+  single_battery_info_msg.abnormalcomm = single_battery_info->batteryState.batteryCommunicationAbnormal;
+  single_battery_info_msg.isembed = single_battery_info->batteryState.isBatteryEmbed;
   single_battery_index1_pub_->publish(single_battery_info_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 
@@ -1310,13 +1315,18 @@ PSDKWrapper::single_battery_index2_callback(const uint8_t *data,
   psdk_interfaces::msg::SingleBatteryInfo single_battery_info_msg;
   single_battery_info_msg.header.stamp = this->get_clock()->now();
 
-  single_battery_info_msg.batteryindex = static_cast<_Float32>(single_battery_info->batteryIndex);
+  single_battery_info_msg.batteryindex = single_battery_info->batteryIndex;
   single_battery_info_msg.voltage = static_cast<_Float32>(single_battery_info->currentVoltage) / 1000; // mV -> V
   single_battery_info_msg.current = static_cast<_Float32>(single_battery_info->currentElectric) / 1000; // mA -> A
-  single_battery_info_msg.capacityremain = static_cast<_Float32>(single_battery_info->remainedCapacity); // mAh -> Ah
-  single_battery_info_msg.percentage = static_cast<_Float32>(single_battery_info->batteryCapacityPercent);
-  single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature);
-  single_battery_info_msg.cellcount = static_cast<_Float32>(single_battery_info->cellCount); // 0.1℃.
+  single_battery_info_msg.fullcapacity = static_cast<_Float32>(single_battery_info->fullCapacity) / 1000; // mAh -> Ah
+  single_battery_info_msg.capacityremain = static_cast<_Float32>(single_battery_info->remainedCapacity) /1000; // mAh -> Ah
+  single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature) / 10; // 0.1℃ -> ℃
+  single_battery_info_msg.cellcount = single_battery_info->cellCount;
+  single_battery_info_msg.maxcycles = single_battery_info->batteryState.maxCycleLimit;
+  single_battery_info_msg.selfcheckerror = single_battery_info->batteryState.selfCheckError;
+  single_battery_info_msg.closedreason = single_battery_info->batteryState.batteryClosedReason;
+  single_battery_info_msg.abnormalcomm = single_battery_info->batteryState.batteryCommunicationAbnormal;
+  single_battery_info_msg.isembed = single_battery_info->batteryState.isBatteryEmbed;
   single_battery_index2_pub_->publish(single_battery_info_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 
