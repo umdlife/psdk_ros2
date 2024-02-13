@@ -20,10 +20,10 @@
       # Set the path to the link_config file if different from the default
       # link_config_file_path: "/absolute/path/to/your/file.json"
 
-      # Mandatory modules to be initialized, choose among: telemetry, 
-      # flight_control, camera, gimbal, liveview. Be aware that some modules might 
-      # have inter-dependencies. Modules not listed here will be initialized but if they fail, 
-      # the node will continue to run.
+      # Mandatory modules to be initialized. Mark with a true those which you 
+      # consider mandatory for your application, false otherwise. Be aware that 
+      # some modules might have inter-dependencies. Non mandatory modules will
+      # still be initialized but if case of failure, the node will continue to run.
       mandatory_modules:
         telemetry: true
         flight_control: true
