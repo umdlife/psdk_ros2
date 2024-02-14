@@ -16,8 +16,6 @@
       camera_frame: "psdk_camera_link"
       publish_transforms: true
 
-      hms_return_codes_file: "hms_2023_08_22.json"
-
       # Mandatory modules to be initialized, choose among: telemetry,
       # flight_control, camera, gimbal, liveview. Be aware that some modules might
       # have inter-dependencies. Modules not listed here will be initialized but if they fail,

@@ -49,7 +49,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
   declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
   declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
-  declare_parameter("hms_return_codes_file", rclcpp::ParameterValue(""));
+  declare_parameter("hms_return_codes_path", rclcpp::ParameterValue(""));
 
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
@@ -417,12 +417,12 @@ PSDKWrapper::load_parameters()
                 "publish_transforms param not defined, using default one: %d",
                 params_.publish_transforms);
   }
-  if (!get_parameter("hms_return_codes_file", params_.hms_return_codes_file))
+  if (!get_parameter("hms_return_codes_path", params_.hms_return_codes_path))
   {
     RCLCPP_WARN(
         get_logger(),
-        "hms_return_codes_file param not defined, using default one: %s",
-        params_.hms_return_codes_file);
+        "hms_return_codes_path param not defined, using default one: %s",
+        params_.hms_return_codes_path);
   }
 
   // Get data frequency

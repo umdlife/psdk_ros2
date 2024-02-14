@@ -45,11 +45,7 @@ PSDKWrapper::init_hms()
   RCLCPP_INFO(get_logger(), "Initiating HMS...");
 
   // Read JSON file with known HMS error codes
-  std::string return_code_path =
-      ament_index_cpp::get_package_share_directory("psdk_wrapper") + "/cfg/" +
-      params_.hms_return_codes_file;
-
-  hms_return_codes_json_ = file_to_string(return_code_path);
+  hms_return_codes_json_ = file_to_string(params_.hms_return_codes_path);
 
   T_DjiReturnCode return_code = DjiHmsManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
