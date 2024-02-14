@@ -2,8 +2,8 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2024-02-14)
+------------------
 * Merge pull request `#34 <https://github.com/umdlife/psdk_ros2/issues/34>`_ from umdlife/feat/upgrade-to-psdk-v3.8
   Feat/upgrade to psdk v3.8
 * Merge pull request `#44 <https://github.com/umdlife/psdk_ros2/issues/44>`_ from RPS98/feat/upgrade-to-psdk-v3.8
