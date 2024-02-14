@@ -23,6 +23,11 @@ colcon build
 # Launch the node
 ros2 launch psdk_wrapper wrapper.launch.py
 
+# Default link_config_file_path = psdk_wrapper/cfg/link_config.json
+# Default psdk_params_file_path = psdk_wrapper/cfg/psdk_params.yml
+# If using parameter and config files different than the default ones, you can point to them as:
+ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
+
 ```
 
 
@@ -39,7 +44,6 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | app_license                   | String    | -                                  | Add your App license                        |
 | developer_account             | String    | -                                  | Add your developer account (not mandatory)  |
 | baudrate                      | String    | 921600                             | -                                           |
-| link_config_file_path         | String    | "absolute/path/to/config.json"     | (Optional) Default: cfg/link_config.json    |
 | num_of_initialization_retries | Int       | 1                                  | Num of retries to init the PSDK app         |
 | imu_frame                     | String    | "psdk_imu_link"                    | -                                           |
 | body_frame                    | String    | "psdk_base_link"                   | -                                           |
