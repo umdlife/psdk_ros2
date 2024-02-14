@@ -15,7 +15,7 @@ The `psdk_ros2` wrapper currently supports the following features:
 
 ## Compatibility 
 
-The current version supports **PSDK v3.5** and it has been tested and built for **ROS 2 Humble**. For firmware and product compatibility, please check the page [DJI Developer - PSDK](https://developer.dji.com/doc/payload-sdk-tutorial/en/). 
+The current version supports **PSDK v3.8** and it has been tested and built for **ROS 2 Humble**. For firmware and product compatibility, please check the page [DJI Developer - PSDK](https://developer.dji.com/doc/payload-sdk-tutorial/en/). 
 
 In terms of hardware used for testing this wrapper, our primary testing platform has been the DJI M300 RTK drone, to which an external board has been connected via the OSDK expansion module. As for the payloads, H20 and H20T cameras have been tested. 
 

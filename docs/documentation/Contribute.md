@@ -8,4 +8,4 @@ The `psdk_ros2` wrapper is released under the [Mozilla Public License version 2.
 
 ### 3rd Party Source Code
 
-It's important to note that the DJI Payload-SDK, a critical component integrated within the `psdk_ros2` wrapper, is released under the MIT license. The MIT license is a permissive open-source license that allows you to use, modify, and distribute the Payload-SDK in accordance with its terms. The MIT license file for the DJI Payload-SDK is included within the designated 3rd party folder of this repository. 
+It's important to note that the DJI Payload-SDK, a critical component integrated within the `psdk_ros2` wrapper, is released under the MIT license. The MIT license is a permissive open-source license that allows you to use, modify, and distribute the Payload-SDK in accordance with its terms.

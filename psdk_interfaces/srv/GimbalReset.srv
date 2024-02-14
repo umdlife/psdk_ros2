@@ -1,5 +1,6 @@
 #request
 uint8 payload_index 1       # see enum E_DjiMountPosition in dji_typedef.h
+uint8 reset_mode    1       # see enum E_DjiGimbalResetMode in dji_gimbal.h
 ---
 #response
 bool success

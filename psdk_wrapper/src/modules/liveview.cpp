@@ -26,9 +26,12 @@ bool
 PSDKWrapper::init_liveview()
 {
   RCLCPP_INFO(get_logger(), "Initiating liveview module...");
-  if (DjiLiveview_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiLiveview_Init();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not initialize liveview module.");
+    RCLCPP_ERROR(get_logger(),
+                 "Could not initialize liveview module. Error code: %ld",
+                 return_code);
     return false;
   }
   /* Start decoders*/
@@ -46,9 +49,12 @@ bool
 PSDKWrapper::deinit_liveview()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing liveview module...");
-  if (DjiLiveview_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiLiveview_Deinit();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not deinitialize the liveview module.");
+    RCLCPP_ERROR(get_logger(),
+                 "Could not deinitialize the liveview module. Error code: %ld",
+                 return_code);
     return false;
   }
   return true;
