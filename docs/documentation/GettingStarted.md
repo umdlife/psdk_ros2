@@ -53,9 +53,9 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | mandatory_modules             |           |                                    |                                             |
 | - telemetry                   | Bool      |  True                              | Trigger node failure, if module not loaded  |
 | - flight_control              | Bool      |  True                              | Trigger node failure, if module not loaded  |
-| - camera                      | Bool      |  True                              | Trigger node failure, if module not loaded  |
-| - gimbal                      | Bool      |  True                              | Trigger node failure, if module not loaded  |
-| - liveview                    | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - camera                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
+| - gimbal                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
+| - liveview                    | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
 | - imu                         | Integer   | 100                                | -                                           |
 | - attitude                    | Integer   | 100                                | -                                           |
@@ -74,7 +74,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - control_information         | Integer   | 1                                  | -                                           |
 
 
-To configure the hardware connection type and to specify the exact ports that need to be used, please use the *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Thus, for simplicity, the psdk_ros2 wrapper follows the same approach. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file. 
+To configure the hardware connection type and to specify the exact ports that need to be used, please use the *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Thus, for simplicity, the psdk_ros2 wrapper follows the same approach. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file (cfg/psdk_params.yml). 
 
 ## Udev rules
 

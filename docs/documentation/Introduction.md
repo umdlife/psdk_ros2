@@ -28,7 +28,7 @@ The `psdk_ros2` wrapper currently supports the following features:
 
 ## Compatibility
 
-The current version supports **PSDK v3.5** and it has been tested and built for **ROS 2 Humble**. For firmware and product compatibility, please check the page [DJI Developer - PSDK](https://developer.dji.com/doc/payload-sdk-tutorial/en/).
+The current version supports **PSDK v3.8** and it has been tested and built for **ROS 2 Humble**. For firmware and product compatibility, please check the page [DJI Developer - PSDK](https://developer.dji.com/doc/payload-sdk-tutorial/en/).
 
 
 ## Important Notice 
