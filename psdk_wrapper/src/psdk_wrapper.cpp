@@ -43,6 +43,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.data_transmission", rclcpp::ParameterValue(true));
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
   declare_parameter("map_frame", rclcpp::ParameterValue("psdk_map_enu"));
@@ -372,6 +373,7 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
   get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
+  get_parameter("mandatory_modules.data_transmission", is_data_transmission_module_mandatory_);
 
   if (!get_parameter("imu_frame", params_.imu_frame))
   {
