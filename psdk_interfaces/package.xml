@@ -5,13 +5,16 @@
   <version>1.0.0</version>
   <description>Provides custom message, srv and action types for psdk ros2 wrapper</description>
   <maintainer email="bianca@unmanned.life">Bianca Bendris</maintainer>
-  <license>TODO: License declaration</license>
+  <maintainer email="victor@unmanned.life">Victor Massague Respall</maintainer>
+  <license>MPL</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>std_srvs</depend>
+
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

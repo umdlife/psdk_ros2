@@ -3,7 +3,7 @@
         "link_available": "use_only_uart/use_uart_and_usb_bulk_device/use_uart_and_network_device",
         "link_select": "use_uart_and_usb_bulk_device",
         "uart_config": {
-            "uart1_device_name": "/dev/dji_test",
+            "uart1_device_name": "/dev/dji_serial",
             "uart2_device_enable": "true",
             "uart2_device_name": "/dev/dji_advanced_sensing"
         },

@@ -21,9 +21,12 @@ using namespace std::placeholders;  // NOLINT
 
 namespace psdk_ros2
 {
-
 PSDKWrapper::PSDKWrapper(const std::string &node_name)
-    : rclcpp_lifecycle::LifecycleNode(node_name, "", rclcpp::NodeOptions())
+    : rclcpp_lifecycle::LifecycleNode(
+          node_name, "",
+          rclcpp::NodeOptions().use_intra_process_comms(true).arguments(
+              {"--ros-args", "-r",
+               node_name + ":" + std::string("__node:=") + node_name}))
 {
   RCLCPP_INFO(get_logger(), "Creating Constructor PSDKWrapper");
   declare_parameter("app_name", rclcpp::ParameterValue(""));
@@ -32,12 +35,14 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("app_license", rclcpp::ParameterValue(""));
   declare_parameter("developer_account", rclcpp::ParameterValue(""));
   declare_parameter("baudrate", rclcpp::ParameterValue(""));
-  std::string ros_pkg_path =
-      ament_index_cpp::get_package_share_directory("psdk_wrapper");
-  std::string default_config_file = ros_pkg_path + "/cfg/link_config.json";
-  declare_parameter("link_config_file_path",
-                    rclcpp::ParameterValue(default_config_file));
-
+  declare_parameter("link_config_file_path", rclcpp::ParameterValue(""));
+  declare_parameter("mandatory_modules.telemetry",
+                    rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.flight_control",
+                    rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
   declare_parameter("map_frame", rclcpp::ParameterValue("psdk_map_enu"));
@@ -62,6 +67,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.flight_status", 1);
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
+
+  declare_parameter("num_of_initialization_retries", 1);
 }
 PSDKWrapper::~PSDKWrapper() {}
 
@@ -75,20 +82,6 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   {
     return CallbackReturn::FAILURE;
   }
-  T_DjiUserInfo user_info;
-  set_user_info(&user_info);
-
-  if (!init(&user_info))
-  {
-    return CallbackReturn::FAILURE;
-  }
-  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
-      !init_gimbal_manager() || !init_liveview() || !init_data_transmission())
-  {
-    return CallbackReturn::FAILURE;
-  }
-  initialize_ros_elements();
-  current_state_.initialize_state();
 
   return CallbackReturn::SUCCESS;
 }
@@ -99,13 +92,31 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   (void)state;
   RCLCPP_INFO(get_logger(), "Activating PSDKWrapper");
 
+  T_DjiUserInfo user_info;
+  set_user_info(&user_info);
+
+  if (!init(&user_info))
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
+
+  if (!initialize_psdk_modules())
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
+
+  // Initialize and activate ROS elements only after the DJI modules are
+  // initialized
+  initialize_ros_elements();
+  current_state_.initialize_state();
   activate_ros_elements();
 
   if (params_.publish_transforms)
   {
     publish_static_transforms();
   }
-
   subscribe_psdk_topics();
   return CallbackReturn::SUCCESS;
 }
@@ -147,13 +158,14 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   // Deinitialize all remaining modules
   if (!deinit_telemetry() || !deinit_flight_control() ||
       !deinit_camera_manager() || !deinit_gimbal_manager() ||
-      !deinit_liveview())
+      !deinit_liveview() || !deinit_data_transmission())
   {
     return CallbackReturn::FAILURE;
   }
 
   global_ptr_.reset();
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
+  rclcpp::shutdown();
   return CallbackReturn::SUCCESS;
 }
 
@@ -278,6 +290,7 @@ PSDKWrapper::set_environment()
       RCLCPP_ERROR(get_logger(),
                    "Register HAL Network handler error. Error code is: %ld",
                    return_code);
+      return false;
     }
   }
   else
@@ -285,8 +298,6 @@ PSDKWrapper::set_environment()
     RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
   }
 
-  // Attention: if you want to use camera stream view function, please uncomment
-  // it.
   return_code = DjiPlatform_RegSocketHandler(&socket_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -354,6 +365,13 @@ PSDKWrapper::load_parameters()
   }
   RCLCPP_INFO(get_logger(), "Using connection configuration file: %s",
               params_.link_config_file_path.c_str());
+
+  get_parameter("mandatory_modules.telemetry", is_telemetry_module_mandatory_);
+  get_parameter("mandatory_modules.flight_control",
+                is_flight_control_module_mandatory_);
+  get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
+  get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
+  get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
 
   if (!get_parameter("imu_frame", params_.imu_frame))
   {
@@ -454,7 +472,7 @@ PSDKWrapper::load_parameters()
     params_.velocity_frequency = VELOCITY_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.angular_velocity",
+if (!get_parameter("data_frequency.angular_velocity",
                      params_.angular_rate_frequency))
   {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
@@ -639,6 +657,9 @@ PSDKWrapper::load_parameters()
         CONTROL_DATA_TOPICS_MAX_FREQ);
     params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
   }
+
+  get_parameter("num_of_initialization_retries",
+                num_of_initialization_retries_);
 }
 
 bool
@@ -683,18 +704,18 @@ bool
 PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
-  int number_retries = 0;
+  int current_num_retries = 0;
   T_DjiReturnCode result;
-  while (number_retries < MAX_NUMBER_OF_RETRIES)
+  while (current_num_retries <= num_of_initialization_retries_)
   {
     result = DjiCore_Init(user_info);
     if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
-      number_retries++;
       RCLCPP_ERROR(get_logger(),
                    "DJI core could not be initiated. Error code is: %ld. "
                    "Retrying for %d time. ",
-                   result, number_retries);
+                   result, current_num_retries);
+      current_num_retries++;
       std::this_thread::sleep_for(std::chrono::milliseconds(5000));
       continue;
     }
@@ -819,9 +840,9 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
           "psdk_ros2/relative_obstacle_info", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/main_camera_stream", 10);
+      "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/fpv_camera_stream", 10);
+      "psdk_ros2/fpv_camera_stream", rclcpp::SensorDataQoS());
   control_mode_pub_ = create_publisher<psdk_interfaces::msg::ControlMode>(
       "psdk_ros2/control_mode", 10);
   home_point_pub_ =
@@ -1405,6 +1426,35 @@ PSDKWrapper::get_yaw_gimbal_camera()
   /* Get current gimbal yaw wrt to East */
   double current_gimbal_yaw = current_state_.gimbal_angles.vector.z;
   return current_gimbal_yaw - current_yaw;
+}
+
+bool
+PSDKWrapper::initialize_psdk_modules()
+{
+  using ModuleInitializer = std::pair<std::function<bool()>, bool>;
+  std::vector<ModuleInitializer> module_initializers = {
+      {std::bind(&PSDKWrapper::init_telemetry, this),
+       is_telemetry_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_flight_control, this),
+       is_flight_control_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_camera_manager, this),
+       is_camera_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_gimbal_manager, this),
+       is_gimbal_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_liveview, this),
+       is_liveview_module_mandatory_}
+      {std::bind(&PSDKWrapper::init_data_transmission, this),
+       is_data_transmission_module_mandatory_}};
+
+  for (const auto &initializer : module_initializers)
+  {
+    if (!initializer.first() && initializer.second)
+    {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }  // namespace psdk_ros2

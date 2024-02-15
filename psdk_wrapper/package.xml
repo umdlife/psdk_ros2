@@ -5,13 +5,17 @@
   <version>1.0.0</version>
   <description>ROS2 wrapper for the DJI PSDK</description>
   <maintainer email="bianca@unmanned.life">Bianca Bendris</maintainer>
-  <license>TODO: License declaration</license>
+  <maintainer email="victor@unmanned.life">Victor Massague Respall</maintainer>
+  <license>MPL</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
+  <depend>ffmpeg-dev</depend>
+  <depend>libusb-1.0-dev</depend>
+  <depend>libopus-dev</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>tf2</depend>

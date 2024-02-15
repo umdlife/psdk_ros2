@@ -29,7 +29,6 @@
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <cmath>
 #include <geometry_msgs/msg/accel_stamped.hpp>
 #include <geometry_msgs/msg/quaternion_stamped.hpp>
@@ -183,7 +182,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   ~PSDKWrapper();
 
- protected:
   /**
    * @brief Configures member variable and sets the environment
    * @param state Reference to Lifecycle state
@@ -1627,6 +1625,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param request CameraSetupStreaming service request. The camera
    * mounted position for which the request is made needs to be specified as
    * well as the camera source (e.g. using the wide or the zoom camera).
+   * Moreover, the user can choose to stream the images raw or decoded.
    * @param response CameraSetupStreaming service response.
    */
   void camera_setup_streaming_cb(
@@ -1921,7 +1920,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   void set_local_altitude_reference(const float altitude);
 
   /**
-   * @brief Starts the main camera streaming.
+   * @brief Starts the camera streaming.
    * @param callback  function to be executed when a frame is received
    * @param user_data unused parameter
    * @param payload_index select which camera to use to retrieve the streaming.
@@ -1932,9 +1931,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false Returns true if the streaming has been started
    * correctly and False otherwise.
    */
-  bool start_main_camera_stream(CameraImageCallback callback, void* user_data,
-                                const E_DjiLiveViewCameraPosition payload_index,
-                                const E_DjiLiveViewCameraSource camera_source);
+  bool start_camera_stream(CameraImageCallback callback, void* user_data,
+                           const E_DjiLiveViewCameraPosition payload_index,
+                           const E_DjiLiveViewCameraSource camera_source);
   /**
    * @brief Stops the main camera streaming.
    * @param payload_index select which camera to use to retrieve the streaming.
@@ -1953,12 +1952,31 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param user_data unused parameter
    */
   void publish_main_camera_images(CameraRGBImage rgb_img, void* user_data);
+
+  /**
+   * @brief Publishes the raw (not decoded) main camera streaming to a ROS 2
+   * topic
+   * @param buffer  raw buffer retrieved from the camera
+   * @param buffer_length length of the buffer
+   */
+  void publish_main_camera_images(const uint8_t* buffer,
+                                  uint32_t buffer_length);
+
   /**
    * @brief Publishes the FPV camera streaming to a ROS 2 topic
    * @param rgb_img  decoded RGB frame retrieved from the camera
    * @param user_data unused parameter
    */
   void publish_fpv_camera_images(CameraRGBImage rgb_img, void* user_data);
+
+  /**
+   * @brief Publishes the raw (not decoded) FPV camera streaming to a ROS 2
+   * topic
+   * @param buffer  raw buffer retrieved from the camera
+   * @param buffer_length length of the buffer
+   */
+  void publish_fpv_camera_images(const uint8_t* buffer, uint32_t buffer_length);
+
   /**
    * @brief Publishes the raw (not decoded) data received over the
    * LowSpeedDataChannel from the RC MSDK app.
@@ -1972,6 +1990,13 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return string with the optical frame id name
    */
   std::string get_optical_frame_id();
+
+  /**
+   * @brief Method to initialize all psdk modules
+   * @return true if all mandatory modules have been correctly initialized,
+   * false otherwise
+   */
+  bool initialize_psdk_modules();
 
   /* Global variables */
   PSDKParams params_;
@@ -2019,6 +2044,14 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   E_DjiCameraType attached_camera_type_;
   E_DjiLiveViewCameraSource selected_camera_source_;
   bool publish_camera_transforms_{false};
+  bool decode_stream_{true};
+  int num_of_initialization_retries_{0};
+
+  bool is_telemetry_module_mandatory_{true};
+  bool is_camera_module_mandatory_{true};
+  bool is_gimbal_module_mandatory_{true};
+  bool is_flight_control_module_mandatory_{true};
+  bool is_liveview_module_mandatory_{true};
 };
 
 /**

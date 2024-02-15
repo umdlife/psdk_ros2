@@ -7,11 +7,9 @@
 # This is a ROS2 launch file which starts the psdk_wrapper_node,
 # configures it and activates it.
 
-import os
-
 from launch import LaunchDescription
 from launch_ros.substitutions import FindPackageShare
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch.actions import EmitEvent, DeclareLaunchArgument
 from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
@@ -21,6 +19,13 @@ import launch
 
 
 def generate_launch_description():
+    """Launch the psdk_wrapper_node."""
+
+    # Create LaunchConfiguration variables
+    namespace = LaunchConfiguration("namespace")
+    link_config_file_path = LaunchConfiguration("link_config_file_path")
+    psdk_params_file_path = LaunchConfiguration("psdk_params_file_path")
+
     # Declare the namespace launch argument
     declare_namespace_cmd = DeclareLaunchArgument(
         "namespace",
@@ -28,13 +33,25 @@ def generate_launch_description():
         description="Namespace of the node",
     )
 
-    namespace = LaunchConfiguration("namespace")
-    # Get wrapper parameters
-    psdk_wrapper_pkg_share = FindPackageShare("psdk_wrapper").find("psdk_wrapper")
-    wrapper_params = os.path.join(
-        psdk_wrapper_pkg_share,
-        "cfg",
-        "psdk_params.yaml",
+    # Declare wrapper parameters
+    psdk_params_default_value = PathJoinSubstitution(
+        [FindPackageShare("psdk_wrapper"), "cfg", "psdk_params.yaml"]
+    )
+    declare_psdk_params_cmd = DeclareLaunchArgument(
+        "psdk_params_file_path",
+        default_value=psdk_params_default_value,
+        description="DJI PSDK ROS2 parameters",
+    )
+
+    # Declare link configuration file path
+    link_config_default_value = PathJoinSubstitution(
+        [FindPackageShare("psdk_wrapper"), "cfg", "link_config.json"]
+    )
+
+    declare_link_config_cmd = DeclareLaunchArgument(
+        "link_config_file_path",
+        default_value=link_config_default_value,
+        description="DJI PSDK link configuration file path",
     )
 
     # Prepare the wrapper node
@@ -44,7 +61,12 @@ def generate_launch_description():
         name="psdk_wrapper_node",
         output="screen",
         namespace=namespace,
-        parameters=[wrapper_params],
+        parameters=[
+            {
+                "link_config_file_path": link_config_file_path,
+            },
+            psdk_params_file_path,
+        ],
     )
 
     # Configure lifecycle node
@@ -68,6 +90,8 @@ def generate_launch_description():
 
     # Declare Launch options
     ld.add_action(declare_namespace_cmd)
+    ld.add_action(declare_psdk_params_cmd)
+    ld.add_action(declare_link_config_cmd)
     ld.add_action(wrapper_node)
     ld.add_action(wrapper_configure_trans_event)
     ld.add_action(wrapper_activate_trans_event)

@@ -22,7 +22,8 @@ int
 main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
-  auto psdk_node = std::make_shared<psdk_ros2::PSDKWrapper>("psdk_node");
+  auto psdk_node =
+      std::make_shared<psdk_ros2::PSDKWrapper>("psdk_wrapper_node");
 
   psdk_ros2::global_ptr_ = psdk_node;
   rclcpp::spin(psdk_node->get_node_base_interface());

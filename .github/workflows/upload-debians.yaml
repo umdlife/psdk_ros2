@@ -1,0 +1,28 @@
+name: Build Debians
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build_debians:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: psdk_ros2
+      - name: ROS 2 Build Debian Package
+        id: build 
+        run: |
+         mv psdk_ros2/debian/create_debians.sh .
+         sudo ./create_debians.sh
+         echo "INTERFACES_DEB=$(find *interfaces*.deb)" >> $GITHUB_ENV
+         echo "WRAPPER_DEB=$(find *wrapper*.deb)" >> $GITHUB_ENV
+      - uses: d1ceward/draft-assets-release-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            ${{ env.INTERFACES_DEB }}
+            ${{ env.WRAPPER_DEB }}
