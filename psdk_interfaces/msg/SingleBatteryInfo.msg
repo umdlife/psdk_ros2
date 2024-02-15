@@ -7,7 +7,6 @@ float32 fullcapacity
 float32 capacityremain
 float32 temperature
 uint8 cellcount
-uint8 maxcycles
 uint32 selfcheckerror
 uint32 closedreason
 uint16 abnormalcomm

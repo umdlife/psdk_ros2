@@ -1290,7 +1290,6 @@ PSDKWrapper::single_battery_index1_callback(const uint8_t *data,
   single_battery_info_msg.capacityremain = static_cast<_Float32>(single_battery_info->remainedCapacity) /1000; // mAh -> Ah
   single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature) / 10; // 0.1℃ -> ℃
   single_battery_info_msg.cellcount = single_battery_info->cellCount;
-  single_battery_info_msg.maxcycles = single_battery_info->batteryState.maxCycleLimit;
   single_battery_info_msg.selfcheckerror = single_battery_info->batteryState.selfCheckError;
   single_battery_info_msg.closedreason = single_battery_info->batteryState.batteryClosedReason;
   single_battery_info_msg.abnormalcomm = single_battery_info->batteryState.batteryCommunicationAbnormal;
@@ -1322,7 +1321,6 @@ PSDKWrapper::single_battery_index2_callback(const uint8_t *data,
   single_battery_info_msg.capacityremain = static_cast<_Float32>(single_battery_info->remainedCapacity) /1000; // mAh -> Ah
   single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature) / 10; // 0.1℃ -> ℃
   single_battery_info_msg.cellcount = single_battery_info->cellCount;
-  single_battery_info_msg.maxcycles = single_battery_info->batteryState.maxCycleLimit;
   single_battery_info_msg.selfcheckerror = single_battery_info->batteryState.selfCheckError;
   single_battery_info_msg.closedreason = single_battery_info->batteryState.batteryClosedReason;
   single_battery_info_msg.abnormalcomm = single_battery_info->batteryState.batteryCommunicationAbnormal;
