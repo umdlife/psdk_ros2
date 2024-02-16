@@ -31,6 +31,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 # FetchContent module
 include(FetchContent)
@@ -182,6 +183,7 @@ ament_target_dependencies(psdk_wrapper_libs
 target_link_libraries(
   psdk_wrapper_libs
   ${PSDK_LIB}
+  nlohmann_json::nlohmann_json
 )
 
 target_link_libraries(

@@ -20,7 +20,7 @@
 
 #include <fstream>
 
-#include "psdk_wrapper/cjson_utils.h"
+#include "psdk_wrapper/json_utils.h"
 #include "psdk_wrapper/psdk_wrapper.hpp"
 
 namespace psdk_ros2
@@ -31,21 +31,14 @@ c_hms_callback(T_DjiHmsInfoTable hms_info_table)
   return global_ptr_->hms_callback(hms_info_table);
 }
 
-std::string inline file_to_string(const std::string& path)
-{
-  std::ifstream file(path);
-  std::ostringstream tmp;
-  tmp << file.rdbuf();
-  return tmp.str();
-}
-
 bool
 PSDKWrapper::init_hms()
 {
   RCLCPP_INFO(get_logger(), "Initiating HMS...");
 
   // Read JSON file with known HMS error codes
-  hms_return_codes_json_ = file_to_string(params_.hms_return_codes_path);
+  hms_return_codes_json_ =
+      json_utils::parse_file(params_.hms_return_codes_path);
 
   T_DjiReturnCode return_code = DjiHmsManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -84,17 +77,17 @@ PSDKWrapper::deinit_hms()
 T_DjiReturnCode
 PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
 {
+  if (!hms_info_table.hmsInfo)
+  {
+    RCLCPP_ERROR(get_logger(), "Pointer to HMS info table is NULL");
+    return DJI_ERROR_SYSTEM_MODULE_CODE_OUT_OF_RANGE;
+  }
+
   // Only process the data when the ROS2 publisher is active
   if (hms_info_table_pub_->is_activated())
   {
-    if (!hms_info_table.hmsInfo)
-    {
-      RCLCPP_ERROR(get_logger(), "Pointer to HMS info table is NULL");
-      return DJI_ERROR_SYSTEM_MODULE_CODE_OUT_OF_RANGE;
-    }
-
     psdk_interfaces::msg::HmsInfoTable ros2_hms =
-        cjson_utils::to_ros2_msg(hms_info_table, hms_return_codes_json_.data());
+        json_utils::to_ros2_msg(hms_info_table, hms_return_codes_json_);
     hms_info_table_pub_->publish(ros2_hms);
   }
 
