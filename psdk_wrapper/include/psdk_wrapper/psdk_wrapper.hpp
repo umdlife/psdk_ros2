@@ -1022,12 +1022,28 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
 
-  /** retrieving single battery data cb -to be filled properly*/
+  /**
+   * @brief Retrieves single information of battery with index 1. More information about this topic can be found in the
+   * dji_fc_subscription.h.
+   * @param data pointer to T_DjiFcSubscriptionSingleBatteryInfo data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
   T_DjiReturnCode single_battery_index1_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
 
-  /** retrieving single battery data cb -to be filled properly*/
+  /**
+   * @brief Retrieves single information of battery with index 2. More information about this topic can be found in the
+   * dji_fc_subscription.h.
+   * @param data pointer to T_DjiFcSubscriptionSingleBatteryInfo data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
   T_DjiReturnCode single_battery_index2_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
