@@ -35,10 +35,14 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("app_license", rclcpp::ParameterValue(""));
   declare_parameter("developer_account", rclcpp::ParameterValue(""));
   declare_parameter("baudrate", rclcpp::ParameterValue(""));
-  declare_parameter("hardware_connection", rclcpp::ParameterValue(""));
-  declare_parameter("uart_dev_1", rclcpp::ParameterValue(""));
-  declare_parameter("uart_dev_2", rclcpp::ParameterValue(""));
-
+  declare_parameter("link_config_file_path", rclcpp::ParameterValue(""));
+  declare_parameter("mandatory_modules.telemetry",
+                    rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.flight_control",
+                    rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
   declare_parameter("map_frame", rclcpp::ParameterValue("psdk_map_enu"));
@@ -97,8 +101,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  if (!init_telemetry() || !init_flight_control() || !init_camera_manager() ||
-      !init_gimbal_manager() || !init_liveview())
+  if (!initialize_psdk_modules())
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
@@ -107,6 +110,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   // Initialize and activate ROS elements only after the DJI modules are
   // initialized
   initialize_ros_elements();
+  current_state_.initialize_state();
   activate_ros_elements();
 
   if (params_.publish_transforms)
@@ -174,6 +178,7 @@ PSDKWrapper::set_environment()
   T_DjiHalUartHandler uart_handler = {0};
   T_DjiFileSystemHandler file_system_handler = {0};
   T_DjiSocketHandler socket_handler{0};
+  T_DjiUserLinkConfig linkConfig;
 
   socket_handler.Socket = Osal_Socket;
   socket_handler.Bind = Osal_Bind;
@@ -243,43 +248,56 @@ PSDKWrapper::set_environment()
   }
   RCLCPP_INFO(get_logger(), "Registered HAL handler");
 
-#if (HARDWARE_CONNECTION == DJI_USE_UART_AND_USB_BULK_DEVICE)
-  RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_USB_BULK_DEVICE");
-  T_DjiHalUsbBulkHandler usb_bulk_handler;
-  usb_bulk_handler.UsbBulkInit = HalUsbBulk_Init;
-  usb_bulk_handler.UsbBulkDeInit = HalUsbBulk_DeInit;
-  usb_bulk_handler.UsbBulkWriteData = HalUsbBulk_WriteData;
-  usb_bulk_handler.UsbBulkReadData = HalUsbBulk_ReadData;
-  usb_bulk_handler.UsbBulkGetDeviceInfo = HalUsbBulk_GetDeviceInfo;
-  return_code = DjiPlatform_RegHalUsbBulkHandler(&usb_bulk_handler);
+  return_code = DjiUserConfigManager_LoadConfiguration(
+      params_.link_config_file_path.c_str());
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(),
-                 "Register HAL USB BULK handler error. Error code is: %ld",
+                 "Configuration file could not be loaded. Error code is: %ld",
                  return_code);
     return false;
   }
-#elif (HARDWARE_CONNECTION == DJI_USE_UART_AND_NETWORK_DEVICE)
-  RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_NETWORK_DEVICE");
-  T_DjiHalNetworkHandler network_handler;
-  network_handler.NetworkInit = HalNetWork_Init;
-  network_handler.NetworkDeInit = HalNetWork_DeInit;
-  network_handler.NetworkGetDeviceInfo = HalNetWork_GetDeviceInfo;
-  return_code = DjiPlatform_RegHalNetworkHandler(&network_handler);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  RCLCPP_INFO(get_logger(), "Loaded configuration file");
+  DjiUserConfigManager_GetLinkConfig(&linkConfig);
+  if (linkConfig.type == DJI_USER_LINK_CONFIG_USE_UART_AND_USB_BULK_DEVICE)
   {
-    RCLCPP_ERROR(get_logger(),
-                 "Register HAL Network handler error. Error code is: %ld",
-                 return_code);
+    RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_USB_BULK_DEVICE");
+    T_DjiHalUsbBulkHandler usb_bulk_handler;
+    usb_bulk_handler.UsbBulkInit = HalUsbBulk_Init;
+    usb_bulk_handler.UsbBulkDeInit = HalUsbBulk_DeInit;
+    usb_bulk_handler.UsbBulkWriteData = HalUsbBulk_WriteData;
+    usb_bulk_handler.UsbBulkReadData = HalUsbBulk_ReadData;
+    usb_bulk_handler.UsbBulkGetDeviceInfo = HalUsbBulk_GetDeviceInfo;
+    return_code = DjiPlatform_RegHalUsbBulkHandler(&usb_bulk_handler);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Register HAL USB BULK handler error. Error code is: %ld",
+                   return_code);
+      return false;
+    }
   }
-#elif (HARDWARE_CONNECTION == DJI_USE_ONLY_UART)
-  RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
-  /*!< Attention: Only use uart hardware connection.
-   */
-#endif
+  else if (linkConfig.type == DJI_USER_LINK_CONFIG_USE_UART_AND_NETWORK_DEVICE)
+  {
+    RCLCPP_INFO(get_logger(), "Using DJI_USE_UART_AND_NETWORK_DEVICE");
+    T_DjiHalNetworkHandler network_handler;
+    network_handler.NetworkInit = HalNetWork_Init;
+    network_handler.NetworkDeInit = HalNetWork_DeInit;
+    network_handler.NetworkGetDeviceInfo = HalNetWork_GetDeviceInfo;
+    return_code = DjiPlatform_RegHalNetworkHandler(&network_handler);
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Register HAL Network handler error. Error code is: %ld",
+                   return_code);
+      return false;
+    }
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Using DJI_USE_ONLY_UART");
+  }
 
-  // Attention: if you want to use camera stream view function, please uncomment
-  // it.
   return_code = DjiPlatform_RegSocketHandler(&socket_handler);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -339,32 +357,21 @@ PSDKWrapper::load_parameters()
     exit(-1);
   }
   RCLCPP_INFO(get_logger(), "Baudrate: %s", params_.baudrate.c_str());
-  if (!get_parameter("hardware_connection", params_.hardware_connection))
+  if (!get_parameter("link_config_file_path", params_.link_config_file_path))
   {
-    RCLCPP_ERROR(get_logger(), "hardware_connection param not defined");
-    exit(-1);
+    RCLCPP_WARN(get_logger(),
+                "link_config_file_path param not defined, using default %s",
+                params_.link_config_file_path.c_str());
   }
-#define HARDWARE_CONNECTION params_.hardware_connection;
-  RCLCPP_INFO(get_logger(), "Hardware connection: %s",
-              params_.hardware_connection.c_str());
+  RCLCPP_INFO(get_logger(), "Using connection configuration file: %s",
+              params_.link_config_file_path.c_str());
 
-  if (!get_parameter("uart_dev_1", params_.uart_dev_1))
-  {
-    RCLCPP_ERROR(get_logger(), "uart_dev_1 param not defined");
-    exit(-1);
-  }
-  const char *name = "UART_DEV_1";
-  setenv(name, params_.uart_dev_1.c_str(), 1);
-  RCLCPP_INFO(get_logger(), "Uart dev 1: %s", params_.uart_dev_1.c_str());
-
-  if (!get_parameter("uart_dev_2", params_.uart_dev_2))
-  {
-    RCLCPP_ERROR(get_logger(), "uart_dev_2 param not defined");
-    exit(-1);
-  }
-  name = "UART_DEV_2";
-  setenv(name, params_.uart_dev_2.c_str(), 1);
-  RCLCPP_INFO(get_logger(), "Uart dev 2: %s", params_.uart_dev_2.c_str());
+  get_parameter("mandatory_modules.telemetry", is_telemetry_module_mandatory_);
+  get_parameter("mandatory_modules.flight_control",
+                is_flight_control_module_mandatory_);
+  get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
+  get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
+  get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
 
   if (!get_parameter("imu_frame", params_.imu_frame))
   {
@@ -697,18 +704,18 @@ bool
 PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
-  int number_retries = 0;
+  int current_num_retries = 0;
   T_DjiReturnCode result;
-  while (number_retries < num_of_initialization_retries_)
+  while (current_num_retries <= num_of_initialization_retries_)
   {
     result = DjiCore_Init(user_info);
     if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
-      number_retries++;
       RCLCPP_ERROR(get_logger(),
                    "DJI core could not be initiated. Error code is: %ld. "
                    "Retrying for %d time. ",
-                   result, number_retries);
+                   result, current_num_retries);
+      current_num_retries++;
       std::this_thread::sleep_for(std::chrono::milliseconds(5000));
       continue;
     }
@@ -1402,7 +1409,8 @@ PSDKWrapper::publish_dynamic_transforms()
     tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
 
     tf2::Quaternion q_gimbal_h20;
-    q_gimbal_h20.setRPY(gimbal_angles_.vector.x, gimbal_angles_.vector.y,
+    q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
+                        current_state_.gimbal_angles.vector.y,
                         get_yaw_gimbal_camera());
     tf_gimbal_H20.transform.rotation.x = q_gimbal_h20.getX();
     tf_gimbal_H20.transform.rotation.y = q_gimbal_h20.getY();
@@ -1416,15 +1424,42 @@ double
 PSDKWrapper::get_yaw_gimbal_camera()
 {
   /* Get current copter yaw wrt. to East */
-  tf2::Matrix3x3 rotation_mat(current_attitude_);
+  tf2::Matrix3x3 rotation_mat(current_state_.attitude);
   double current_roll;
   double current_pitch;
   double current_yaw;
   rotation_mat.getRPY(current_roll, current_pitch, current_yaw);
 
   /* Get current gimbal yaw wrt to East */
-  double current_gimbal_yaw = gimbal_angles_.vector.z;
+  double current_gimbal_yaw = current_state_.gimbal_angles.vector.z;
   return current_gimbal_yaw - current_yaw;
+}
+
+bool
+PSDKWrapper::initialize_psdk_modules()
+{
+  using ModuleInitializer = std::pair<std::function<bool()>, bool>;
+  std::vector<ModuleInitializer> module_initializers = {
+      {std::bind(&PSDKWrapper::init_telemetry, this),
+       is_telemetry_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_flight_control, this),
+       is_flight_control_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_camera_manager, this),
+       is_camera_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_gimbal_manager, this),
+       is_gimbal_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_liveview, this),
+       is_liveview_module_mandatory_}};
+
+  for (const auto &initializer : module_initializers)
+  {
+    if (!initializer.first() && initializer.second)
+    {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }  // namespace psdk_ros2

@@ -19,6 +19,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
+add_definitions(-DSYSTEM_ARCH_LINUX)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
@@ -38,7 +39,7 @@ include(FetchContent)
 FetchContent_Declare(
   Payload_SDK
   GIT_REPOSITORY https://github.com/dji-sdk/Payload-SDK.git
-  GIT_TAG 3.5
+  GIT_TAG 3.8
 )
 
 FetchContent_GetProperties(Payload_SDK)
@@ -61,6 +62,8 @@ find_package(LIBUSB REQUIRED)
 set(DJI_OSAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/common/osal)
 set(DJI_HAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/hal)
 set(DJI_STREAMING_PATH ${PSDK_PATH}/samples/sample_c++/module_sample/liveview)
+set(DJI_CONFIG_MANAGER_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/application)
+set(DJI_UTILS_PATH ${PSDK_PATH}/samples/sample_c/module_sample)
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -127,9 +130,10 @@ include_directories(${FFMPEG_INCLUDE_DIR})
 include_directories(${DJI_OSAL_PATH})
 include_directories(${DJI_HAL_PATH})
 include_directories(${DJI_STREAMING_PATH})
+include_directories(${DJI_UTILS_PATH})
+include_directories(${DJI_CONFIG_MANAGER_PATH})
 include_directories(${PSDK_PATH}/psdk_lib/include)
 include_directories(include)
-include_directories(src/3rdparty)
 
 set(dependencies
   rclcpp
@@ -155,14 +159,18 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/camera.cpp
   src/modules/gimbal.cpp
   src/modules/liveview.cpp
-  src/3rdparty/hal_uart.c
   ${DJI_OSAL_PATH}/osal_fs.c
   ${DJI_OSAL_PATH}/osal_socket.c
   ${DJI_OSAL_PATH}/osal.c
   ${DJI_HAL_PATH}/hal_network.c
   ${DJI_HAL_PATH}/hal_usb_bulk.c
+  ${DJI_HAL_PATH}/hal_uart.c
   ${DJI_STREAMING_PATH}/dji_camera_image_handler.cpp
   ${DJI_STREAMING_PATH}/dji_camera_stream_decoder.cpp
+  ${DJI_UTILS_PATH}/utils/util_misc.c
+  ${DJI_UTILS_PATH}/utils/util_file.c
+  ${DJI_UTILS_PATH}/utils/cJSON.c
+  ${DJI_CONFIG_MANAGER_PATH}/dji_config_manager.c
 )
 
 ament_target_dependencies(psdk_wrapper_libs
@@ -190,8 +198,19 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-install(DIRECTORY include/
+
+install(DIRECTORY 
+  include/
+  ${PSDK_PATH}/psdk_lib/include/
+  ${DJI_STREAMING_PATH}/
+  ${DJI_HAL_PATH}/
+  ${DJI_OSAL_PATH}/
+  ${DJI_UTILS_PATH}/
+  ${DJI_CONFIG_MANAGER_PATH}/
   DESTINATION include/
+  FILES_MATCHING 
+    PATTERN "*.h"
+    PATTERN "*.hpp"
 )
 
 install(DIRECTORY

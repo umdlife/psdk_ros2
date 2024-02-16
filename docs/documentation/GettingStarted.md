@@ -23,6 +23,11 @@ colcon build
 # Launch the node
 ros2 launch psdk_wrapper wrapper.launch.py
 
+# Default link_config_file_path = psdk_wrapper/cfg/link_config.json
+# Default psdk_params_file_path = psdk_wrapper/cfg/psdk_params.yml
+# If using parameter and config files different than the default ones, you can point to them as:
+ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
+
 ```
 
 
@@ -39,15 +44,18 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | app_license                   | String    | -                                  | Add your App license                        |
 | developer_account             | String    | -                                  | Add your developer account (not mandatory)  |
 | baudrate                      | String    | 921600                             | -                                           |
-| hardware_connection           | String    | "DJI_USE_UART_AND_USB_BULK_DEVICE" | Depends on your connection method           |
-| uart_dev_1                    | String    | "/dev/dji_serial"                  | As defined in udev rules                    |
 | num_of_initialization_retries | Int       | 1                                  | Num of retries to init the PSDK app         |
 | imu_frame                     | String    | "psdk_imu_link"                    | -                                           |
 | body_frame                    | String    | "psdk_base_link"                   | -                                           |
 | map_frame                     | String    | "psdk_map_enu"                     | -                                           |
 | gimbal_frame                  | String    | "psdk_gimbal_link"                 | -                                           |
 | camera_frame                  | String    | "psdk_camera_link"                 | -                                           |
-| publish_transforms            | Bool      |  True                              | Whether to publish transforms or not        |
+| mandatory_modules             |           |                                    |                                             |
+| - telemetry                   | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - flight_control              | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - camera                      | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - gimbal                      | Bool      |  True                              | Trigger node failure, if module not loaded  |
+| - liveview                    | Bool      |  True                              | Trigger node failure, if module not loaded  |
 | data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
 | - imu                         | Integer   | 100                                | -                                           |
 | - attitude                    | Integer   | 100                                | -                                           |
@@ -66,6 +74,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - control_information         | Integer   | 1                                  | -                                           |
 
 
+To configure the hardware connection type and to specify the exact ports that need to be used, please use the *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Thus, for simplicity, the psdk_ros2 wrapper follows the same approach. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file. 
 
 ## Udev rules
 

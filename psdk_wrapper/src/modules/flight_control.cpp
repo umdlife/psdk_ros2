@@ -25,9 +25,18 @@ bool
 PSDKWrapper::init_flight_control()
 {
   RCLCPP_INFO(get_logger(), "Initiating flight control module...");
-  if (DjiFlightController_Init() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiFlightControllerRidInfo rid_info;
+  rid_info.latitude = current_state_.gps_position.latitude;
+  rid_info.longitude = current_state_.gps_position.longitude;
+  rid_info.altitude = current_state_.gps_position.altitude;
+
+  T_DjiReturnCode return_code = DjiFlightController_Init(rid_info);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not initialize flight control module.");
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not initialize flight control module. Error code is: %ld",
+        return_code);
     return false;
   }
   return true;
@@ -37,10 +46,13 @@ bool
 PSDKWrapper::deinit_flight_control()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing flight control module...");
-  if (DjiFlightController_Deinit() != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  T_DjiReturnCode return_code = DjiFlightController_DeInit();
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
-                 "Could not deinitialze the flight control module.");
+    RCLCPP_ERROR(
+        get_logger(),
+        "Could not deinitialze the flight control module. Error code: %ld",
+        return_code);
     return false;
   }
   return true;
@@ -54,15 +66,20 @@ PSDKWrapper::set_local_position_ref_cb(
   (void)request;
   /** The check for the z_health flag is temporarly removed as it is always 0 in
    * real scenarios (not HITL) */
-  if (current_local_position_.x_health && current_local_position_.y_health)
+  if (current_state_.local_position.x_health &&
+      current_state_.local_position.y_health)
   {
-    local_position_reference_.vector.x = current_local_position_.position.x;
-    local_position_reference_.vector.y = current_local_position_.position.y;
-    local_position_reference_.vector.z = current_local_position_.position.z;
-    RCLCPP_INFO(
-        get_logger(), "Set local position reference to x:%f, y:%f, z:%f",
-        current_local_position_.position.x, current_local_position_.position.y,
-        current_local_position_.position.z);
+    local_position_reference_.vector.x =
+        current_state_.local_position.position.x;
+    local_position_reference_.vector.y =
+        current_state_.local_position.position.y;
+    local_position_reference_.vector.z =
+        current_state_.local_position.position.z;
+    RCLCPP_INFO(get_logger(),
+                "Set local position reference to x:%f, y:%f, z:%f",
+                current_state_.local_position.position.x,
+                current_state_.local_position.position.y,
+                current_state_.local_position.position.z);
     set_local_position_ref_ = true;
     response->success = true;
     return;
@@ -72,8 +89,9 @@ PSDKWrapper::set_local_position_ref_cb(
     RCLCPP_ERROR(
         get_logger(),
         "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
-        current_local_position_.x_health, current_local_position_.y_health,
-        current_local_position_.z_health);
+        current_state_.local_position.x_health,
+        current_state_.local_position.y_health,
+        current_state_.local_position.z_health);
     set_local_position_ref_ = false;
     response->success = false;
     return;
