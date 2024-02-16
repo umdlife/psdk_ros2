@@ -20,6 +20,7 @@
 #include <dji_hms.h>
 
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 #include "psdk_interfaces/msg/hms_info_msg.hpp"
 #include "psdk_interfaces/msg/hms_info_table.hpp"
@@ -36,17 +37,18 @@ parse_file(const std::string& path)
 }
 
 template <typename T>
-inline to_hex_str(const T& value)
+inline std::string
+to_hex_str(const T& value)
 {
   std::stringstream stream;
   stream << std::showbase << std::setfill('0') << std::setw(sizeof(T) * 2)
-         << std::hex << i;
+         << std::hex << value;
   return stream.str();
 }
 
 inline psdk_interfaces::msg::HmsInfoTable
-to_ros2_msg(const T_DjiHmsInfoTable* hms_info_table,
-            const nlohmann::json* codes, const char* language = "en")
+to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
+            const nlohmann::json& codes, const char* language = "en")
 {
   psdk_interfaces::msg::HmsInfoTable ros2_hms;
   ros2_hms.num_msg = hms_info_table.hmsInfoNum;
@@ -63,8 +65,8 @@ to_ros2_msg(const T_DjiHmsInfoTable* hms_info_table,
     auto ground_error_code = codes.find(ground_key);
     if (ground_error_code != codes.end())
     {
-      auto ground_error_message = ground_error_code.find(language);
-      if (ground_error_message != ground_error_code.end())
+      auto ground_error_message = ground_error_code->find(language);
+      if (ground_error_message != ground_error_code->end())
       {
         ros2_hms.table[i].error_code = hms_info_table.hmsInfo[i].errorCode;
         ros2_hms.table[i].component_index =
@@ -75,10 +77,10 @@ to_ros2_msg(const T_DjiHmsInfoTable* hms_info_table,
         auto air_error_code = codes.find(air_key);
         if (air_error_code != codes.end())
         {
-          auto air_error_message = air_error_code.find(language);
+          auto air_error_message = air_error_code->find(language);
           ros2_hms.table[i].fly_info =
-              (air_error_message != air_error_code.end() ? *air_error_message
-                                                         : "");
+              (air_error_message != air_error_code->end() ? *air_error_message
+                                                          : "");
         }
         else
         {
@@ -101,7 +103,7 @@ to_ros2_msg(const T_DjiHmsInfoTable* hms_info_table,
   return ros2_hms;
 }
 
-};  // namespace json_utils
+}  // namespace json_utils
 }  // namespace psdk_ros2
 
 #endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_JSON_UTILS_HPP_
