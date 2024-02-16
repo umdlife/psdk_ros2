@@ -2,6 +2,18 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.0.0 (2024-02-14)
+------------------
+* Merge pull request `#34 <https://github.com/umdlife/psdk_ros2/issues/34>`_ from umdlife/feat/upgrade-to-psdk-v3.8
+  Feat/upgrade to psdk v3.8
+* Merge pull request `#44 <https://github.com/umdlife/psdk_ros2/issues/44>`_ from RPS98/feat/upgrade-to-psdk-v3.8
+  Add config files as launcher configs
+* Set camera, gimbal and streaming modules as non mandatory
+* Merge pull request `#49 <https://github.com/umdlife/psdk_ros2/issues/49>`_ from umdlife/feat/parametrise-retry-num
+  Make the number of init retries as a ros param
+* Upgrade wrapper to be compatible with DJI PSDK v3.8
+* Contributors: Rafael Perez-Segui, Sergi Grau Moya, Victor Massagué Respall, biancabnd
+
 0.0.5 (2024-02-05)
 ------------------
 * Move lifecycle interfaces to be public, also add rclcpp::shutdown() to finish cleanly the node when shutting down

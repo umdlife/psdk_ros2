@@ -2,6 +2,13 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.0.0 (2024-02-14)
+------------------
+* Merge pull request `#34 <https://github.com/umdlife/psdk_ros2/issues/34>`_ from umdlife/feat/upgrade-to-psdk-v3.8
+  Feat/upgrade to psdk v3.8
+* Upgrade wrapper to be compatible with DJI PSDK v3.8
+* Contributors: Victor Massagué Respall, biancabnd
+
 0.0.5 (2024-02-05)
 ------------------
 * Merge pull request `#48 <https://github.com/umdlife/psdk_ros2/issues/48>`_ from umdlife/hotfix/update_documentation
