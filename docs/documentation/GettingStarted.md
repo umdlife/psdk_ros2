@@ -56,6 +56,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - camera                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | - gimbal                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | - liveview                    | Bool      |  False                             | Trigger node failure, if module not loaded  |
+| - hms                         | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
 | - imu                         | Integer   | 100                                | -                                           |
 | - attitude                    | Integer   | 100                                | -                                           |
@@ -107,7 +108,7 @@ The following ROS 2 packages are needed to successfully build the wrapper:
 
 ### Other libraries
 
-The following libraries are needded to enable the access to USB devices and handling the video streaming:
+The following libraries are needed to enable the access to USB devices and handling the video streaming:
 
 * libusb-1.0-0-dev
 * libopus-dev 
@@ -116,3 +117,5 @@ The following libraries are needded to enable the access to USB devices and hand
 * libavformat-dev 
 * libavfilter-dev
 
+The following library is used to work with JSON:
+* nlohmann-json-dev
