@@ -2033,6 +2033,20 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   bool initialize_psdk_modules();
 
+  /**
+   * @brief Create a 'psdk_interfaces::msg::HmsInfoTable' from a
+   * PSDK HMS message of type 'T_DjiHmsInfoTable', given a JSON
+   * with all known return codes and a language to retrieve
+   * the return code messages in.
+   * @param hms_info_table HMS message from PSDK.
+   * @param codes JSON containing known return codes.
+   * @param language Language to fetch the return codes in.
+   * @return psdk_interfaces::msg::HmsInfoTable
+   */
+  psdk_interfaces::msg::HmsInfoTable
+  to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
+              const nlohmann::json& codes, const char* language = "en");
+
   /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
