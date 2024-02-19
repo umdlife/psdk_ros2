@@ -153,7 +153,7 @@ PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
   if (hms_info_table_pub_->is_activated())
   {
     psdk_interfaces::msg::HmsInfoTable ros2_hms =
-        json_utils::to_ros2_msg(hms_info_table, hms_return_codes_json_);
+        to_ros2_msg(hms_info_table, hms_return_codes_json_);
     hms_info_table_pub_->publish(ros2_hms);
   }
 
