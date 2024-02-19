@@ -7,3 +7,4 @@ string fly_info             # Description of the error code if/when the drone is
 uint8 MIN_HMS_ERROR_LEVEL = 0
 uint8 MID_HMS_ERROR_LEVEL = 3
 uint8 MAX_HMS_ERROR_LEVEL = 6
+
