@@ -834,6 +834,10 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/flight_anomaly", 10);
   battery_pub_ =
       create_publisher<sensor_msgs::msg::BatteryState>("psdk_ros2/battery", 10);
+  single_battery_index1_pub_ =
+      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>("psdk_ros2/single_battery_index1", 10);
+  single_battery_index2_pub_ =
+    create_publisher<psdk_interfaces::msg::SingleBatteryInfo>("psdk_ros2/single_battery_index2", 10);
   height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/height_above_ground", 10);
   angular_rate_body_raw_pub_ =
@@ -1154,6 +1158,8 @@ PSDKWrapper::activate_ros_elements()
   motor_start_error_pub_->on_activate();
   flight_anomaly_pub_->on_activate();
   battery_pub_->on_activate();
+  single_battery_index1_pub_->on_activate();
+  single_battery_index2_pub_->on_activate();
   height_fused_pub_->on_activate();
   angular_rate_body_raw_pub_->on_activate();
   angular_rate_ground_fused_pub_->on_activate();
@@ -1203,6 +1209,8 @@ PSDKWrapper::deactivate_ros_elements()
   landing_gear_pub_->on_deactivate();
   flight_anomaly_pub_->on_deactivate();
   battery_pub_->on_deactivate();
+  single_battery_index1_pub_->on_deactivate();
+  single_battery_index2_pub_->on_deactivate();
   height_fused_pub_->on_deactivate();
   angular_rate_body_raw_pub_->on_deactivate();
   angular_rate_ground_fused_pub_->on_deactivate();
@@ -1325,6 +1333,8 @@ PSDKWrapper::clean_ros_elements()
   motor_start_error_pub_.reset();
   flight_anomaly_pub_.reset();
   battery_pub_.reset();
+  single_battery_index1_pub_.reset();
+  single_battery_index2_pub_.reset();
   height_fused_pub_.reset();
   angular_rate_body_raw_pub_.reset();
   angular_rate_ground_fused_pub_.reset();
