@@ -14,6 +14,7 @@
       map_frame: "psdk_map_enu"
       gimbal_frame: "psdk_gimbal_link"
       camera_frame: "psdk_camera_link"
+      add_namespace_to_tf: false
       publish_transforms: true
 
       # Mandatory modules to be initialized. Mark with a true those which you 

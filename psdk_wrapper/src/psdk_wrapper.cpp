@@ -49,6 +49,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
   declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
   declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
+  declare_parameter("add_namespace_to_tf", rclcpp::ParameterValue(false));
 
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
@@ -402,6 +403,20 @@ PSDKWrapper::load_parameters()
     RCLCPP_WARN(get_logger(),
                 "camera_frame param not defined, using default one: %s",
                 params_.camera_frame.c_str());
+  }
+  if (!get_parameter("add_namespace_to_tf", params_.add_namespace_to_tf))
+  {
+    RCLCPP_WARN(get_logger(),
+                "add_namespace_to_tf param not defined, using default one: %s",
+                params_.add_namespace_to_tf ? "true" : "false");
+  }
+  if (params_.add_namespace_to_tf)
+  {
+    params_.imu_frame = std::string(get_namespace()) + "/" + params_.imu_frame;
+    params_.body_frame = std::string(get_namespace()) + "/" + params_.body_frame;
+    params_.map_frame = std::string(get_namespace()) + "/" + params_.map_frame;
+    params_.gimbal_frame = std::string(get_namespace()) + "/" + params_.gimbal_frame;
+    params_.camera_frame = std::string(get_namespace()) + "/" + params_.camera_frame;
   }
   if (!get_parameter("publish_transforms", params_.publish_transforms))
   {
