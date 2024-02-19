@@ -1294,6 +1294,7 @@ PSDKWrapper::single_battery_index1_callback(const uint8_t *data,
   single_battery_info_msg.current = static_cast<_Float32>(single_battery_info->currentElectric) / 1000; // mA -> A
   single_battery_info_msg.full_capacity = static_cast<_Float32>(single_battery_info->fullCapacity) / 1000; // mAh -> Ah
   single_battery_info_msg.capacity_remain = static_cast<_Float32>(single_battery_info->remainedCapacity) /1000; // mAh -> Ah
+  single_battery_info_msg.percentage = static_cast<_Float32>(single_battery_info->batteryCapacityPercent) / 100;  // convert to 0-1 scale
   single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature) / 10; // 0.1℃ -> ℃
   single_battery_info_msg.cell_count = single_battery_info->cellCount;
   single_battery_info_msg.self_check_error = single_battery_info->batteryState.selfCheckError;
@@ -1325,6 +1326,7 @@ PSDKWrapper::single_battery_index2_callback(const uint8_t *data,
   single_battery_info_msg.current = static_cast<_Float32>(single_battery_info->currentElectric) / 1000; // mA -> A
   single_battery_info_msg.full_capacity = static_cast<_Float32>(single_battery_info->fullCapacity) / 1000; // mAh -> Ah
   single_battery_info_msg.capacity_remain = static_cast<_Float32>(single_battery_info->remainedCapacity) /1000; // mAh -> Ah
+  single_battery_info_msg.percentage = static_cast<_Float32>(single_battery_info->batteryCapacityPercent) / 100;  // convert to 0-1 scale
   single_battery_info_msg.temperature = static_cast<_Float32>(single_battery_info->batteryTemperature) / 10; // 0.1℃ -> ℃
   single_battery_info_msg.cell_count = single_battery_info->cellCount;
   single_battery_info_msg.self_check_error = single_battery_info->batteryState.selfCheckError;
