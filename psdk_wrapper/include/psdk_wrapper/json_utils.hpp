@@ -38,11 +38,11 @@ parse_file(const std::string& path)
 
 template <typename T>
 inline std::string
-to_hex_str(const T& value)
+to_hex_str(const T& value, const bool& is_lower_case = true)
 {
   std::stringstream stream;
-  stream << std::showbase << std::setfill('0') << std::setw(sizeof(T) * 2)
-         << std::hex << value;
+  stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex
+         << (is_lower_case ? std::nouppercase : std::uppercase) << value;
   return stream.str();
 }
 
@@ -58,11 +58,17 @@ to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
   {
     // Extract error codes. If the "air" error code exists, it is
     // implied that the associated "ground" error code also exists
-    std::string ground_key =
+    std::string ground_key_lower_case =
         "fpv_tip_" + to_hex_str(hms_info_table.hmsInfo[i].errorCode);
-    std::string air_key = ground_key + "_in_the_sky";
+    std::string ground_key_upper_case =
+        "fpv_tip_" + to_hex_str(hms_info_table.hmsInfo[i].errorCode, false);
+    std::string air_key_lower_case = ground_key_lower_case + "_in_the_sky";
+    std::string air_key_upper_case = ground_key_upper_case + "_in_the_sky";
 
-    auto ground_error_code = codes.find(ground_key);
+    // Hex error codes can be either lower or upper case, inspect both
+    auto ground_error_code = (codes.find(ground_key_lower_case) != codes.end()
+                                  ? codes.find(ground_key_lower_case)
+                                  : codes.find(ground_key_upper_case));
     if (ground_error_code != codes.end())
     {
       auto ground_error_message = ground_error_code->find(language);
@@ -74,7 +80,9 @@ to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
         ros2_hms.table[i].error_level = hms_info_table.hmsInfo[i].errorLevel;
         ros2_hms.table[i].ground_info = *ground_error_message;
 
-        auto air_error_code = codes.find(air_key);
+        auto air_error_code = (codes.find(air_key_lower_case) != codes.end()
+                                   ? codes.find(air_key_lower_case)
+                                   : codes.find(air_key_upper_case));
         if (air_error_code != codes.end())
         {
           auto air_error_message = air_error_code->find(language);
