@@ -119,10 +119,13 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     publish_static_transforms();
   }
 
-  if (!init_hms())
+  if (is_hms_module_mandatory_)
   {
-    rclcpp::shutdown();
-    return CallbackReturn::FAILURE;
+    if (!init_hms())
+    {
+      rclcpp::shutdown();
+      return CallbackReturn::FAILURE;
+    }
   }
 
   subscribe_psdk_topics();
@@ -380,6 +383,7 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
   get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
+  get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
 
   if (!get_parameter("imu_frame", params_.imu_frame))
   {

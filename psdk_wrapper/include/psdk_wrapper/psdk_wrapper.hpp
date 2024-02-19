@@ -2088,6 +2088,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool is_gimbal_module_mandatory_{true};
   bool is_flight_control_module_mandatory_{true};
   bool is_liveview_module_mandatory_{true};
+  bool is_hms_module_mandatory_{true};
 };
 
 /**
