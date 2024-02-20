@@ -2,8 +2,8 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2024-02-20)
+------------------
 * Merge pull request `#51 <https://github.com/umdlife/psdk_ros2/issues/51>`_ from umdlife/feat/hms-support
   Integration of Health Monitoring System (HMS) as a module
 * Merge pull request `#59 <https://github.com/umdlife/psdk_ros2/issues/59>`_ from umdlife/extend_single_battery_info
