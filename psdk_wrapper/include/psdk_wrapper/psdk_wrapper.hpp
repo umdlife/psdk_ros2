@@ -339,6 +339,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool deinit_liveview();
   /**
    * @brief Initialize the health monitoring system (HMS) module
+   * @note Since the HMS module callback function involves a ROS2
+   * publisher, this init method should be invoked **after** ROS2
+   * elements have been initialized.
    * @return true/false
    */
   bool init_hms();

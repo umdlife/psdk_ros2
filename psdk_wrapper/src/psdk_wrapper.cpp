@@ -119,13 +119,10 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     publish_static_transforms();
   }
 
-  if (is_hms_module_mandatory_)
+  if (!init_hms() && is_hms_module_mandatory_)
   {
-    if (!init_hms())
-    {
-      rclcpp::shutdown();
-      return CallbackReturn::FAILURE;
-    }
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
   }
 
   subscribe_psdk_topics();
