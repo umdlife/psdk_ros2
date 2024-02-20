@@ -49,6 +49,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
   declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
   declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
+  declare_parameter("hms_return_codes_path", rclcpp::ParameterValue(""));
 
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
@@ -117,6 +118,13 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   {
     publish_static_transforms();
   }
+
+  if (!init_hms() && is_hms_module_mandatory_)
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
+
   subscribe_psdk_topics();
   return CallbackReturn::SUCCESS;
 }
@@ -158,7 +166,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   // Deinitialize all remaining modules
   if (!deinit_telemetry() || !deinit_flight_control() ||
       !deinit_camera_manager() || !deinit_gimbal_manager() ||
-      !deinit_liveview())
+      !deinit_liveview() || !deinit_hms())
   {
     return CallbackReturn::FAILURE;
   }
@@ -372,6 +380,7 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
   get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
+  get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
 
   if (!get_parameter("imu_frame", params_.imu_frame))
   {
@@ -408,6 +417,13 @@ PSDKWrapper::load_parameters()
     RCLCPP_WARN(get_logger(),
                 "publish_transforms param not defined, using default one: %d",
                 params_.publish_transforms);
+  }
+  if (!get_parameter("hms_return_codes_path", params_.hms_return_codes_path))
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "hms_return_codes_path param not defined, using default one: %s",
+        params_.hms_return_codes_path);
   }
 
   // Get data frequency
@@ -859,6 +875,8 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/altitude_sea_level", 10);
   altitude_barometric_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/altitude_barometric", 10);
+  hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
+      "psdk_ros2/hms_info_table", 10);
 
   RCLCPP_INFO(get_logger(), "Creating subscribers");
   flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
@@ -1158,6 +1176,7 @@ PSDKWrapper::activate_ros_elements()
   home_point_altitude_pub_->on_activate();
   altitude_sl_pub_->on_activate();
   altitude_barometric_pub_->on_activate();
+  hms_info_table_pub_->on_activate();
 }
 
 void
@@ -1208,6 +1227,7 @@ PSDKWrapper::deactivate_ros_elements()
   home_point_altitude_pub_->on_deactivate();
   altitude_sl_pub_->on_deactivate();
   altitude_barometric_pub_->on_deactivate();
+  hms_info_table_pub_->on_deactivate();
 }
 
 void
@@ -1331,6 +1351,7 @@ PSDKWrapper::clean_ros_elements()
   home_point_altitude_pub_.reset();
   altitude_sl_pub_.reset();
   altitude_barometric_pub_.reset();
+  hms_info_table_pub_.reset();
 }
 
 /*@todo Generalize the functions related to TFs for different copter, gimbal

@@ -16,8 +16,8 @@
       camera_frame: "psdk_camera_link"
       publish_transforms: true
 
-      # Mandatory modules to be initialized. Mark with a true those which you 
-      # consider mandatory for your application, false otherwise. Be aware that 
+      # Mandatory modules to be initialized. Mark with a true those which you
+      # consider mandatory for your application, false otherwise. Be aware that
       # some modules might have inter-dependencies. Non mandatory modules will
       # still be initialized but if case of failure, the node will continue to run.
       mandatory_modules:
@@ -26,8 +26,9 @@
         camera: false
         gimbal: false
         liveview: false
-  
-      data_frequency: # Options are: 1, 5, 10, 50, 100, 200, 400 Hz 
+        hms: false
+
+      data_frequency: # Options are: 1, 5, 10, 50, 100, 200, 400 Hz
         imu: 100
         attitude: 100
         acceleration: 50
@@ -44,5 +45,3 @@
         flight_status: 1
         battery_level: 1
         control_information: 1
-
-

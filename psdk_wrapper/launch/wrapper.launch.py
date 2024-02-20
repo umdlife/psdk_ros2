@@ -25,6 +25,7 @@ def generate_launch_description():
     namespace = LaunchConfiguration("namespace")
     link_config_file_path = LaunchConfiguration("link_config_file_path")
     psdk_params_file_path = LaunchConfiguration("psdk_params_file_path")
+    hms_return_codes_file = LaunchConfiguration("hms_return_codes_file")
 
     # Declare the namespace launch argument
     declare_namespace_cmd = DeclareLaunchArgument(
@@ -54,6 +55,19 @@ def generate_launch_description():
         description="DJI PSDK link configuration file path",
     )
 
+    # Declare HMS known error codes JSON file path
+    hms_codes_file_default_value = "hms_2023_08_22.json"
+
+    declare_hms_codes_cmd = DeclareLaunchArgument(
+        "hms_return_codes_file",
+        default_value=hms_codes_file_default_value,
+        description="Path to JSON file with known DJI return codes",
+    )
+
+    hms_return_codes_path = PathJoinSubstitution(
+        [FindPackageShare("psdk_wrapper"), "cfg", hms_return_codes_file]
+    )
+
     # Prepare the wrapper node
     wrapper_node = LifecycleNode(
         package="psdk_wrapper",
@@ -64,6 +78,7 @@ def generate_launch_description():
         parameters=[
             {
                 "link_config_file_path": link_config_file_path,
+                "hms_return_codes_path": hms_return_codes_path,
             },
             psdk_params_file_path,
         ],
@@ -92,6 +107,7 @@ def generate_launch_description():
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_psdk_params_cmd)
     ld.add_action(declare_link_config_cmd)
+    ld.add_action(declare_hms_codes_cmd)
     ld.add_action(wrapper_node)
     ld.add_action(wrapper_configure_trans_event)
     ld.add_action(wrapper_activate_trans_event)
