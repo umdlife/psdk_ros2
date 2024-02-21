@@ -403,7 +403,7 @@ PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb(
   {
     status = DJI_FLIGHT_CONTROLLER_DISABLE_OBSTACLE_AVOIDANCE;
   }
-  result =
+  auto result =
       DjiFlightController_SetUpwardsRadarObstacleAvoidanceEnableStatus(status);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
