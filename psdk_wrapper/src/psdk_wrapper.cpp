@@ -1444,7 +1444,7 @@ PSDKWrapper::initialize_psdk_modules()
       {std::bind(&PSDKWrapper::init_gimbal_manager, this),
        is_gimbal_module_mandatory_},
       {std::bind(&PSDKWrapper::init_liveview, this),
-       is_liveview_module_mandatory_}
+       is_liveview_module_mandatory_},
       {std::bind(&PSDKWrapper::init_data_transmission, this),
        is_data_transmission_module_mandatory_}};
 
