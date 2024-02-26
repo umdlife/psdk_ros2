@@ -21,6 +21,7 @@
 #include <dji_aircraft_info.h>
 #include <dji_core.h>
 #include <dji_flight_controller.h>
+#include <dji_hms.h>
 #include <dji_liveview.h>
 #include <dji_logger.h>
 #include <dji_platform.h>
@@ -37,6 +38,7 @@
 #include <map>
 #include <memory>
 #include <nav_msgs/msg/odometry.hpp>
+#include <nlohmann/json.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
@@ -71,12 +73,15 @@
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
 #include "psdk_interfaces/msg/gimbal_status.hpp"
 #include "psdk_interfaces/msg/gps_details.hpp"
+#include "psdk_interfaces/msg/hms_info_msg.hpp"
+#include "psdk_interfaces/msg/hms_info_table.hpp"
 #include "psdk_interfaces/msg/home_position.hpp"
 #include "psdk_interfaces/msg/position_fused.hpp"
 #include "psdk_interfaces/msg/rc_connection_status.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
 #include "psdk_interfaces/msg/transmission_data.hpp"
+#include "psdk_interfaces/msg/single_battery_info.hpp"
 #include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_list.hpp"
@@ -232,6 +237,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string map_frame;
     std::string gimbal_frame;
     std::string camera_frame;
+    std::string hms_return_codes_path;
     bool publish_transforms;
     int imu_frequency;
     int attitude_frequency;
@@ -323,7 +329,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
    */
   bool deinit_gimbal_manager();
-
   /**
    * @brief Initialize the liveview streaming module
    * @return true/false
@@ -344,6 +349,19 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
   */
   bool deinit_data_transmission();
+  /**
+   * @brief Initialize the health monitoring system (HMS) module
+   * @note Since the HMS module callback function involves a ROS2
+   * publisher, this init method should be invoked **after** ROS2
+   * elements have been initialized.
+   * @return true/false
+   */
+  bool init_hms();
+  /**
+   * @brief Deinitialize the health monitoring system (HMS) module
+   * @return true/false
+   */
+  bool deinit_hms();
 
   /**
    * @brief Get the DJI frequency object associated with a certain frequency
@@ -498,9 +516,16 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_altitude_barometric_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_single_battery_index1_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_single_battery_index2_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_home_point_altitude_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_hms_callback(T_DjiHmsInfoTable hms_info_table);
   /* Streaming */
   friend void c_publish_main_streaming_callback(CameraRGBImage img,
                                                 void* user_data);
@@ -1031,6 +1056,32 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
 
   /**
+   * @brief Retrieves single information of battery with index 1. More information about this topic can be found in the
+   * dji_fc_subscription.h.
+   * @param data pointer to T_DjiFcSubscriptionSingleBatteryInfo data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode single_battery_index1_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Retrieves single information of battery with index 2. More information about this topic can be found in the
+   * dji_fc_subscription.h.
+   * @param data pointer to T_DjiFcSubscriptionSingleBatteryInfo data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode single_battery_index2_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+
+  /**
    * @brief Retrieves the altitude from sea level when the aircraft last took
    * off. This is a fused value. More information about this topic can be found
    * in dji_fc_subscription.h.
@@ -1043,6 +1094,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiReturnCode home_point_altitude_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Callback function registered to retrieve HMS information.
+   * DJI pushes data at a fixed frequency of 1Hz.
+   * @param hms_info_table  Array of HMS info messages
+   * @return T_DjiReturnCode error code indicating whether there have been any
+   * issues processing the HMS info table
+   */
+  T_DjiReturnCode hms_callback(T_DjiHmsInfoTable hms_info_table);
 
   /* ROS 2 Subscriber callbacks */
   /**
@@ -1732,8 +1792,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       psdk_interfaces::msg::DisplayMode>::SharedPtr display_mode_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<
-      sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_index1_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_index2_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
@@ -1761,6 +1822,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       altitude_barometric_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       home_point_altitude_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::HmsInfoTable>::SharedPtr hms_info_table_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       main_camera_stream_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
@@ -1998,6 +2061,20 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   bool initialize_psdk_modules();
 
+  /**
+   * @brief Create a 'psdk_interfaces::msg::HmsInfoTable' from a
+   * PSDK HMS message of type 'T_DjiHmsInfoTable', given a JSON
+   * with all known return codes and a language to retrieve
+   * the return code messages in.
+   * @param hms_info_table HMS message from PSDK.
+   * @param codes JSON containing known return codes.
+   * @param language Language to fetch the return codes in.
+   * @return psdk_interfaces::msg::HmsInfoTable
+   */
+  psdk_interfaces::msg::HmsInfoTable
+  to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
+              const nlohmann::json& codes, const char* language = "en");
+
   /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
@@ -2043,6 +2120,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
   E_DjiCameraType attached_camera_type_;
   E_DjiLiveViewCameraSource selected_camera_source_;
+  nlohmann::json hms_return_codes_json_;
   bool publish_camera_transforms_{false};
   bool decode_stream_{true};
   int num_of_initialization_retries_{0};
@@ -2052,6 +2130,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool is_gimbal_module_mandatory_{true};
   bool is_flight_control_module_mandatory_{true};
   bool is_liveview_module_mandatory_{true};
+  bool is_hms_module_mandatory_{true};
   bool is_data_transmission_module_mandatory_{true};
 };
 

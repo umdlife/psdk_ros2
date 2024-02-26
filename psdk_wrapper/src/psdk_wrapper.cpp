@@ -50,6 +50,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
   declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
   declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
+  declare_parameter("hms_return_codes_path", rclcpp::ParameterValue(""));
 
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
@@ -118,6 +119,13 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   {
     publish_static_transforms();
   }
+
+  if (!init_hms() && is_hms_module_mandatory_)
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
+
   subscribe_psdk_topics();
   return CallbackReturn::SUCCESS;
 }
@@ -159,7 +167,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   // Deinitialize all remaining modules
   if (!deinit_telemetry() || !deinit_flight_control() ||
       !deinit_camera_manager() || !deinit_gimbal_manager() ||
-      !deinit_liveview() || !deinit_data_transmission())
+      !deinit_liveview() || !deinit_hms() || !deinit_data_transmission())
   {
     return CallbackReturn::FAILURE;
   }
@@ -374,6 +382,7 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
   get_parameter("mandatory_modules.data_transmission", is_data_transmission_module_mandatory_);
+  get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
 
   if (!get_parameter("imu_frame", params_.imu_frame))
   {
@@ -410,6 +419,13 @@ PSDKWrapper::load_parameters()
     RCLCPP_WARN(get_logger(),
                 "publish_transforms param not defined, using default one: %d",
                 params_.publish_transforms);
+  }
+  if (!get_parameter("hms_return_codes_path", params_.hms_return_codes_path))
+  {
+    RCLCPP_WARN(
+        get_logger(),
+        "hms_return_codes_path param not defined, using default one: %s",
+        params_.hms_return_codes_path);
   }
 
   // Get data frequency
@@ -821,6 +837,10 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/flight_anomaly", 10);
   battery_pub_ =
       create_publisher<sensor_msgs::msg::BatteryState>("psdk_ros2/battery", 10);
+  single_battery_index1_pub_ =
+      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>("psdk_ros2/single_battery_index1", 10);
+  single_battery_index2_pub_ =
+    create_publisher<psdk_interfaces::msg::SingleBatteryInfo>("psdk_ros2/single_battery_index2", 10);
   height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/height_above_ground", 10);
   angular_rate_body_raw_pub_ =
@@ -859,6 +879,8 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/altitude_barometric", 10);
   low_speed_transmission_data_pub_ = create_publisher<psdk_interfaces::msg::TransmissionData>(
       "psdk_ros2/low_speed_transmission_data", 10);
+  hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
+      "psdk_ros2/hms_info_table", 10);
 
   RCLCPP_INFO(get_logger(), "Creating subscribers");
   flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
@@ -1141,6 +1163,8 @@ PSDKWrapper::activate_ros_elements()
   motor_start_error_pub_->on_activate();
   flight_anomaly_pub_->on_activate();
   battery_pub_->on_activate();
+  single_battery_index1_pub_->on_activate();
+  single_battery_index2_pub_->on_activate();
   height_fused_pub_->on_activate();
   angular_rate_body_raw_pub_->on_activate();
   angular_rate_ground_fused_pub_->on_activate();
@@ -1157,6 +1181,7 @@ PSDKWrapper::activate_ros_elements()
   altitude_sl_pub_->on_activate();
   altitude_barometric_pub_->on_activate();
   low_speed_transmission_data_pub_->on_activate();
+  hms_info_table_pub_->on_activate();
 }
 
 void
@@ -1190,6 +1215,8 @@ PSDKWrapper::deactivate_ros_elements()
   landing_gear_pub_->on_deactivate();
   flight_anomaly_pub_->on_deactivate();
   battery_pub_->on_deactivate();
+  single_battery_index1_pub_->on_deactivate();
+  single_battery_index2_pub_->on_deactivate();
   height_fused_pub_->on_deactivate();
   angular_rate_body_raw_pub_->on_deactivate();
   angular_rate_ground_fused_pub_->on_deactivate();
@@ -1205,6 +1232,7 @@ PSDKWrapper::deactivate_ros_elements()
   home_point_altitude_pub_->on_deactivate();
   altitude_sl_pub_->on_deactivate();
   altitude_barometric_pub_->on_deactivate();
+  hms_info_table_pub_->on_deactivate();
 }
 
 void
@@ -1311,6 +1339,8 @@ PSDKWrapper::clean_ros_elements()
   motor_start_error_pub_.reset();
   flight_anomaly_pub_.reset();
   battery_pub_.reset();
+  single_battery_index1_pub_.reset();
+  single_battery_index2_pub_.reset();
   height_fused_pub_.reset();
   angular_rate_body_raw_pub_.reset();
   angular_rate_ground_fused_pub_.reset();
@@ -1326,6 +1356,7 @@ PSDKWrapper::clean_ros_elements()
   home_point_altitude_pub_.reset();
   altitude_sl_pub_.reset();
   altitude_barometric_pub_.reset();
+  hms_info_table_pub_.reset();
 }
 
 /*@todo Generalize the functions related to TFs for different copter, gimbal
