@@ -31,6 +31,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(psdk_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 # FetchContent module
 include(FetchContent)
@@ -64,6 +65,7 @@ set(DJI_HAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/hal)
 set(DJI_STREAMING_PATH ${PSDK_PATH}/samples/sample_c++/module_sample/liveview)
 set(DJI_CONFIG_MANAGER_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/application)
 set(DJI_UTILS_PATH ${PSDK_PATH}/samples/sample_c/module_sample)
+set(DJI_HMS_RETURN_CODES_PATH ${PSDK_PATH}/samples/sample_c/module_sample/hms/data)
 
 # Find toolchain name needed to select the right PSDK lib
 execute_process(COMMAND uname -m
@@ -86,7 +88,7 @@ if (PSDK_LIB)
   message(STATUS "PSDK library found: ${PSDK_LIB}")
 else()
   message(FATAL_ERROR "PSDK library NOT found")
-endif()                                                                                                     
+endif()
 
 if (FFMPEG_FOUND)
     message(STATUS "Found FFMPEG installed in the system")
@@ -159,6 +161,7 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/camera.cpp
   src/modules/gimbal.cpp
   src/modules/liveview.cpp
+  src/modules/hms.cpp
   ${DJI_OSAL_PATH}/osal_fs.c
   ${DJI_OSAL_PATH}/osal_socket.c
   ${DJI_OSAL_PATH}/osal.c
@@ -180,6 +183,7 @@ ament_target_dependencies(psdk_wrapper_libs
 target_link_libraries(
   psdk_wrapper_libs
   ${PSDK_LIB}
+  nlohmann_json::nlohmann_json
 )
 
 target_link_libraries(
@@ -217,6 +221,11 @@ install(DIRECTORY
   cfg
   launch
   DESTINATION share/${PROJECT_NAME}/
+)
+
+install(DIRECTORY
+  ${DJI_HMS_RETURN_CODES_PATH}/
+  DESTINATION share/${PROJECT_NAME}/cfg
 )
 
 ament_export_dependencies(

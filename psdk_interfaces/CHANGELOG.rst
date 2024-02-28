@@ -2,6 +2,16 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.0 (2024-02-20)
+------------------
+* Merge pull request `#51 <https://github.com/umdlife/psdk_ros2/issues/51>`_ from umdlife/feat/hms-support
+  Integration of Health Monitoring System (HMS) as a module
+* Merge pull request `#59 <https://github.com/umdlife/psdk_ros2/issues/59>`_ from umdlife/extend_single_battery_info
+  Extend single battery info
+* Merge pull request `#57 <https://github.com/umdlife/psdk_ros2/issues/57>`_ from umdlife/feat/single_battery_info
+  Add new message types HmsInfoMsg, HmsInfoTable
+* Contributors: Stevedan, Victor Massagué Respall, amoramar, biancabnd, marta
+
 1.0.0 (2024-02-14)
 ------------------
 * Merge pull request `#34 <https://github.com/umdlife/psdk_ros2/issues/34>`_ from umdlife/feat/upgrade-to-psdk-v3.8
