@@ -873,7 +873,7 @@ PSDKWrapper::gimbal_angles_callback(const uint8_t *data, uint16_t data_size,
    */
   geometry_msgs::msg::Vector3Stamped gimbal_angles_msg;
   gimbal_angles_msg.header.stamp = this->get_clock()->now();
-  gimbal_angles_msg.header.frame_id = params_.gimbal_frame;
+  gimbal_angles_msg.header.frame_id = params_.gimbal_base_frame;
   gimbal_angles_msg.vector.x = psdk_utils::deg_to_rad(gimbal_angles->y);
   gimbal_angles_msg.vector.y = psdk_utils::deg_to_rad(-gimbal_angles->x);
   gimbal_angles_msg.vector.z =
