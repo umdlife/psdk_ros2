@@ -1394,6 +1394,25 @@ PSDKWrapper::publish_static_transforms()
   {
     if (attached_camera_type_ == DJI_CAMERA_TYPE_H20)
     {
+      // Publish TF between Gimbal - H20
+      geometry_msgs::msg::TransformStamped tf_gimbal_H20;
+      tf_gimbal_H20.header.stamp = this->get_clock()->now();
+      tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
+      tf_gimbal_H20.child_frame_id = params_.camera_frame;
+      tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
+      tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
+      tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
+
+      tf2::Quaternion q_gimbal_h20;
+      q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
+                          current_state_.gimbal_angles.vector.y,
+                          get_yaw_gimbal());
+      tf_gimbal_H20.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
+      tf_gimbal_H20.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
+      tf_gimbal_H20.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
+      tf_gimbal_H20.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+      tf_static_broadcaster_->sendTransform(tf_gimbal_H20);
+
       // Publish TF between H20 - Zoom lens
       geometry_msgs::msg::TransformStamped tf_H20_zoom;
       tf_H20_zoom.header.stamp = this->get_clock()->now();
@@ -1447,28 +1466,6 @@ PSDKWrapper::publish_dynamic_transforms()
     tf_gimbal_base_gimbal.transform.rotation.z = q_gimbal.getZ();
     tf_gimbal_base_gimbal.transform.rotation.w = q_gimbal.getW();
     tf_broadcaster_->sendTransform(tf_gimbal_base_gimbal);
-  }
-
-  if (attached_camera_type_ == DJI_CAMERA_TYPE_H20)
-  {
-    // Publish TF between Gimbal - H20
-    geometry_msgs::msg::TransformStamped tf_gimbal_H20;
-    tf_gimbal_H20.header.stamp = this->get_clock()->now();
-    tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
-    tf_gimbal_H20.child_frame_id = params_.camera_frame;
-    tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
-    tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
-    tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
-
-    tf2::Quaternion q_gimbal_h20;
-    q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
-                        current_state_.gimbal_angles.vector.y,
-                        get_yaw_gimbal());
-    tf_gimbal_H20.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
-    tf_gimbal_H20.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
-    tf_gimbal_H20.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
-    tf_gimbal_H20.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
-    tf_broadcaster_->sendTransform(tf_gimbal_H20);
   }
 }
 
