@@ -1505,7 +1505,7 @@ PSDKWrapper::generate_tf_name(const std::string &ns,
   {
     return frame_name;
   }
-  return ns + "/" + frame_name;
+  return ns + "_" + frame_name;
 }
 
 std::string
