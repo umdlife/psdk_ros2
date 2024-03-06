@@ -2051,6 +2051,24 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
               const nlohmann::json& codes, const char* language = "en");
 
+  /**
+   * @brief Method to generate a tf name with the namespace of the node
+   * @param ns namespace of the node
+   * @param frame_name name of the frame to be transformed
+   * @return string with the tf name
+   */
+  std::string generate_tf_name(const std::string& ns,
+                               const std::string& frame_name);
+
+  /**
+   * @brief Method to generate a tf name with the namespace of the node
+   * @param node pointer to the node
+   * @param frame_name name of the frame to be transformed
+   * @return string with the tf name
+   */
+  std::string generate_tf_name(rclcpp_lifecycle::LifecycleNode* node,
+                               const std::string frame_name);
+
   /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
