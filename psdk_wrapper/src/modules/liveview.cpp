@@ -117,19 +117,25 @@ PSDKWrapper::camera_setup_streaming_cb(
   {
     RCLCPP_INFO(get_logger(), "Starting streaming...");
     bool streaming_result;
+
     if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_NO_1)
     {
       char main_camera_name[] = "MAIN_CAMERA";
-      streaming_result = start_camera_stream(&c_publish_main_streaming_callback,
-                                             &main_camera_name, payload_index,
-                                             selected_camera_source_);
+      std::future<bool> result_future =
+          std::async(std::launch::async, &PSDKWrapper::start_camera_stream,
+                     &c_publish_main_streaming_callback, &main_camera_name,
+                     payload_index, selected_camera_source_);
+      streaming_result = result_future.get();
     }
     else if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
     {
       char fpv_camera_name[] = "FPV_CAMERA";
-      streaming_result = start_camera_stream(&c_publish_fpv_streaming_callback,
-                                             &fpv_camera_name, payload_index,
-                                             selected_camera_source_);
+      std::future<bool> result_future =
+          std::async(std::launch::async, &PSDKWrapper::start_camera_stream,
+                     &c_publish_fpv_streaming_callback, &fpv_camera_name,
+                     payload_index, selected_camera_source_);
+
+      streaming_result = result_future.get();
     }
 
     if (streaming_result)
@@ -178,9 +184,6 @@ PSDKWrapper::start_camera_stream(CameraImageCallback callback, void *user_data,
       return false;
     }
   }
-
-  // sleep DEBUG
-  std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
   T_DjiReturnCode return_code = DjiLiveview_StartH264Stream(
       payload_index, camera_source, c_LiveviewConvertH264ToRgbCallback);
