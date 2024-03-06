@@ -123,7 +123,7 @@ PSDKWrapper::camera_setup_streaming_cb(
       char main_camera_name[] = "MAIN_CAMERA";
       std::future<bool> result_future =
           std::async(std::launch::async, &PSDKWrapper::start_camera_stream,
-                     &c_publish_main_streaming_callback, &main_camera_name,
+                     this, c_publish_main_streaming_callback, main_camera_name,
                      payload_index, selected_camera_source_);
       streaming_result = result_future.get();
     }
@@ -132,7 +132,7 @@ PSDKWrapper::camera_setup_streaming_cb(
       char fpv_camera_name[] = "FPV_CAMERA";
       std::future<bool> result_future =
           std::async(std::launch::async, &PSDKWrapper::start_camera_stream,
-                     &c_publish_fpv_streaming_callback, &fpv_camera_name,
+                     this, c_publish_fpv_streaming_callback, fpv_camera_name,
                      payload_index, selected_camera_source_);
 
       streaming_result = result_future.get();
