@@ -9,12 +9,12 @@
 
       num_of_initialization_retries: 3
 
+      tf_frame_prefix: ""
       imu_frame: "psdk_imu_link"
       body_frame: "psdk_base_link"
       map_frame: "psdk_map_enu"
       gimbal_frame: "psdk_gimbal_link"
       camera_frame: "psdk_camera_link"
-      add_namespace_to_tf: false
       publish_transforms: true
 
       # Mandatory modules to be initialized. Mark with a true those which you
