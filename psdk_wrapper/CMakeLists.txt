@@ -161,6 +161,7 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/camera.cpp
   src/modules/gimbal.cpp
   src/modules/liveview.cpp
+  src/modules/data_transmission.cpp
   src/modules/hms.cpp
   ${DJI_OSAL_PATH}/osal_fs.c
   ${DJI_OSAL_PATH}/osal_socket.c
@@ -203,7 +204,7 @@ install(TARGETS
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY 
+install(DIRECTORY
   include/
   ${PSDK_PATH}/psdk_lib/include/
   ${DJI_STREAMING_PATH}/
@@ -212,7 +213,7 @@ install(DIRECTORY
   ${DJI_UTILS_PATH}/
   ${DJI_CONFIG_MANAGER_PATH}/
   DESTINATION include/
-  FILES_MATCHING 
+  FILES_MATCHING
     PATTERN "*.h"
     PATTERN "*.hpp"
 )

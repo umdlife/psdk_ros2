@@ -36,6 +36,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FlightStatus.msg"
   "msg/RCConnectionStatus.msg"
   "msg/ControlMode.msg"
+  "msg/TransmissionData.msg"
   "msg/HmsInfoMsg.msg"
   "msg/HmsInfoTable.msg"
   "msg/SingleBatteryInfo.msg"

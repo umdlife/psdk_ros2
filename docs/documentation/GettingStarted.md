@@ -1,6 +1,6 @@
  # Getting started
 
-To use the psdk_ros2 wrapper you will need to create a new workspace in which you clone both the wrapper as well as the Payload-SDK libraries. 
+To use the psdk_ros2 wrapper you will need to create a new workspace in which you clone both the wrapper as well as the Payload-SDK libraries.
 
 ```bash
 mkdir -p ~/psdk_ros2_ws/src
@@ -14,7 +14,7 @@ rosdep update
 rosdep keys --from-paths . --ignore-src --rosdistro humble | \
   xargs rosdep resolve --rosdistro humble | \
   awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
-sudo apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt) 
+sudo apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt)
 
 # Build the code
 cd ~/psdk_ros2_ws
@@ -57,6 +57,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - gimbal                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | - liveview                    | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | - hms                         | Bool      |  False                             | Trigger node failure, if module not loaded  |
+| - data_transmission           | Bool      |  True                              | Trigger node failure, if module not loaded  |
 | data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
 | - imu                         | Integer   | 100                                | -                                           |
 | - attitude                    | Integer   | 100                                | -                                           |
@@ -75,7 +76,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - control_information         | Integer   | 1                                  | -                                           |
 
 
-To configure the hardware connection type and to specify the exact ports that need to be used, please use the *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Thus, for simplicity, the psdk_ros2 wrapper follows the same approach. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file (cfg/psdk_params.yml). 
+To configure the hardware connection type and to specify the exact ports that need to be used, please use the *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Thus, for simplicity, the psdk_ros2 wrapper follows the same approach. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file.
 
 ## Udev rules
 
@@ -90,7 +91,7 @@ SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="YourVendor", ATTRS{idProd
 
 
 
-## Dependencies 
+## Dependencies
 
 ### ROS 2 packages
 
@@ -108,14 +109,12 @@ The following ROS 2 packages are needed to successfully build the wrapper:
 
 ### Other libraries
 
-The following libraries are needed to enable the access to USB devices and handling the video streaming:
+The following libraries are needded to enable the access to USB devices and handling the video streaming:
 
 * libusb-1.0-0-dev
-* libopus-dev 
-* ffmpeg 
-* libavcodec-dev 
-* libavformat-dev 
+* libopus-dev
+* ffmpeg
+* libavcodec-dev
+* libavformat-dev
 * libavfilter-dev
 
-The following library is used to work with JSON:
-* nlohmann-json-dev

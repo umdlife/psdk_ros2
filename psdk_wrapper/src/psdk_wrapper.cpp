@@ -43,6 +43,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.data_transmission", rclcpp::ParameterValue(true));
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
   declare_parameter("map_frame", rclcpp::ParameterValue("psdk_map_enu"));
@@ -166,7 +167,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   // Deinitialize all remaining modules
   if (!deinit_telemetry() || !deinit_flight_control() ||
       !deinit_camera_manager() || !deinit_gimbal_manager() ||
-      !deinit_liveview() || !deinit_hms())
+      !deinit_liveview() || !deinit_hms() || !deinit_data_transmission())
   {
     return CallbackReturn::FAILURE;
   }
@@ -380,6 +381,7 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
   get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
+  get_parameter("mandatory_modules.data_transmission", is_data_transmission_module_mandatory_);
   get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
 
   if (!get_parameter("imu_frame", params_.imu_frame))
@@ -488,7 +490,7 @@ PSDKWrapper::load_parameters()
     params_.velocity_frequency = VELOCITY_TOPICS_MAX_FREQ;
   }
 
-  if (!get_parameter("data_frequency.angular_velocity",
+if (!get_parameter("data_frequency.angular_velocity",
                      params_.angular_rate_frequency))
   {
     RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
@@ -877,6 +879,8 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/altitude_sea_level", 10);
   altitude_barometric_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/altitude_barometric", 10);
+  low_speed_transmission_data_pub_ = create_publisher<psdk_interfaces::msg::TransmissionData>(
+      "psdk_ros2/low_speed_transmission_data", 10);
   hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
       "psdk_ros2/hms_info_table", 10);
 
@@ -1178,6 +1182,7 @@ PSDKWrapper::activate_ros_elements()
   home_point_altitude_pub_->on_activate();
   altitude_sl_pub_->on_activate();
   altitude_barometric_pub_->on_activate();
+  low_speed_transmission_data_pub_->on_activate();
   hms_info_table_pub_->on_activate();
 }
 
@@ -1472,7 +1477,9 @@ PSDKWrapper::initialize_psdk_modules()
       {std::bind(&PSDKWrapper::init_gimbal_manager, this),
        is_gimbal_module_mandatory_},
       {std::bind(&PSDKWrapper::init_liveview, this),
-       is_liveview_module_mandatory_}};
+       is_liveview_module_mandatory_},
+      {std::bind(&PSDKWrapper::init_data_transmission, this),
+       is_data_transmission_module_mandatory_}};
 
   for (const auto &initializer : module_initializers)
   {
