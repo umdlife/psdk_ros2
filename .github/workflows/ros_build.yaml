@@ -6,6 +6,9 @@ on:
 permissions:
   contents: write
   statuses: write
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
 jobs:
   clang-format-lint:
       name: Code Formatting
