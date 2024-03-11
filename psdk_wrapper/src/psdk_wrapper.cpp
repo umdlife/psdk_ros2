@@ -423,7 +423,7 @@ PSDKWrapper::load_parameters()
     RCLCPP_WARN(
         get_logger(),
         "hms_return_codes_path param not defined, using default one: %s",
-        params_.hms_return_codes_path);
+        params_.hms_return_codes_path.c_str());
   }
 
   // Get data frequency
@@ -942,6 +942,9 @@ PSDKWrapper::initialize_ros_elements()
   turn_off_motors_srv_ = create_service<Trigger>(
       "psdk_ros2/turn_off_motors",
       std::bind(&PSDKWrapper::turn_off_motors_cb, this, _1, _2));
+  emergency_stop_motors_srv_ = create_service<Trigger>(
+      "psdk_ros2/emergency_stop_motors",
+      std::bind(&PSDKWrapper::emergency_stop_motors_cb, this, _1, _2));
   takeoff_srv_ = create_service<Trigger>(
       "psdk_ros2/takeoff",
       std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
@@ -1250,6 +1253,7 @@ PSDKWrapper::clean_ros_elements()
   release_ctrl_authority_srv_.reset();
   turn_on_motors_srv_.reset();
   turn_off_motors_srv_.reset();
+  emergency_stop_motors_srv_.reset();
   takeoff_srv_.reset();
   land_srv_.reset();
   cancel_landing_srv_.reset();

@@ -1244,6 +1244,18 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   void turn_off_motors_cb(const std::shared_ptr<Trigger::Request> request,
                           const std::shared_ptr<Trigger::Response> response);
+
+  /**
+   * @brief Callback function to emergency_stop_motors service which triggers
+   * the emergency stop of the motors. Warning: This will stop the motors
+   * immediately and the aircraft will fall from the sky.
+   * @param request Trigger service request
+   * @param response Trigger service response
+   */
+  void emergency_stop_motors_cb(
+      const std::shared_ptr<Trigger::Request> request,
+      const std::shared_ptr<Trigger::Response> response);
+
   /**
    * @brief Request Take-off action while copter is on the ground.
    * @param request Trigger service request
@@ -1846,6 +1858,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp::Service<Trigger>::SharedPtr release_ctrl_authority_srv_;
   rclcpp::Service<Trigger>::SharedPtr turn_on_motors_srv_;
   rclcpp::Service<Trigger>::SharedPtr turn_off_motors_srv_;
+  rclcpp::Service<Trigger>::SharedPtr emergency_stop_motors_srv_;
   rclcpp::Service<Trigger>::SharedPtr takeoff_srv_;
   rclcpp::Service<Trigger>::SharedPtr land_srv_;
   rclcpp::Service<Trigger>::SharedPtr cancel_landing_srv_;

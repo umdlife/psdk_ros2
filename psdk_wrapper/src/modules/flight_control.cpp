@@ -859,4 +859,26 @@ PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb(
   DjiFlightController_ExecuteJoystickAction(joystick_command);
 }
 
+void
+PSDKWrapper::emergency_stop_motors_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
+{
+  (void)request;
+  RCLCPP_WARN(get_logger(), "Emergency stop motors requested!");
+  E_DjiFlightControllerEmergencyStopMotor cmd =
+      DJI_FLIGHT_CONTROLLER_ENABLE_EMERGENCY_STOP_MOTOR;
+
+  char* debug_msg = "User requested emergency stop of motors!";
+  auto result = DjiFlightController_EmergencyStopMotor(cmd, debug_msg);
+  if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not stop motors! Error code is: %ld",
+                 result);
+    response->success = false;
+    return;
+  }
+  RCLCPP_INFO(get_logger(), "Motors have been stopped");
+  response->success = true;
+}
 }  // namespace psdk_ros2
