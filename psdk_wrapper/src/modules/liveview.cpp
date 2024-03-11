@@ -122,14 +122,14 @@ PSDKWrapper::camera_setup_streaming_cb(
       char main_camera_name[] = "MAIN_CAMERA";
       streaming_result = start_camera_stream(&c_publish_main_streaming_callback,
                                              &main_camera_name, payload_index,
-          selected_camera_source_);
+                                             selected_camera_source_);
     }
     else if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
     {
       char fpv_camera_name[] = "FPV_CAMERA";
       streaming_result = start_camera_stream(&c_publish_fpv_streaming_callback,
                                              &fpv_camera_name, payload_index,
-          selected_camera_source_);
+                                             selected_camera_source_);
     }
 
     if (streaming_result)
@@ -161,8 +161,8 @@ PSDKWrapper::camera_setup_streaming_cb(
 
 bool
 PSDKWrapper::start_camera_stream(CameraImageCallback callback, void *user_data,
-                                      E_DjiLiveViewCameraPosition payload_index,
-                                      E_DjiLiveViewCameraSource camera_source)
+                                 E_DjiLiveViewCameraPosition payload_index,
+                                 E_DjiLiveViewCameraSource camera_source)
 {
   if (decode_stream_)
   {

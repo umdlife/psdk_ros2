@@ -836,9 +836,11 @@ PSDKWrapper::initialize_ros_elements()
   battery_pub_ =
       create_publisher<sensor_msgs::msg::BatteryState>("psdk_ros2/battery", 10);
   single_battery_index1_pub_ =
-      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>("psdk_ros2/single_battery_index1", 10);
+      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>(
+          "psdk_ros2/single_battery_index1", 10);
   single_battery_index2_pub_ =
-    create_publisher<psdk_interfaces::msg::SingleBatteryInfo>("psdk_ros2/single_battery_index2", 10);
+      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>(
+          "psdk_ros2/single_battery_index2", 10);
   height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/height_above_ground", 10);
   angular_rate_body_raw_pub_ =
