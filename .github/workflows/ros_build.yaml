@@ -3,8 +3,67 @@ name: ROS2 Build
 on: 
   pull_request:
     types: [opened, synchronize, reopened]
-
+permissions:
+  contents: write
+  statuses: write
 jobs:
+  clang-format-lint:
+      name: Code Formatting
+      runs-on: ubuntu-latest
+      steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          path: psdk_ros2
+      - name: Checkout UMD Workflows
+        uses: actions/checkout@v4
+        with:
+          repository: umdlife/umd_workflows
+          path: umd_workflows
+
+      - name: Attach clang-format
+        run: |
+          cp umd_workflows/.clang-format .
+          rm -rf umd_workflows
+
+      - uses: DoozyX/clang-format-lint-action@v0.15
+        with:
+          source: '.'
+          extensions: 'h,c,cpp,hpp'
+          clangFormatVersion: 14
+          inplace: True
+        continue-on-error: true
+
+      - uses: EndBug/add-and-commit@v9.1.1
+        with:
+          author_name: UMLDev Clang Robot
+          author_email: dev@unmanned.life
+          message: 'Committing clang-format changes'
+
+  super-linter:
+    needs: clang-format-lint
+    name: Lint Code Base
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          path: psdk_ros2
+
+      - name: Super Linter
+        uses: github/super-linter/slim@v4
+        env:
+          DEFAULT_BRANCH: ${{ github.base_ref }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LOG_LEVEL: NOTICE
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_CPP: true
+          VALIDATE_PYTHON_BLACK: true
+          VALIDATE_PYTHON_FLAKE8: true
+          VALIDATE_XML: true
+          VALIDATE_YAML: true
+          FILTER_REGEX_EXCLUDE: .*src/common/.*c
+
   ros2_build:
     runs-on: ubuntu-latest
     steps:
