@@ -13,8 +13,7 @@ jobs:
       steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          path: psdk_ros2
+
       - name: Checkout UMD Workflows
         uses: actions/checkout@v4
         with:
@@ -24,15 +23,15 @@ jobs:
       - name: Attach clang-format
         run: |
           cp umd_workflows/.clang-format .
+          cp umd_workflows/run-clang-format.py .
           rm -rf umd_workflows
 
-      - uses: DoozyX/clang-format-lint-action@v0.15
-        with:
-          source: '.'
-          extensions: 'h,c,cpp,hpp'
-          clangFormatVersion: 14
-          inplace: True
-        continue-on-error: true
+      - name: Clang Format Lint
+        env:
+          EXCLUDE: ${{ inputs.regex_exclude }}
+        run: |
+          python3 run-clang-format.py --clang-format-executable /usr/bin/clang-format -r --color always --style 'file' --inplace True --extensions 'h,c,cpp,hpp' --exclude "$EXCLUDE" '.'
+          rm run-clang-format.py
 
       - uses: EndBug/add-and-commit@v9.1.1
         with:
@@ -62,7 +61,7 @@ jobs:
           VALIDATE_PYTHON_FLAKE8: true
           VALIDATE_XML: true
           VALIDATE_YAML: true
-          FILTER_REGEX_EXCLUDE: .*src/common/.*c
+          # FILTER_REGEX_EXCLUDE: .*src/common/.*c
 
   ros2_build:
     runs-on: ubuntu-latest
