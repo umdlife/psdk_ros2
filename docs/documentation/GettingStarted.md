@@ -45,6 +45,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | developer_account             | String    | -                                  | Add your developer account (not mandatory)  |
 | baudrate                      | String    | 921600                             | -                                           |
 | num_of_initialization_retries | Int       | 1                                  | Num of retries to init the PSDK app         |
+| tf_frame_prefix               | String    | TF frame prefix                    | Add prefix before the frame name            |
 | imu_frame                     | String    | "psdk_imu_link"                    | -                                           |
 | body_frame                    | String    | "psdk_base_link"                   | -                                           |
 | map_frame                     | String    | "psdk_map_enu"                     | -                                           |

@@ -230,6 +230,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string developer_account;
     std::string baudrate;
     std::string link_config_file_path;
+    std::string tf_frame_prefix;
     std::string imu_frame;
     std::string body_frame;
     std::string map_frame;
@@ -2054,6 +2055,13 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   psdk_interfaces::msg::HmsInfoTable to_ros2_msg(
       const T_DjiHmsInfoTable& hms_info_table, const nlohmann::json& codes,
       const char* language = "en");
+
+  /**
+   * @brief Method to generate a tf adding the tf_prefix to the frame name
+   * @param frame_name name of the frame to be transformed
+   * @return string with the tf name
+   */
+  std::string add_tf_prefix(const std::string& frame_name);
 
   /* Global variables */
   PSDKParams params_;
