@@ -202,7 +202,7 @@ T_DjiReturnCode
 c_esc_callback(const uint8_t *data, uint16_t data_size,
                const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->c_esc_callback(data, data_size, timestamp);
+  return global_ptr_->esc_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
