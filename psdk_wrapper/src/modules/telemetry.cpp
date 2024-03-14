@@ -863,8 +863,8 @@ PSDKWrapper::esc_callback(const uint8_t *data, uint16_t data_size,
     esc_individual_msg.stall = esc_data->esc[i].stall;
     esc_individual_msg.empty = esc_data->esc[i].empty;
     esc_individual_msg.unbalanced = esc_data->esc[i].unbalanced;
-    esc_individual_msg.escDisconnected = esc_data->esc[i].escDisconnected;
-    esc_individual_msg.temperatureHigh = esc_data->esc[i].temperatureHigh;
+    esc_individual_msg.esc_disconnected = esc_data->esc[i].escDisconnected;
+    esc_individual_msg.temperature_high = esc_data->esc[i].temperatureHigh;
     esc_msg.esc.push_back(esc_individual_msg);
   }
   esc_pub_->publish(esc_msg);

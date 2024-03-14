@@ -5,5 +5,5 @@ int16 temperature        # ESC temperature, unit: degree C
 int16 stall               # Motor is stall
 int16 empty               # Motor has no load
 int16 unbalanced          # Motor speed is unbalanced
-int16 escDisconnected     # ESC is disconnected
-int16 temperatureHigh     # Temperature is high
+int16 esc_disconnected     # ESC is disconnected
+int16 temperature_high     # Temperature is high
