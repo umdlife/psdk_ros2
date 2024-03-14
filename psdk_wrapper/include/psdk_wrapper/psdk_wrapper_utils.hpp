@@ -39,6 +39,7 @@
 #define FLIGHT_STATUS_TOPICS_MAX_FREQ 50
 #define BATTERY_STATUS_TOPICS_MAX_FREQ 50
 #define CONTROL_DATA_TOPICS_MAX_FREQ 50
+#define ESC_DATA_TOPICS_FREQ 10
 
 #define GOOD_GPS_SIGNAL_LEVEL 5
 
@@ -183,7 +184,7 @@ const std::vector<DJITopic> topics_to_subscribe{
              CONTROL_DATA_TOPICS_MAX_FREQ},
     DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ALTITUDE_OF_HOMEPOINT,
              CONTROL_DATA_TOPICS_MAX_FREQ},
-};
+    DJITopic{DJI_FC_SUBSCRIPTION_TOPIC_ESC_DATA, ESC_DATA_TOPICS_FREQ}};
 
 const std::map<E_DjiCameraType, std::string> camera_type_str = {
     {DJI_CAMERA_TYPE_UNKNOWN, "Unkown"},

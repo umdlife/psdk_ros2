@@ -199,6 +199,13 @@ c_rc_callback(const uint8_t *data, uint16_t data_size,
 }
 
 T_DjiReturnCode
+c_esc_callback(const uint8_t *data, uint16_t data_size,
+               const T_DjiDataTimestamp *timestamp)
+{
+  return global_ptr_->c_esc_callback(data, data_size, timestamp);
+}
+
+T_DjiReturnCode
 c_rc_connection_status_callback(const uint8_t *data, uint16_t data_size,
                                 const T_DjiDataTimestamp *timestamp)
 {
@@ -831,6 +838,36 @@ PSDKWrapper::rc_callback(const uint8_t *data, uint16_t data_size,
   rc_msg.buttons[0] = rc_data->mode;   // [-10000,10000]
   rc_msg.buttons[1] = rc_data->gear;   // [-10000,10000]
   rc_pub_->publish(rc_msg);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+T_DjiReturnCode
+PSDKWrapper::esc_callback(const uint8_t *data, uint16_t data_size,
+                          const T_DjiDataTimestamp *timestamp)
+{
+  (void)data_size;
+  (void)timestamp;
+  std::unique_ptr<T_DjiFcSubscriptionEscData> esc_data =
+      std::make_unique<T_DjiFcSubscriptionEscData>(
+          *reinterpret_cast<const T_DjiFcSubscriptionEscData *>(data));
+  psdk_interfaces::msg::EscData esc_msg;
+  esc_msg.header.stamp = this->get_clock()->now();
+  // Populate the message with ESC data
+  for (int i = 0; i < 4; ++i)
+  {
+    psdk_interfaces::msg::EscStatusIndividual esc_individual_msg;
+    esc_individual_msg.current = esc_data->esc[i].current;
+    esc_individual_msg.speed = esc_data->esc[i].speed;
+    esc_individual_msg.voltage = esc_data->esc[i].voltage;
+    esc_individual_msg.temperature = esc_data->esc[i].temperature;
+    esc_individual_msg.stall = esc_data->esc[i].stall;
+    esc_individual_msg.empty = esc_data->esc[i].empty;
+    esc_individual_msg.unbalanced = esc_data->esc[i].unbalanced;
+    esc_individual_msg.escDisconnected = esc_data->esc[i].escDisconnected;
+    esc_individual_msg.temperatureHigh = esc_data->esc[i].temperatureHigh;
+    esc_msg.esc.push_back(esc_individual_msg);
+  }
+  esc_pub_->publish(esc_msg);
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -1735,6 +1772,20 @@ PSDKWrapper::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_RC_WITH_FLAG_DATA, error %ld",
+                   return_code);
+    }
+  }
+  if (params_.esc_data_frequency > 0)
+  {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_ESC_DATA,
+        get_frequency(params_.esc_data_frequency), c_esc_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_ESC_DATA, error %ld",
                    return_code);
     }
   }

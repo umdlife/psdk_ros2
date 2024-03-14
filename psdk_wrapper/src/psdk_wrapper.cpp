@@ -622,6 +622,22 @@ PSDKWrapper::load_parameters()
     params_.rc_channels_data_frequency = RC_CHANNELS_TOPICS_MAX_FREQ;
   }
 
+  if (!get_parameter("data_frequency.esc_data_frequency",
+                     params_.esc_data_frequency))
+  {
+    RCLCPP_ERROR(get_logger(), "esc_data_frequency param not defined");
+    exit(-1);
+  }
+  if (params_.esc_data_frequency > ESC_DATA_TOPICS_FREQ)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for the ESC channel topics is higher than "
+                "the maximum "
+                "allowed %d. Tha maximum value is set",
+                ESC_DATA_TOPICS_FREQ);
+    params_.esc_data_frequency = ESC_DATA_TOPICS_FREQ;
+  }
+
   if (!get_parameter("data_frequency.gimbal_data",
                      params_.gimbal_data_frequency))
   {
@@ -831,6 +847,8 @@ PSDKWrapper::initialize_ros_elements()
   rc_connection_status_pub_ =
       create_publisher<psdk_interfaces::msg::RCConnectionStatus>(
           "psdk_ros2/rc_connection_status", 10);
+  esc_pub_ =
+      create_publisher<psdk_interface::msg::EscData>("psdk_ros2/esc_data", 1);
   gimbal_angles_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
       "psdk_ros2/gimbal_angles", 10);
   gimbal_status_pub_ = create_publisher<psdk_interfaces::msg::GimbalStatus>(
@@ -1164,6 +1182,7 @@ PSDKWrapper::activate_ros_elements()
   rtk_connection_status_pub_->on_activate();
   magnetic_field_pub_->on_activate();
   rc_pub_->on_activate();
+  esc_pub_->on_activate();
   rc_connection_status_pub_->on_activate();
   gimbal_angles_pub_->on_activate();
   gimbal_status_pub_->on_activate();
@@ -1215,6 +1234,7 @@ PSDKWrapper::deactivate_ros_elements()
   rtk_connection_status_pub_->on_deactivate();
   magnetic_field_pub_->on_deactivate();
   rc_pub_->on_deactivate();
+  esc_pub_->on_deactivate();
   rc_connection_status_pub_->on_deactivate();
   gimbal_angles_pub_->on_deactivate();
   gimbal_status_pub_->on_deactivate();
@@ -1339,6 +1359,7 @@ PSDKWrapper::clean_ros_elements()
   rtk_connection_status_pub_.reset();
   magnetic_field_pub_.reset();
   rc_pub_.reset();
+  esc_pub_.reset();
   rc_connection_status_pub_.reset();
   gimbal_angles_pub_.reset();
   gimbal_status_pub_.reset();
