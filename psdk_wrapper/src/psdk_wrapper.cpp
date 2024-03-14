@@ -848,7 +848,7 @@ PSDKWrapper::initialize_ros_elements()
       create_publisher<psdk_interfaces::msg::RCConnectionStatus>(
           "psdk_ros2/rc_connection_status", 10);
   esc_pub_ =
-      create_publisher<psdk_interface::msg::EscData>("psdk_ros2/esc_data", 1);
+      create_publisher<psdk_interfaces::msg::EscData>("psdk_ros2/esc_data", 1);
   gimbal_angles_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
       "psdk_ros2/gimbal_angles", 10);
   gimbal_status_pub_ = create_publisher<psdk_interfaces::msg::GimbalStatus>(
