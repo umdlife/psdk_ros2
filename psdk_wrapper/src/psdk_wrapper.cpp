@@ -69,6 +69,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.flight_status", 1);
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
+  declare_parameter("data_frequency.esc_data_frequency", 1);
 
   declare_parameter("num_of_initialization_retries", 1);
 }
