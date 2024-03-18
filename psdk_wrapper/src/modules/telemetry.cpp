@@ -1424,6 +1424,7 @@ PSDKWrapper::home_point_altitude_callback(const uint8_t *data,
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
+// super-linter-disable-next-line
 void
 PSDKWrapper::subscribe_psdk_topics()
 {
