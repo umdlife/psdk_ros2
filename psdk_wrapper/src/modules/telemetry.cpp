@@ -1442,7 +1442,9 @@ PSDKWrapper::subscribe_psdk_topics()
                    return_code);
     }
   }
-
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_QUATERNION
+   */
   if (params_.attitude_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1456,6 +1458,9 @@ PSDKWrapper::subscribe_psdk_topics()
                    return_code);
     }
   }
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_ACCELERATION
+   */
   if (params_.acceleration_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1495,6 +1500,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_VELOCITY
+   */
   if (params_.velocity_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1510,6 +1518,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_ANGULAR_RATE
+   */
   if (params_.angular_rate_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1539,6 +1550,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_POSITION
+   */
   if (params_.position_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1554,6 +1568,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_ALTITUDE
+   */
   if (params_.altitude_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1581,6 +1598,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_GPS
+   */
   if (params_.gps_fused_position_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1597,6 +1617,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_GPS_POSITION
+   */
   if (params_.gps_data_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1660,6 +1683,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_RTK_POSITION
+   */
   if (params_.rtk_data_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1735,6 +1761,10 @@ PSDKWrapper::subscribe_psdk_topics()
                    return_code);
     }
   }
+
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_COMPASS
+   */
   if (params_.magnetometer_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1749,6 +1779,10 @@ PSDKWrapper::subscribe_psdk_topics()
                    return_code);
     }
   }
+
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_RC
+   */
   if (params_.rc_channels_data_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1881,6 +1915,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_INFO
+   */
   if (params_.battery_level_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
@@ -1922,6 +1959,9 @@ PSDKWrapper::subscribe_psdk_topics()
     }
   }
 
+  /*
+   *  Subscribe to the topic DJI_FC_SUBSCRIPTION_TOPIC_HEIGHT_FUSION
+   */
   if (params_.control_information_frequency > 0)
   {
     return_code = DjiFcSubscription_SubscribeTopic(
