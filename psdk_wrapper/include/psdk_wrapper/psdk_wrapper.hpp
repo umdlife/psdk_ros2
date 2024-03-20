@@ -230,6 +230,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string developer_account;
     std::string baudrate;
     std::string link_config_file_path;
+    std::string tf_frame_prefix;
     std::string imu_frame;
     std::string body_frame;
     std::string map_frame;
@@ -1041,8 +1042,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
 
   /**
-   * @brief Retrieves single information of battery with index 1. More information about this topic can be found in the
-   * dji_fc_subscription.h.
+   * @brief Retrieves single information of battery with index 1. More
+   * information about this topic can be found in the dji_fc_subscription.h.
    * @param data pointer to T_DjiFcSubscriptionSingleBatteryInfo data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
@@ -1054,8 +1055,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
 
   /**
-   * @brief Retrieves single information of battery with index 2. More information about this topic can be found in the
-   * dji_fc_subscription.h.
+   * @brief Retrieves single information of battery with index 2. More
+   * information about this topic can be found in the dji_fc_subscription.h.
    * @param data pointer to T_DjiFcSubscriptionSingleBatteryInfo data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
@@ -1777,9 +1778,14 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       psdk_interfaces::msg::DisplayMode>::SharedPtr display_mode_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_index1_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_index2_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr
+      single_battery_index1_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr
+      single_battery_index2_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
@@ -2046,9 +2052,16 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param language Language to fetch the return codes in.
    * @return psdk_interfaces::msg::HmsInfoTable
    */
-  psdk_interfaces::msg::HmsInfoTable
-  to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
-              const nlohmann::json& codes, const char* language = "en");
+  psdk_interfaces::msg::HmsInfoTable to_ros2_msg(
+      const T_DjiHmsInfoTable& hms_info_table, const nlohmann::json& codes,
+      const char* language = "en");
+
+  /**
+   * @brief Method to generate a tf adding the tf_prefix to the frame name
+   * @param frame_name name of the frame to be transformed
+   * @return string with the tf name
+   */
+  std::string add_tf_prefix(const std::string& frame_name);
 
   /* Global variables */
   PSDKParams params_;
