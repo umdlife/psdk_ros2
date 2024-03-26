@@ -46,4 +46,4 @@
         flight_status: 1
         battery_level: 1
         control_information: 1
-        esc_data_frequency: 10
+        esc_data_frequency: 1

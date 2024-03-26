@@ -853,7 +853,7 @@ PSDKWrapper::esc_callback(const uint8_t *data, uint16_t data_size,
   psdk_interfaces::msg::EscData esc_msg;
   esc_msg.header.stamp = this->get_clock()->now();
   // Populate the message with ESC data
-  for (int i = 0; i < 4; ++i)
+  for (int i = 0; i < 8; ++i)
   {
     psdk_interfaces::msg::EscStatusIndividual esc_individual_msg;
     esc_individual_msg.current = esc_data->esc[i].current;
