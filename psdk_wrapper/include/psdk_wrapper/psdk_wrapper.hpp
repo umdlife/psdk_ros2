@@ -67,6 +67,7 @@
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
+#include "psdk_interfaces/msg/esc_data.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
@@ -254,6 +255,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     int flight_status_frequency;
     int battery_level_frequency;
     int control_information_frequency;
+    int esc_data_frequency;
   };
 
   std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder*>
@@ -448,6 +450,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_rc_callback(const uint8_t* data, uint16_t data_size,
                                        const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_esc_callback(const uint8_t* data, uint16_t data_size,
+                                        const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_rc_connection_status_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
@@ -818,6 +822,19 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return T_DjiReturnCode error code indicating if the subscription has been
    * done correctly
    */
+
+  /**
+   * @brief Retrieves the ESC data provided by DJI PSDK lib and publishes it on
+   * a ROS 2 topic.This topic provides esc data
+   * @param data pointer to T_DjiFcSubscriptionEscData data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode esc_callback(const uint8_t* data, uint16_t data_size,
+                               const T_DjiDataTimestamp* timestamp);
+
   T_DjiReturnCode gimbal_angles_callback(const uint8_t* data,
                                          uint16_t data_size,
                                          const T_DjiDataTimestamp* timestamp);
@@ -1764,6 +1781,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::RCConnectionStatus>::SharedPtr
       rc_connection_status_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::EscData>::SharedPtr
+      esc_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr gimbal_angles_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
