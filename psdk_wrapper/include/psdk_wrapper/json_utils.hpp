@@ -18,6 +18,8 @@
 #define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_JSON_UTILS_HPP_
 
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <nlohmann/json.hpp>
 
 namespace psdk_ros2
