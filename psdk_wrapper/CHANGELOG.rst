@@ -2,8 +2,8 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.1 (2024-03-27)
+------------------
 * Merge pull request `#68 <https://github.com/umdlife/psdk_ros2/issues/68>`_ from umdlife/hotfix/motors-stop
   Add ESC data
 * Merge pull request `#60 <https://github.com/umdlife/psdk_ros2/issues/60>`_ from RPS98/add_namespace_to_tf
