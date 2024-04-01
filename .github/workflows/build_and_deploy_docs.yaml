@@ -47,7 +47,7 @@ jobs:
         make -C docs html  # This assumes your Sphinx configuration is in a 'docs' folder
     
     - name: Setup Pages
-      uses: actions/configure-pages@v4
+      uses: actions/configure-pages@v5
       
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
