@@ -143,6 +143,12 @@ Given the high number of topics available, these have been grouped under differe
 | ------------------------- |-----------|
 | psdk_ros2/hms_info_table  |  1 Hz     |
 
+* **ESC Data**
+
+| ROS 2 Topic               | Max. freq |
+| ------------------------- |-----------|
+| psdk_ros2/esc_data        |  50 Hz    |
+
 The user can set a specific publishing frequency to each category within the `psdk_params.yaml` file and this will be applied to all topics contained within it. The possible frequencies that can be set for any given category are: 1, 5, 10, 50, 100, 200, 400 Hz.  If the frequency set by the user is higher than the maximum one handled internally by the PSDK libraries, an error message will appear. 
 
 <div style="background-color: #D6EAF8; padding: 10px; border: 1px solid ##FBFAFA;">

@@ -1,38 +1,14 @@
- # Getting started
-
-To use the psdk_ros2 wrapper you will need to create a new workspace in which you clone both the wrapper as well as the Payload-SDK libraries. 
-
-```bash
-mkdir -p ~/psdk_ros2_ws/src
-cd ~/psdk_ros2_ws/src
-# Clone the psdk_ros2 wrapper
-git clone https://github.com/umdlife/psdk_ros2.git
-
-# Before building, check the Dependencies section and make sure you have everything installed
-# You can also run rosdep to automatically install the dependencies
-rosdep update
-rosdep keys --from-paths . --ignore-src --rosdistro humble | \
-  xargs rosdep resolve --rosdistro humble | \
-  awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
-sudo apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt) 
-
-# Build the code
-cd ~/psdk_ros2_ws
-colcon build
-
-# Launch the node
-ros2 launch psdk_wrapper wrapper.launch.py
-
-# Default link_config_file_path = psdk_wrapper/cfg/link_config.json
-# Default psdk_params_file_path = psdk_wrapper/cfg/psdk_params.yml
-# If using parameter and config files different than the default ones, you can point to them as:
-ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
-
-```
-
-
+# Getting started
 
 ## Configuration
+
+### Hardware configuration 
+
+Before launching the psdk_ros2 wrapper, you must ensure that you are using the proper hardware connection to the DJI drone. Please be aware that each drone model may require a different connection type. Refer to the instructions provided by DJI here: [Aircraft Hardware Connection](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/device-connect.html). For the drones using the E-Port connection, ensure the necessary setup on your board is performed to enable both serial and network communication. You can find some examples on how to do that here: [E-Port Quick Start](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/quick-guide/jetson-nano.html). We advise to first try and run the DJI sample code, and only afterwards run the psdk_ros2 wrapper. 
+
+Once you've established the hardware connection between your board and the DJI drone, you can configure the psdk_ros2 wrapper to utilize that setup through the  *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file (cfg/psdk_params.yml). 
+
+### ROS 2 Parameter configuration
 
 The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.yaml* file:
 
@@ -74,9 +50,56 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - flight_status               | Integer   | 1                                  | -                                           |
 | - battery_level               | Integer   | 1                                  | -                                           |
 | - control_information         | Integer   | 1                                  | -                                           |
+| - esc_data_frequency          | Integer   | 1                                  | -                                           |
 
+## Running the psdk_ros2 wrapper
 
-To configure the hardware connection type and to specify the exact ports that need to be used, please use the *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Thus, for simplicity, the psdk_ros2 wrapper follows the same approach. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file (cfg/psdk_params.yml). 
+### Debian packages for ROS 2 Humble
+
+```bash
+# Install debians
+sudo apt install ros-humble-psdk-wrapper ros-humble-psdk-interfaces
+source /opt/ros/humble/setup.bash
+
+# Launch the node
+# Default link_config_file_path = /opt/ros/humble/share/psdk_wrapper/cfg/link_config.json
+# Default psdk_params_file_path = /opt/ros/humble/share/psdk_wrapper/cfg/psdk_params.yaml
+# If using parameter and config files different than the default ones, you can point to them as:
+ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
+ 
+```
+
+### Compile from source
+
+To use the psdk_ros2 wrapper you will need to create a new workspace in which you clone both the wrapper as well as the Payload-SDK libraries. 
+
+```bash
+mkdir -p ~/psdk_ros2_ws/src
+cd ~/psdk_ros2_ws/src
+# Clone the psdk_ros2 wrapper
+git clone https://github.com/umdlife/psdk_ros2.git
+
+# Before building, check the Dependencies section and make sure you have everything installed
+# You can also run rosdep to automatically install the dependencies
+rosdep update
+rosdep keys --from-paths . --ignore-src --rosdistro humble | \
+  xargs rosdep resolve --rosdistro humble | \
+  awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
+sudo apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt) 
+
+# Build the code
+cd ~/psdk_ros2_ws
+colcon build
+
+# Launch the node
+ros2 launch psdk_wrapper wrapper.launch.py
+
+# Default link_config_file_path = psdk_wrapper/cfg/link_config.json
+# Default psdk_params_file_path = psdk_wrapper/cfg/psdk_params.yml
+# If using parameter and config files different than the default ones, you can point to them as:
+ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
+
+```
 
 ## Udev rules
 
