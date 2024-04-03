@@ -54,6 +54,21 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 
 ## Running the psdk_ros2 wrapper
 
+### Debian packages for ROS 2 Humble
+
+```bash
+# Install debians
+sudo apt install ros-humble-psdk-wrapper ros-humble-psdk-interfaces
+source /opt/ros/humble/setup.bash
+
+# Launch the node
+# Default link_config_file_path = /opt/ros/humble/share/psdk_wrapper/cfg/link_config.json
+# Default psdk_params_file_path = /opt/ros/humble/share/psdk_wrapper/cfg/psdk_params.yaml
+# If using parameter and config files different than the default ones, you can point to them as:
+ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
+ 
+```
+
 ### Compile from source
 
 To use the psdk_ros2 wrapper you will need to create a new workspace in which you clone both the wrapper as well as the Payload-SDK libraries. 
@@ -84,21 +99,6 @@ ros2 launch psdk_wrapper wrapper.launch.py
 # If using parameter and config files different than the default ones, you can point to them as:
 ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
 
-```
-
-### Debian packages for ROS 2 Humble
-
-```bash
-# Install debians
-sudo apt install ros-humble-psdk-wrapper ros-humble-psdk-interfaces
-source /opt/ros/humble/setup.bash
-
-# Launch the node
-# Default link_config_file_path = /opt/ros/humble/share/psdk_wrapper/cfg/link_config.json
-# Default psdk_params_file_path = /opt/ros/humble/share/psdk_wrapper/cfg/psdk_params.yaml
-# If using parameter and config files different than the default ones, you can point to them as:
-ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
- 
 ```
 
 ## Udev rules
