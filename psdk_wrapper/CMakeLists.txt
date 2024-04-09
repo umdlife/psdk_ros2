@@ -63,7 +63,7 @@ find_package(LIBUSB REQUIRED)
 set(DJI_OSAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/common/osal)
 set(DJI_HAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/hal)
 set(DJI_STREAMING_PATH ${PSDK_PATH}/samples/sample_c++/module_sample/liveview)
-set(DJI_UTILS_PATH ${PSDK_PATH}/samples/sample_c/module_sample)
+set(DJI_UTILS_PATH ${PSDK_PATH}/samples/sample_c/module_sample/utils)
 set(DJI_HMS_RETURN_CODES_PATH ${PSDK_PATH}/samples/sample_c/module_sample/hms/data)
 
 # Find toolchain name needed to select the right PSDK lib
@@ -131,7 +131,7 @@ include_directories(${FFMPEG_INCLUDE_DIR})
 include_directories(${DJI_OSAL_PATH})
 include_directories(${DJI_HAL_PATH})
 include_directories(${DJI_STREAMING_PATH})
-include_directories(${DJI_UTILS_PATH}/utils)
+include_directories(${DJI_UTILS_PATH})
 include_directories(${PSDK_PATH}/psdk_lib/include)
 include_directories(include)
 
@@ -168,10 +168,10 @@ add_library(psdk_wrapper_libs SHARED
   ${DJI_HAL_PATH}/hal_uart.c
   ${DJI_STREAMING_PATH}/dji_camera_image_handler.cpp
   ${DJI_STREAMING_PATH}/dji_camera_stream_decoder.cpp
-  ${DJI_UTILS_PATH}/utils/util_misc.c
-  ${DJI_UTILS_PATH}/utils/util_file.c
-  ${DJI_UTILS_PATH}/utils/cJSON.c
-  ${DJI_UTILS_PATH}/utils/dji_config_manager.c
+  ${DJI_UTILS_PATH}/util_misc.c
+  ${DJI_UTILS_PATH}/util_file.c
+  ${DJI_UTILS_PATH}/cJSON.c
+  ${DJI_UTILS_PATH}/dji_config_manager.c
 )
 
 ament_target_dependencies(psdk_wrapper_libs
