@@ -12,7 +12,6 @@ jobs:
         with:
           path: psdk_ros2
       - name: ROS 2 Build Debian Package
-        id: build 
         run: |
          mv psdk_ros2/debian/create_debians.sh .
          sudo ./create_debians.sh
@@ -30,7 +29,6 @@ jobs:
         with:
           path: psdk_ros2
       - name: ROS 2 Build Debian Package
-        id: build 
         run: |
          mv psdk_ros2/debian/create_debians.sh .
          sudo ./create_debians.sh
@@ -48,7 +46,7 @@ jobs:
       contents: write
     steps:
       - name: Download Debians
-        uses: actions/download-artifact@v4.3.1
+        uses: actions/download-artifact@v4.1.4
       - name: Find Debians
         run: |
           echo "INTERFACES_AMD64=$(ls debians_amd64/*interfaces*.deb)" >> $GITHUB_ENV
