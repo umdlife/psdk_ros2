@@ -15,7 +15,7 @@ curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 apt update
-apt install -y --no-install-recommends ros-humble-ros-base python3-bloom python3-catkin-pkg dpkg-dev debhelper dh-python nlohmann-json3-dev python3-rosdep2
+apt install -y --no-install-recommends python3-bloom python3-catkin-pkg dpkg-dev debhelper dh-python nlohmann-json3-dev python3-rosdep2
 # rosdep init
 # cp psdk_ros2/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d
 # cp psdk_ros2/debian/rosdep.yaml /
@@ -30,8 +30,6 @@ rosdep keys --from-paths . --ignore-src --rosdistro humble --os ubuntu:jammy | \
   xargs rosdep resolve --rosdistro humble --os ubuntu:jammy | \
   awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
 apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt)
-
-source /opt/ros/humble/setup.bash
 
 PACKAGE_LIST=(
   psdk_ros2/psdk_interfaces \
