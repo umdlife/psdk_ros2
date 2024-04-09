@@ -11,7 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: umdlife/psdk_ros2
           path: psdk_ros2
       - name: ROS 2 Build Debian Package
         run: |
@@ -30,7 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: umdlife/psdk_ros2
           path: psdk_ros2
       - name: ROS 2 Build Debian Package
         run: |
