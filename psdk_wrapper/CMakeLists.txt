@@ -131,7 +131,7 @@ include_directories(${FFMPEG_INCLUDE_DIR})
 include_directories(${DJI_OSAL_PATH})
 include_directories(${DJI_HAL_PATH})
 include_directories(${DJI_STREAMING_PATH})
-include_directories(${DJI_UTILS_PATH})
+include_directories(${DJI_UTILS_PATH}/utils)
 include_directories(${PSDK_PATH}/psdk_lib/include)
 include_directories(include)
 
