@@ -45,7 +45,7 @@ for PACKAGE in ${PACKAGE_LIST[@]}; do
 
     # We have to go to the ROS package parent directory
     cd $PACKAGE;
-    bloom-generate rosdebian --ros-distro humble
+    bloom-generate rosdebian --ros-distro humble --os-name ubuntu --os-version jammy
     debian/rules "binary --parallel --dpkg-shlibdeps-params=--ignore-missing-info"
 
     cd ..
