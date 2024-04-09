@@ -32,6 +32,8 @@ rosdep keys --from-paths . --ignore-src --rosdistro humble --os ubuntu:jammy | \
   awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
 apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt)
 
+source /opt/ros/humble/setup.bash
+
 PACKAGE_LIST=(
   psdk_ros2/psdk_interfaces \
   psdk_ros2/psdk_wrapper
