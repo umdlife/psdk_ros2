@@ -1,24 +1,6 @@
 #!/bin/bash
-# locale  # check for UTF-8
-
-# apt update && apt install locales
-# locale-gen en_US en_US.UTF-8
-# update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-# export LANG=en_US.UTF-8
-
-# apt install -y --no-install-recommends software-properties-common
-# add-apt-repository universe
-
-# apt update && apt install curl -y
-# curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-
-# echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-
 apt update
 apt install -y --no-install-recommends python3-bloom python3-catkin-pkg dpkg-dev debhelper dh-python nlohmann-json3-dev
-# rosdep init
-# cp psdk_ros2/debian/50-my-packages.list /etc/ros/rosdep/sources.list.d
-# cp psdk_ros2/debian/rosdep.yaml /
 
 # store the current dir
 CUR_DIR=$(pwd)

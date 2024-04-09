@@ -7,14 +7,16 @@ on:
 jobs:
   build-debians-amd64:
     runs-on: [self-hosted, amd64]
+    container: ros:humble-ros-base
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: umdlife/psdk_ros2
           path: psdk_ros2
       - name: ROS 2 Build Debian Package
         run: |
-         mv psdk_ros2/debian/create_debians.sh .
-         sudo ./create_debians.sh
+          mv psdk_ros2/debian/create_debians.sh .
+          ./create_debians.sh
       - name: Upload Debians
         uses: actions/upload-artifact@v4.3.1
         with:
@@ -24,14 +26,16 @@ jobs:
             *.deb
   build-debians-arm64:
     runs-on: [self-hosted, arm64]
+    container: ros:humble-ros-base
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: umdlife/psdk_ros2
           path: psdk_ros2
       - name: ROS 2 Build Debian Package
         run: |
-         mv psdk_ros2/debian/create_debians.sh .
-         ./create_debians.sh
+          mv psdk_ros2/debian/create_debians.sh .
+          ./create_debians.sh
       - name: Upload Debians
         uses: actions/upload-artifact@v4.3.1
         with:
