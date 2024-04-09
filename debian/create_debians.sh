@@ -24,6 +24,7 @@ apt install -y --no-install-recommends python3-bloom python3-catkin-pkg dpkg-dev
 CUR_DIR=$(pwd)
 
 # Update ROS deps
+rosdep init
 rosdep update
 
 rosdep keys --from-paths . --ignore-src --rosdistro humble --os ubuntu:jammy | \
