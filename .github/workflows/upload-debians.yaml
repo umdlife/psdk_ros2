@@ -5,24 +5,62 @@ on:
       - '*'
 
 jobs:
-  build_debians:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+  build-debians-amd64:
+    runs-on: [self-hosted, amd64]
+    container: ros:humble-ros-base
     steps:
       - uses: actions/checkout@v4
         with:
           path: psdk_ros2
       - name: ROS 2 Build Debian Package
-        id: build 
         run: |
-         mv psdk_ros2/debian/create_debians.sh .
-         sudo ./create_debians.sh
-         echo "INTERFACES_DEB=$(find *interfaces*.deb)" >> $GITHUB_ENV
-         echo "WRAPPER_DEB=$(find *wrapper*.deb)" >> $GITHUB_ENV
-      - uses: d1ceward/draft-assets-release-action@v2
+          mv psdk_ros2/debian/create_debians.sh .
+          ./create_debians.sh
+      - name: Upload Debians
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: debians_amd64
+          if-no-files-found: error
+          path: |
+            *.deb
+  build-debians-arm64:
+    runs-on: [self-hosted, arm64]
+    container: ros:humble-ros-base
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: psdk_ros2
+      - name: ROS 2 Build Debian Package
+        run: |
+          mv psdk_ros2/debian/create_debians.sh .
+          ./create_debians.sh
+      - name: Upload Debians
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: debians_arm64
+          if-no-files-found: error
+          path: |
+            *.deb
+  draft-release:
+    needs: [build-debians-amd64, build-debians-arm64]
+    runs-on: self-hosted
+    permissions:
+      contents: write
+    steps:
+      - name: Download Debians
+        uses: actions/download-artifact@v4.1.4
+      - name: Find Debians
+        run: |
+          echo "INTERFACES_AMD64=$(ls debians_amd64/*interfaces*.deb)" >> $GITHUB_ENV
+          echo "INTERFACES_ARM64=$(ls debians_arm64/*interfaces*.deb)" >> $GITHUB_ENV
+          echo "WRAPPER_AMD64=$(ls debians_amd64/*wrapper*.deb)" >> $GITHUB_ENV
+          echo "WRAPPER_ARM64=$(ls debians_arm64/*wrapper*.deb)" >> $GITHUB_ENV
+      - name: Draft Release
+        uses: d1ceward/draft-assets-release-action@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            ${{ env.INTERFACES_DEB }}
-            ${{ env.WRAPPER_DEB }}
+            ${{ env.INTERFACES_AMD64 }}
+            ${{ env.INTERFACES_ARM64 }}
+            ${{ env.WRAPPER_AMD64 }}
+            ${{ env.WRAPPER_ARM64 }}
