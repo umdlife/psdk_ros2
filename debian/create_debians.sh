@@ -26,8 +26,8 @@ CUR_DIR=$(pwd)
 # Update ROS deps
 rosdep update
 
-rosdep keys --from-paths . --ignore-src --rosdistro humble | \
-  xargs rosdep resolve --rosdistro humble | \
+rosdep keys --from-paths . --ignore-src --rosdistro humble --os ubuntu:jammy | \
+  xargs rosdep resolve --rosdistro humble --os ubuntu:jammy | \
   awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
 apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt)
 
