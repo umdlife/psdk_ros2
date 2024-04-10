@@ -103,7 +103,6 @@
 #include "psdk_interfaces/srv/camera_set_optical_zoom.hpp"
 #include "psdk_interfaces/srv/camera_set_shutter_speed.hpp"
 #include "psdk_interfaces/srv/camera_setup_streaming.hpp"
-#include "psdk_interfaces/srv/camera_shoot_aeb_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_burst_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_interval_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_single_photo.hpp"
@@ -1599,9 +1598,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * well as the AEB count. (see enum E_DjiCameraManagerPhotoAEBCount).
    * @param response CameraShootAEBPhoto service response.
    */
-  void camera_shoot_aeb_photo_cb(
-      const std::shared_ptr<CameraShootAEBPhoto::Request> request,
-      const std::shared_ptr<CameraShootAEBPhoto::Response> response);
   /**
    * @brief Request shooting photos at a certain interval.
    * This service sets the camera work mode to
@@ -1896,8 +1892,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       camera_shoot_single_photo_service_;
   rclcpp::Service<CameraShootBurstPhoto>::SharedPtr
       camera_shoot_burst_photo_service_;
-  rclcpp::Service<CameraShootAEBPhoto>::SharedPtr
-      camera_shoot_aeb_photo_service_;
   rclcpp::Service<CameraShootIntervalPhoto>::SharedPtr
       camera_shoot_interval_photo_service_;
   rclcpp::Service<CameraStopShootPhoto>::SharedPtr
