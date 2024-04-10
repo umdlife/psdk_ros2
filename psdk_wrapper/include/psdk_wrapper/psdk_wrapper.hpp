@@ -55,7 +55,6 @@
 
 #include "dji_camera_manager.h"           //NOLINT
 #include "dji_camera_stream_decoder.hpp"  //NOLINT
-#include "dji_config_manager.h"           //NOLINT
 #include "dji_gimbal_manager.h"           //NOLINT
 #include "hal_network.h"                  //NOLINT
 #include "hal_uart.h"                     //NOLINT
@@ -63,6 +62,7 @@
 #include "osal.h"                         //NOLINT
 #include "osal_fs.h"                      //NOLINT
 #include "osal_socket.h"                  //NOLINT
+#include "utils/dji_config_manager.h"     //NOLINT
 
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/control_mode.hpp"
