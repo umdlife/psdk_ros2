@@ -139,7 +139,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   // Camera
   using CameraShootSinglePhoto = psdk_interfaces::srv::CameraShootSinglePhoto;
   using CameraShootBurstPhoto = psdk_interfaces::srv::CameraShootBurstPhoto;
-  using CameraShootAEBPhoto = psdk_interfaces::srv::CameraShootAEBPhoto;
   using CameraShootIntervalPhoto =
       psdk_interfaces::srv::CameraShootIntervalPhoto;
   using CameraStopShootPhoto = psdk_interfaces::srv::CameraStopShootPhoto;
@@ -1588,16 +1587,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraShootBurstPhoto::Request> request,
       const std::shared_ptr<CameraShootBurstPhoto::Response> response);
   /**
-   * @brief Request shooting photos in Automatic Exposure Bracketing (AEB) mode.
-   * This service sets the camera work mode to
-   * DJI_CAMERA_MANAGER_WORK_MODE_SHOOT_PHOTO, the shoot photo mode to
-   * DJI_CAMERA_MANAGER_SHOOT_PHOTO_MODE_AEB and sets the desired AEB count.
-   * Then, triggers the start shoot photo method.
-   * @param request CameraShootAEBPhoto service request. The camera
-   * mounted position for which the request is made needs to be specified as
-   * well as the AEB count. (see enum E_DjiCameraManagerPhotoAEBCount).
-   * @param response CameraShootAEBPhoto service response.
-   */
+
   /**
    * @brief Request shooting photos at a certain interval.
    * This service sets the camera work mode to
