@@ -87,14 +87,14 @@ PSDKWrapper::to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
         RCLCPP_WARN(
             get_logger(),
             "Selected language \'%s\' is not supported for error code \'%s\'",
-            language, ground_error_code.c_str());
+            language, ground_key_lower_case.c_str());
       }
     }
     else
     {
       RCLCPP_WARN(get_logger(),
                   "Error code \'%s\' does not match any known error codes",
-                  ground_error_code.c_str());
+                  ground_key_lower_case.c_str());
     }
   }
 
