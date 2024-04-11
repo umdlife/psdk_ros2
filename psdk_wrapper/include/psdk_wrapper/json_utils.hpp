@@ -26,11 +26,21 @@ namespace psdk_ros2
 {
 namespace json_utils
 {
-inline nlohmann::json
-parse_file(const std::string& path)
+inline bool
+parse_file(const std::string& path, nlohmann::json& json)
 {
-  std::ifstream file(path);
-  return nlohmann::json::parse(file);
+  try
+  {
+    std::ifstream file(path);
+    json = nlohmann::json::parse(file);
+    return true;
+  }
+  catch (std::exception& ex)
+  {
+    std::cerr << "Exception while parsing \'" << path.c_str()
+              << "\' JSON file: " << ex.what() << std::endl;
+    return false;
+  }
 }
 
 template <typename T>
