@@ -56,7 +56,7 @@ def generate_launch_description():
     )
 
     # Declare HMS known error codes JSON file path
-    hms_codes_file_default_value = "hms_2023_08_22.json"
+    hms_codes_file_default_value = "hms.json"
 
     declare_hms_codes_cmd = DeclareLaunchArgument(
         "hms_return_codes_file",
