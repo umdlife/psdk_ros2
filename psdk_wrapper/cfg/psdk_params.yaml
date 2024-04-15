@@ -9,6 +9,7 @@
 
       num_of_initialization_retries: 3
 
+      tf_frame_prefix: ""
       imu_frame: "psdk_imu_link"
       body_frame: "psdk_base_link"
       map_frame: "psdk_map_enu"
@@ -46,3 +47,4 @@
         flight_status: 1
         battery_level: 1
         control_information: 1
+        esc_data_frequency: 1

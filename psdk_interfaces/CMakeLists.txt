@@ -39,6 +39,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HmsInfoMsg.msg"
   "msg/HmsInfoTable.msg"
   "msg/SingleBatteryInfo.msg"
+  "msg/EscData.msg"
+  "msg/EscStatusIndividual.msg"
   "srv/CameraGetType.srv"
   "srv/CameraSetExposureModeEV.srv"
   "srv/CameraGetExposureModeEV.srv"

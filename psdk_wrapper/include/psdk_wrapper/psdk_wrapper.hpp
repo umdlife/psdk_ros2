@@ -67,6 +67,7 @@
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
+#include "psdk_interfaces/msg/esc_data.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
@@ -230,6 +231,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string developer_account;
     std::string baudrate;
     std::string link_config_file_path;
+    std::string tf_frame_prefix;
     std::string imu_frame;
     std::string body_frame;
     std::string map_frame;
@@ -254,6 +256,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     int flight_status_frequency;
     int battery_level_frequency;
     int control_information_frequency;
+    int esc_data_frequency;
   };
 
   std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder*>
@@ -448,6 +451,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_rc_callback(const uint8_t* data, uint16_t data_size,
                                        const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_esc_callback(const uint8_t* data, uint16_t data_size,
+                                        const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_rc_connection_status_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
@@ -818,6 +823,19 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return T_DjiReturnCode error code indicating if the subscription has been
    * done correctly
    */
+
+  /**
+   * @brief Retrieves the ESC data provided by DJI PSDK lib and publishes it on
+   * a ROS 2 topic.This topic provides esc data
+   * @param data pointer to T_DjiFcSubscriptionEscData data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode esc_callback(const uint8_t* data, uint16_t data_size,
+                               const T_DjiDataTimestamp* timestamp);
+
   T_DjiReturnCode gimbal_angles_callback(const uint8_t* data,
                                          uint16_t data_size,
                                          const T_DjiDataTimestamp* timestamp);
@@ -1042,8 +1060,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
 
   /**
-   * @brief Retrieves single information of battery with index 1. More information about this topic can be found in the
-   * dji_fc_subscription.h.
+   * @brief Retrieves single information of battery with index 1. More
+   * information about this topic can be found in the dji_fc_subscription.h.
    * @param data pointer to T_DjiFcSubscriptionSingleBatteryInfo data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
@@ -1055,8 +1073,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiDataTimestamp* timestamp);
 
   /**
-   * @brief Retrieves single information of battery with index 2. More information about this topic can be found in the
-   * dji_fc_subscription.h.
+   * @brief Retrieves single information of battery with index 2. More
+   * information about this topic can be found in the dji_fc_subscription.h.
    * @param data pointer to T_DjiFcSubscriptionSingleBatteryInfo data
    * @param data_size size of data. Unused parameter.
    * @param timestamp  timestamp provided by DJI
@@ -1764,6 +1782,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::RCConnectionStatus>::SharedPtr
       rc_connection_status_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::EscData>::SharedPtr
+      esc_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::Vector3Stamped>::SharedPtr gimbal_angles_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
@@ -1778,9 +1798,14 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       psdk_interfaces::msg::DisplayMode>::SharedPtr display_mode_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::FlightAnomaly>::SharedPtr flight_anomaly_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_index1_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr single_battery_index2_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      sensor_msgs::msg::BatteryState>::SharedPtr battery_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr
+      single_battery_index1_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::SingleBatteryInfo>::SharedPtr
+      single_battery_index2_pub_;
   rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32>::SharedPtr
       height_fused_pub_;
   rclcpp_lifecycle::LifecyclePublisher<
@@ -2047,9 +2072,16 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param language Language to fetch the return codes in.
    * @return psdk_interfaces::msg::HmsInfoTable
    */
-  psdk_interfaces::msg::HmsInfoTable
-  to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
-              const nlohmann::json& codes, const char* language = "en");
+  psdk_interfaces::msg::HmsInfoTable to_ros2_msg(
+      const T_DjiHmsInfoTable& hms_info_table, const nlohmann::json& codes,
+      const char* language = "en");
+
+  /**
+   * @brief Method to generate a tf adding the tf_prefix to the frame name
+   * @param frame_name name of the frame to be transformed
+   * @return string with the tf name
+   */
+  std::string add_tf_prefix(const std::string& frame_name);
 
   /* Global variables */
   PSDKParams params_;

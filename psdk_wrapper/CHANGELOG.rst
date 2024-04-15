@@ -2,6 +2,18 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.1 (2024-03-27)
+------------------
+* Merge pull request `#68 <https://github.com/umdlife/psdk_ros2/issues/68>`_ from umdlife/hotfix/motors-stop
+  Add ESC data
+* Merge pull request `#60 <https://github.com/umdlife/psdk_ros2/issues/60>`_ from RPS98/add_namespace_to_tf
+  Add prefix to TF frames
+* Merge pull request `#65 <https://github.com/umdlife/psdk_ros2/issues/65>`_ from umdlife/feat/add-linters-workflow
+  Add clang and super linter to workflows
+* Merge pull request `#61 <https://github.com/umdlife/psdk_ros2/issues/61>`_ from umdlife/hotfix/set-home-from-gps
+  Convert coordinates to radians before setting home position
+* Contributors: DominikWawak, Rafael Perez-Segui, UMLDev Clang Robot, Victor Massagué Respall, biancabnd, vicmassy
+
 1.1.0 (2024-02-20)
 ------------------
 * Merge pull request `#51 <https://github.com/umdlife/psdk_ros2/issues/51>`_ from umdlife/feat/hms-support

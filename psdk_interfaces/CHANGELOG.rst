@@ -2,6 +2,13 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.1 (2024-03-27)
+------------------
+* Merge pull request `#68 <https://github.com/umdlife/psdk_ros2/issues/68>`_ from umdlife/hotfix/motors-stop
+  Add ESC data
+* Merge remote-tracking branch 'origin/main' into add_namespace_to_tf
+* Contributors: DominikWawak, Rafael Perez-Segui, biancabnd
+
 1.1.0 (2024-02-20)
 ------------------
 * Merge pull request `#51 <https://github.com/umdlife/psdk_ros2/issues/51>`_ from umdlife/feat/hms-support
