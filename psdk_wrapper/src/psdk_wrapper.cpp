@@ -1084,6 +1084,10 @@ PSDKWrapper::initialize_ros_elements()
   //           shared_from_this(), "psdk_ros2/camera_delete_file_by_index",
   //           std::bind(&PSDKWrapper::camera_delete_file_by_index_cb,
   //           this));
+  camera_download_file_list_service_ = create_service<CameraDownloadFileList>(
+      "psdk_ros2/camera_download_file_list",
+      std::bind(&PSDKWrapper::camera_download_file_list_cb, this, _1, _2),
+      qos_profile_);
   camera_get_type_service_ = create_service<CameraGetType>(
       "psdk_ros2/camera_get_type",
       std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2), qos_profile_);

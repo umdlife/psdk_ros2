@@ -1942,7 +1942,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   // Gimbal
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
-
+  // SD Card Manager
+  rclcpp::Service<CameraDownloadFileList>::SharedPtr
+      camera_download_file_list_service_;
   /**
    * @brief Get the gps signal level
    * @return int gps signal level
