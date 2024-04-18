@@ -1153,7 +1153,7 @@ PSDKWrapper::camera_download_file_list_cb(
   // return_code =
   //     DjiCameraManager_DownloadFileList(main_payload_index,
   //     &media_file_list);
-  return_code = DjiTest_CameraManagerMediaDownloadFileListBySlices(index);
+  return_code = DjiCameraManager_ObtainDownloaderRights(index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Download file list failed, error code: %ld.",
