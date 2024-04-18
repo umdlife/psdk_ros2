@@ -1150,8 +1150,10 @@ PSDKWrapper::camera_download_file_list_cb(
   T_DjiCameraManagerFileList media_file_list;
   E_DjiMountPosition main_payload_index = DJI_MOUNT_POSITION_PAYLOAD_PORT_NO1;
 
-  return_code =
-      DjiCameraManager_DownloadFileList(main_payload_index, &media_file_list);
+  // return_code =
+  //     DjiCameraManager_DownloadFileList(main_payload_index,
+  //     &media_file_list);
+  return_code = DjiTest_CameraManagerMediaDownloadFileListBySlices(index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Download file list failed, error code: %ld.",
