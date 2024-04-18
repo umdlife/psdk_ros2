@@ -1180,8 +1180,10 @@ PSDKWrapper::camera_download_file_by_index_cb(
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
 
-  return_code =
-      DjiCameraManager_DownloadFileByIndex(index, request->file_index);
+  // return_code =
+  //     DjiCameraManager_DownloadFileByIndex(index, request->file_index);
+  T_DjiCameraManagerFileList media_file_list;
+  return_code = DjiCameraManager_DownloadFileList(index, &media_file_list);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(),
