@@ -3,8 +3,58 @@
 ## Configuration
 
 ### Hardware configuration 
+Various methods exist to connect each dji drones to companion computers, and the approach varies depending on the drone model and the companion computer in use. Below is a table outlining the potential connection configurations . For the most recent updates, please refer to the latest version of the [table](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/drone-port.html).
 
-Before launching the psdk_ros2 wrapper, you must ensure that you are using the proper hardware connection to the DJI drone. Please be aware that each drone model may require a different connection type. Refer to the instructions provided by DJI here: [Aircraft Hardware Connection](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/device-connect.html). For the drones using the E-Port connection, ensure the necessary setup on your board is performed to enable both serial and network communication. You can find some examples on how to do that here: [E-Port Quick Start](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/quick-guide/jetson-nano.html). We advise to first try and run the DJI sample code, and only afterwards run the psdk_ros2 wrapper. 
+| Aircraft       | Port Name                | Adapted Development Kit                                                                                        |
+|----------------|--------------------------|----------------------------------------------------------------------------------------------------------------|
+| Matrice 3D/3TD | E-Port                   | [E-Port Development Kit](https://store.dji.com/cn/product/dji-e-port-development-kit)                          |
+|                | E-Port Lite              | [E-Port Development Kit](https://store.dji.com/cn/product/dji-e-port-development-kit)                          |
+| FlyCart 30     | E-Port Lite              | -                                                                                                              |
+| M350 RTK       | E-Port                   | [E-Port Development Kit](https://store.dji.com/cn/product/dji-e-port-development-kit)                          |
+|                |                          | [SDK Round Ribbon Cable](https://store.dji.com/product/osdk-round-ribbon-cable-set)                            |
+|                | PSDK Port (Gimbal Port)  | [SkyPort V2 Development Kit](https://store.dji.com/product/psdk-development-kit-v2)                            |
+|                |                          | [SkyPort V2 Production Suit](https://store.dji.com/product/dji-skyport-adapter-set-v2)                         |
+|                |                          | [DJI X-Port](https://store.dji.com/product/dji-x-port)                                                         |
+| Mavic 3E/3T    | E-Port                   | [E-Port Development Kit](https://store.dji.com/cn/product/dji-e-port-development-kit)                          |
+| Matrice 30/30T | E-Port                   | [E-Port Development Kit](https://store.dji.com/cn/product/dji-e-port-development-kit)                          |
+| M300 RTK       | OSDK Port                | [E-Port Development Kit](https://store.dji.com/cn/product/dji-e-port-development-kit)                          |
+|                |                          | [SDK Round Ribbon Cable](https://store.dji.com/product/osdk-round-ribbon-cable-set)                            |
+|                |                          | [OSDK Expansion Module(Not recommended)](https://store.dji.com/product/matrice-300-rtk-osdk-expansion-module)  |
+|                | PSDK Port (Gimbal Port)  | [SkyPort V2 Development Kit](https://store.dji.com/product/psdk-development-kit-v2)                            |
+|                |                          | [X-port](https://store.dji.com/product/dji-x-port)                                                             |
+|                |                          | [SkyPort V1 Development Kit](https://store.dji.com/product/psdk-development-kit)                               |
+|                |                          | [SkyPort V1 Production Suit](https://store.dji.com/product/dji-skyport-adapter-set)                            |
+
+
+#### OSDK Expansion Module
+This connection is compatible exclusively with the M300 RTK drone. Upon establishing the connection, two devices will be recognized by the computer: one for serial communication and the other for network communication. To maintain consistent device naming across sessions, refer to the 'Udev rules' section, which provides guidance on preventing device name alterations each time the devices are connected.
+
+* Steps
+
+1. Connect the FTDI adapter to the designated pins on the OSDK Exapansion module for serial communication:
+
+![alt text](images/ftdi_connection.png)
+
+2. Use a mini-USB A to USB A cable (this cable is different depending on the ftdi module you use) to connect the FTDI adapter to the computer's USB 2.0 port:
+
+![alt text](images/ftdi_connection_2.png)
+
+3. Connect the USB A to USB A from the OSDK Expansion module to the USB port of the computer:
+
+![alt text](images/usba_to_usba.png)
+
+4. Connect the power cable from the OSDK Expansion module to supply power to the companion computer:
+
+![alt text](images/power_cable.png)
+
+<div style="background-color: #FFDDB8; padding: 10px; border: 0.2px solid ##FBFAFA;">
+    <p style="margin: 0;"><strong> Caution:</strong>  The OSDK expansion module outputs 24V. Ensure that your companion computer can tolerate this voltage level. If not, you must use an appropriate step-down module to reduce the voltage to a safe level for your device.</p>
+</div>
+<div style="margin-bottom: 20px;"></div>
+
+#### E-Port
+
+Before launching the psdk_ros2 wrapper, you must ensure that you are using the proper hardware connection to the DJI drone. Please be aware that each drone model and companion computer may require a different connection type. Refer to the instructions provided by DJI here: [Aircraft Hardware Connection](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/device-connect.html). Ensure the necessary setup on your board is performed to enable both serial and network communication. You can find some examples on how to do that here: [E-Port Quick Start](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/quick-guide/jetson-nano.html). We advise to first try and run the DJI sample code, and only afterwards run the psdk_ros2 wrapper. 
 
 Once you've established the hardware connection between your board and the DJI drone, you can configure the psdk_ros2 wrapper to utilize that setup through the  *psdk_wrapper/cfg/link_config.json* file. This file follows a similar strategy to the file one must configure before running the DJI PSDK samples. Please notice, that the App configuration (e.g. app_id, app_key) has been kept in the ros parameter file (cfg/psdk_params.yml). 
 
