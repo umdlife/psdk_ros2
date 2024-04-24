@@ -38,9 +38,10 @@ The link configurations represent the different channels DJI uses to send inform
 
 Usually the serial interface is supported out-of-the-box by most systems, thus the basic functionalities of the psdk_ros2 wrapper are guaranteed. However, to interact with the different cameras on-board the drone, the USB bulk or Network device interface needs to be enabled on your computer. DJI offers a series of instructions and scripts to set-up the E-Port connection and enable the USB Bulk function for the Jetson Nano and Raspberry Pi 4B boards:
 * Jetson Nano [instructions](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/quick-guide/jetson-nano.html) - Jetson Nano [scripts](https://terra-1-g.djicdn.com/71a7d383e71a4fb8887a310eb746b47f/psdk/e-port/usb-bulk-configuration-reference.zip)
+  * If you want to enable the Ethernet interface, you can try to follow the instructions provided in the *readme.txt* file that comes within the scripts folder
 * Raspberry 4B [instructions](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/quick-guide/raspberry-pi.html) - Raspberry 4B [scripts](https://sdk-forum.dji.net/hc/zh-cn/articles/10232604141465-M30%E5%BC%80%E5%8F%91-%E6%A0%91%E8%8E%93%E6%B4%BE4B%E9%85%8D%E7%BD%AEUSB-device-RNDIS-%E5%92%8C-BULK)
 
-If you are using a different board, you must make sure to enable either the USB Bulk or the Network interface to be able to access the camera stream via the psdk_ros2 wrapper. Please check the [Basic Concepts page](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/porting.html#basic-concepts) to know more about this topic. 
+For any other board, you must make sure to enable either the USB Bulk or the Network interface to be able to access the camera stream via the psdk_ros2 wrapper. Please check the [Basic Concepts page](https://developer.dji.com/doc/payload-sdk-tutorial/en/quick-start/porting.html#basic-concepts) to know more about this topic. 
 
 #### Example of DJI M300 - OKSD Port - OSDK Expansion Module connection 
 
