@@ -16,11 +16,11 @@ Within the `psdk_wrapper` folder you can find:
 
 ### Telemetry
 
-This module subscribes to the main data exposed by the PSDK libraries and publishes it on ROS 2 topics. The latest information of the maximum frequency of each topic and the corresponding drones can be found in this [table](https://developer.dji.com/doc/payload-sdk-tutorial/en/function-set/basic-function/info-management.html).
+This module subscribes to the main data exposed by the PSDK libraries and publishes it on ROS 2 topics. 
 
 #### Available topics
 
-Each frequency corresponds to the maximum allowed freqnecy set by dji. Given the high number of topics available, these have been grouped under different categories  mimicking the options from DJI Assistant 2:
+Given the high number of topics available, these have been grouped under different categories  mimicking the options from DJI Assistant 2. Below you can find the topics currently available as well as the maximum frequency at which you can retrieve them. Note that these frequencies are different depending on the drone model you are using. The latest information of the maximum frequency of each topic and the corresponding drones can be found in this [table](https://developer.dji.com/doc/payload-sdk-tutorial/en/function-set/basic-function/info-management.html).
 
 * **IMU**
 
@@ -151,7 +151,7 @@ Each frequency corresponds to the maximum allowed freqnecy set by dji. Given the
 | --------------------|------------|----------------|----------|
 | psdk_ros2/esc_data  |  50 Hz     |   50 Hz        |  50 Hz   |
 
-The user can set a specific publishing frequency to each category within the `psdk_params.yaml` file and this will be applied to all topics contained within it. The possible frequencies that can be set for any given category are: 1, 5, 10, 50, 100, 200, 400 Hz. If the frequency set by the user is higher than the maximum one handled internally by the PSDK libraries, an error message will appear. Setting a high number of topics to its maximum value may prevent some topics from initializing or may reduce the update frequency of certain topics. Please consider using a moderate number of topics to optimize performance and ensure all topics initialize properly.
+The user can set a specific publishing frequency to each category within the `psdk_params.yaml` file and this will be applied to all topics contained within it. The possible frequencies that can be set for any given category are: 1, 5, 10, 50, 100, 200, 400 Hz. If the frequency set by the user is higher than the maximum one handled internally by the PSDK libraries, an error message will appear. Setting a high number of topics to the maximum frequency may prevent some topics from initializing or may reduce the update frequency of certain topics. Please consider using a moderate number of topics to optimize performance and ensure all topics initialize properly.
 
 <div style="background-color: #D6EAF8; padding: 10px; border: 1px solid ##FBFAFA;">
     <p style="margin: 0;"><strong> Note:</strong>  If 0 Hz frequency is set, the publisher of that topic will be disabled.</p>
