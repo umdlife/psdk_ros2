@@ -41,7 +41,7 @@ jobs:
       - uses: ros-tooling/setup-ros@0.7.2
         with:
           required-ros-distributions: humble
-      - uses: ros-tooling/action-ros-ci@0.3.7
+      - uses: ros-tooling/action-ros-ci@0.3.8
         with:
           package-name: psdk_interfaces psdk_wrapper
           target-ros2-distro: humble
