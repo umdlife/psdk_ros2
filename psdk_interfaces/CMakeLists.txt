@@ -41,6 +41,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SingleBatteryInfo.msg"
   "msg/EscData.msg"
   "msg/EscStatusIndividual.msg"
+  "msg/ImageFileInfo.msg"
+  "msg/ImagesInfo.msg"
   "srv/CameraGetType.srv"
   "srv/CameraSetExposureModeEV.srv"
   "srv/CameraGetExposureModeEV.srv"

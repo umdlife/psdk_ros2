@@ -73,7 +73,12 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
 
   declare_parameter("num_of_initialization_retries", 1);
 }
-PSDKWrapper::~PSDKWrapper() {}
+PSDKWrapper::~PSDKWrapper()
+{
+  RCLCPP_INFO(get_logger(), "Destroying PSDKWrapper");
+  rclcpp_lifecycle::State state;
+  PSDKWrapper::on_shutdown(state);
+}
 
 PSDKWrapper::CallbackReturn
 PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
@@ -1093,6 +1098,11 @@ PSDKWrapper::initialize_ros_elements()
           "psdk_ros2/camera_download_file_by_index",
           std::bind(&PSDKWrapper::camera_download_file_by_index_cb, this, _1,
                     _2),
+          qos_profile_);
+  camera_delete_file_by_index_service_ =
+      create_service<CameraDeleteFileByIndex>(
+          "psdk_ros2/camera_delete_file_by_index",
+          std::bind(&PSDKWrapper::camera_delete_file_by_index_cb, this, _1, _2),
           qos_profile_);
   camera_get_type_service_ = create_service<CameraGetType>(
       "psdk_ros2/camera_get_type",

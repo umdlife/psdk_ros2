@@ -76,6 +76,8 @@
 #include "psdk_interfaces/msg/hms_info_msg.hpp"
 #include "psdk_interfaces/msg/hms_info_table.hpp"
 #include "psdk_interfaces/msg/home_position.hpp"
+#include "psdk_interfaces/msg/image_file_info.hpp"
+#include "psdk_interfaces/msg/images_info.hpp"
 #include "psdk_interfaces/msg/position_fused.hpp"
 #include "psdk_interfaces/msg/rc_connection_status.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
@@ -519,6 +521,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_hms_callback(T_DjiHmsInfoTable hms_info_table);
+  friend T_DjiReturnCode c_cameraManagerDownloadFileDataCallback(
+      T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data,
+      uint16_t len);
   /* Streaming */
   friend void c_publish_main_streaming_callback(CameraRGBImage img,
                                                 void* user_data);
@@ -1106,6 +1111,10 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * issues processing the HMS info table
    */
   T_DjiReturnCode hms_callback(T_DjiHmsInfoTable hms_info_table);
+
+  T_DjiReturnCode cameraManagerDownloadFileDataCallback(
+      T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data, uint16_t len,
+      const std::string& file_label);
 
   /* ROS 2 Subscriber callbacks */
   /**
@@ -2085,6 +2094,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
+  std::string file_name_label_;
+  std::string images_folder_path_{"/logs/images/"};
 
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
@@ -2127,6 +2138,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
   E_DjiCameraType attached_camera_type_;
   E_DjiLiveViewCameraSource selected_camera_source_;
+  T_DjiCameraManagerFileList media_file_list_;
+
   nlohmann::json hms_return_codes_json_;
   bool publish_camera_transforms_{false};
   bool decode_stream_{true};

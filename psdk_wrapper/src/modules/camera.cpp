@@ -20,6 +20,14 @@
 
 namespace psdk_ros2
 {
+
+T_DjiReturnCode
+c_cameraManagerDownloadFileDataCallback(T_DjiDownloadFilePacketInfo packetInfo,
+                                        const uint8_t *data, uint16_t len)
+{
+  return global_ptr_->cameraManagerDownloadFileDataCallback(
+      packetInfo, data, len, global_ptr_->file_name_label_);
+}
 bool
 PSDKWrapper::init_camera_manager()
 {
@@ -1138,7 +1146,6 @@ PSDKWrapper::camera_get_laser_ranging_info_cb(
   }
 }
 
-// TODO(@lidiadltv): Not working. Debug potential issue
 void
 PSDKWrapper::camera_download_file_list_cb(
     const std::shared_ptr<CameraDownloadFileList::Request> request,
@@ -1147,30 +1154,92 @@ PSDKWrapper::camera_download_file_list_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  T_DjiCameraManagerFileList media_file_list;
-  E_DjiMountPosition main_payload_index = DJI_MOUNT_POSITION_PAYLOAD_PORT_NO1;
 
-  // return_code =
-  //     DjiCameraManager_DownloadFileList(main_payload_index,
-  //     &media_file_list);
+  return_code = DjiCameraManager_RegDownloadFileDataCallback(
+      index, c_cameraManagerDownloadFileDataCallback);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Register download file data callback failed, error code: %ld.",
+        return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(),
+                "Register download file data callback successful.");
+  }
   return_code = DjiCameraManager_ObtainDownloaderRights(index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Download file list failed, error code: %ld.",
+    RCLCPP_ERROR(get_logger(),
+                 "Obtain Downloader Rights failed, error code: %ld.",
                  return_code);
     response->success = false;
     return;
   }
   else
   {
-    RCLCPP_INFO(get_logger(), "Download file list successful.");
-    // TODO(@lidiadltv): Return file name list
+    RCLCPP_INFO(get_logger(), "Obtain Downloader Rights successful.");
+  }
+
+  return_code = DjiCameraManager_DownloadFileList(index, &media_file_list_);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Download File List failed, error code: %ld.",
+                 return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Download File List successful.");
+    psdk_interfaces::msg::ImagesInfo imagesInfoArray;
+
+    for (int i = 0; i < media_file_list_.totalCount; i++)
+    {
+      psdk_interfaces::msg::ImageFileInfo imageInfo;
+      std::tm timeinfo = {};
+      timeinfo.tm_year =
+          media_file_list_.fileListInfo[i].createTime.year - 1900;
+      timeinfo.tm_mon = media_file_list_.fileListInfo[i].createTime.month - 1;
+      timeinfo.tm_mday = media_file_list_.fileListInfo[i].createTime.day;
+      timeinfo.tm_hour = media_file_list_.fileListInfo[i].createTime.hour;
+      timeinfo.tm_min = media_file_list_.fileListInfo[i].createTime.minute;
+      timeinfo.tm_sec = media_file_list_.fileListInfo[i].createTime.second;
+      imageInfo.header.stamp.sec = std::mktime(&timeinfo);
+      imageInfo.header.stamp.nanosec = 0;
+
+      imageInfo.file_size = media_file_list_.fileListInfo[i].fileSize;
+      imageInfo.camera_file_type = media_file_list_.fileListInfo[i].type;
+      imageInfo.file_index = media_file_list_.fileListInfo[i].fileIndex;
+      imagesInfoArray.file_data.push_back(imageInfo);
+    }
+
+    response->result = imagesInfoArray;
+    response->count = media_file_list_.totalCount;
     response->success = true;
+  }
+
+  // Release rights
+  return_code = DjiCameraManager_ReleaseDownloaderRights(index);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Release Downloader Rights failed, error code: %ld.",
+                 return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Release Downloader Rights successful.");
     return;
   }
 }
 
-// TODO(@lidiadltv): Not working. Debug potential issue
 void
 PSDKWrapper::camera_download_file_by_index_cb(
     const std::shared_ptr<CameraDownloadFileByIndex::Request> request,
@@ -1179,11 +1248,54 @@ PSDKWrapper::camera_download_file_by_index_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
+  file_name_label_ = request->file_label;
+  return_code = DjiCameraManager_RegDownloadFileDataCallback(
+      index, c_cameraManagerDownloadFileDataCallback);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Register download file data callback failed, error code: %ld.",
+        return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(),
+                "Register download file data callback successful.");
+  }
 
-  // return_code =
-  //     DjiCameraManager_DownloadFileByIndex(index, request->file_index);
-  T_DjiCameraManagerFileList media_file_list;
-  return_code = DjiCameraManager_DownloadFileList(index, &media_file_list);
+  return_code = DjiCameraManager_ObtainDownloaderRights(index);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Obtain Downloader Rights failed, error code: %ld.",
+                 return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Obtain Downloader Rights successful.");
+  }
+
+  return_code = DjiCameraManager_DownloadFileList(index, &media_file_list_);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Download File List failed, error code: %ld.",
+                 return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Download File List successful.");
+  }
+
+  return_code =
+      DjiCameraManager_DownloadFileByIndex(index, request->file_index);
+
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(),
@@ -1196,11 +1308,24 @@ PSDKWrapper::camera_download_file_by_index_cb(
   {
     RCLCPP_INFO(get_logger(), "Download file by index successful.");
     response->success = true;
+  }
+
+  return_code = DjiCameraManager_ReleaseDownloaderRights(index);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Release Downloader Rights failed, error code: %ld.",
+                 return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Release Downloader Rights successful.");
     return;
   }
 }
 
-// TODO(@lidiadltv): Not working. Debug potential issue
 void
 PSDKWrapper::camera_delete_file_by_index_cb(
     const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
@@ -1209,6 +1334,50 @@ PSDKWrapper::camera_delete_file_by_index_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
+
+  return_code = DjiCameraManager_RegDownloadFileDataCallback(
+      index, c_cameraManagerDownloadFileDataCallback);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Register download file data callback failed, error code: %ld.",
+        return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(),
+                "Register download file data callback successful.");
+  }
+
+  return_code = DjiCameraManager_ObtainDownloaderRights(index);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Obtain Downloader Rights failed, error code: %ld.",
+                 return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Obtain Downloader Rights successful.");
+  }
+
+  return_code = DjiCameraManager_DownloadFileList(index, &media_file_list_);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(), "Download File List failed, error code: %ld.",
+                 return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Download File List successful.");
+  }
 
   return_code = DjiCameraManager_DeleteFileByIndex(index, request->file_index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -1222,6 +1391,20 @@ PSDKWrapper::camera_delete_file_by_index_cb(
   {
     RCLCPP_INFO(get_logger(), "Deleted file by index successfully.");
     response->success = true;
+  }
+
+  return_code = DjiCameraManager_ReleaseDownloaderRights(index);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Release Downloader Rights failed, error code: %ld.",
+                 return_code);
+    response->success = false;
+    return;
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Release Downloader Rights successful.");
     return;
   }
 }
@@ -1236,6 +1419,108 @@ PSDKWrapper::get_optical_frame_id()
       return it.second;
     }
   }
+}
+
+T_DjiReturnCode
+PSDKWrapper::cameraManagerDownloadFileDataCallback(
+    T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len,
+    const std::string &file_label)
+{
+  int32_t i;
+  float downloadSpeed = 0.0f;
+  uint32_t downloadStartMs = 0;
+  uint32_t downloadEndMs = 0;
+  std::string downloadFileName;
+  FILE *s_downloadMediaFile = NULL;
+  uint32_t s_nextDownloadFileIndex = 0;
+  std::string directory_path = images_folder_path_ + file_label + "/";
+  T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
+
+  if (!std::filesystem::exists(directory_path))
+  {
+    try
+    {
+      std::filesystem::create_directories(directory_path);
+    }
+    catch (const std::exception &e)
+    {
+      RCLCPP_ERROR(get_logger(), "Failed to create folder: %s", e.what());
+      return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
+    }
+  }
+
+  if (packetInfo.downloadFileEvent == DJI_DOWNLOAD_FILE_EVENT_START)
+  {
+    for (i = 0; i < media_file_list_.totalCount; ++i)
+    {
+      if (media_file_list_.fileListInfo[i].fileIndex == packetInfo.fileIndex)
+      {
+        s_nextDownloadFileIndex = i + 1;
+        break;
+      }
+    }
+    osalHandler->GetTimeMs(&downloadStartMs);
+
+    // memset(downloadFileName, 0, sizeof(downloadFileName));
+    // snprintf(downloadFileName, sizeof(downloadFileName), "%s%s",
+    //          directory_path.c_str(),
+    //          media_file_list_.fileListInfo[i].fileName.c_str());
+    downloadFileName = directory_path + file_label + "_" +
+                       media_file_list_.fileListInfo[i].fileName;
+    RCLCPP_INFO(get_logger(),
+                "Start download media file, index : %d, next "
+                "download media file, index: %d",
+                i, s_nextDownloadFileIndex);
+    s_downloadMediaFile = fopen(downloadFileName.c_str(), "wb+");
+    if (s_downloadMediaFile == NULL)
+    {
+      return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
+    }
+    fwrite(data, 1, len, s_downloadMediaFile);
+  }
+  else if (packetInfo.downloadFileEvent == DJI_DOWNLOAD_FILE_EVENT_TRANSFER)
+  {
+    if (s_downloadMediaFile != NULL)
+    {
+      fwrite(data, 1, len, s_downloadMediaFile);
+    }
+    printf(
+        "\033[1;32;40m ### [Complete rate : %0.1f%%] (%s), size: %u, "
+        "fileIndex: %d\033[0m\r\n",
+        packetInfo.progressInPercent, downloadFileName, packetInfo.fileSize,
+        packetInfo.fileIndex);
+    printf("\033[1A");
+    RCLCPP_DEBUG(get_logger(),
+                 "Transfer download media file data, len: %d, percent: %.1f",
+                 len, packetInfo.progressInPercent);
+  }
+  else if (packetInfo.downloadFileEvent == DJI_DOWNLOAD_FILE_EVENT_END)
+  {
+    if (s_downloadMediaFile == NULL)
+    {
+      return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
+    }
+
+    fwrite(data, 1, len, s_downloadMediaFile);
+
+    osalHandler->GetTimeMs(&downloadEndMs);
+
+    downloadSpeed = static_cast<float>(packetInfo.fileSize) /
+                    static_cast<float>(downloadEndMs - downloadStartMs);
+    RCLCPP_INFO(get_logger(),
+                "\033[1;32;40m ### [Complete rate : %0.1f%%] (%s), size: %u, "
+                "fileIndex: %d\033[0m\r\n",
+                packetInfo.progressInPercent, downloadFileName,
+                packetInfo.fileSize, packetInfo.fileIndex);
+
+    RCLCPP_INFO(get_logger(),
+                "End download media file, Download Speed %.2f KB/S\r\n\r\n",
+                downloadSpeed);
+    fclose(s_downloadMediaFile);
+    s_downloadMediaFile = NULL;
+  }
+
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
 }  // namespace psdk_ros2
