@@ -17,20 +17,31 @@
 #ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_JSON_UTILS_HPP_
 #define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_JSON_UTILS_HPP_
 
-#include <iostream>
-#include <sstream>
 #include <iomanip>
+#include <iostream>
 #include <nlohmann/json.hpp>
+#include <sstream>
+#include <string>
 
 namespace psdk_ros2
 {
 namespace json_utils
 {
-inline nlohmann::json
-parse_file(const std::string& path)
+inline bool
+parse_file(const std::string& path, nlohmann::json& json)  // NOLINT
 {
-  std::ifstream file(path);
-  return nlohmann::json::parse(file);
+  try
+  {
+    std::ifstream file(path);
+    json = nlohmann::json::parse(file);
+    return true;
+  }
+  catch (std::exception& ex)
+  {
+    std::cerr << "Exception while parsing \'" << path.c_str()
+              << "\' JSON file: " << ex.what() << std::endl;
+    return false;
+  }
 }
 
 template <typename T>

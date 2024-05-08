@@ -59,7 +59,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraGetAperture.srv"
   "srv/CameraShootSinglePhoto.srv"
   "srv/CameraShootBurstPhoto.srv"
-  "srv/CameraShootAEBPhoto.srv"
   "srv/CameraShootIntervalPhoto.srv"
   "srv/CameraStopShootPhoto.srv"
   "srv/CameraRecordVideo.srv"

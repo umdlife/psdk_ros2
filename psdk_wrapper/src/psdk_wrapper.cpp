@@ -1049,10 +1049,6 @@ PSDKWrapper::initialize_ros_elements()
       "psdk_ros2/camera_shoot_burst_photo",
       std::bind(&PSDKWrapper::camera_shoot_burst_photo_cb, this, _1, _2),
       qos_profile_);
-  camera_shoot_aeb_photo_service_ = create_service<CameraShootAEBPhoto>(
-      "psdk_ros2/camera_shoot_aeb_photo",
-      std::bind(&PSDKWrapper::camera_shoot_aeb_photo_cb, this, _1, _2),
-      qos_profile_);
   camera_shoot_interval_photo_service_ =
       create_service<CameraShootIntervalPhoto>(
           "psdk_ros2/camera_shoot_interval_photo",
@@ -1305,7 +1301,6 @@ PSDKWrapper::clean_ros_elements()
   // Camera
   camera_shoot_single_photo_service_.reset();
   camera_shoot_burst_photo_service_.reset();
-  camera_shoot_aeb_photo_service_.reset();
   camera_shoot_interval_photo_service_.reset();
   camera_stop_shoot_photo_service_.reset();
   camera_record_video_service_.reset();
