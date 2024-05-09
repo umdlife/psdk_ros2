@@ -285,7 +285,7 @@ Please notice that the frequency of the streaming will depend on the computation
 
 #### Camera file management
 
-These services currently are not working properly. Future work will address these functionalities. 
+Camera services for managing the SD card storege from the DJI payload. Calling the `psdk_ros2/camera_download_file_list` returns as a result the number of files and an array of file data. With this information you are able to manipulate the objects inside the SD card by calling the other services like `psdk_ros2/camera_download_file_by_index` or `psdk_ros2/camera_delete_file_by_index`. Inside the services you need to specify the location where the files will be saved. To change the default path look at the psdk_params.
 
 | Name                                        | Type      |
 | --------------------------------------------| --------- | 

@@ -3,6 +3,10 @@ uint8 payload_index 1   # see enum E_DjiMountPosition in dji_typedef.h
 
 ---
 #response
+
+
 bool success
-ImagesInfo result       # vector of image info
-int16 count            # total_count from enum T_DjiCameraManagerFileList in dji_camera_manager.h
+# vector of image info
+MediaInfo result 
+# total_count from enum T_DjiCameraManagerFileList in dji_camera_manager.h
+int16 count

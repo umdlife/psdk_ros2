@@ -85,6 +85,8 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | map_frame                     | String    | "psdk_map_enu"                     | -                                           |
 | gimbal_frame                  | String    | "psdk_gimbal_link"                 | -                                           |
 | camera_frame                  | String    | "psdk_camera_link"                 | -                                           |
+| file download path            | String    | "/logs/media"                      | -                                           |
+
 | mandatory_modules             |           |                                    |                                             |
 | - telemetry                   | Bool      |  True                              | Trigger node failure, if module not loaded  |
 | - flight_control              | Bool      |  True                              | Trigger node failure, if module not loaded  |
@@ -108,7 +110,8 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - flight_status               | Integer   | 1                                  | -                                           |
 | - battery_level               | Integer   | 1                                  | -                                           |
 | - control_information         | Integer   | 1                                  | -                                           |
-| - esc_data_frequency          | Integer   | 1                                  | -                                           |
+| - esc_data_frequency          | Integer   | 1                                  | 
+-
 
 ## Running the psdk_ros2 wrapper
 

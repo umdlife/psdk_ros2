@@ -1,2 +1,0 @@
-
-ImageFileInfo[]  file_data

@@ -51,6 +51,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
   declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
   declare_parameter("hms_return_codes_path", rclcpp::ParameterValue(""));
+  declare_parameter("file_path", rclcpp::ParameterValue("/logs/media/"));
 
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
@@ -442,6 +443,12 @@ PSDKWrapper::load_parameters()
         get_logger(),
         "hms_return_codes_path param not defined, using default one: %s",
         params_.hms_return_codes_path);
+  }
+  if (!get_parameter("file_path", params_.file_path))
+  {
+    RCLCPP_WARN(get_logger(),
+                "file_path param not defined, using default one: %s",
+                params_.file_path);
   }
 
   // Get data frequency
@@ -1073,22 +1080,6 @@ PSDKWrapper::initialize_ros_elements()
           std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this, _1,
                     _2),
           qos_profile_);
-  // TODO(@lidiadltv): Enable these actions once are working properly
-  // camera_download_file_list_action_ =
-  //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
-  //           shared_from_this(), "psdk_ros2/camera_download_file_list",
-  //           std::bind(&PSDKWrapper::camera_download_file_list_cb,
-  //           this));
-  // camera_download_file_by_index_action_ =
-  //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>>(
-  //           shared_from_this(), "psdk_ros2/camera_download_file_by_index",
-  //           std::bind(&PSDKWrapper::camera_download_file_by_index_cb,
-  //           this));
-  // camera_delete_file_by_index_action_ =
-  //     std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
-  //           shared_from_this(), "psdk_ros2/camera_delete_file_by_index",
-  //           std::bind(&PSDKWrapper::camera_delete_file_by_index_cb,
-  //           this));
   camera_download_file_list_service_ = create_service<CameraDownloadFileList>(
       "psdk_ros2/camera_download_file_list",
       std::bind(&PSDKWrapper::camera_download_file_list_cb, this, _1, _2),
@@ -1104,6 +1095,14 @@ PSDKWrapper::initialize_ros_elements()
           "psdk_ros2/camera_delete_file_by_index",
           std::bind(&PSDKWrapper::camera_delete_file_by_index_cb, this, _1, _2),
           qos_profile_);
+  camera_format_sd_card_service_ = create_service<CameraFormatSdCard>(
+      "psdk_ros2/camera_format_sd_card",
+      std::bind(&PSDKWrapper::camera_format_sd_card_cb, this, _1, _2),
+      qos_profile_);
+  camera_get_sd_storage_info_service_ = create_service<CameraGetSDStorageInfo>(
+      "psdk_ros2/camera_get_sd_storage_info",
+      std::bind(&PSDKWrapper::camera_get_sd_storage_info_cb, this, _1, _2),
+      qos_profile_);
   camera_get_type_service_ = create_service<CameraGetType>(
       "psdk_ros2/camera_get_type",
       std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2), qos_profile_);
@@ -1344,6 +1343,8 @@ PSDKWrapper::clean_ros_elements()
   camera_download_file_list_service_.reset();
   camera_download_file_by_index_service_.reset();
   camera_delete_file_by_index_service_.reset();
+  camera_format_sd_card_service_.reset();
+  camera_get_sd_storage_info_service_.reset();
   // Streaming
   camera_setup_streaming_service_.reset();
   // Gimbal
