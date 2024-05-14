@@ -39,7 +39,7 @@ PSDKWrapper::to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
   ros2_hms.num_msg = hms_info_table.hmsInfoNum;
   ros2_hms.table.resize(hms_info_table.hmsInfoNum);
 
-  for (int i = 0; i < hms_info_table.hmsInfoNum; i++)
+  for (uint32_t i = 0; i < hms_info_table.hmsInfoNum; i++)
   {
     // Extract error codes. If the "air" error code exists, it is
     // implied that the associated "ground" error code also exists

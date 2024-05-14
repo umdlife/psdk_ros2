@@ -1605,8 +1605,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraShootBurstPhoto::Request> request,
       const std::shared_ptr<CameraShootBurstPhoto::Response> response);
   /**
-
-  /**
    * @brief Request shooting photos at a certain interval.
    * This service sets the camera work mode to
    * DJI_CAMERA_MANAGER_WORK_MODE_SHOOT_PHOTO, the shoot photo mode to
