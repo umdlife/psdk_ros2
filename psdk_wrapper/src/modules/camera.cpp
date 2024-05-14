@@ -15,7 +15,6 @@
  *
  */
 
-#include "dji_camera_manager.h"
 #include "psdk_wrapper/psdk_wrapper.hpp"
 #include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
