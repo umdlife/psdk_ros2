@@ -70,6 +70,9 @@
 #include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
 #include "psdk_interfaces/msg/esc_data.hpp"
+#include "psdk_interfaces/msg/file_attributes.hpp"
+#include "psdk_interfaces/msg/file_info.hpp"
+#include "psdk_interfaces/msg/file_list_info.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
@@ -78,13 +81,12 @@
 #include "psdk_interfaces/msg/hms_info_msg.hpp"
 #include "psdk_interfaces/msg/hms_info_table.hpp"
 #include "psdk_interfaces/msg/home_position.hpp"
-#include "psdk_interfaces/msg/media_file_info.hpp"
-#include "psdk_interfaces/msg/media_info.hpp"
 #include "psdk_interfaces/msg/position_fused.hpp"
 #include "psdk_interfaces/msg/rc_connection_status.hpp"
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
 #include "psdk_interfaces/msg/single_battery_info.hpp"
+#include "psdk_interfaces/msg/sub_file_info.hpp"
 #include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_list.hpp"
@@ -1712,6 +1714,27 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   void camera_delete_file_by_index_cb(
       const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
       const std::shared_ptr<CameraDeleteFileByIndex::Response> response);
+  /**
+   * @brief Set the file info msg object
+   * @param file_info received from the SD card
+   * @return psdk_interfaces::msg::FileInfo msg object
+   */
+  psdk_interfaces::msg::FileInfo set_file_info(
+      const T_DjiCameraManagerFileListInfo file_info);
+  /**
+   * @brief Get the unix time object
+   * @param time Time object as defined by T_DjiCameraManagerFileCreateTime
+   * @return std::time_t
+   */
+  std::time_t get_unix_time(const T_DjiCameraManagerFileCreateTime& time);
+  /**
+   * @brief Set the file attributes msg
+   * @param attributes received file attributes
+   * @return psdk_interfaces::msg::FileAttributes file attributes msg
+   */
+  psdk_interfaces::msg::FileAttributes set_file_attributes(
+      const T_DjiCameraManagerFileAttributeData& attributes);
+
   /* Streaming*/
   /**
    * @brief Request to start/stop streming of a certain camera.

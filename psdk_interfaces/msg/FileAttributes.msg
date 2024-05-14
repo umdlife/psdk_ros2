@@ -1,0 +1,6 @@
+uint32 photo_ratio
+uint32 photo_rotation
+uint32 video_duration
+uint32 video_frame_rate
+uint32 video_rotation
+uint32 video_resolution

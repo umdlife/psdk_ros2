@@ -15,6 +15,7 @@
  *
  */
 
+#include "dji_camera_manager.h"
 #include "psdk_wrapper/psdk_wrapper.hpp"
 #include "psdk_wrapper/psdk_wrapper_utils.hpp"
 
@@ -43,14 +44,6 @@ PSDKWrapper::init_camera_manager()
     publish_camera_transforms_ = true;
   }
   return true;
-}
-
-T_DjiReturnCode
-c_camera_manager_download_file_data_callback(
-    T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len)
-{
-  return global_ptr_->camera_manager_download_file_data_callback(
-      packetInfo, data, len, global_ptr_->params_.file_path);
 }
 
 bool
@@ -1147,6 +1140,30 @@ PSDKWrapper::camera_get_laser_ranging_info_cb(
   }
 }
 
+std::string
+PSDKWrapper::get_optical_frame_id()
+{
+  for (auto &it : psdk_utils::camera_source_str)
+  {
+    if (it.first == selected_camera_source_)
+    {
+      return it.second;
+    }
+  }
+}
+
+/**
+ * FILE MANAGEMENT METHODS
+ */
+
+T_DjiReturnCode
+c_camera_manager_download_file_data_callback(
+    T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len)
+{
+  return global_ptr_->camera_manager_download_file_data_callback(
+      packetInfo, data, len, global_ptr_->params_.file_path);
+}
+
 void
 PSDKWrapper::camera_format_sd_card_cb(
     const std::shared_ptr<CameraFormatSdCard::Request> request,
@@ -1269,7 +1286,7 @@ PSDKWrapper::release_downloader_rights(E_DjiMountPosition index)
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(),
-                 "Release downloader rights failed, error code: %ld.",
+                 "Release downloader rights failed, error code: %ld",
                  return_code);
     return;
   }
@@ -1278,6 +1295,7 @@ PSDKWrapper::release_downloader_rights(E_DjiMountPosition index)
     RCLCPP_INFO(get_logger(), "Release downloader rights successful.");
   }
 }
+
 void
 PSDKWrapper::camera_download_file_list_cb(
     const std::shared_ptr<CameraDownloadFileList::Request> request,
@@ -1291,7 +1309,6 @@ PSDKWrapper::camera_download_file_list_cb(
   register_file_data_callback(index);
 
   // Obtain downloader rights
-
   obtain_downloader_rights(index);
 
   return_code = DjiCameraManager_DownloadFileList(index, &media_file_list_);
@@ -1305,31 +1322,15 @@ PSDKWrapper::camera_download_file_list_cb(
   else
   {
     RCLCPP_INFO(get_logger(), "Download File List successful.");
-    psdk_interfaces::msg::MediaInfo mediaInfoArray;
-
+    psdk_interfaces::msg::FileListInfo file_list;
     for (int i = 0; i < media_file_list_.totalCount; i++)
     {
-      psdk_interfaces::msg::MediaFileInfo mediaInfo;
-      std::tm timeinfo = {};
-      timeinfo.tm_year =
-          media_file_list_.fileListInfo[i].createTime.year - 1900;
-      timeinfo.tm_mon = media_file_list_.fileListInfo[i].createTime.month - 1;
-      timeinfo.tm_mday = media_file_list_.fileListInfo[i].createTime.day;
-      timeinfo.tm_hour = media_file_list_.fileListInfo[i].createTime.hour;
-      timeinfo.tm_min = media_file_list_.fileListInfo[i].createTime.minute;
-      timeinfo.tm_sec = media_file_list_.fileListInfo[i].createTime.second;
-      mediaInfo.header.stamp.sec = std::mktime(&timeinfo);
-      mediaInfo.header.stamp.nanosec = 0;
-
-      mediaInfo.file_size = media_file_list_.fileListInfo[i].fileSize;
-      mediaInfo.file_type = media_file_list_.fileListInfo[i].type;
-      mediaInfo.file_index = media_file_list_.fileListInfo[i].fileIndex;
-      mediaInfo.file_name =
-          std::string(media_file_list_.fileListInfo[i].fileName);
-      mediaInfoArray.files.push_back(mediaInfo);
+      psdk_interfaces::msg::FileInfo file_info;
+      file_info = set_file_info(media_file_list_.fileListInfo[i]);
+      file_list.files.push_back(file_info);
     }
 
-    response->result = mediaInfoArray;
+    response->file_list = file_list;
     response->count = media_file_list_.totalCount;
     response->success = true;
   }
@@ -1352,7 +1353,6 @@ PSDKWrapper::camera_download_file_by_index_cb(
   register_file_data_callback(index);
 
   // Obtain downloader rights
-
   obtain_downloader_rights(index);
 
   return_code = DjiCameraManager_DownloadFileList(index, &media_file_list_);
@@ -1434,17 +1434,67 @@ PSDKWrapper::camera_delete_file_by_index_cb(
   release_downloader_rights(index);
 }
 
-std::string
-PSDKWrapper::get_optical_frame_id()
+psdk_interfaces::msg::FileInfo
+PSDKWrapper::set_file_info(const T_DjiCameraManagerFileListInfo file_info)
 {
-  for (auto &it : psdk_utils::camera_source_str)
+  psdk_interfaces::msg::FileInfo file;
+  file.name = std::string(file_info.fileName);
+  file.type = file_info.type;
+  file.size = file_info.fileSize;
+  file.index = file_info.fileIndex;
+
+  file.create_time_unix =
+      static_cast<int64_t>(get_unix_time(file_info.createTime));
+  file.attributes = set_file_attributes(file_info.attributeData);
+  file.number_sub_files = file_info.subFileListTotalNum;
+
+  if (file.number_sub_files > 0)
   {
-    if (it.first == selected_camera_source_)
+    for (int i = 0; i < file.number_sub_files; i++)
     {
-      return it.second;
+      psdk_interfaces::msg::SubFileInfo sub_file;
+      sub_file.name = std::string(file_info.subFileListInfo[i].fileName);
+      sub_file.size = file_info.subFileListInfo[i].fileSize;
+      sub_file.index = file_info.subFileListInfo[i].fileIndex;
+      sub_file.type = file_info.subFileListInfo[i].type;
+      sub_file.create_time_unix = static_cast<int64_t>(
+          get_unix_time(file_info.subFileListInfo[i].createTime));
+      sub_file.attributes =
+          set_file_attributes(file_info.subFileListInfo[i].attributeData);
+      file.sub_files.push_back(sub_file);
     }
   }
+
+  return file;
 }
+
+std::time_t
+PSDKWrapper::get_unix_time(const T_DjiCameraManagerFileCreateTime &time)
+{
+  std::tm timeinfo = {};
+  timeinfo.tm_year = time.year - 1900;
+  timeinfo.tm_mon = time.month - 1;
+  timeinfo.tm_mday = time.day;
+  timeinfo.tm_hour = time.hour;
+  timeinfo.tm_min = time.minute;
+  timeinfo.tm_sec = time.second;
+  return std::mktime(&timeinfo);
+}
+
+psdk_interfaces::msg::FileAttributes
+PSDKWrapper::set_file_attributes(
+    const T_DjiCameraManagerFileAttributeData &attributes)
+{
+  psdk_interfaces::msg::FileAttributes att_msg;
+  att_msg.photo_ratio = attributes.photoAttribute.attributePhotoRatio;
+  att_msg.photo_rotation = attributes.photoAttribute.attributePhotoRotation;
+  att_msg.video_duration = attributes.videoAttribute.attributeVideoDuration;
+  att_msg.video_resolution = attributes.videoAttribute.attributeVideoResolution;
+  att_msg.video_frame_rate = attributes.videoAttribute.attributeVideoFramerate;
+  att_msg.video_rotation = attributes.videoAttribute.attributeVideoRotation;
+  return att_msg;
+}
+
 T_DjiReturnCode
 PSDKWrapper::camera_manager_download_file_data_callback(
     T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len,

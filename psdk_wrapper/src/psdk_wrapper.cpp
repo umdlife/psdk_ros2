@@ -442,13 +442,13 @@ PSDKWrapper::load_parameters()
     RCLCPP_WARN(
         get_logger(),
         "hms_return_codes_path param not defined, using default one: %s",
-        params_.hms_return_codes_path);
+        params_.hms_return_codes_path.c_str());
   }
   if (!get_parameter("file_path", params_.file_path))
   {
     RCLCPP_WARN(get_logger(),
                 "file_path param not defined, using default one: %s",
-                params_.file_path);
+                params_.file_path.c_str());
   }
 
   // Get data frequency

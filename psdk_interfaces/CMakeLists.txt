@@ -41,8 +41,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SingleBatteryInfo.msg"
   "msg/EscData.msg"
   "msg/EscStatusIndividual.msg"
-  "msg/MediaFileInfo.msg"
-  "msg/MediaInfo.msg"
+  "msg/FileInfo.msg"
+  "msg/SubFileInfo.msg"
+  "msg/FileListInfo.msg"
+  "msg/FileAttributes.msg"
   "srv/CameraGetType.srv"
   "srv/CameraSetExposureModeEV.srv"
   "srv/CameraGetExposureModeEV.srv"
@@ -70,6 +72,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraDownloadFileByIndex.srv"
   "srv/CameraDeleteFileByIndex.srv"
   "srv/CameraSetupStreaming.srv"
+  "srv/CameraFormatSdCard.srv"
+  "srv/CameraGetSDStorageInfo.srv"
   "srv/GimbalSetMode.srv"
   "srv/GimbalReset.srv"
   "srv/SetHomeFromGPS.srv"
@@ -77,8 +81,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetGoHomeAltitude.srv"
   "srv/SetObstacleAvoidance.srv"
   "srv/GetObstacleAvoidance.srv"
-  "srv/CameraFormatSdCard.srv"
-  "srv/CameraGetSDStorageInfo.srv"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
