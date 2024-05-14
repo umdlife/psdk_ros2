@@ -57,7 +57,6 @@
 
 #include "dji_camera_manager.h"           //NOLINT
 #include "dji_camera_stream_decoder.hpp"  //NOLINT
-#include "dji_config_manager.h"           //NOLINT
 #include "dji_gimbal_manager.h"           //NOLINT
 #include "hal_network.h"                  //NOLINT
 #include "hal_uart.h"                     //NOLINT
@@ -65,6 +64,7 @@
 #include "osal.h"                         //NOLINT
 #include "osal_fs.h"                      //NOLINT
 #include "osal_socket.h"                  //NOLINT
+#include "utils/dji_config_manager.h"     //NOLINT
 
 // PSDK wrapper interfaces
 #include "psdk_interfaces/msg/control_mode.hpp"
@@ -111,7 +111,6 @@
 #include "psdk_interfaces/srv/camera_set_optical_zoom.hpp"
 #include "psdk_interfaces/srv/camera_set_shutter_speed.hpp"
 #include "psdk_interfaces/srv/camera_setup_streaming.hpp"
-#include "psdk_interfaces/srv/camera_shoot_aeb_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_burst_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_interval_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_single_photo.hpp"
@@ -148,7 +147,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   // Camera
   using CameraShootSinglePhoto = psdk_interfaces::srv::CameraShootSinglePhoto;
   using CameraShootBurstPhoto = psdk_interfaces::srv::CameraShootBurstPhoto;
-  using CameraShootAEBPhoto = psdk_interfaces::srv::CameraShootAEBPhoto;
   using CameraShootIntervalPhoto =
       psdk_interfaces::srv::CameraShootIntervalPhoto;
   using CameraStopShootPhoto = psdk_interfaces::srv::CameraStopShootPhoto;
@@ -1607,19 +1605,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraShootBurstPhoto::Request> request,
       const std::shared_ptr<CameraShootBurstPhoto::Response> response);
   /**
-   * @brief Request shooting photos in Automatic Exposure Bracketing (AEB) mode.
-   * This service sets the camera work mode to
-   * DJI_CAMERA_MANAGER_WORK_MODE_SHOOT_PHOTO, the shoot photo mode to
-   * DJI_CAMERA_MANAGER_SHOOT_PHOTO_MODE_AEB and sets the desired AEB count.
-   * Then, triggers the start shoot photo method.
-   * @param request CameraShootAEBPhoto service request. The camera
-   * mounted position for which the request is made needs to be specified as
-   * well as the AEB count. (see enum E_DjiCameraManagerPhotoAEBCount).
-   * @param response CameraShootAEBPhoto service response.
-   */
-  void camera_shoot_aeb_photo_cb(
-      const std::shared_ptr<CameraShootAEBPhoto::Request> request,
-      const std::shared_ptr<CameraShootAEBPhoto::Response> response);
+
   /**
    * @brief Request shooting photos at a certain interval.
    * This service sets the camera work mode to
@@ -1949,8 +1935,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       camera_shoot_single_photo_service_;
   rclcpp::Service<CameraShootBurstPhoto>::SharedPtr
       camera_shoot_burst_photo_service_;
-  rclcpp::Service<CameraShootAEBPhoto>::SharedPtr
-      camera_shoot_aeb_photo_service_;
   rclcpp::Service<CameraShootIntervalPhoto>::SharedPtr
       camera_shoot_interval_photo_service_;
   rclcpp::Service<CameraStopShootPhoto>::SharedPtr

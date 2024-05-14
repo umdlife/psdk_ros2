@@ -265,8 +265,7 @@ The following services can be called to start shooting photos or record videos w
 | Name                                    | Type      |
 | ----------------------------------------| --------- | 
 | psdk_ros2/camera_shoot_single_photo     | Service   | 
-| psdk_ros2/camera_shoot_burst_photo      | Service   | 
-| psdk_ros2/camera_shoot_aeb_photo        | Service   |   
+| psdk_ros2/camera_shoot_burst_photo      | Service   |  
 | psdk_ros2/camera_shoot_interval_photo   | Service   | 
 | psdk_ros2/camera_stop_shoot_photo       | Service   | 
 | psdk_ros2/camera_record_video           | Service   |

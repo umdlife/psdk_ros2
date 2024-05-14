@@ -40,7 +40,7 @@ include(FetchContent)
 FetchContent_Declare(
   Payload_SDK
   GIT_REPOSITORY https://github.com/dji-sdk/Payload-SDK.git
-  GIT_TAG 3.8
+  GIT_TAG 3.8.1
 )
 
 FetchContent_GetProperties(Payload_SDK)
@@ -63,7 +63,6 @@ find_package(LIBUSB REQUIRED)
 set(DJI_OSAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/common/osal)
 set(DJI_HAL_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/hal)
 set(DJI_STREAMING_PATH ${PSDK_PATH}/samples/sample_c++/module_sample/liveview)
-set(DJI_CONFIG_MANAGER_PATH ${PSDK_PATH}/samples/sample_c++/platform/linux/manifold2/application)
 set(DJI_UTILS_PATH ${PSDK_PATH}/samples/sample_c/module_sample)
 set(DJI_HMS_RETURN_CODES_PATH ${PSDK_PATH}/samples/sample_c/module_sample/hms/data)
 
@@ -133,7 +132,6 @@ include_directories(${DJI_OSAL_PATH})
 include_directories(${DJI_HAL_PATH})
 include_directories(${DJI_STREAMING_PATH})
 include_directories(${DJI_UTILS_PATH})
-include_directories(${DJI_CONFIG_MANAGER_PATH})
 include_directories(${PSDK_PATH}/psdk_lib/include)
 include_directories(include)
 
@@ -173,7 +171,7 @@ add_library(psdk_wrapper_libs SHARED
   ${DJI_UTILS_PATH}/utils/util_misc.c
   ${DJI_UTILS_PATH}/utils/util_file.c
   ${DJI_UTILS_PATH}/utils/cJSON.c
-  ${DJI_CONFIG_MANAGER_PATH}/dji_config_manager.c
+  ${DJI_UTILS_PATH}/utils/dji_config_manager.c
 )
 
 ament_target_dependencies(psdk_wrapper_libs
@@ -210,7 +208,6 @@ install(DIRECTORY
   ${DJI_HAL_PATH}/
   ${DJI_OSAL_PATH}/
   ${DJI_UTILS_PATH}/
-  ${DJI_CONFIG_MANAGER_PATH}/
   DESTINATION include/
   FILES_MATCHING 
     PATTERN "*.h"

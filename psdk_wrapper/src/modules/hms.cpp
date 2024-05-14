@@ -84,14 +84,17 @@ PSDKWrapper::to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
       }
       else
       {
-        // TODO (@amoramar): add proper log to indicate language selected is not
-        // supported
+        RCLCPP_WARN(
+            get_logger(),
+            "Selected language \'%s\' is not supported for error code \'%s\'",
+            language, ground_key_lower_case.c_str());
       }
     }
     else
     {
-      // TODO (@amoramar): add proper log to indicate current error code does
-      // not match any known error codes
+      RCLCPP_WARN(get_logger(),
+                  "Error code \'%s\' does not match any known error codes",
+                  ground_key_lower_case.c_str());
     }
   }
 
@@ -103,8 +106,13 @@ PSDKWrapper::init_hms()
   RCLCPP_INFO(get_logger(), "Initiating HMS...");
 
   // Read JSON file with known HMS error codes
-  hms_return_codes_json_ =
-      json_utils::parse_file(params_.hms_return_codes_path);
+  if (!json_utils::parse_file(params_.hms_return_codes_path,
+                              hms_return_codes_json_))
+  {
+    RCLCPP_ERROR(get_logger(),
+                 "Could not parse JSON file with HMS error codes. Unknown "
+                 "error codes will NOT be published");
+  }
 
   T_DjiReturnCode return_code = DjiHmsManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
