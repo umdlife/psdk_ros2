@@ -1076,9 +1076,9 @@ PSDKWrapper::initialize_ros_elements()
           std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this, _1,
                     _2),
           qos_profile_);
-  camera_download_file_list_service_ = create_service<CameraDownloadFileList>(
-      "psdk_ros2/camera_download_file_list",
-      std::bind(&PSDKWrapper::camera_download_file_list_cb, this, _1, _2),
+  camera_get_file_list_info_service_ = create_service<CameraGetFileListInfo>(
+      "psdk_ros2/camera_get_file_list_info",
+      std::bind(&PSDKWrapper::camera_get_file_list_info_cb, this, _1, _2),
       qos_profile_);
   camera_download_file_by_index_service_ =
       create_service<CameraDownloadFileByIndex>(
@@ -1335,7 +1335,7 @@ PSDKWrapper::clean_ros_elements()
   camera_set_infrared_zoom_service_.reset();
   camera_set_aperture_service_.reset();
   camera_get_laser_ranging_info_service_.reset();
-  camera_download_file_list_service_.reset();
+  camera_get_file_list_info_service_.reset();
   camera_download_file_by_index_service_.reset();
   camera_delete_file_by_index_service_.reset();
   camera_format_sd_card_service_.reset();

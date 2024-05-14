@@ -3,5 +3,5 @@ uint8 payload_index 1   # see enum E_DjiMountPosition in dji_typedef.h
 ---
 #response
 bool success
-FileListInfo file_list 
+FileInfo[] file_list
 int16 count

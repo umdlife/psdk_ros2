@@ -1210,21 +1210,15 @@ PSDKWrapper::release_downloader_rights(E_DjiMountPosition index)
 }
 
 void
-PSDKWrapper::camera_download_file_list_cb(
-    const std::shared_ptr<CameraDownloadFileList::Request> request,
-    const std::shared_ptr<CameraDownloadFileList::Response> response)
+PSDKWrapper::camera_get_file_list_info_cb(
+    const std::shared_ptr<CameraGetFileListInfo::Request> request,
+    const std::shared_ptr<CameraGetFileListInfo::Response> response)
 {
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-
-  // Register callback
-  register_file_data_callback(index);
-
-  // Obtain downloader rights
-  obtain_downloader_rights(index);
-
-  return_code = DjiCameraManager_DownloadFileList(index, &media_file_list_);
+  T_DjiCameraManagerFileList retrieved_file_list;
+  return_code = DjiCameraManager_DownloadFileList(index, &retrieved_file_list);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(), "Download File List failed, error code: %ld.",
@@ -1234,22 +1228,18 @@ PSDKWrapper::camera_download_file_list_cb(
   }
   else
   {
-    RCLCPP_INFO(get_logger(), "Download File List successful.");
-    psdk_interfaces::msg::FileListInfo file_list;
-    for (int i = 0; i < media_file_list_.totalCount; i++)
+    std::vector<psdk_interfaces::msg::FileInfo> file_list;
+    for (int i = 0; i < retrieved_file_list.totalCount; i++)
     {
       psdk_interfaces::msg::FileInfo file_info;
-      file_info = set_file_info(media_file_list_.fileListInfo[i]);
-      file_list.files.push_back(file_info);
+      file_info = set_file_info(retrieved_file_list.fileListInfo[i]);
+      file_list.push_back(file_info);
     }
 
     response->file_list = file_list;
-    response->count = media_file_list_.totalCount;
+    response->count = retrieved_file_list.totalCount;
     response->success = true;
   }
-
-  // Release rights
-  release_downloader_rights(index);
 }
 
 void
@@ -1258,48 +1248,31 @@ PSDKWrapper::camera_download_file_by_index_cb(
     const std::shared_ptr<CameraDownloadFileByIndex::Response> response)
 {
   T_DjiReturnCode return_code;
-  E_DjiMountPosition index =
+  E_DjiMountPosition payload_index =
       static_cast<E_DjiMountPosition>(request->payload_index);
-  params_.file_path = request->file_path;
+  file_index_to_download_ = request->file_index;
+  file_name_to_download_ = request->file_name;
 
   // Register callback
-  register_file_data_callback(index);
+  register_file_data_callback(payload_index);
 
   // Obtain downloader rights
-  obtain_downloader_rights(index);
+  obtain_downloader_rights(payload_index);
 
-  return_code = DjiCameraManager_DownloadFileList(index, &media_file_list_);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-  {
-    RCLCPP_ERROR(get_logger(), "Download File List failed, error code: %ld.",
-                 return_code);
-    response->success = false;
-    return;
-  }
-  else
-  {
-    RCLCPP_INFO(get_logger(), "Download File List successful.");
-  }
-
-  return_code =
-      DjiCameraManager_DownloadFileByIndex(index, request->file_index);
-
+  return_code = DjiCameraManager_DownloadFileByIndex(payload_index,
+                                                     file_index_to_download_);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(get_logger(),
-                 "Download file by index failed, error code: %ld.",
-                 return_code);
+                 "Download file with index  %d failed, error code: %ld.",
+                 file_index_to_download_, return_code);
     response->success = false;
     return;
   }
-  else
-  {
-    RCLCPP_INFO(get_logger(), "Download file by index successful.");
-    response->success = true;
-  }
 
+  response->success = true;
   // Release rights
-  release_downloader_rights(index);
+  release_downloader_rights(payload_index);
 }
 
 void
@@ -1311,40 +1284,21 @@ PSDKWrapper::camera_delete_file_by_index_cb(
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
 
-  // Register callback
-  register_file_data_callback(index);
-  // Obtain downloader rights
-  obtain_downloader_rights(index);
-
-  return_code = DjiCameraManager_DownloadFileList(index, &media_file_list_);
-  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-  {
-    RCLCPP_ERROR(get_logger(), "Download File List failed, error code: %ld.",
-                 return_code);
-    response->success = false;
-    return;
-  }
-  else
-  {
-    RCLCPP_INFO(get_logger(), "Download File List successful.");
-  }
-
   return_code = DjiCameraManager_DeleteFileByIndex(index, request->file_index);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Failed to delete file, error code: %ld.",
-                 return_code);
+    RCLCPP_ERROR(get_logger(),
+                 "Failed to delete file with index %d, error code: %ld.",
+                 request->file_index, return_code);
     response->success = false;
     return;
   }
   else
   {
-    RCLCPP_INFO(get_logger(), "Deleted file by index successfully.");
+    RCLCPP_INFO(get_logger(), "Successfully deleted file with index %d.",
+                request->file_index);
     response->success = true;
   }
-
-  // Release rights
-  release_downloader_rights(index);
 }
 
 psdk_interfaces::msg::FileInfo
@@ -1413,12 +1367,9 @@ PSDKWrapper::camera_manager_download_file_data_callback(
     T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len,
     const std::string &file_path)
 {
-  int32_t i;
-  float downloadSpeed = 0.0f;
-  uint32_t downloadStartMs = 0;
-  uint32_t downloadEndMs = 0;
-  std::string downloadFileName;
-  uint32_t s_nextDownloadFileIndex = 0;
+  float download_speed = 0.0f;
+  uint32_t download_start_ms = 0;
+  uint32_t download_end_ms = 0;
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
 
   if (!std::filesystem::exists(file_path))
@@ -1436,27 +1387,26 @@ PSDKWrapper::camera_manager_download_file_data_callback(
 
   if (packetInfo.downloadFileEvent == DJI_DOWNLOAD_FILE_EVENT_START)
   {
-    for (i = 0; i < media_file_list_.totalCount; ++i)
-    {
-      if (media_file_list_.fileListInfo[i].fileIndex == packetInfo.fileIndex)
-      {
-        s_nextDownloadFileIndex = i + 1;
-        break;
-      }
-    }
-    osalHandler->GetTimeMs(&downloadStartMs);
+    osalHandler->GetTimeMs(&download_start_ms);
 
-    downloadFileName = file_path + media_file_list_.fileListInfo[i].fileName;
-    RCLCPP_INFO(get_logger(),
-                "Start download media file, index : %d, next "
-                "download media file, index: %d",
-                i, s_nextDownloadFileIndex);
-    s_downloadMediaFile_ = fopen(downloadFileName.c_str(), "wb+");
-    if (s_downloadMediaFile_ == NULL)
+    if (packetInfo.fileIndex == file_index_to_download_)
     {
+      std::string download_file_name = file_path + file_name_to_download_;
+      RCLCPP_INFO(get_logger(), "Start download media file, index : %d",
+                  packetInfo.fileIndex);
+      s_downloadMediaFile_ = fopen(download_file_name.c_str(), "wb+");
+      if (s_downloadMediaFile_ == NULL)
+      {
+        return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
+      }
+      fwrite(data, 1, len, s_downloadMediaFile_);
+    }
+    else
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "File index does not match the requested file index");
       return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
     }
-    fwrite(data, 1, len, s_downloadMediaFile_);
   }
   else if (packetInfo.downloadFileEvent == DJI_DOWNLOAD_FILE_EVENT_TRANSFER)
   {
@@ -1474,20 +1424,18 @@ PSDKWrapper::camera_manager_download_file_data_callback(
     {
       return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
     }
-
     fwrite(data, 1, len, s_downloadMediaFile_);
 
-    osalHandler->GetTimeMs(&downloadEndMs);
-
-    downloadSpeed = static_cast<float>(packetInfo.fileSize) /
-                    static_cast<float>(downloadEndMs - downloadStartMs);
+    osalHandler->GetTimeMs(&download_end_ms);
+    download_speed = static_cast<float>(packetInfo.fileSize) /
+                     static_cast<float>(download_end_ms - download_start_ms);
+    RCLCPP_DEBUG(get_logger(),
+                 "End download media file, index : %d, download speed: %.1f",
+                 packetInfo.fileIndex, download_speed);
 
     fclose(s_downloadMediaFile_);
     s_downloadMediaFile_ = NULL;
-    media_file_list_.totalCount = 0;
-    media_file_list_.fileListInfo = nullptr;
   }
-
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 

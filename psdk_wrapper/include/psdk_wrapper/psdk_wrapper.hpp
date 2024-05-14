@@ -72,7 +72,6 @@
 #include "psdk_interfaces/msg/esc_data.hpp"
 #include "psdk_interfaces/msg/file_attributes.hpp"
 #include "psdk_interfaces/msg/file_info.hpp"
-#include "psdk_interfaces/msg/file_list_info.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
@@ -89,10 +88,10 @@
 #include "psdk_interfaces/msg/sub_file_info.hpp"
 #include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
-#include "psdk_interfaces/srv/camera_download_file_list.hpp"
 #include "psdk_interfaces/srv/camera_format_sd_card.hpp"
 #include "psdk_interfaces/srv/camera_get_aperture.hpp"
 #include "psdk_interfaces/srv/camera_get_exposure_mode_ev.hpp"
+#include "psdk_interfaces/srv/camera_get_file_list_info.hpp"
 #include "psdk_interfaces/srv/camera_get_focus_mode.hpp"
 #include "psdk_interfaces/srv/camera_get_focus_target.hpp"
 #include "psdk_interfaces/srv/camera_get_iso.hpp"
@@ -153,7 +152,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   using CameraRecordVideo = psdk_interfaces::srv::CameraRecordVideo;
   using CameraGetLaserRangingInfo =
       psdk_interfaces::srv::CameraGetLaserRangingInfo;
-  using CameraDownloadFileList = psdk_interfaces::srv::CameraDownloadFileList;
+  using CameraGetFileListInfo = psdk_interfaces::srv::CameraGetFileListInfo;
   using CameraDownloadFileByIndex =
       psdk_interfaces::srv::CameraDownloadFileByIndex;
   using CameraDeleteFileByIndex = psdk_interfaces::srv::CameraDeleteFileByIndex;
@@ -1653,15 +1652,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraGetLaserRangingInfo::Response> response);
   /**
    * @brief Request downloading of a file list
-   * @param request CameraDownloadFileList service request. The camera
+   * @param request CameraGetFileListInfo service request. The camera
    * mounted position for which the request is made needs to be specified.
    * @note This method is currently not working properly. Future work will
    * ensure its proper functioning.
-   * @param response CameraDownloadFileList service response.
+   * @param response CameraGetFileListInfo service response.
    */
-  void camera_download_file_list_cb(
-      const std::shared_ptr<CameraDownloadFileList::Request> request,
-      const std::shared_ptr<CameraDownloadFileList::Response> response);
+  void camera_get_file_list_info_cb(
+      const std::shared_ptr<CameraGetFileListInfo::Request> request,
+      const std::shared_ptr<CameraGetFileListInfo::Response> response);
   /**
    * @brief Request downloading of a file by index
    * @param request CameraDownloadFileByIndex service request. The camera
@@ -1940,8 +1939,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp::Service<CameraRecordVideo>::SharedPtr camera_record_video_service_;
   rclcpp::Service<CameraGetLaserRangingInfo>::SharedPtr
       camera_get_laser_ranging_info_service_;
-  rclcpp::Service<CameraDownloadFileList>::SharedPtr
-      camera_download_file_list_service_;
+  rclcpp::Service<CameraGetFileListInfo>::SharedPtr
+      camera_get_file_list_info_service_;
   rclcpp::Service<CameraDownloadFileByIndex>::SharedPtr
       camera_download_file_by_index_service_;
   rclcpp::Service<CameraDeleteFileByIndex>::SharedPtr
@@ -2185,7 +2184,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
   E_DjiCameraType attached_camera_type_;
   E_DjiLiveViewCameraSource selected_camera_source_;
-  T_DjiCameraManagerFileList media_file_list_;
+  int32_t file_index_to_download_{0};
+  std::string file_name_to_download_;
 
   nlohmann::json hms_return_codes_json_;
   bool publish_camera_transforms_{false};
