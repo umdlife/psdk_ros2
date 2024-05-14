@@ -18,6 +18,8 @@ The `psdk_ros2` wrapper currently supports the following features:
 
 6. **Gimbal Control**: You can manipulate gimbal parameters, adjusting the gimbal's orientation and behavior.
 
+7. **Health management system**: All DJI notifications and errors seen on the RC can be retrieved over a ROS 2 topic. 
+
 
 
 <div style="background-color: #D6EAF8; padding: 10px; border: 1px solid ##FBFAFA;">
@@ -28,7 +30,7 @@ The `psdk_ros2` wrapper currently supports the following features:
 
 ## Compatibility
 
-The current version supports **PSDK v3.8** and it has been tested and built for **ROS 2 Humble**. For firmware and product compatibility, please check the page [DJI Developer - PSDK](https://developer.dji.com/doc/payload-sdk-tutorial/en/).
+The current version supports **PSDK v3.8.1** and it has been tested and built for **ROS 2 Humble**. For firmware and product compatibility, please check the page [DJI Developer - PSDK](https://developer.dji.com/doc/payload-sdk-tutorial/en/).
 
 
 ## Important Notice 
