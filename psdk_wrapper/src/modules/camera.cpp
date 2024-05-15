@@ -1168,8 +1168,8 @@ PSDKWrapper::register_file_data_callback(E_DjiMountPosition index)
   }
   else
   {
-    RCLCPP_INFO(get_logger(),
-                "Register download file data callback successful.");
+    RCLCPP_DEBUG(get_logger(),
+                 "Register download file data callback successful.");
   }
 }
 
@@ -1187,7 +1187,7 @@ PSDKWrapper::obtain_downloader_rights(E_DjiMountPosition index)
   }
   else
   {
-    RCLCPP_INFO(get_logger(), "Obtain downloader rights successful.");
+    RCLCPP_DEBUG(get_logger(), "Obtain downloader rights successful.");
   }
 }
 
@@ -1205,7 +1205,7 @@ PSDKWrapper::release_downloader_rights(E_DjiMountPosition index)
   }
   else
   {
-    RCLCPP_INFO(get_logger(), "Release downloader rights successful.");
+    RCLCPP_DEBUG(get_logger(), "Release downloader rights successful.");
   }
 }
 
@@ -1382,34 +1382,24 @@ PSDKWrapper::camera_manager_download_file_data_callback(
   uint32_t download_end_ms = 0;
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
 
-  if (!std::filesystem::exists(file_path))
+  if (!create_directory(file_path))
   {
-    try
-    {
-      std::filesystem::create_directories(file_path);
-    }
-    catch (const std::exception &e)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to create folder: %s", e.what());
-      return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
-    }
+    return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   }
 
   if (packetInfo.downloadFileEvent == DJI_DOWNLOAD_FILE_EVENT_START)
   {
     osalHandler->GetTimeMs(&download_start_ms);
-
     if (packetInfo.fileIndex == file_index_to_download_)
     {
       std::string download_file_name = file_path + file_name_to_download_;
       RCLCPP_INFO(get_logger(), "Start download media file, index : %d",
                   packetInfo.fileIndex);
       s_downloadMediaFile_ = fopen(download_file_name.c_str(), "wb+");
-      if (s_downloadMediaFile_ == NULL)
+      if (!write_to_file(data, len))
       {
         return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
       }
-      fwrite(data, 1, len, s_downloadMediaFile_);
     }
     else
     {
@@ -1420,9 +1410,9 @@ PSDKWrapper::camera_manager_download_file_data_callback(
   }
   else if (packetInfo.downloadFileEvent == DJI_DOWNLOAD_FILE_EVENT_TRANSFER)
   {
-    if (s_downloadMediaFile_ != NULL)
+    if (!write_to_file(data, len))
     {
-      fwrite(data, 1, len, s_downloadMediaFile_);
+      return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
     }
     RCLCPP_DEBUG(get_logger(),
                  "Transfer download media file data, len: %d, percent: %.1f",
@@ -1430,12 +1420,10 @@ PSDKWrapper::camera_manager_download_file_data_callback(
   }
   else if (packetInfo.downloadFileEvent == DJI_DOWNLOAD_FILE_EVENT_END)
   {
-    if (s_downloadMediaFile_ == NULL)
+    if (!write_to_file(data, len))
     {
       return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
     }
-    fwrite(data, 1, len, s_downloadMediaFile_);
-
     osalHandler->GetTimeMs(&download_end_ms);
     download_speed = static_cast<float>(packetInfo.fileSize) /
                      static_cast<float>(download_end_ms - download_start_ms);
@@ -1447,6 +1435,36 @@ PSDKWrapper::camera_manager_download_file_data_callback(
     s_downloadMediaFile_ = NULL;
   }
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
+bool
+PSDKWrapper::write_to_file(const uint8_t *data, uint16_t len)
+{
+  if (s_downloadMediaFile_ != NULL)
+  {
+    fwrite(data, 1, len, s_downloadMediaFile_);
+    return true;
+  }
+  RCLCPP_ERROR(get_logger(), "Failed to write to file");
+  return false;
+}
+
+bool
+PSDKWrapper::create_directory(const std::string &path)
+{
+  if (!std::filesystem::exists(path))
+  {
+    try
+    {
+      std::filesystem::create_directories(path);
+    }
+    catch (const std::exception &e)
+    {
+      RCLCPP_ERROR(get_logger(), "Failed to create directory: %s", e.what());
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace psdk_ros2

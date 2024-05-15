@@ -1717,6 +1717,19 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   psdk_interfaces::msg::FileAttributes set_file_attributes(
       const T_DjiCameraManagerFileAttributeData& attributes);
+  /**
+   * @brief Write data to a file
+   * @param data data to be written
+   * @param len length of data
+   * @return true if succedded / false otherwise
+   */
+  bool write_to_file(const uint8_t* data, uint16_t len);
+  /**
+   * @brief Create a directory if it does not exist already
+   * @param path path of the directory to be created
+   * @return true if succedded / false otherwise
+   */
+  bool create_directory(const std::string& path);
 
   /* Streaming*/
   /**
