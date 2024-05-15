@@ -1217,6 +1217,12 @@ PSDKWrapper::camera_get_file_list_info_cb(
   T_DjiReturnCode return_code;
   E_DjiMountPosition index =
       static_cast<E_DjiMountPosition>(request->payload_index);
+
+  // Register callback
+  register_file_data_callback(index);
+
+  // Obtain downloader rights
+  obtain_downloader_rights(index);
   T_DjiCameraManagerFileList retrieved_file_list;
   return_code = DjiCameraManager_DownloadFileList(index, &retrieved_file_list);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -1224,6 +1230,8 @@ PSDKWrapper::camera_get_file_list_info_cb(
     RCLCPP_ERROR(get_logger(), "Download File List failed, error code: %ld.",
                  return_code);
     response->success = false;
+    // Release rights
+    release_downloader_rights(index);
     return;
   }
   else
@@ -1240,6 +1248,8 @@ PSDKWrapper::camera_get_file_list_info_cb(
     response->count = retrieved_file_list.totalCount;
     response->success = true;
   }
+  // Release rights
+  release_downloader_rights(index);
 }
 
 void
