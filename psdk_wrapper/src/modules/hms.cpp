@@ -20,8 +20,8 @@
 
 #include <fstream>
 
-#include "psdk_wrapper/json_utils.hpp"
 #include "psdk_wrapper/psdk_wrapper.hpp"
+#include "psdk_wrapper/utils/json_utils.hpp"
 
 namespace psdk_ros2
 {

@@ -14,8 +14,8 @@
  * Contact: alejandro@unmanned.life
  *
  */
-#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_JSON_UTILS_HPP_
-#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_JSON_UTILS_HPP_
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_UTILS_JSON_UTILS_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_UTILS_JSON_UTILS_HPP_
 
 #include <iomanip>
 #include <iostream>
@@ -57,4 +57,4 @@ to_hex_str(const T& value, const bool& is_lower_case = true)
 }  // namespace json_utils
 }  // namespace psdk_ros2
 
-#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_JSON_UTILS_HPP_
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_UTILS_JSON_UTILS_HPP_

@@ -67,6 +67,8 @@
 #include "utils/dji_config_manager.h"     //NOLINT
 
 // PSDK wrapper interfaces
+#include "psdk_interfaces/action/camera_delete_file_by_index.hpp"
+#include "psdk_interfaces/action/camera_download_file_by_index.hpp"
 #include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
 #include "psdk_interfaces/msg/esc_data.hpp"
@@ -86,8 +88,6 @@
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
 #include "psdk_interfaces/msg/single_battery_info.hpp"
 #include "psdk_interfaces/msg/sub_file_info.hpp"
-#include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
-#include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
 #include "psdk_interfaces/srv/camera_format_sd_card.hpp"
 #include "psdk_interfaces/srv/camera_get_aperture.hpp"
 #include "psdk_interfaces/srv/camera_get_exposure_mode_ev.hpp"
@@ -121,7 +121,8 @@
 #include "psdk_interfaces/srv/set_go_home_altitude.hpp"
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
 #include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
-#include "psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/utils/action_server.hpp"
+#include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
 
 namespace psdk_ros2
 {
@@ -154,8 +155,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       psdk_interfaces::srv::CameraGetLaserRangingInfo;
   using CameraGetFileListInfo = psdk_interfaces::srv::CameraGetFileListInfo;
   using CameraDownloadFileByIndex =
-      psdk_interfaces::srv::CameraDownloadFileByIndex;
-  using CameraDeleteFileByIndex = psdk_interfaces::srv::CameraDeleteFileByIndex;
+      psdk_interfaces::action::CameraDownloadFileByIndex;
+  using CameraDeleteFileByIndex =
+      psdk_interfaces::action::CameraDeleteFileByIndex;
   using CameraGetType = psdk_interfaces::srv::CameraGetType;
   using CameraSetExposureModeEV = psdk_interfaces::srv::CameraSetExposureModeEV;
   using CameraGetExposureModeEV = psdk_interfaces::srv::CameraGetExposureModeEV;
@@ -1662,14 +1664,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraGetFileListInfo::Request> request,
       const std::shared_ptr<CameraGetFileListInfo::Response> response);
   /**
-   * @brief Request downloading of a file by index
-   * @param request CameraDownloadFileByIndex service request. The camera
-   * mounted position for which the request is made needs to be specified.
-   * @param response CameraDownloadFileByIndex service response.
+   * @brief Execute the request of downloading of a file by index
    */
-  void camera_download_file_by_index_cb(
-      const std::shared_ptr<CameraDownloadFileByIndex::Request> request,
-      const std::shared_ptr<CameraDownloadFileByIndex::Response> response);
+  void execute_download_file_by_index();
   /**
    * @brief Request to format SD card
    * @param request CameraFormatSdCard service request. The camera
@@ -1689,14 +1686,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraGetSDStorageInfo::Request> request,
       const std::shared_ptr<CameraGetSDStorageInfo::Response> response);
   /**
-   * @brief Request to delete a file by index
-   * @param request CameraDeleteFileByIndex service request. The camera
-   * mounted position for which the request is made needs to be specified.
-   * @param response CameraDeleteFileByIndex service response.
+   * @brief Execute the request of deleting a file by index
    */
-  void camera_delete_file_by_index_cb(
-      const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
-      const std::shared_ptr<CameraDeleteFileByIndex::Response> response);
+  void execute_delete_file_by_index();
   /**
    * @brief Set the file info msg object
    * @param file_info received from the SD card
@@ -1954,10 +1946,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       camera_get_laser_ranging_info_service_;
   rclcpp::Service<CameraGetFileListInfo>::SharedPtr
       camera_get_file_list_info_service_;
-  rclcpp::Service<CameraDownloadFileByIndex>::SharedPtr
-      camera_download_file_by_index_service_;
-  rclcpp::Service<CameraDeleteFileByIndex>::SharedPtr
-      camera_delete_file_by_index_service_;
   rclcpp::Service<CameraFormatSdCard>::SharedPtr camera_format_sd_card_service_;
   rclcpp::Service<CameraGetSDStorageInfo>::SharedPtr
       camera_get_sd_storage_info_service_;
@@ -1992,6 +1980,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   // Gimbal
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
+  // Camera action servers
+  std::unique_ptr<utils::ActionServer<CameraDeleteFileByIndex>>
+      camera_delete_file_by_index_server_;
+  std::unique_ptr<utils::ActionServer<CameraDownloadFileByIndex>>
+      camera_download_file_by_index_server_;
 
   /**
    * @brief Get the gps signal level

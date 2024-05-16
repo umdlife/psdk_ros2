@@ -16,7 +16,7 @@
  */
 
 #include "psdk_wrapper/psdk_wrapper.hpp"
-#include "psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
 
 namespace psdk_ros2
 {

@@ -67,8 +67,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/CameraRecordVideo.srv"
   "srv/CameraGetLaserRangingInfo.srv"
   "srv/CameraGetFileListInfo.srv"
-  "srv/CameraDownloadFileByIndex.srv"
-  "srv/CameraDeleteFileByIndex.srv"
   "srv/CameraSetupStreaming.srv"
   "srv/CameraFormatSdCard.srv"
   "srv/CameraGetSDStorageInfo.srv"
@@ -79,6 +77,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetGoHomeAltitude.srv"
   "srv/SetObstacleAvoidance.srv"
   "srv/GetObstacleAvoidance.srv"
+  "action/CameraDeleteFileByIndex.action"
+  "action/CameraDownloadFileByIndex.action"
   DEPENDENCIES std_msgs geometry_msgs
 )
 
