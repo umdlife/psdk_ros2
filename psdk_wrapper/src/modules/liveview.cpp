@@ -111,7 +111,7 @@ PSDKWrapper::camera_setup_streaming_cb(
   RCLCPP_INFO(get_logger(),
               "Setting up camera streaming for payload index %d and camera "
               "source %d. Output decoded: %d",
-              payload_index, selected_camera_source_);
+              payload_index, selected_camera_source_, decode_stream_);
 
   if (request->start_stop)
   {

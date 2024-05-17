@@ -17,6 +17,8 @@
       camera_frame: "psdk_camera_link"
       publish_transforms: true
 
+      file_path: "/logs/media/"
+
       # Mandatory modules to be initialized. Mark with a true those which you
       # consider mandatory for your application, false otherwise. Be aware that
       # some modules might have inter-dependencies. Non mandatory modules will

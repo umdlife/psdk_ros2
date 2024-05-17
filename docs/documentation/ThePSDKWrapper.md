@@ -284,14 +284,17 @@ Please notice that the frequency of the streaming will depend on the computation
 
 #### Camera file management
 
-These services currently are not working properly. Future work will address these functionalities. 
+Camera services for managing the SD card storage from the DJI payload. Calling the `psdk_ros2/camera_get_file_list_info` returns as a result the number of files and an array of file data. With this information you are able to manipulate the objects inside the SD card by calling the other services like `psdk_ros2/camera_download_file_by_index` or `psdk_ros2/camera_delete_file_by_index`. Inside these services you need to specify the location where the files will be saved. You can configure the path for the file download via a ROS 2 parameter (see psdk_params.yml).
+
+Moreover, one can check the current storage capacity of the SD card (`psdk_ros2/camera_get_sd_storage_info`) and format it if desired (`psdk_ros2/camera_format_sd_card`).
 
 | Name                                        | Type      |
 | --------------------------------------------| --------- | 
-| psdk_ros2/camera_download_file_list         | Service   |
+| psdk_ros2/camera_get_file_list_info         | Service   |
 | psdk_ros2/camera_download_file_by_index     | Service   |
 | psdk_ros2/camera_delete_file_by_index       | Service   |
-
+| psdk_ros2/camera_get_sd_storage_info        | Service   |
+| psdk_ros2/camera_format_sd_card             | Service   |
  
 
 ### Gimbal

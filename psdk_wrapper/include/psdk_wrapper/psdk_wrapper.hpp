@@ -29,10 +29,12 @@
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <cmath>
+#include <fstream>
 #include <geometry_msgs/msg/accel_stamped.hpp>
 #include <geometry_msgs/msg/quaternion_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <nav_msgs/msg/odometry.hpp>
@@ -63,9 +65,13 @@
 #include "utils/dji_config_manager.h"     //NOLINT
 
 // PSDK wrapper interfaces
+#include "psdk_interfaces/action/camera_delete_file_by_index.hpp"
+#include "psdk_interfaces/action/camera_download_file_by_index.hpp"
 #include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
 #include "psdk_interfaces/msg/esc_data.hpp"
+#include "psdk_interfaces/msg/file_attributes.hpp"
+#include "psdk_interfaces/msg/file_info.hpp"
 #include "psdk_interfaces/msg/flight_anomaly.hpp"
 #include "psdk_interfaces/msg/flight_status.hpp"
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
@@ -79,16 +85,17 @@
 #include "psdk_interfaces/msg/relative_obstacle_info.hpp"
 #include "psdk_interfaces/msg/rtk_yaw.hpp"
 #include "psdk_interfaces/msg/single_battery_info.hpp"
-#include "psdk_interfaces/srv/camera_delete_file_by_index.hpp"
-#include "psdk_interfaces/srv/camera_download_file_by_index.hpp"
-#include "psdk_interfaces/srv/camera_download_file_list.hpp"
+#include "psdk_interfaces/msg/sub_file_info.hpp"
+#include "psdk_interfaces/srv/camera_format_sd_card.hpp"
 #include "psdk_interfaces/srv/camera_get_aperture.hpp"
 #include "psdk_interfaces/srv/camera_get_exposure_mode_ev.hpp"
+#include "psdk_interfaces/srv/camera_get_file_list_info.hpp"
 #include "psdk_interfaces/srv/camera_get_focus_mode.hpp"
 #include "psdk_interfaces/srv/camera_get_focus_target.hpp"
 #include "psdk_interfaces/srv/camera_get_iso.hpp"
 #include "psdk_interfaces/srv/camera_get_laser_ranging_info.hpp"
 #include "psdk_interfaces/srv/camera_get_optical_zoom.hpp"
+#include "psdk_interfaces/srv/camera_get_sd_storage_info.hpp"
 #include "psdk_interfaces/srv/camera_get_shutter_speed.hpp"
 #include "psdk_interfaces/srv/camera_get_type.hpp"
 #include "psdk_interfaces/srv/camera_record_video.hpp"
@@ -113,7 +120,8 @@
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
 #include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
 #include "psdk_wrapper/modules/flight_control.hpp"
-#include "psdk_wrapper/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/utils/action_server.hpp"
+#include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
 
 namespace psdk_ros2
 {
@@ -144,10 +152,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   using CameraRecordVideo = psdk_interfaces::srv::CameraRecordVideo;
   using CameraGetLaserRangingInfo =
       psdk_interfaces::srv::CameraGetLaserRangingInfo;
-  using CameraDownloadFileList = psdk_interfaces::srv::CameraDownloadFileList;
+  using CameraGetFileListInfo = psdk_interfaces::srv::CameraGetFileListInfo;
   using CameraDownloadFileByIndex =
-      psdk_interfaces::srv::CameraDownloadFileByIndex;
-  using CameraDeleteFileByIndex = psdk_interfaces::srv::CameraDeleteFileByIndex;
+      psdk_interfaces::action::CameraDownloadFileByIndex;
+  using CameraDeleteFileByIndex =
+      psdk_interfaces::action::CameraDeleteFileByIndex;
   using CameraGetType = psdk_interfaces::srv::CameraGetType;
   using CameraSetExposureModeEV = psdk_interfaces::srv::CameraSetExposureModeEV;
   using CameraGetExposureModeEV = psdk_interfaces::srv::CameraGetExposureModeEV;
@@ -164,6 +173,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   using CameraSetInfraredZoom = psdk_interfaces::srv::CameraSetInfraredZoom;
   using CameraSetAperture = psdk_interfaces::srv::CameraSetAperture;
   using CameraGetAperture = psdk_interfaces::srv::CameraGetAperture;
+  using CameraFormatSdCard = psdk_interfaces::srv::CameraFormatSdCard;
+  using CameraGetSDStorageInfo = psdk_interfaces::srv::CameraGetSDStorageInfo;
   // Streaming
   using CameraSetupStreaming = psdk_interfaces::srv::CameraSetupStreaming;
   // Gimbal
@@ -235,6 +246,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string gimbal_frame;
     std::string camera_frame;
     std::string hms_return_codes_path;
+    std::string file_path;
     bool publish_transforms;
     int imu_frequency;
     int attitude_frequency;
@@ -505,6 +517,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
   friend T_DjiReturnCode c_hms_callback(T_DjiHmsInfoTable hms_info_table);
+  friend T_DjiReturnCode c_camera_manager_download_file_data_callback(
+      T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data,
+      uint16_t len);
   /* Streaming */
   friend void c_publish_main_streaming_callback(CameraRGBImage img,
                                                 void* user_data);
@@ -1093,6 +1108,10 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   T_DjiReturnCode hms_callback(T_DjiHmsInfoTable hms_info_table);
 
+  T_DjiReturnCode camera_manager_download_file_data_callback(
+      T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data, uint16_t len,
+      const std::string& file_path);
+
   /* ROS 2 Subscriber callbacks */
   /**
    * @brief Callback function to control aircraft position and yaw. This
@@ -1358,8 +1377,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraShootBurstPhoto::Request> request,
       const std::shared_ptr<CameraShootBurstPhoto::Response> response);
   /**
-
-  /**
    * @brief Request shooting photos at a certain interval.
    * This service sets the camera work mode to
    * DJI_CAMERA_MANAGER_WORK_MODE_SHOOT_PHOTO, the shoot photo mode to
@@ -1408,37 +1425,75 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<CameraGetLaserRangingInfo::Response> response);
   /**
    * @brief Request downloading of a file list
-   * @param request CameraDownloadFileList service request. The camera
+   * @param request CameraGetFileListInfo service request. The camera
    * mounted position for which the request is made needs to be specified.
    * @note This method is currently not working properly. Future work will
    * ensure its proper functioning.
-   * @param response CameraDownloadFileList service response.
+   * @param response CameraGetFileListInfo service response.
    */
-  void camera_download_file_list_cb(
-      const std::shared_ptr<CameraDownloadFileList::Request> request,
-      const std::shared_ptr<CameraDownloadFileList::Response> response);
+  void camera_get_file_list_info_cb(
+      const std::shared_ptr<CameraGetFileListInfo::Request> request,
+      const std::shared_ptr<CameraGetFileListInfo::Response> response);
   /**
-   * @brief Request downloading of a file by index
-   * @param request CameraDownloadFileByIndex service request. The camera
-   * mounted position for which the request is made needs to be specified.
-   * @note This method is currently not working properly. Future work will
-   * ensure its proper functioning.
-   * @param response CameraDownloadFileByIndex service response.
+   * @brief Execute the request of downloading of a file by index
    */
-  void camera_download_file_by_index_cb(
-      const std::shared_ptr<CameraDownloadFileByIndex::Request> request,
-      const std::shared_ptr<CameraDownloadFileByIndex::Response> response);
+  void execute_download_file_by_index();
   /**
-   * @brief Request to delete a file by index
-   * @param request CameraDeleteFileByIndex service request. The camera
+   * @brief Request to format SD card
+   * @param request CameraFormatSdCard service request. The camera
    * mounted position for which the request is made needs to be specified.
-   * @note This method is currently not working properly. Future work will
-   * ensure its proper functioning.
-   * @param response CameraDeleteFileByIndex service response.
+   * @param response CameraFormatSdCard service response.
    */
-  void camera_delete_file_by_index_cb(
-      const std::shared_ptr<CameraDeleteFileByIndex::Request> request,
-      const std::shared_ptr<CameraDeleteFileByIndex::Response> response);
+  void camera_format_sd_card_cb(
+      const std::shared_ptr<CameraFormatSdCard::Request> request,
+      const std::shared_ptr<CameraFormatSdCard::Response> response);
+  /**
+   * @brief Request SD card storage information
+   * @param request CameraGetSDStorageInfo service request. The camera
+   * mounted position for which the request is made needs to be specified.
+   * @param response CameraGetSDStorageInfo service response.
+   */
+  void camera_get_sd_storage_info_cb(
+      const std::shared_ptr<CameraGetSDStorageInfo::Request> request,
+      const std::shared_ptr<CameraGetSDStorageInfo::Response> response);
+  /**
+   * @brief Execute the request of deleting a file by index
+   */
+  void execute_delete_file_by_index();
+  /**
+   * @brief Set the file info msg object
+   * @param file_info received from the SD card
+   * @return psdk_interfaces::msg::FileInfo msg object
+   */
+  psdk_interfaces::msg::FileInfo set_file_info(
+      const T_DjiCameraManagerFileListInfo file_info);
+  /**
+   * @brief Get the unix time object
+   * @param time Time object as defined by T_DjiCameraManagerFileCreateTime
+   * @return std::time_t
+   */
+  std::time_t get_unix_time(const T_DjiCameraManagerFileCreateTime& time);
+  /**
+   * @brief Set the file attributes msg
+   * @param attributes received file attributes
+   * @return psdk_interfaces::msg::FileAttributes file attributes msg
+   */
+  psdk_interfaces::msg::FileAttributes set_file_attributes(
+      const T_DjiCameraManagerFileAttributeData& attributes);
+  /**
+   * @brief Write data to a file
+   * @param data data to be written
+   * @param len length of data
+   * @return true if succedded / false otherwise
+   */
+  bool write_to_file(const uint8_t* data, uint16_t len);
+  /**
+   * @brief Create a directory if it does not exist already
+   * @param path path of the directory to be created
+   * @return true if succedded / false otherwise
+   */
+  bool create_directory(const std::string& path);
+
   /* Streaming*/
   /**
    * @brief Request to start/stop streming of a certain camera.
@@ -1649,12 +1704,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   rclcpp::Service<CameraRecordVideo>::SharedPtr camera_record_video_service_;
   rclcpp::Service<CameraGetLaserRangingInfo>::SharedPtr
       camera_get_laser_ranging_info_service_;
-  rclcpp::Service<CameraDownloadFileList>::SharedPtr
-      camera_download_file_list_service_;
-  rclcpp::Service<CameraDownloadFileByIndex>::SharedPtr
-      camera_download_file_by_index_service_;
-  rclcpp::Service<CameraDeleteFileByIndex>::SharedPtr
-      camera_delete_file_by_index_service_;
+  rclcpp::Service<CameraGetFileListInfo>::SharedPtr
+      camera_get_file_list_info_service_;
+  rclcpp::Service<CameraFormatSdCard>::SharedPtr camera_format_sd_card_service_;
+  rclcpp::Service<CameraGetSDStorageInfo>::SharedPtr
+      camera_get_sd_storage_info_service_;
   rclcpp::Service<CameraGetType>::SharedPtr camera_get_type_service_;
   rclcpp::Service<CameraSetExposureModeEV>::SharedPtr
       camera_set_exposure_mode_ev_service_;
@@ -1686,6 +1740,11 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   // Gimbal
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
+  // Camera action servers
+  std::unique_ptr<utils::ActionServer<CameraDeleteFileByIndex>>
+      camera_delete_file_by_index_server_;
+  std::unique_ptr<utils::ActionServer<CameraDownloadFileByIndex>>
+      camera_download_file_by_index_server_;
 
   /**
    * @brief Get the gps signal level
@@ -1799,6 +1858,25 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   std::string get_optical_frame_id();
 
   /**
+   * @brief Register the callback for downloading files from the sd card
+   * @param index camera index
+   *
+   */
+  void register_file_data_callback(E_DjiMountPosition index);
+
+  /**
+   * @brief Obtain the rights to download files from the sd card
+   * @param index camera index
+   *
+   */
+  void obtain_downloader_rights(E_DjiMountPosition index);
+
+  /**
+   * @brief Release the rights to download files from the sd card
+   * @param index camera index
+   */
+  void release_downloader_rights(E_DjiMountPosition index);
+  /**
    * @brief Method to initialize all psdk modules
    * @return true if all mandatory modules have been correctly initialized,
    * false otherwise
@@ -1837,6 +1915,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   float local_altitude_reference_{0};
   bool local_altitude_reference_set_{false};
   bool set_local_position_ref_{false};
+  FILE* s_downloadMediaFile_ = NULL;
   geometry_msgs::msg::Vector3Stamped local_position_reference_;
   struct CopterState
   {
@@ -1871,6 +1950,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
   E_DjiCameraType attached_camera_type_;
   E_DjiLiveViewCameraSource selected_camera_source_;
+  int32_t file_index_to_download_{0};
+  std::string file_name_to_download_;
+
   nlohmann::json hms_return_codes_json_;
   bool publish_camera_transforms_{false};
   bool decode_stream_{true};
