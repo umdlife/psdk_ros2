@@ -94,6 +94,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
+  flight_control_module_->on_configure();
   return CallbackReturn::SUCCESS;
 }
 
@@ -111,6 +112,10 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
+
+  flight_control_module_->on_activate();
+  flight_control_thread_ = std::make_unique<utils::NodeThread>(
+      flight_control_module_->get_node_base_interface());
 
   if (!initialize_psdk_modules())
   {
@@ -147,6 +152,7 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
   unsubscribe_psdk_topics();
   deactivate_ros_elements();
 
+  flight_control_thread_.reset();
   return CallbackReturn::SUCCESS;
 }
 
@@ -156,6 +162,8 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
   (void)state;
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
   clean_ros_elements();
+  flight_control_thread_.reset();
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -174,9 +182,8 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   }
 
   // Deinitialize all remaining modules
-  if (!deinit_telemetry() || !deinit_flight_control() ||
-      !deinit_camera_manager() || !deinit_gimbal_manager() ||
-      !deinit_liveview() || !deinit_hms())
+  if (!deinit_telemetry() || !deinit_camera_manager() ||
+      !deinit_gimbal_manager() || !deinit_liveview() || !deinit_hms())
   {
     return CallbackReturn::FAILURE;
   }
@@ -935,99 +942,7 @@ PSDKWrapper::initialize_ros_elements()
   set_local_position_ref_srv_ = create_service<Trigger>(
       "psdk_ros2/set_local_position_ref",
       std::bind(&PSDKWrapper::set_local_position_ref_cb, this, _1, _2));
-  set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
-      "psdk_ros2/set_home_from_gps",
-      std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
-  set_home_from_current_location_srv_ = create_service<Trigger>(
-      "psdk_ros2/set_home_from_current_location",
-      std::bind(&PSDKWrapper::set_home_from_current_location_cb, this, _1, _2));
-  set_go_home_altitude_srv_ = create_service<SetGoHomeAltitude>(
-      "psdk_ros2/set_go_home_altitude",
-      std::bind(&PSDKWrapper::set_go_home_altitude_cb, this, _1, _2));
-  get_go_home_altitude_srv_ = create_service<GetGoHomeAltitude>(
-      "psdk_ros2/get_go_home_altitude",
-      std::bind(&PSDKWrapper::get_go_home_altitude_cb, this, _1, _2));
-  start_go_home_srv_ = create_service<Trigger>(
-      "psdk_ros2/start_go_home",
-      std::bind(&PSDKWrapper::start_go_home_cb, this, _1, _2));
-  cancel_go_home_srv_ = create_service<Trigger>(
-      "psdk_ros2/cancel_go_home",
-      std::bind(&PSDKWrapper::cancel_go_home_cb, this, _1, _2));
-  obtain_ctrl_authority_srv_ = create_service<Trigger>(
-      "psdk_ros2/obtain_ctrl_authority",
-      std::bind(&PSDKWrapper::obtain_ctrl_authority_cb, this, _1, _2));
-  release_ctrl_authority_srv_ = create_service<Trigger>(
-      "psdk_ros2/release_ctrl_authority",
-      std::bind(&PSDKWrapper::release_ctrl_authority_cb, this, _1, _2));
-  turn_on_motors_srv_ = create_service<Trigger>(
-      "psdk_ros2/turn_on_motors",
-      std::bind(&PSDKWrapper::turn_on_motors_cb, this, _1, _2));
-  turn_off_motors_srv_ = create_service<Trigger>(
-      "psdk_ros2/turn_off_motors",
-      std::bind(&PSDKWrapper::turn_off_motors_cb, this, _1, _2));
-  takeoff_srv_ = create_service<Trigger>(
-      "psdk_ros2/takeoff",
-      std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
-  land_srv_ = create_service<Trigger>(
-      "psdk_ros2/land",
-      std::bind(&PSDKWrapper::start_landing_cb, this, _1, _2));
-  cancel_landing_srv_ = create_service<Trigger>(
-      "psdk_ros2/cancel_landing",
-      std::bind(&PSDKWrapper::cancel_landing_cb, this, _1, _2));
-  start_confirm_landing_srv_ = create_service<Trigger>(
-      "psdk_ros2/start_confirm_landing",
-      std::bind(&PSDKWrapper::start_confirm_landing_cb, this, _1, _2));
-  start_force_landing_srv_ = create_service<Trigger>(
-      "psdk_ros2/start_force_landing",
-      std::bind(&PSDKWrapper::start_force_landing_cb, this, _1, _2));
-  set_horizontal_vo_obstacle_avoidance_srv_ =
-      create_service<SetObstacleAvoidance>(
-          "psdk_ros2/set_horizontal_vo_obstacle_avoidance",
-          std::bind(&PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb, this,
-                    _1, _2));
-  set_horizontal_radar_obstacle_avoidance_srv_ =
-      create_service<SetObstacleAvoidance>(
-          "psdk_ros2/set_horizontal_radar_obstacle_avoidance",
-          std::bind(&PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb,
-                    this, _1, _2));
-  set_upwards_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
-      "psdk_ros2/set_upwards_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb, this, _1,
-                _2));
-  set_upwards_radar_obstacle_avoidance_srv_ =
-      create_service<SetObstacleAvoidance>(
-          "psdk_ros2/set_upwards_radar_obstacle_avoidance",
-          std::bind(&PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb, this,
-                    _1, _2));
-  set_downwards_vo_obstacle_avoidance_srv_ =
-      create_service<SetObstacleAvoidance>(
-          "psdk_ros2/set_downwards_vo_obstacle_avoidance",
-          std::bind(&PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb, this,
-                    _1, _2));
-  get_horizontal_vo_obstacle_avoidance_srv_ =
-      create_service<GetObstacleAvoidance>(
-          "psdk_ros2/get_horizontal_vo_obstacle_avoidance",
-          std::bind(&PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb, this,
-                    _1, _2));
-  get_upwards_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
-      "psdk_ros2/get_upwards_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb, this, _1,
-                _2));
-  get_upwards_radar_obstacle_avoidance_srv_ =
-      create_service<GetObstacleAvoidance>(
-          "psdk_ros2/get_upwards_radar_obstacle_avoidance",
-          std::bind(&PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb, this,
-                    _1, _2));
-  get_downwards_vo_obstacle_avoidance_srv_ =
-      create_service<GetObstacleAvoidance>(
-          "psdk_ros2/get_downwards_vo_obstacle_avoidance",
-          std::bind(&PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb, this,
-                    _1, _2));
-  get_horizontal_radar_obstacle_avoidance_srv_ =
-      create_service<GetObstacleAvoidance>(
-          "psdk_ros2/get_horizontal_radar_obstacle_avoidance",
-          std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb,
-                    this, _1, _2));
+
   /* Camera */
   camera_shoot_single_photo_service_ = create_service<CameraShootSinglePhoto>(
       "psdk_ros2/camera_shoot_single_photo",
@@ -1280,31 +1195,6 @@ PSDKWrapper::clean_ros_elements()
   // Services
   // General
   set_local_position_ref_srv_.reset();
-  set_home_from_gps_srv_.reset();
-  set_home_from_current_location_srv_.reset();
-  set_go_home_altitude_srv_.reset();
-  get_go_home_altitude_srv_.reset();
-  start_go_home_srv_.reset();
-  cancel_go_home_srv_.reset();
-  obtain_ctrl_authority_srv_.reset();
-  release_ctrl_authority_srv_.reset();
-  turn_on_motors_srv_.reset();
-  turn_off_motors_srv_.reset();
-  takeoff_srv_.reset();
-  land_srv_.reset();
-  cancel_landing_srv_.reset();
-  start_confirm_landing_srv_.reset();
-  start_force_landing_srv_.reset();
-  set_horizontal_vo_obstacle_avoidance_srv_.reset();
-  set_horizontal_radar_obstacle_avoidance_srv_.reset();
-  set_upwards_vo_obstacle_avoidance_srv_.reset();
-  set_upwards_radar_obstacle_avoidance_srv_.reset();
-  set_downwards_vo_obstacle_avoidance_srv_.reset();
-  get_horizontal_vo_obstacle_avoidance_srv_.reset();
-  get_upwards_vo_obstacle_avoidance_srv_.reset();
-  get_upwards_radar_obstacle_avoidance_srv_.reset();
-  get_downwards_vo_obstacle_avoidance_srv_.reset();
-  get_horizontal_radar_obstacle_avoidance_srv_.reset();
   // Camera
   camera_shoot_single_photo_service_.reset();
   camera_shoot_burst_photo_service_.reset();
@@ -1335,13 +1225,6 @@ PSDKWrapper::clean_ros_elements()
   // Gimbal
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();
-
-  // Subscribers
-  flight_control_generic_sub_.reset();
-  flight_control_position_yaw_sub_.reset();
-  flight_control_velocity_yawrate_sub_.reset();
-  flight_control_body_velocity_yawrate_sub_.reset();
-  flight_control_rollpitch_yawrate_thrust_sub_.reset();
 
   // TF broadcasters
   tf_static_broadcaster_.reset();
@@ -1505,8 +1388,6 @@ PSDKWrapper::initialize_psdk_modules()
   std::vector<ModuleInitializer> module_initializers = {
       {std::bind(&PSDKWrapper::init_telemetry, this),
        is_telemetry_module_mandatory_},
-      {std::bind(&PSDKWrapper::init_flight_control, this),
-       is_flight_control_module_mandatory_},
       {std::bind(&PSDKWrapper::init_camera_manager, this),
        is_camera_module_mandatory_},
       {std::bind(&PSDKWrapper::init_gimbal_manager, this),
@@ -1529,6 +1410,46 @@ std::string
 PSDKWrapper::add_tf_prefix(const std::string &frame_name)
 {
   return params_.tf_frame_prefix + frame_name;
+}
+
+void
+PSDKWrapper::set_local_position_ref_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
+{
+  (void)request;
+  /** The check for the z_health flag is temporarly removed as it is always 0 in
+   * real scenarios (not HITL) */
+  if (current_state_.local_position.x_health &&
+      current_state_.local_position.y_health)
+  {
+    local_position_reference_.vector.x =
+        current_state_.local_position.position.x;
+    local_position_reference_.vector.y =
+        current_state_.local_position.position.y;
+    local_position_reference_.vector.z =
+        current_state_.local_position.position.z;
+    RCLCPP_INFO(node_->get_logger(),
+                "Set local position reference to x:%f, y:%f, z:%f",
+                current_state_.local_position.position.x,
+                current_state_.local_position.position.y,
+                current_state_.local_position.position.z);
+    set_local_position_ref_ = true;
+    response->success = true;
+    return;
+  }
+  else
+  {
+    RCLCPP_ERROR(
+        node_->get_logger(),
+        "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
+        current_state_.local_position.x_health,
+        current_state_.local_position.y_health,
+        current_state_.local_position.z_health);
+    set_local_position_ref_ = false;
+    response->success = false;
+    return;
+  }
 }
 
 }  // namespace psdk_ros2

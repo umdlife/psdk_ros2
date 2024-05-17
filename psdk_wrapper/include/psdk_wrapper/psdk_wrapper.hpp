@@ -112,13 +112,10 @@
 #include "psdk_interfaces/srv/camera_shoot_interval_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_single_photo.hpp"
 #include "psdk_interfaces/srv/camera_stop_shoot_photo.hpp"
-#include "psdk_interfaces/srv/get_go_home_altitude.hpp"
-#include "psdk_interfaces/srv/get_obstacle_avoidance.hpp"
+
 #include "psdk_interfaces/srv/gimbal_reset.hpp"
 #include "psdk_interfaces/srv/gimbal_set_mode.hpp"
-#include "psdk_interfaces/srv/set_go_home_altitude.hpp"
-#include "psdk_interfaces/srv/set_home_from_gps.hpp"
-#include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
+
 #include "psdk_wrapper/modules/flight_control.hpp"
 #include "psdk_wrapper/utils/action_server.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
@@ -135,14 +132,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
  public:
   using CallbackReturn =
       rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
-
   using Trigger = std_srvs::srv::Trigger;
-  // Flight Control
-  using SetHomeFromGPS = psdk_interfaces::srv::SetHomeFromGPS;
-  using SetGoHomeAltitude = psdk_interfaces::srv::SetGoHomeAltitude;
-  using GetGoHomeAltitude = psdk_interfaces::srv::GetGoHomeAltitude;
-  using SetObstacleAvoidance = psdk_interfaces::srv::SetObstacleAvoidance;
-  using GetObstacleAvoidance = psdk_interfaces::srv::GetObstacleAvoidance;
   // Camera
   using CameraShootSinglePhoto = psdk_interfaces::srv::CameraShootSinglePhoto;
   using CameraShootBurstPhoto = psdk_interfaces::srv::CameraShootBurstPhoto;
@@ -1113,53 +1103,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const std::string& file_path);
 
   /* ROS 2 Subscriber callbacks */
-  /**
-   * @brief Callback function to control aircraft position and yaw. This
-   * function expects the commands to be given with respect to a global ENU
-   * frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [m], y [m], z [m]
-   * and yaw [rad] command.
-   */
-  void flight_control_position_yaw_cb(
-      const sensor_msgs::msg::Joy::SharedPtr msg);
-  /**
-   * @brief Callback function to control aircraft velocity and yaw rate. This
-   * function expects the commands to be given with respect to a global ENU
-   * frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [m/s], y [m/s], z
-   * [m/s] and yaw [rad/s] command.
-   */
-  void flight_control_velocity_yawrate_cb(
-      const sensor_msgs::msg::Joy::SharedPtr msg);
-
-  /**
-   * @brief Callback function to control aircraft velocity and yaw.  This
-   * function expects the commands to be given with respect to a FLU body frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [m/s], y [m/s], z
-   * [m/s] and yaw [rad/s] command.
-   */
-  void flight_control_body_velocity_yawrate_cb(
-      const sensor_msgs::msg::Joy::SharedPtr msg);
-
-  /**
-   * @brief Callback function to control roll, pitch, yaw rate and thrust. This
-   * function expects the commands to be given with respect to a FLU body frame.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x [rad], y [rad],
-   * thrust value percentage [0-100%] and yaw rate [rad/s] command.
-   * @note This type of control is not implemented at this moment.
-   */
-  void flight_control_rollpitch_yawrate_thrust_cb(
-      const sensor_msgs::msg::Joy::SharedPtr msg);
-
-  /**
-   * @brief Callback function to exposing a generic control method of the
-   * aircraft.The type of commands as well as the reference frame is specified
-   * in a flag within the msg.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw
-   * command.
-   * @note This type of control is not implemented at this moment.
-   */
-  void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
 
   /**
    * @brief Callback function to control roll, pitch, yaw and time.
@@ -1657,41 +1600,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   /* ROS 2 Services */
   rclcpp::Service<Trigger>::SharedPtr set_local_position_ref_srv_;
-  rclcpp::Service<SetHomeFromGPS>::SharedPtr set_home_from_gps_srv_;
-  rclcpp::Service<Trigger>::SharedPtr set_home_from_current_location_srv_;
-  rclcpp::Service<SetGoHomeAltitude>::SharedPtr set_go_home_altitude_srv_;
-  rclcpp::Service<GetGoHomeAltitude>::SharedPtr get_go_home_altitude_srv_;
-  rclcpp::Service<Trigger>::SharedPtr start_go_home_srv_;
-  rclcpp::Service<Trigger>::SharedPtr cancel_go_home_srv_;
-  rclcpp::Service<Trigger>::SharedPtr obtain_ctrl_authority_srv_;
-  rclcpp::Service<Trigger>::SharedPtr release_ctrl_authority_srv_;
-  rclcpp::Service<Trigger>::SharedPtr turn_on_motors_srv_;
-  rclcpp::Service<Trigger>::SharedPtr turn_off_motors_srv_;
-  rclcpp::Service<Trigger>::SharedPtr takeoff_srv_;
-  rclcpp::Service<Trigger>::SharedPtr land_srv_;
-  rclcpp::Service<Trigger>::SharedPtr cancel_landing_srv_;
-  rclcpp::Service<Trigger>::SharedPtr start_confirm_landing_srv_;
-  rclcpp::Service<Trigger>::SharedPtr start_force_landing_srv_;
-  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
-      set_horizontal_vo_obstacle_avoidance_srv_;
-  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
-      set_horizontal_radar_obstacle_avoidance_srv_;
-  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
-      set_upwards_vo_obstacle_avoidance_srv_;
-  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
-      set_upwards_radar_obstacle_avoidance_srv_;
-  rclcpp::Service<SetObstacleAvoidance>::SharedPtr
-      set_downwards_vo_obstacle_avoidance_srv_;
-  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
-      get_horizontal_vo_obstacle_avoidance_srv_;
-  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
-      get_upwards_vo_obstacle_avoidance_srv_;
-  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
-      get_upwards_radar_obstacle_avoidance_srv_;
-  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
-      get_downwards_vo_obstacle_avoidance_srv_;
-  rclcpp::Service<GetObstacleAvoidance>::SharedPtr
-      get_horizontal_radar_obstacle_avoidance_srv_;
+
   // Camera
   rclcpp::Service<CameraShootSinglePhoto>::SharedPtr
       camera_shoot_single_photo_service_;
@@ -1903,6 +1812,15 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return string with the tf name
    */
   std::string add_tf_prefix(const std::string& frame_name);
+
+  /**
+   * @brief Sets the current position as the new origin for the local position.
+   * @param request Trigger service request
+   * @param response Trigger service response
+   */
+  void set_local_position_ref_cb(
+      const std::shared_ptr<Trigger::Request> request,
+      const std::shared_ptr<Trigger::Response> response);
 
   /* Global variables */
   PSDKParams params_;

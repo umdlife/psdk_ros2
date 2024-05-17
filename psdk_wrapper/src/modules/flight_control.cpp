@@ -15,50 +15,174 @@
  *
  */
 
+#include "psdk_wrapper/modules/flight_control.hpp"
+
 #include "psdk_wrapper/psdk_wrapper.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
 
 namespace psdk_ros2
 {
 
-#include "psdk_wrapper/modules/flight_control.hpp"
-
-FlightControlModule::FlightControlModule(rclcpp::Node::SharedPtr node)
-    : ModuleBase("FlightControlModule", node)
+FlightControlModule::FlightControlModule(
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+    : PSDKModuleBase("FlightControlModule", node)
 
 {
-  RCLCPP_INFO(get_logger(), "Creating FlightControlModule...");
+  RCLCPP_INFO(node_->get_logger(), "Creating FlightControlModule...");
 }
 
 void
 FlightControlModule::on_configure()
 {
   RCLCPP_INFO(node_->get_logger(), "Configuring FlightControlModule...");
-  RCLCPP_INFO(get_logger(), "Creating subscribers");
-  flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "psdk_ros2/flight_control_setpoint_generic", 10,
-      std::bind(&FlightControlModule::flight_control_generic_cb, this, _1));
-  flight_control_position_yaw_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "psdk_ros2/flight_control_setpoint_ENUposition_yaw", 10,
-      std::bind(&FlightControlModule::flight_control_position_yaw_cb, this,
-                _1));
+  RCLCPP_INFO(node_->get_logger(), "Creating subscribers");
+  flight_control_generic_sub_ =
+      node_->create_subscription<sensor_msgs::msg::Joy>(
+          "psdk_ros2/flight_control_setpoint_generic", 10,
+          std::bind(&FlightControlModule::flight_control_generic_cb, this,
+                    std::placeholders::_1));
+  flight_control_position_yaw_sub_ =
+      node_->create_subscription<sensor_msgs::msg::Joy>(
+          "psdk_ros2/flight_control_setpoint_ENUposition_yaw", 10,
+          std::bind(&FlightControlModule::flight_control_position_yaw_cb, this,
+                    std::placeholders::_1));
   flight_control_velocity_yawrate_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
+      node_->create_subscription<sensor_msgs::msg::Joy>(
           "psdk_ros2/flight_control_setpoint_ENUvelocity_yawrate", 10,
           std::bind(&FlightControlModule::flight_control_velocity_yawrate_cb,
-                    this, _1));
+                    this, std::placeholders::_1));
   flight_control_body_velocity_yawrate_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
+      node_->create_subscription<sensor_msgs::msg::Joy>(
           "psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate", 10,
           std::bind(
               &FlightControlModule::flight_control_body_velocity_yawrate_cb,
-              this, _1));
+              this, std::placeholders::_1));
   flight_control_rollpitch_yawrate_thrust_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
+      node_->create_subscription<sensor_msgs::msg::Joy>(
           "psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust", 10,
           std::bind(
               &FlightControlModule::flight_control_rollpitch_yawrate_thrust_cb,
-              this, _1));
+              this, std::placeholders::_1));
+
+  // ROS 2 Services
+  set_home_from_gps_srv_ = node_->create_service<SetHomeFromGPS>(
+      "psdk_ros2/set_home_from_gps",
+      std::bind(&FlightControlModule::set_home_from_gps_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  set_home_from_current_location_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/set_home_from_current_location",
+      std::bind(&FlightControlModule::set_home_from_current_location_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  set_go_home_altitude_srv_ = node_->create_service<SetGoHomeAltitude>(
+      "psdk_ros2/set_go_home_altitude",
+      std::bind(&FlightControlModule::set_go_home_altitude_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  get_go_home_altitude_srv_ = node_->create_service<GetGoHomeAltitude>(
+      "psdk_ros2/get_go_home_altitude",
+      std::bind(&FlightControlModule::get_go_home_altitude_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  start_go_home_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/start_go_home",
+      std::bind(&FlightControlModule::start_go_home_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  cancel_go_home_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/cancel_go_home",
+      std::bind(&FlightControlModule::cancel_go_home_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  obtain_ctrl_authority_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/obtain_ctrl_authority",
+      std::bind(&FlightControlModule::obtain_ctrl_authority_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  release_ctrl_authority_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/release_ctrl_authority",
+      std::bind(&FlightControlModule::release_ctrl_authority_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  turn_on_motors_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/turn_on_motors",
+      std::bind(&FlightControlModule::turn_on_motors_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  turn_off_motors_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/turn_off_motors",
+      std::bind(&FlightControlModule::turn_off_motors_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  takeoff_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/takeoff",
+      std::bind(&FlightControlModule::start_takeoff_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  land_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/land",
+      std::bind(&FlightControlModule::start_landing_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  cancel_landing_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/cancel_landing",
+      std::bind(&FlightControlModule::cancel_landing_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  start_confirm_landing_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/start_confirm_landing",
+      std::bind(&FlightControlModule::start_confirm_landing_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  start_force_landing_srv_ = node_->create_service<Trigger>(
+      "psdk_ros2/start_force_landing",
+      std::bind(&FlightControlModule::start_force_landing_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  set_horizontal_vo_obstacle_avoidance_srv_ =
+      node_->create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_horizontal_vo_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::set_horizontal_vo_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  set_horizontal_radar_obstacle_avoidance_srv_ =
+      node_->create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_horizontal_radar_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::set_horizontal_radar_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  set_upwards_vo_obstacle_avoidance_srv_ =
+      node_->create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_upwards_vo_obstacle_avoidance",
+          std::bind(&FlightControlModule::set_upwards_vo_obstacle_avoidance_cb,
+                    this, std::placeholders::_1, std::placeholders::_2));
+  set_upwards_radar_obstacle_avoidance_srv_ =
+      node_->create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_upwards_radar_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::set_upwards_radar_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  set_downwards_vo_obstacle_avoidance_srv_ =
+      node_->create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_downwards_vo_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::set_downwards_vo_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  get_horizontal_vo_obstacle_avoidance_srv_ =
+      node_->create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_horizontal_vo_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::get_horizontal_vo_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  get_upwards_vo_obstacle_avoidance_srv_ =
+      node_->create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_upwards_vo_obstacle_avoidance",
+          std::bind(&FlightControlModule::get_upwards_vo_obstacle_avoidance_cb,
+                    this, std::placeholders::_1, std::placeholders::_2));
+  get_upwards_radar_obstacle_avoidance_srv_ =
+      node_->create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_upwards_radar_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::get_upwards_radar_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  get_downwards_vo_obstacle_avoidance_srv_ =
+      node_->create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_downwards_vo_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::get_downwards_vo_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  get_horizontal_radar_obstacle_avoidance_srv_ =
+      node_->create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_horizontal_radar_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::get_horizontal_radar_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
 }
 
 void
@@ -77,11 +201,39 @@ void
 FlightControlModule::on_cleanup()
 {
   RCLCPP_INFO(node_->get_logger(), "Cleaning up FlightControlModule...");
+  // ROS 2 subscribers
   flight_control_generic_sub_.reset();
   flight_control_position_yaw_sub_.reset();
   flight_control_velocity_yawrate_sub_.reset();
   flight_control_body_velocity_yawrate_sub_.reset();
   flight_control_rollpitch_yawrate_thrust_sub_.reset();
+
+  // ROS 2 services
+  set_home_from_gps_srv_.reset();
+  set_home_from_current_location_srv_.reset();
+  set_go_home_altitude_srv_.reset();
+  get_go_home_altitude_srv_.reset();
+  start_go_home_srv_.reset();
+  cancel_go_home_srv_.reset();
+  obtain_ctrl_authority_srv_.reset();
+  release_ctrl_authority_srv_.reset();
+  turn_on_motors_srv_.reset();
+  turn_off_motors_srv_.reset();
+  takeoff_srv_.reset();
+  land_srv_.reset();
+  cancel_landing_srv_.reset();
+  start_confirm_landing_srv_.reset();
+  start_force_landing_srv_.reset();
+  set_horizontal_vo_obstacle_avoidance_srv_.reset();
+  set_horizontal_radar_obstacle_avoidance_srv_.reset();
+  set_upwards_vo_obstacle_avoidance_srv_.reset();
+  set_upwards_radar_obstacle_avoidance_srv_.reset();
+  set_downwards_vo_obstacle_avoidance_srv_.reset();
+  get_horizontal_vo_obstacle_avoidance_srv_.reset();
+  get_upwards_vo_obstacle_avoidance_srv_.reset();
+  get_upwards_radar_obstacle_avoidance_srv_.reset();
+  get_downwards_vo_obstacle_avoidance_srv_.reset();
+  get_horizontal_radar_obstacle_avoidance_srv_.reset();
 }
 
 void
@@ -99,17 +251,17 @@ FlightControlModule::get_node_base_interface()
 bool
 FlightControlModule::init()
 {
-  RCLCPP_INFO(get_logger(), "Initiating flight control module...");
+  RCLCPP_INFO(node_->get_logger(), "Initiating flight control module...");
   T_DjiFlightControllerRidInfo rid_info;
-  rid_info.latitude = current_state_.gps_position.latitude;
-  rid_info.longitude = current_state_.gps_position.longitude;
-  rid_info.altitude = current_state_.gps_position.altitude;
+  rid_info.latitude = 40.0;  // current_state_.gps_position.latitude;
+  rid_info.longitude = 2.0;  // current_state_.gps_position.longitude;
+  rid_info.altitude = 0.0;   // current_state_.gps_position.altitude;
 
   T_DjiReturnCode return_code = DjiFlightController_Init(rid_info);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
-        get_logger(),
+        node_->get_logger(),
         "Could not initialize flight control module. Error code is: %ld",
         return_code);
     return false;
@@ -120,57 +272,17 @@ FlightControlModule::init()
 bool
 FlightControlModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing flight control module...");
+  RCLCPP_INFO(node_->get_logger(), "Deinitializing flight control module...");
   T_DjiReturnCode return_code = DjiFlightController_DeInit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
-        get_logger(),
+        node_->get_logger(),
         "Could not deinitialize the flight control module. Error code: %ld",
         return_code);
     return false;
   }
   return true;
-}
-
-void
-FlightControlModule::set_local_position_ref_cb(
-    const std::shared_ptr<Trigger::Request> request,
-    const std::shared_ptr<Trigger::Response> response)
-{
-  (void)request;
-  /** The check for the z_health flag is temporarly removed as it is always 0 in
-   * real scenarios (not HITL) */
-  if (current_state_.local_position.x_health &&
-      current_state_.local_position.y_health)
-  {
-    local_position_reference_.vector.x =
-        current_state_.local_position.position.x;
-    local_position_reference_.vector.y =
-        current_state_.local_position.position.y;
-    local_position_reference_.vector.z =
-        current_state_.local_position.position.z;
-    RCLCPP_INFO(get_logger(),
-                "Set local position reference to x:%f, y:%f, z:%f",
-                current_state_.local_position.position.x,
-                current_state_.local_position.position.y,
-                current_state_.local_position.position.z);
-    set_local_position_ref_ = true;
-    response->success = true;
-    return;
-  }
-  else
-  {
-    RCLCPP_ERROR(
-        get_logger(),
-        "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
-        current_state_.local_position.x_health,
-        current_state_.local_position.y_health,
-        current_state_.local_position.z_health);
-    set_local_position_ref_ = false;
-    response->success = false;
-    return;
-  }
 }
 
 void
@@ -185,7 +297,7 @@ FlightControlModule::set_home_from_gps_cb(
       DjiFlightController_SetHomeLocationUsingGPSCoordinates(home_location);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not set the home location using the given gps "
                  "coordinates. Error "
                  "code is: %ld",
@@ -193,7 +305,7 @@ FlightControlModule::set_home_from_gps_cb(
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(),
+  RCLCPP_INFO(node_->get_logger(),
               "Home position set to coordinates lat: %f, long: %f",
               request->latitude, request->longitude);
   response->success = true;
@@ -209,14 +321,15 @@ FlightControlModule::set_home_from_current_location_cb(
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
-        get_logger(),
+        node_->get_logger(),
         "Could not set the home location using current aicraft position. Error "
         "code is: %ld",
         result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Home location has been set to current position!");
+  RCLCPP_INFO(node_->get_logger(),
+              "Home location has been set to current position!");
   response->success = true;
 }
 
@@ -229,7 +342,7 @@ FlightControlModule::set_go_home_altitude_cb(
   auto result = DjiFlightController_SetGoHomeAltitude(home_altitude);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not set the home altitude at the current aicraft "
                  "location. Error "
                  "code is: %ld",
@@ -237,7 +350,7 @@ FlightControlModule::set_go_home_altitude_cb(
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Home altitude has been set to: %d",
+  RCLCPP_INFO(node_->get_logger(), "Home altitude has been set to: %d",
               request->altitude);
   response->success = true;
 }
@@ -253,7 +366,7 @@ FlightControlModule::get_go_home_altitude_cb(
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
-        get_logger(),
+        node_->get_logger(),
         "Could not get the home location using current aicraft location. Error "
         "code is: %ld",
         result);
@@ -272,12 +385,12 @@ FlightControlModule::start_go_home_cb(
   auto result = DjiFlightController_StartGoHome();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not start go to home action. Error code: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Go Home action started");
+  RCLCPP_INFO(node_->get_logger(), "Go Home action started");
   response->success = true;
 }
 
@@ -290,12 +403,12 @@ FlightControlModule::cancel_go_home_cb(
   auto result = DjiFlightController_CancelGoHome();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not cancel go to home action. Error code: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Go Home action has been cancelled");
+  RCLCPP_INFO(node_->get_logger(), "Go Home action has been cancelled");
   response->success = true;
 }
 
@@ -308,14 +421,14 @@ FlightControlModule::obtain_ctrl_authority_cb(
   auto result = DjiFlightController_ObtainJoystickCtrlAuthority();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not obtain control authority. Error code "
                  "is: %ld",
                  result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Control authority obtained");
+  RCLCPP_INFO(node_->get_logger(), "Control authority obtained");
   response->success = true;
 }
 
@@ -328,14 +441,14 @@ FlightControlModule::release_ctrl_authority_cb(
   auto result = DjiFlightController_ReleaseJoystickCtrlAuthority();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not release control authority. Error code "
                  "is: %ld",
                  result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Control authority released");
+  RCLCPP_INFO(node_->get_logger(), "Control authority released");
   response->success = true;
 }
 
@@ -358,14 +471,15 @@ FlightControlModule::set_horizontal_vo_obstacle_avoidance_cb(
           status);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not set horizontal vo obstacle avoidance status. Error "
                  "code is: %ld",
                  result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Horizontal VO obstacle avoidance set to: %d",
+  RCLCPP_INFO(node_->get_logger(),
+              "Horizontal VO obstacle avoidance set to: %d",
               request->obstacle_avoidance_on);
   response->success = true;
 }
@@ -390,14 +504,15 @@ FlightControlModule::set_horizontal_radar_obstacle_avoidance_cb(
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
-        get_logger(),
+        node_->get_logger(),
         "Could not set horizontal radar obstacle avoidance status. Error "
         "code is: %ld",
         result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Horizontal Radar obstacle avoidance set to: %d",
+  RCLCPP_INFO(node_->get_logger(),
+              "Horizontal Radar obstacle avoidance set to: %d",
               request->obstacle_avoidance_on);
   response->success = true;
 }
@@ -422,14 +537,14 @@ FlightControlModule::set_downwards_vo_obstacle_avoidance_cb(
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
-        get_logger(),
+        node_->get_logger(),
         "Could not set downwards visual obstacle avoidance status. Error "
         "code is: %ld",
         result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Downwards VO obstacle avoidance set to: %d",
+  RCLCPP_INFO(node_->get_logger(), "Downwards VO obstacle avoidance set to: %d",
               request->obstacle_avoidance_on);
   response->success = true;
 }
@@ -453,14 +568,14 @@ FlightControlModule::set_upwards_vo_obstacle_avoidance_cb(
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
-        get_logger(),
+        node_->get_logger(),
         "Could not set upwards visual obstacle avoidance status. Error "
         "code is: %ld",
         result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Upwards VO obstacle avoidance set to: %d",
+  RCLCPP_INFO(node_->get_logger(), "Upwards VO obstacle avoidance set to: %d",
               request->obstacle_avoidance_on);
   response->success = true;
 }
@@ -483,14 +598,15 @@ FlightControlModule::set_upwards_radar_obstacle_avoidance_cb(
       DjiFlightController_SetUpwardsRadarObstacleAvoidanceEnableStatus(status);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not set upwards radar obstacle avoidance status. Error "
                  "code is: %ld",
                  result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Upwards Radar obstacle avoidance set to: %d",
+  RCLCPP_INFO(node_->get_logger(),
+              "Upwards Radar obstacle avoidance set to: %d",
               request->obstacle_avoidance_on);
   response->success = true;
 }
@@ -507,7 +623,7 @@ FlightControlModule::get_horizontal_vo_obstacle_avoidance_cb(
           &status);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not get horizontal vo obstacle avoidance status. Error "
                  "code is: %ld",
                  result);
@@ -538,7 +654,7 @@ FlightControlModule::get_horizontal_radar_obstacle_avoidance_cb(
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
     RCLCPP_ERROR(
-        get_logger(),
+        node_->get_logger(),
         "Could not get horizontal radar obstacle avoidance status. Error "
         "code is: %ld",
         result);
@@ -568,7 +684,7 @@ FlightControlModule::get_downwards_vo_obstacle_avoidance_cb(
           &status);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not get downwards vo obstacle avoidance status. Error "
                  "code is: %ld",
                  result);
@@ -598,7 +714,7 @@ FlightControlModule::get_upwards_vo_obstacle_avoidance_cb(
           &status);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not get upwards vo obstacle avoidance status. Error "
                  "code is: %ld",
                  result);
@@ -627,7 +743,7 @@ FlightControlModule::get_upwards_radar_obstacle_avoidance_cb(
       DjiFlightController_GetUpwardsRadarObstacleAvoidanceEnableStatus(&status);
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not get upwards radar obstacle avoidance status. Error "
                  "code is: %ld",
                  result);
@@ -654,12 +770,12 @@ FlightControlModule::turn_on_motors_cb(
   auto result = DjiFlightController_TurnOnMotors();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not get turn ON motors. Error code is: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Motors have been turned ON");
+  RCLCPP_INFO(node_->get_logger(), "Motors have been turned ON");
   response->success = true;
 }
 
@@ -672,12 +788,12 @@ FlightControlModule::turn_off_motors_cb(
   auto result = DjiFlightController_TurnOffMotors();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(),
+    RCLCPP_ERROR(node_->get_logger(),
                  "Could not get turn OFF motors. Error code is: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Motors have been turned OFF");
+  RCLCPP_INFO(node_->get_logger(), "Motors have been turned OFF");
   response->success = true;
 }
 
@@ -690,12 +806,12 @@ FlightControlModule::start_takeoff_cb(
   auto result = DjiFlightController_StartTakeoff();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not start takeoff! Error code is: %ld",
-                 result);
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Could not start takeoff! Error code is: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Starting Take Off");
+  RCLCPP_INFO(node_->get_logger(), "Starting Take Off");
   response->success = true;
 }
 
@@ -708,12 +824,12 @@ FlightControlModule::start_landing_cb(
   auto result = DjiFlightController_StartLanding();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not start landing! Error code is: %ld",
-                 result);
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Could not start landing! Error code is: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Starting Landing");
+  RCLCPP_INFO(node_->get_logger(), "Starting Landing");
   response->success = true;
 }
 
@@ -726,12 +842,12 @@ FlightControlModule::cancel_landing_cb(
   auto result = DjiFlightController_CancelLanding();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not cancel landing! Error code is: %ld",
-                 result);
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Could not cancel landing! Error code is: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Landing has been cancelled");
+  RCLCPP_INFO(node_->get_logger(), "Landing has been cancelled");
   response->success = true;
 }
 
@@ -744,12 +860,12 @@ FlightControlModule::start_confirm_landing_cb(
   auto result = DjiFlightController_StartConfirmLanding();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not confirm landing! Error code is: %ld",
-                 result);
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Could not confirm landing! Error code is: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Landing has been confirmed");
+  RCLCPP_INFO(node_->get_logger(), "Landing has been confirmed");
   response->success = true;
 }
 
@@ -762,12 +878,12 @@ FlightControlModule::start_force_landing_cb(
   auto result = DjiFlightController_StartForceLanding();
   if (result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    RCLCPP_ERROR(get_logger(), "Could not force landing! Error code is: %ld",
-                 result);
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Could not force landing! Error code is: %ld", result);
     response->success = false;
     return;
   }
-  RCLCPP_INFO(get_logger(), "Force Landing!");
+  RCLCPP_INFO(node_->get_logger(), "Force Landing!");
   response->success = true;
 }
 
@@ -777,7 +893,7 @@ FlightControlModule::flight_control_generic_cb(
 {
   /** @todo implemnent generic control functionality */
   (void)msg;
-  RCLCPP_WARN(get_logger(),
+  RCLCPP_WARN(node_->get_logger(),
               "Generic control setpoint is not currently implemented!");
 }
 
