@@ -21,8 +21,83 @@
 namespace psdk_ros2
 {
 
+#include "psdk_wrapper/modules/flight_control.hpp"
+
+FlightControlModule::FlightControlModule(rclcpp::Node::SharedPtr node)
+    : ModuleBase("FlightControlModule", node)
+
+{
+  RCLCPP_INFO(get_logger(), "Creating FlightControlModule...");
+}
+
+void
+FlightControlModule::on_configure()
+{
+  RCLCPP_INFO(node_->get_logger(), "Configuring FlightControlModule...");
+  RCLCPP_INFO(get_logger(), "Creating subscribers");
+  flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
+      "psdk_ros2/flight_control_setpoint_generic", 10,
+      std::bind(&FlightControlModule::flight_control_generic_cb, this, _1));
+  flight_control_position_yaw_sub_ = create_subscription<sensor_msgs::msg::Joy>(
+      "psdk_ros2/flight_control_setpoint_ENUposition_yaw", 10,
+      std::bind(&FlightControlModule::flight_control_position_yaw_cb, this,
+                _1));
+  flight_control_velocity_yawrate_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "psdk_ros2/flight_control_setpoint_ENUvelocity_yawrate", 10,
+          std::bind(&FlightControlModule::flight_control_velocity_yawrate_cb,
+                    this, _1));
+  flight_control_body_velocity_yawrate_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate", 10,
+          std::bind(
+              &FlightControlModule::flight_control_body_velocity_yawrate_cb,
+              this, _1));
+  flight_control_rollpitch_yawrate_thrust_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust", 10,
+          std::bind(
+              &FlightControlModule::flight_control_rollpitch_yawrate_thrust_cb,
+              this, _1));
+}
+
+void
+FlightControlModule::on_activate()
+{
+  RCLCPP_INFO(node_->get_logger(), "Activating FlightControlModule...");
+}
+
+void
+FlightControlModule::on_deactivate()
+{
+  RCLCPP_INFO(node_->get_logger(), "Deactivating FlightControlModule...");
+}
+
+void
+FlightControlModule::on_cleanup()
+{
+  RCLCPP_INFO(node_->get_logger(), "Cleaning up FlightControlModule...");
+  flight_control_generic_sub_.reset();
+  flight_control_position_yaw_sub_.reset();
+  flight_control_velocity_yawrate_sub_.reset();
+  flight_control_body_velocity_yawrate_sub_.reset();
+  flight_control_rollpitch_yawrate_thrust_sub_.reset();
+}
+
+void
+FlightControlModule::on_shutdown()
+{
+  RCLCPP_INFO(node_->get_logger(), "Shutting down FlightControlModule...");
+}
+
+rclcpp::node_interfaces::NodeBaseInterface::SharedPtr
+FlightControlModule::get_node_base_interface()
+{
+  return node_->get_node_base_interface();
+}
+
 bool
-PSDKWrapper::init_flight_control()
+FlightControlModule::init()
 {
   RCLCPP_INFO(get_logger(), "Initiating flight control module...");
   T_DjiFlightControllerRidInfo rid_info;
@@ -43,7 +118,7 @@ PSDKWrapper::init_flight_control()
 }
 
 bool
-PSDKWrapper::deinit_flight_control()
+FlightControlModule::deinit()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing flight control module...");
   T_DjiReturnCode return_code = DjiFlightController_DeInit();
@@ -59,7 +134,7 @@ PSDKWrapper::deinit_flight_control()
 }
 
 void
-PSDKWrapper::set_local_position_ref_cb(
+FlightControlModule::set_local_position_ref_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -99,7 +174,7 @@ PSDKWrapper::set_local_position_ref_cb(
 }
 
 void
-PSDKWrapper::set_home_from_gps_cb(
+FlightControlModule::set_home_from_gps_cb(
     const std::shared_ptr<SetHomeFromGPS::Request> request,
     const std::shared_ptr<SetHomeFromGPS::Response> response)
 {
@@ -124,7 +199,7 @@ PSDKWrapper::set_home_from_gps_cb(
   response->success = true;
 }
 void
-PSDKWrapper::set_home_from_current_location_cb(
+FlightControlModule::set_home_from_current_location_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -146,7 +221,7 @@ PSDKWrapper::set_home_from_current_location_cb(
 }
 
 void
-PSDKWrapper::set_go_home_altitude_cb(
+FlightControlModule::set_go_home_altitude_cb(
     const std::shared_ptr<SetGoHomeAltitude::Request> request,
     const std::shared_ptr<SetGoHomeAltitude::Response> response)
 {
@@ -168,7 +243,7 @@ PSDKWrapper::set_go_home_altitude_cb(
 }
 
 void
-PSDKWrapper::get_go_home_altitude_cb(
+FlightControlModule::get_go_home_altitude_cb(
     const std::shared_ptr<GetGoHomeAltitude::Request> request,
     const std::shared_ptr<GetGoHomeAltitude::Response> response)
 {
@@ -189,8 +264,9 @@ PSDKWrapper::get_go_home_altitude_cb(
 }
 
 void
-PSDKWrapper::start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
-                              const std::shared_ptr<Trigger::Response> response)
+FlightControlModule::start_go_home_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_StartGoHome();
@@ -206,7 +282,7 @@ PSDKWrapper::start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::cancel_go_home_cb(
+FlightControlModule::cancel_go_home_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -224,7 +300,7 @@ PSDKWrapper::cancel_go_home_cb(
 }
 
 void
-PSDKWrapper::obtain_ctrl_authority_cb(
+FlightControlModule::obtain_ctrl_authority_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -244,7 +320,7 @@ PSDKWrapper::obtain_ctrl_authority_cb(
 }
 
 void
-PSDKWrapper::release_ctrl_authority_cb(
+FlightControlModule::release_ctrl_authority_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -264,7 +340,7 @@ PSDKWrapper::release_ctrl_authority_cb(
 }
 
 void
-PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb(
+FlightControlModule::set_horizontal_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -295,7 +371,7 @@ PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb(
+FlightControlModule::set_horizontal_radar_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -327,7 +403,7 @@ PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb(
+FlightControlModule::set_downwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -359,7 +435,7 @@ PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb(
+FlightControlModule::set_upwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -390,7 +466,7 @@ PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb(
+FlightControlModule::set_upwards_radar_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -420,7 +496,7 @@ PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb(
+FlightControlModule::get_horizontal_vo_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -450,7 +526,7 @@ PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb(
+FlightControlModule::get_horizontal_radar_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -481,7 +557,7 @@ PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb(
+FlightControlModule::get_downwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -511,7 +587,7 @@ PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb(
+FlightControlModule::get_upwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -541,7 +617,7 @@ PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb(
+FlightControlModule::get_upwards_radar_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -570,7 +646,7 @@ PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::turn_on_motors_cb(
+FlightControlModule::turn_on_motors_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -588,7 +664,7 @@ PSDKWrapper::turn_on_motors_cb(
 }
 
 void
-PSDKWrapper::turn_off_motors_cb(
+FlightControlModule::turn_off_motors_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -606,8 +682,9 @@ PSDKWrapper::turn_off_motors_cb(
 }
 
 void
-PSDKWrapper::start_takeoff_cb(const std::shared_ptr<Trigger::Request> request,
-                              const std::shared_ptr<Trigger::Response> response)
+FlightControlModule::start_takeoff_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_StartTakeoff();
@@ -623,8 +700,9 @@ PSDKWrapper::start_takeoff_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::start_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                              const std::shared_ptr<Trigger::Response> response)
+FlightControlModule::start_landing_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_StartLanding();
@@ -640,7 +718,7 @@ PSDKWrapper::start_landing_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::cancel_landing_cb(
+FlightControlModule::cancel_landing_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -658,7 +736,7 @@ PSDKWrapper::cancel_landing_cb(
 }
 
 void
-PSDKWrapper::start_confirm_landing_cb(
+FlightControlModule::start_confirm_landing_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -676,7 +754,7 @@ PSDKWrapper::start_confirm_landing_cb(
 }
 
 void
-PSDKWrapper::start_force_landing_cb(
+FlightControlModule::start_force_landing_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -694,7 +772,7 @@ PSDKWrapper::start_force_landing_cb(
 }
 
 void
-PSDKWrapper::flight_control_generic_cb(
+FlightControlModule::flight_control_generic_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   /** @todo implemnent generic control functionality */
@@ -704,7 +782,7 @@ PSDKWrapper::flight_control_generic_cb(
 }
 
 void
-PSDKWrapper::flight_control_position_yaw_cb(
+FlightControlModule::flight_control_position_yaw_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
@@ -750,7 +828,7 @@ PSDKWrapper::flight_control_position_yaw_cb(
 }
 
 void
-PSDKWrapper::flight_control_velocity_yawrate_cb(
+FlightControlModule::flight_control_velocity_yawrate_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
@@ -787,7 +865,7 @@ PSDKWrapper::flight_control_velocity_yawrate_cb(
 }
 
 void
-PSDKWrapper::flight_control_body_velocity_yawrate_cb(
+FlightControlModule::flight_control_body_velocity_yawrate_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
@@ -822,7 +900,7 @@ PSDKWrapper::flight_control_body_velocity_yawrate_cb(
 }
 
 void
-PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb(
+FlightControlModule::flight_control_rollpitch_yawrate_thrust_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {

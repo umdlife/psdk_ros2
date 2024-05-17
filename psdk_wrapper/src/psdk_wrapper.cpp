@@ -26,7 +26,9 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
           node_name, "",
           rclcpp::NodeOptions().use_intra_process_comms(true).arguments(
               {"--ros-args", "-r",
-               node_name + ":" + std::string("__node:=") + node_name}))
+               node_name + ":" + std::string("__node:=") + node_name})),
+      flight_control_module_(
+          std::make_shared<FlightControlModule>(this->shared_from_this()))
 {
   RCLCPP_INFO(get_logger(), "Creating Constructor PSDKWrapper");
   declare_parameter("app_name", rclcpp::ParameterValue(""));
@@ -73,7 +75,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
 
   declare_parameter("num_of_initialization_retries", 1);
 }
-PSDKWrapper::~PSDKWrapper() {
+PSDKWrapper::~PSDKWrapper()
+{
   RCLCPP_INFO(get_logger(), "Destroying PSDKWrapper");
   rclcpp_lifecycle::State state;
   PSDKWrapper::on_shutdown(state);
@@ -915,28 +918,6 @@ PSDKWrapper::initialize_ros_elements()
   hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
       "psdk_ros2/hms_info_table", 10);
 
-  RCLCPP_INFO(get_logger(), "Creating subscribers");
-  flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "psdk_ros2/flight_control_setpoint_generic", 10,
-      std::bind(&PSDKWrapper::flight_control_generic_cb, this, _1));
-  flight_control_position_yaw_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "psdk_ros2/flight_control_setpoint_ENUposition_yaw", 10,
-      std::bind(&PSDKWrapper::flight_control_position_yaw_cb, this, _1));
-  flight_control_velocity_yawrate_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
-          "psdk_ros2/flight_control_setpoint_ENUvelocity_yawrate", 10,
-          std::bind(&PSDKWrapper::flight_control_velocity_yawrate_cb, this,
-                    _1));
-  flight_control_body_velocity_yawrate_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
-          "psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate", 10,
-          std::bind(&PSDKWrapper::flight_control_body_velocity_yawrate_cb, this,
-                    _1));
-  flight_control_rollpitch_yawrate_thrust_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
-          "psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust", 10,
-          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb,
-                    this, _1));
   gimbal_rotation_sub_ =
       create_subscription<psdk_interfaces::msg::GimbalRotation>(
           "psdk_ros2/gimbal_rotation", 10,
