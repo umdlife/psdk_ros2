@@ -1271,46 +1271,21 @@ PSDKWrapper::execute_download_file_by_index()
 
   T_DjiReturnCode return_code = DjiCameraManager_DownloadFileByIndex(
       payload_index, file_index_to_download_);
-  rclcpp::WallRate loop_rate(10.0);
 
-  while (rclcpp::ok())
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    if (!camera_download_file_by_index_server_ ||
-        !camera_download_file_by_index_server_->is_server_active())
-    {
-      RCLCPP_ERROR(get_logger(),
-                   "[CameraDownloadFileByIndex] Action server unavailable or "
-                   "inactive. Stopping download.");
-      break;
-    }
-
-    if (camera_download_file_by_index_server_->is_cancel_requested())
-    {
-      RCLCPP_INFO(get_logger(),
-                  "[CameraDownloadFileByIndex] Download was cancelled.");
-      result->success = false;
-      camera_download_file_by_index_server_->terminate_current();
-      break;
-    }
-
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(),
-                   "Download file with index  %d failed, error code: %ld.",
-                   file_index_to_download_, return_code);
-      result->success = false;
-      camera_download_file_by_index_server_->terminate_current();
-      break;
-    }
-    else
-    {
-      RCLCPP_INFO(get_logger(), "Download file with index %d successful.",
-                  file_index_to_download_);
-      result->success = true;
-      camera_download_file_by_index_server_->succeeded_current();
-      break;
-    }
-    loop_rate.sleep();
+    RCLCPP_ERROR(get_logger(),
+                 "Download file with index  %d failed, error code: %ld.",
+                 file_index_to_download_, return_code);
+    result->success = false;
+    camera_download_file_by_index_server_->terminate_current();
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Download file with index %d successful.",
+                file_index_to_download_);
+    result->success = true;
+    camera_download_file_by_index_server_->succeeded_current();
   }
 
   // Release rights
@@ -1328,36 +1303,20 @@ PSDKWrapper::execute_delete_file_by_index()
   T_DjiReturnCode return_code =
       DjiCameraManager_DeleteFileByIndex(index, goal->file_index);
 
-  rclcpp::WallRate loop_rate(10.0);
-  while (rclcpp::ok())
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
-    if (!camera_delete_file_by_index_server_ ||
-        !camera_delete_file_by_index_server_->is_server_active())
-    {
-      RCLCPP_ERROR(get_logger(),
-                   "[CameraDeleteFileByIndex] Action server unavailable or "
-                   "inactive. Stopping download.");
-      break;
-    }
-
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(),
-                   "Failed to delete file with index %d, error code: %ld.",
-                   goal->file_index, return_code);
-      result->success = false;
-      camera_delete_file_by_index_server_->terminate_current();
-      break;
-    }
-    else
-    {
-      RCLCPP_INFO(get_logger(), "Successfully deleted file with index %d.",
-                  goal->file_index);
-      result->success = true;
-      camera_delete_file_by_index_server_->succeeded_current();
-      break;
-    }
-    loop_rate.sleep();
+    RCLCPP_ERROR(get_logger(),
+                 "Failed to delete file with index %d, error code: %ld.",
+                 goal->file_index, return_code);
+    result->success = false;
+    camera_delete_file_by_index_server_->terminate_current();
+  }
+  else
+  {
+    RCLCPP_INFO(get_logger(), "Successfully deleted file with index %d.",
+                goal->file_index);
+    result->success = true;
+    camera_delete_file_by_index_server_->succeeded_current();
   }
 }
 
