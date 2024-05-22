@@ -1121,8 +1121,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiReturnCode hms_callback(T_DjiHmsInfoTable hms_info_table);
 
   T_DjiReturnCode camera_manager_download_file_data_callback(
-      T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data, uint16_t len,
-      const std::string& file_path);
+      T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data,
+      uint16_t len);
 
   /* ROS 2 Subscriber callbacks */
   /**
