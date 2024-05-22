@@ -1074,7 +1074,7 @@ c_camera_manager_download_file_data_callback(
     T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len)
 {
   return global_ptr_->camera_manager_download_file_data_callback(
-      packetInfo, data, len, global_ptr_->params_.file_path);
+      packetInfo, data, len, global_ptr_->file_path_to_download_);
 }
 
 void
@@ -1262,6 +1262,7 @@ PSDKWrapper::execute_download_file_by_index()
       static_cast<E_DjiMountPosition>(goal->payload_index);
   file_index_to_download_ = goal->file_index;
   file_name_to_download_ = goal->file_name;
+  file_path_to_download_ = goal->file_path;
 
   // Register callback
   register_file_data_callback(payload_index);
@@ -1390,6 +1391,15 @@ PSDKWrapper::camera_manager_download_file_data_callback(
   uint32_t download_start_ms = 0;
   uint32_t download_end_ms = 0;
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
+
+  if (file_name_to_download_.empty())
+  {
+    file_name_to_download_ = packetInfo.fileName;
+  }
+  if (file_path.empty())
+  {
+    file_path = params_.file_path;
+  }
 
   if (!create_directory(file_path))
   {

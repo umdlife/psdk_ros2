@@ -2192,6 +2192,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   E_DjiLiveViewCameraSource selected_camera_source_;
   int32_t file_index_to_download_{0};
   std::string file_name_to_download_;
+  std::string file_path_to_download_;
 
   nlohmann::json hms_return_codes_json_;
   bool publish_camera_transforms_{false};
