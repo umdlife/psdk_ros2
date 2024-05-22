@@ -26,9 +26,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
           node_name, "",
           rclcpp::NodeOptions().use_intra_process_comms(true).arguments(
               {"--ros-args", "-r",
-               node_name + ":" + std::string("__node:=") + node_name})),
-      flight_control_module_(
-          std::make_shared<FlightControlModule>(this->shared_from_this()))
+               node_name + ":" + std::string("__node:=") + node_name}))
 {
   RCLCPP_INFO(get_logger(), "Creating Constructor PSDKWrapper");
   declare_parameter("app_name", rclcpp::ParameterValue(""));
@@ -94,7 +92,9 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  flight_control_module_->on_configure();
+  flight_control_module_ =
+      std::make_shared<FlightControlModule>("flight_control_node");
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -113,10 +113,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  flight_control_module_->on_activate();
-  flight_control_thread_ = std::make_unique<utils::NodeThread>(
-      flight_control_module_->get_node_base_interface());
-
   if (!initialize_psdk_modules())
   {
     rclcpp::shutdown();
@@ -126,6 +122,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   // Initialize and activate ROS elements only after the DJI modules are
   // initialized
   initialize_ros_elements();
+  flight_control_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
   current_state_.initialize_state();
   activate_ros_elements();
 
@@ -141,6 +138,11 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   }
 
   subscribe_psdk_topics();
+
+  flight_control_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
+  flight_control_thread_ =
+      std::make_unique<utils::NodeThread>(flight_control_module_);
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -152,6 +154,8 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
   unsubscribe_psdk_topics();
   deactivate_ros_elements();
 
+  flight_control_module_->on_deactivate(
+      rclcpp_lifecycle::State(2, "deactivate"));
   flight_control_thread_.reset();
   return CallbackReturn::SUCCESS;
 }
@@ -162,6 +166,7 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
   (void)state;
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
   clean_ros_elements();
+  flight_control_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
   flight_control_thread_.reset();
 
   return CallbackReturn::SUCCESS;
@@ -182,8 +187,9 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   }
 
   // Deinitialize all remaining modules
-  if (!deinit_telemetry() || !deinit_camera_manager() ||
-      !deinit_gimbal_manager() || !deinit_liveview() || !deinit_hms())
+  if (!deinit_telemetry() || !flight_control_module_->deinit() ||
+      !deinit_camera_manager() || !deinit_gimbal_manager() ||
+      !deinit_liveview() || !deinit_hms())
   {
     return CallbackReturn::FAILURE;
   }
@@ -1388,6 +1394,8 @@ PSDKWrapper::initialize_psdk_modules()
   std::vector<ModuleInitializer> module_initializers = {
       {std::bind(&PSDKWrapper::init_telemetry, this),
        is_telemetry_module_mandatory_},
+      {std::bind(&FlightControlModule::init, flight_control_module_),
+       is_flight_control_module_mandatory_},
       {std::bind(&PSDKWrapper::init_camera_manager, this),
        is_camera_module_mandatory_},
       {std::bind(&PSDKWrapper::init_gimbal_manager, this),
@@ -1429,7 +1437,7 @@ PSDKWrapper::set_local_position_ref_cb(
         current_state_.local_position.position.y;
     local_position_reference_.vector.z =
         current_state_.local_position.position.z;
-    RCLCPP_INFO(node_->get_logger(),
+    RCLCPP_INFO(get_logger(),
                 "Set local position reference to x:%f, y:%f, z:%f",
                 current_state_.local_position.position.x,
                 current_state_.local_position.position.y,
@@ -1441,7 +1449,7 @@ PSDKWrapper::set_local_position_ref_cb(
   else
   {
     RCLCPP_ERROR(
-        node_->get_logger(),
+        get_logger(),
         "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
         current_state_.local_position.x_health,
         current_state_.local_position.y_health,

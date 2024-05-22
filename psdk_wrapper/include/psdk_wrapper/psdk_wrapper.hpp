@@ -112,10 +112,8 @@
 #include "psdk_interfaces/srv/camera_shoot_interval_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_single_photo.hpp"
 #include "psdk_interfaces/srv/camera_stop_shoot_photo.hpp"
-
 #include "psdk_interfaces/srv/gimbal_reset.hpp"
 #include "psdk_interfaces/srv/gimbal_set_mode.hpp"
-
 #include "psdk_wrapper/modules/flight_control.hpp"
 #include "psdk_wrapper/utils/action_server.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
@@ -1119,6 +1117,14 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
                                         uint32_t buffer_length);
 
   /* ROS 2 Service callbacks */
+  /**
+   * @brief Sets the current position as the new origin for the local position.
+   * @param request Trigger service request
+   * @param response Trigger service response
+   */
+  void set_local_position_ref_cb(
+      const std::shared_ptr<Trigger::Request> request,
+      const std::shared_ptr<Trigger::Response> response);
 
   // Camera
   /**
@@ -1812,15 +1818,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return string with the tf name
    */
   std::string add_tf_prefix(const std::string& frame_name);
-
-  /**
-   * @brief Sets the current position as the new origin for the local position.
-   * @param request Trigger service request
-   * @param response Trigger service response
-   */
-  void set_local_position_ref_cb(
-      const std::shared_ptr<Trigger::Request> request,
-      const std::shared_ptr<Trigger::Response> response);
 
   /* Global variables */
   PSDKParams params_;

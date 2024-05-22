@@ -3,6 +3,8 @@
 
 #include <dji_flight_controller.h>
 
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
@@ -11,10 +13,9 @@
 #include "psdk_interfaces/srv/set_go_home_altitude.hpp"
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
 #include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
-#include "psdk_wrapper/psdk_module_base.hpp"
 namespace psdk_ros2
 {
-class FlightControlModule : public PSDKModuleBase
+class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
 {
  public:
   using Trigger = std_srvs::srv::Trigger;
@@ -30,28 +31,27 @@ class FlightControlModule : public PSDKModuleBase
    *
    * @param node_name
    */
-  FlightControlModule(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
+  explicit FlightControlModule(const std::string &name);
 
-  void on_activate();
-  void on_configure();
-  void on_cleanup();
-  void on_deactivate();
-  void on_shutdown();
+  ~FlightControlModule();
+
+  CallbackReturn on_activate(const rclcpp_lifecycle::State &state);
+  CallbackReturn on_configure(const rclcpp_lifecycle::State &state);
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State &state);
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State &state);
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State &state);
 
   /**
    * @brief Initialize the flight control module. It needs the RID information
    * to be passed to the native flight control initialization function from DJI.
    * @return true/false
    */
-  bool init() override;
+  bool init();
   /**
    * @brief Deinitialize the flight control module
    * @return true/false
    */
-  bool deinit() override;
-
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr
-  get_node_base_interface();
+  bool deinit();
 
  private:
   /**

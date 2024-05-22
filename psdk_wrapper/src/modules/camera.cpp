@@ -1431,7 +1431,10 @@ PSDKWrapper::camera_manager_download_file_data_callback(
   uint32_t download_start_ms = 0;
   uint32_t download_end_ms = 0;
   T_DjiOsalHandler *osalHandler = DjiPlatform_GetOsalHandler();
-
+  RCLCPP_INFO(get_logger(), "Downloading media..");
+  E_DjiMountPosition payload_index = static_cast<E_DjiMountPosition>(1);
+  release_downloader_rights(payload_index);
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
   if (!create_directory(file_path))
   {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SYSTEM_ERROR;
