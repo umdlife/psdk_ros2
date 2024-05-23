@@ -1656,8 +1656,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Request downloading of a file list
    * @param request CameraGetFileListInfo service request. The camera
    * mounted position for which the request is made needs to be specified.
-   * @note This method is currently not working properly. Future work will
-   * ensure its proper functioning.
    * @param response CameraGetFileListInfo service response.
    */
   void camera_get_file_list_info_cb(
