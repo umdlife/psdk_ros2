@@ -14,8 +14,8 @@
  * Contact: bianca@unmanned.life
  *
  */
-#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
-#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_UTILS_PSDK_WRAPPER_UTILS_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_UTILS_PSDK_WRAPPER_UTILS_HPP_
 
 #include <dji_fc_subscription.h>
 #include <dji_flight_controller.h>
@@ -251,4 +251,4 @@ double inline deg_to_rad(const double degrees)
 };  // namespace psdk_utils
 }  // namespace psdk_ros2
 
-#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_UTILS_HPP_
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_UTILS_PSDK_WRAPPER_UTILS_HPP_

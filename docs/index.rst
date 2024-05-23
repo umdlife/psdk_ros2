@@ -13,6 +13,7 @@ psdk_ros2 wrapper
 
    documentation/Introduction.md
    documentation/GettingStarted.md
+   documentation/RunningTheWrapper.md
    documentation/ThePSDKWrapper.md
    documentation/Contribute.md
 

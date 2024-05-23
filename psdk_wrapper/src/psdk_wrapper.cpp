@@ -51,6 +51,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
   declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
   declare_parameter("hms_return_codes_path", rclcpp::ParameterValue(""));
+  declare_parameter("file_path", rclcpp::ParameterValue("/logs/media/"));
 
   declare_parameter("data_frequency.imu", 1);
   declare_parameter("data_frequency.timestamp", 1);
@@ -73,7 +74,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
 
   declare_parameter("num_of_initialization_retries", 1);
 }
-PSDKWrapper::~PSDKWrapper() {
+PSDKWrapper::~PSDKWrapper()
+{
   RCLCPP_INFO(get_logger(), "Destroying PSDKWrapper");
   rclcpp_lifecycle::State state;
   PSDKWrapper::on_shutdown(state);
@@ -440,7 +442,13 @@ PSDKWrapper::load_parameters()
     RCLCPP_WARN(
         get_logger(),
         "hms_return_codes_path param not defined, using default one: %s",
-        params_.hms_return_codes_path);
+        params_.hms_return_codes_path.c_str());
+  }
+  if (!get_parameter("file_path", params_.file_path))
+  {
+    RCLCPP_WARN(get_logger(),
+                "file_path param not defined, using default one: %s",
+                params_.file_path.c_str());
   }
 
   // Get data frequency
@@ -1068,22 +1076,18 @@ PSDKWrapper::initialize_ros_elements()
           std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this, _1,
                     _2),
           qos_profile_);
-  // TODO(@lidiadltv): Enable these actions once are working properly
-  // camera_download_file_list_action_ =
-  //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileList>>(
-  //           shared_from_this(), "psdk_ros2/camera_download_file_list",
-  //           std::bind(&PSDKWrapper::camera_download_file_list_cb,
-  //           this));
-  // camera_download_file_by_index_action_ =
-  //     std::make_unique<nav2_util::SimpleActionServer<CameraDownloadFileByIndex>>(
-  //           shared_from_this(), "psdk_ros2/camera_download_file_by_index",
-  //           std::bind(&PSDKWrapper::camera_download_file_by_index_cb,
-  //           this));
-  // camera_delete_file_by_index_action_ =
-  //     std::make_unique<nav2_util::SimpleActionServer<CameraDeleteFileByIndex>>(
-  //           shared_from_this(), "psdk_ros2/camera_delete_file_by_index",
-  //           std::bind(&PSDKWrapper::camera_delete_file_by_index_cb,
-  //           this));
+  camera_get_file_list_info_service_ = create_service<CameraGetFileListInfo>(
+      "psdk_ros2/camera_get_file_list_info",
+      std::bind(&PSDKWrapper::camera_get_file_list_info_cb, this, _1, _2),
+      qos_profile_);
+  camera_format_sd_card_service_ = create_service<CameraFormatSdCard>(
+      "psdk_ros2/camera_format_sd_card",
+      std::bind(&PSDKWrapper::camera_format_sd_card_cb, this, _1, _2),
+      qos_profile_);
+  camera_get_sd_storage_info_service_ = create_service<CameraGetSDStorageInfo>(
+      "psdk_ros2/camera_get_sd_storage_info",
+      std::bind(&PSDKWrapper::camera_get_sd_storage_info_cb, this, _1, _2),
+      qos_profile_);
   camera_get_type_service_ = create_service<CameraGetType>(
       "psdk_ros2/camera_get_type",
       std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2), qos_profile_);
@@ -1159,6 +1163,20 @@ PSDKWrapper::initialize_ros_elements()
   gimbal_reset_service_ = create_service<GimbalReset>(
       "psdk_ros2/gimbal_reset",
       std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2), qos_profile_);
+
+  // Camera action servers
+  camera_download_file_by_index_server_ =
+      std::make_unique<utils::ActionServer<CameraDownloadFileByIndex>>(
+          get_node_base_interface(), get_node_clock_interface(),
+          get_node_logging_interface(), get_node_waitables_interface(),
+          "psdk_ros2/camera_download_file_by_index",
+          std::bind(&PSDKWrapper::execute_download_file_by_index, this));
+  camera_delete_file_by_index_server_ =
+      std::make_unique<utils::ActionServer<CameraDeleteFileByIndex>>(
+          get_node_base_interface(), get_node_clock_interface(),
+          get_node_logging_interface(), get_node_waitables_interface(),
+          "psdk_ros2/camera_delete_file_by_index",
+          std::bind(&PSDKWrapper::execute_delete_file_by_index, this));
 }
 
 void
@@ -1211,6 +1229,9 @@ PSDKWrapper::activate_ros_elements()
   altitude_sl_pub_->on_activate();
   altitude_barometric_pub_->on_activate();
   hms_info_table_pub_->on_activate();
+
+  camera_download_file_by_index_server_->activate();
+  camera_delete_file_by_index_server_->activate();
 }
 
 void
@@ -1263,6 +1284,9 @@ PSDKWrapper::deactivate_ros_elements()
   altitude_sl_pub_->on_deactivate();
   altitude_barometric_pub_->on_deactivate();
   hms_info_table_pub_->on_deactivate();
+
+  camera_download_file_by_index_server_->deactivate();
+  camera_delete_file_by_index_server_->deactivate();
 }
 
 void
@@ -1270,6 +1294,9 @@ PSDKWrapper::clean_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Cleaning ROS elements");
 
+  // Action servers
+  camera_download_file_by_index_server_.reset();
+  camera_delete_file_by_index_server_.reset();
   // Services
   // General
   set_local_position_ref_srv_.reset();
@@ -1320,9 +1347,9 @@ PSDKWrapper::clean_ros_elements()
   camera_set_infrared_zoom_service_.reset();
   camera_set_aperture_service_.reset();
   camera_get_laser_ranging_info_service_.reset();
-  camera_download_file_list_service_.reset();
-  camera_download_file_by_index_service_.reset();
-  camera_delete_file_by_index_service_.reset();
+  camera_get_file_list_info_service_.reset();
+  camera_format_sd_card_service_.reset();
+  camera_get_sd_storage_info_service_.reset();
   // Streaming
   camera_setup_streaming_service_.reset();
   // Gimbal

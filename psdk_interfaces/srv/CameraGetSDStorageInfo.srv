@@ -1,0 +1,7 @@
+#request
+uint8 payload_index 1   # see enum E_DjiMountPosition in dji_typedef.h
+---
+#response
+bool success
+uint32 total_capacity
+uint32 remain_capacity

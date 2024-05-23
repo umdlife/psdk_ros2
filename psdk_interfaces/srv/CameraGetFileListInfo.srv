@@ -1,7 +1,7 @@
 #request
 uint8 payload_index 1   # see enum E_DjiMountPosition in dji_typedef.h
-
 ---
 #response
 bool success
-int16 result            # total_count from enum T_DjiCameraManagerFileList in dji_camera_manager.h
+FileInfo[] file_list
+int16 count
