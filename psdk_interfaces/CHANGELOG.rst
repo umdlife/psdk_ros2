@@ -2,8 +2,8 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.0 (2024-05-23)
+------------------
 * Merge pull request `#81 <https://github.com/umdlife/psdk_ros2/issues/81>`_ from umdlife/feat/sd_images
   SD card functions
 * Merge pull request `#76 <https://github.com/umdlife/psdk_ros2/issues/76>`_ from umdlife/feat/psdk-3.8.1
