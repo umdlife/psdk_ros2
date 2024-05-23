@@ -291,8 +291,8 @@ Moreover, one can check the current storage capacity of the SD card (`psdk_ros2/
 | Name                                        | Type      |
 | --------------------------------------------| --------- | 
 | psdk_ros2/camera_get_file_list_info         | Service   |
-| psdk_ros2/camera_download_file_by_index     | Service   |
-| psdk_ros2/camera_delete_file_by_index       | Service   |
+| psdk_ros2/camera_download_file_by_index     | Action    |
+| psdk_ros2/camera_delete_file_by_index       | Action    |
 | psdk_ros2/camera_get_sd_storage_info        | Service   |
 | psdk_ros2/camera_format_sd_card             | Service   |
  

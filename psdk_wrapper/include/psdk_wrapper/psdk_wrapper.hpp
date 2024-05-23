@@ -1097,8 +1097,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiReturnCode hms_callback(T_DjiHmsInfoTable hms_info_table);
 
   T_DjiReturnCode camera_manager_download_file_data_callback(
-      T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data, uint16_t len,
-      const std::string& file_path);
+      T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data,
+      uint16_t len);
 
   /* ROS 2 Subscriber callbacks */
 
@@ -1376,8 +1376,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Request downloading of a file list
    * @param request CameraGetFileListInfo service request. The camera
    * mounted position for which the request is made needs to be specified.
-   * @note This method is currently not working properly. Future work will
-   * ensure its proper functioning.
    * @param response CameraGetFileListInfo service response.
    */
   void camera_get_file_list_info_cb(
@@ -1867,6 +1865,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   E_DjiLiveViewCameraSource selected_camera_source_;
   int32_t file_index_to_download_{0};
   std::string file_name_to_download_;
+  std::string file_path_to_download_;
 
   nlohmann::json hms_return_codes_json_;
   bool publish_camera_transforms_{false};
