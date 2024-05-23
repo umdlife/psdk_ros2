@@ -45,7 +45,6 @@ FlightControlModule::on_configure(const rclcpp_lifecycle::State &state)
   (void)state;
   RCLCPP_INFO(get_logger(), "Configuring FlightControlModule...");
 
-  RCLCPP_INFO(get_logger(), "Creating subscribers");
   flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
       "psdk_ros2/flight_control_setpoint_generic", 10,
       std::bind(&FlightControlModule::flight_control_generic_cb, this,
@@ -257,13 +256,14 @@ FlightControlModule::on_shutdown(const rclcpp_lifecycle::State &state)
 }
 
 bool
-FlightControlModule::init()
+FlightControlModule::init(
+    const sensor_msgs::msg::NavSatFix &current_gps_position)
 {
   RCLCPP_INFO(get_logger(), "Initiating flight control module...");
   T_DjiFlightControllerRidInfo rid_info;
-  rid_info.latitude = 40.0;  // current_state_.gps_position.latitude;
-  rid_info.longitude = 2.0;  // current_state_.gps_position.longitude;
-  rid_info.altitude = 0.0;   // current_state_.gps_position.altitude;
+  rid_info.latitude = psdk_utils::deg_to_rad(current_gps_position.latitude);
+  rid_info.longitude = psdk_utils::deg_to_rad(current_gps_position.longitude);
+  rid_info.altitude = current_gps_position.altitude;
 
   T_DjiReturnCode return_code = DjiFlightController_Init(rid_info);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)

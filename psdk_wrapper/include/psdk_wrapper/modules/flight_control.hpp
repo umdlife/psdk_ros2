@@ -6,6 +6,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/joy.hpp>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
 #include "psdk_interfaces/srv/get_go_home_altitude.hpp"
@@ -35,18 +36,42 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
 
   ~FlightControlModule();
 
-  CallbackReturn on_activate(const rclcpp_lifecycle::State &state);
+  /**
+   * @brief Configures the flight control module. Creates the ROS 2 subscribers
+   * and services.
+   * @param state rclcpp_lifecycle::State. Current state of the node.
+   * @return CallbackReturn SUCCESS or FAILURE
+   */
   CallbackReturn on_configure(const rclcpp_lifecycle::State &state);
+
+  /**
+   * @brief Activates the flight control module.
+   * @param state rclcpp_lifecycle::State. Current state of the node.
+   * @return CallbackReturn SUCCESS or FAILURE
+   */
+  CallbackReturn on_activate(const rclcpp_lifecycle::State &state);
+  /**
+   * @brief Cleans the flight control module. Resets the ROS 2 subscribers and
+   * services.
+   * @param state rclcpp_lifecycle::State. Current state of the node.
+   * @return CallbackReturn SUCCESS or FAILURE
+   */
   CallbackReturn on_cleanup(const rclcpp_lifecycle::State &state);
+  /**
+   * @brief Deactivates the flight control module.
+   * @param state rclcpp_lifecycle::State. Current state of the node.
+   * @return CallbackReturn SUCCESS or FAILURE
+   */
   CallbackReturn on_deactivate(const rclcpp_lifecycle::State &state);
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State &state);
 
   /**
    * @brief Initialize the flight control module. It needs the RID information
    * to be passed to the native flight control initialization function from DJI.
+   * @param current_gps_position  sensor_msgs::msg::NavSatFix. Current GPS
    * @return true/false
    */
-  bool init();
+  bool init(const sensor_msgs::msg::NavSatFix &current_gps_position);
   /**
    * @brief Deinitialize the flight control module
    * @return true/false

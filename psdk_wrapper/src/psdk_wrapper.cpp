@@ -94,7 +94,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 
   flight_control_module_ =
       std::make_shared<FlightControlModule>("flight_control_node");
-
+  current_state_.initialize_state();
   return CallbackReturn::SUCCESS;
 }
 
@@ -122,13 +122,19 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   // Initialize and activate ROS elements only after the DJI modules are
   // initialized
   initialize_ros_elements();
-  flight_control_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
-  current_state_.initialize_state();
   activate_ros_elements();
+  subscribe_psdk_topics();
 
-  if (params_.publish_transforms)
+  flight_control_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
+  flight_control_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
+  flight_control_thread_ =
+      std::make_unique<utils::NodeThread>(flight_control_module_);
+
+  if (!flight_control_module_->init(current_state_.gps_position) &&
+      is_flight_control_module_mandatory_)
   {
-    publish_static_transforms();
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
   }
 
   if (!init_hms() && is_hms_module_mandatory_)
@@ -137,11 +143,10 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  subscribe_psdk_topics();
-
-  flight_control_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
-  flight_control_thread_ =
-      std::make_unique<utils::NodeThread>(flight_control_module_);
+  if (params_.publish_transforms)
+  {
+    publish_static_transforms();
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -1394,8 +1399,6 @@ PSDKWrapper::initialize_psdk_modules()
   std::vector<ModuleInitializer> module_initializers = {
       {std::bind(&PSDKWrapper::init_telemetry, this),
        is_telemetry_module_mandatory_},
-      {std::bind(&FlightControlModule::init, flight_control_module_),
-       is_flight_control_module_mandatory_},
       {std::bind(&PSDKWrapper::init_camera_manager, this),
        is_camera_module_mandatory_},
       {std::bind(&PSDKWrapper::init_gimbal_manager, this),
