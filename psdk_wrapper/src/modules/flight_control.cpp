@@ -8,7 +8,10 @@
 /**
  * @file flight_control.cpp
  *
- * @brief
+ * @brief Flight control module implementation. This module is responsible for
+ * handling the flight control commands and implementating the basic flight
+ * behaviors such as takeoff, landing, return to home. Moreover, it enables and
+ * disables the obstacle avoidance functionality.
  *
  * @author Bianca Bendris
  * Contact: bianca@unmanned.life

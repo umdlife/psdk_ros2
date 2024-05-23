@@ -20,7 +20,6 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
 {
  public:
   using Trigger = std_srvs::srv::Trigger;
-  // Flight Control
   using SetHomeFromGPS = psdk_interfaces::srv::SetHomeFromGPS;
   using SetGoHomeAltitude = psdk_interfaces::srv::SetGoHomeAltitude;
   using GetGoHomeAltitude = psdk_interfaces::srv::GetGoHomeAltitude;
@@ -29,11 +28,13 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
 
   /**
    * @brief Construct a new FlightControlModule object
-   *
-   * @param node_name
+   * @param node_name Name of the node
    */
   explicit FlightControlModule(const std::string &name);
 
+  /**
+   * @brief Destroy the Flight Control Module object
+   */
   ~FlightControlModule();
 
   /**
@@ -72,6 +73,7 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
    */
   bool init(const sensor_msgs::msg::NavSatFix &current_gps_position);
+
   /**
    * @brief Deinitialize the flight control module
    * @return true/false
