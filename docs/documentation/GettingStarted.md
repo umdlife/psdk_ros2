@@ -49,12 +49,7 @@ This connection is compatible exclusively with the M300 RTK drone. Upon establis
 
 **Steps:**
 
-1. Connect the FTDI adapter to the designated pins on the OSDK Exapansion module for serial communication:
-
-<p align="left">
-  <img src="images/ftdi_connection.png" alt="alt text" width="560" height="200">
-</p>
-
+1. Connect the FTDI adapter to the designated pins on the OSDK Exapansion module for serial communication
 2. Use a mini-USB A to USB A cable (this cable is different depending on the ftdi module you use) to connect the FTDI adapter to the computer's USB 2.0 port
 3. Connect the USB A to USB A from the OSDK Expansion module to the USB port of the computer
 4. Connect the power cable from the OSDK Expansion module to supply power to the companion computer
@@ -86,7 +81,6 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | gimbal_frame                  | String    | "psdk_gimbal_link"                 | -                                           |
 | camera_frame                  | String    | "psdk_camera_link"                 | -                                           |
 | file download path            | String    | "/logs/media"                      | -                                           |
-
 | mandatory_modules             |           |                                    |                                             |
 | - telemetry                   | Bool      |  True                              | Trigger node failure, if module not loaded  |
 | - flight_control              | Bool      |  True                              | Trigger node failure, if module not loaded  |
@@ -110,57 +104,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - flight_status               | Integer   | 1                                  | -                                           |
 | - battery_level               | Integer   | 1                                  | -                                           |
 | - control_information         | Integer   | 1                                  | -                                           |
-| - esc_data_frequency          | Integer   | 1                                  | 
--
-
-## Running the psdk_ros2 wrapper
-
-### Debian packages for ROS 2 Humble
-
-```bash
-# Install debians
-sudo apt install ros-humble-psdk-wrapper ros-humble-psdk-interfaces
-source /opt/ros/humble/setup.bash
-
-# Launch the node
-# Default link_config_file_path = /opt/ros/humble/share/psdk_wrapper/cfg/link_config.json
-# Default psdk_params_file_path = /opt/ros/humble/share/psdk_wrapper/cfg/psdk_params.yaml
-# If using parameter and config files different than the default ones, you can point to them as:
-ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
- 
-```
-
-### Compile from source
-
-To use the psdk_ros2 wrapper you will need to create a new workspace in which you clone both the wrapper as well as the Payload-SDK libraries. 
-
-```bash
-mkdir -p ~/psdk_ros2_ws/src
-cd ~/psdk_ros2_ws/src
-# Clone the psdk_ros2 wrapper
-git clone https://github.com/umdlife/psdk_ros2.git
-
-# Before building, check the Dependencies section and make sure you have everything installed
-# You can also run rosdep to automatically install the dependencies
-rosdep update
-rosdep keys --from-paths . --ignore-src --rosdistro humble | \
-  xargs rosdep resolve --rosdistro humble | \
-  awk '/#apt/{getline; print}' > ./rosdep_requirements.txt
-sudo apt install -y --no-install-recommends $(cat ./rosdep_requirements.txt) 
-
-# Build the code
-cd ~/psdk_ros2_ws
-colcon build
-
-# Launch the node
-ros2 launch psdk_wrapper wrapper.launch.py
-
-# Default link_config_file_path = psdk_wrapper/cfg/link_config.json
-# Default psdk_params_file_path = psdk_wrapper/cfg/psdk_params.yml
-# If using parameter and config files different than the default ones, you can point to them as:
-ros2 launch psdk_wrapper wrapper.launch.py link_config_file_path:=/absolute/path/to/config.json psdk_params_file_path:=/absolute/path/to/params.yml
-
-```
+| - esc_data_frequency          | Integer   | 1                                  | -                                           |
 
 ## Udev rules
 
@@ -172,35 +116,3 @@ SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="YourVendor", ATTRS{idProd
 # DJI Advanced Sensing
 SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="YourVendor", ATTRS{idProduct}=="YourProduct", MODE="0666", SYMLINK+="dji_advanced_sensing"
 ```
-
-
-
-## Dependencies 
-
-### ROS 2 packages
-
-The following ROS 2 packages are needed to successfully build the wrapper:
-
-* rclcpp
-* rclcpp_lifecycle
-* tf2
-* tf2_ros
-* sensor_msgs
-* geometry_msgs
-* std_msgs
-* nav_msgs
-* std_srvs
-
-### Other libraries
-
-The following libraries are needed to enable the access to USB devices and handling the video streaming:
-
-* libusb-1.0-0-dev
-* libopus-dev 
-* ffmpeg 
-* libavcodec-dev 
-* libavformat-dev 
-* libavfilter-dev
-
-The following library is used to work with JSON:
-* nlohmann-json-dev
