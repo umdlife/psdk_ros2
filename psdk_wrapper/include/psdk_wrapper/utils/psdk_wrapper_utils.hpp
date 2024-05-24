@@ -19,6 +19,7 @@
 
 #include <dji_fc_subscription.h>
 #include <dji_flight_controller.h>
+#include <dji_liveview.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 

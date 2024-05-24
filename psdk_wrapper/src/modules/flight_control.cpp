@@ -20,9 +20,6 @@
 
 #include "psdk_wrapper/modules/flight_control.hpp"
 
-#include "psdk_wrapper/psdk_wrapper.hpp"
-#include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
-
 namespace psdk_ros2
 {
 

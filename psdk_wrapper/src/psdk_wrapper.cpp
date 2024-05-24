@@ -94,6 +94,8 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 
   flight_control_module_ =
       std::make_shared<FlightControlModule>("flight_control_node");
+  telemetry_module_ =
+      std::make_shared<TelemetryModule>("telemetry_node", global_ptr_);
   current_state_.initialize_state();
   return CallbackReturn::SUCCESS;
 }
@@ -162,6 +164,8 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
   flight_control_module_->on_deactivate(
       rclcpp_lifecycle::State(2, "deactivate"));
   flight_control_thread_.reset();
+  telemetry_module_->on_deactivate(rclcpp_lifecycle::State(2, "deactivate"));
+  telemetry_thread_.reset();
   return CallbackReturn::SUCCESS;
 }
 
@@ -173,6 +177,8 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
   clean_ros_elements();
   flight_control_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
   flight_control_thread_.reset();
+  telemetry_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
+  telemetry_thread_.reset();
 
   return CallbackReturn::SUCCESS;
 }
@@ -842,107 +848,12 @@ PSDKWrapper::initialize_ros_elements()
   tf_broadcaster_ =
       std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
 
-  attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
-      "psdk_ros2/attitude", 10);
-  imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("psdk_ros2/imu", 10);
-  velocity_ground_fused_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
-          "psdk_ros2/velocity_ground_fused", 10);
-  position_fused_pub_ = create_publisher<psdk_interfaces::msg::PositionFused>(
-      "psdk_ros2/position_fused", 10);
-  gps_fused_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
-      "psdk_ros2/gps_position_fused", 10);
-  gps_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
-      "psdk_ros2/gps_position", 10);
-  gps_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
-      "psdk_ros2/gps_velocity", 10);
-  gps_details_pub_ = create_publisher<psdk_interfaces::msg::GPSDetails>(
-      "psdk_ros2/gps_details", 10);
-  gps_signal_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/gps_signal_level", 10);
-  gps_control_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/gps_control_level", 10);
-  rtk_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
-      "psdk_ros2/rtk_position", 10);
-  rtk_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
-      "psdk_ros2/rtk_velocity", 10);
-  rtk_yaw_pub_ =
-      create_publisher<psdk_interfaces::msg::RTKYaw>("psdk_ros2/rtk_yaw", 10);
-  rtk_position_info_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_position_info", 10);
-  rtk_yaw_info_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_yaw_info", 10);
-  rtk_connection_status_pub_ = create_publisher<std_msgs::msg::UInt16>(
-      "psdk_ros2/rtk_connection_status", 10);
-  magnetic_field_pub_ = create_publisher<sensor_msgs::msg::MagneticField>(
-      "psdk_ros2/magnetic_field", 10);
-  rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("psdk_ros2/rc", 10);
-  rc_connection_status_pub_ =
-      create_publisher<psdk_interfaces::msg::RCConnectionStatus>(
-          "psdk_ros2/rc_connection_status", 10);
-  esc_pub_ =
-      create_publisher<psdk_interfaces::msg::EscData>("psdk_ros2/esc_data", 1);
-  gimbal_angles_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
-      "psdk_ros2/gimbal_angles", 10);
-  gimbal_status_pub_ = create_publisher<psdk_interfaces::msg::GimbalStatus>(
-      "psdk_ros2/gimbal_status", 10);
-  flight_status_pub_ = create_publisher<psdk_interfaces::msg::FlightStatus>(
-      "psdk_ros2/flight_status", 10);
-  display_mode_pub_ = create_publisher<psdk_interfaces::msg::DisplayMode>(
-      "psdk_ros2/display_mode", 10);
-  landing_gear_pub_ = create_publisher<std_msgs::msg::UInt8>(
-      "psdk_ros2/landing_gear_status", 10);
-  motor_start_error_pub_ = create_publisher<std_msgs::msg::UInt16>(
-      "psdk_ros2/motor_start_error", 10);
-  flight_anomaly_pub_ = create_publisher<psdk_interfaces::msg::FlightAnomaly>(
-      "psdk_ros2/flight_anomaly", 10);
-  battery_pub_ =
-      create_publisher<sensor_msgs::msg::BatteryState>("psdk_ros2/battery", 10);
-  single_battery_index1_pub_ =
-      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>(
-          "psdk_ros2/single_battery_index1", 10);
-  single_battery_index2_pub_ =
-      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>(
-          "psdk_ros2/single_battery_index2", 10);
-  height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
-      "psdk_ros2/height_above_ground", 10);
-  angular_rate_body_raw_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
-          "psdk_ros2/angular_rate_body_raw", 10);
-  angular_rate_ground_fused_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
-          "psdk_ros2/angular_rate_ground_fused", 10);
-  acceleration_ground_fused_pub_ =
-      create_publisher<geometry_msgs::msg::AccelStamped>(
-          "psdk_ros2/acceleration_ground_fused", 10);
-  acceleration_body_fused_pub_ =
-      create_publisher<geometry_msgs::msg::AccelStamped>(
-          "psdk_ros2/acceleration_body_fused", 10);
-  acceleration_body_raw_pub_ =
-      create_publisher<geometry_msgs::msg::AccelStamped>(
-          "psdk_ros2/acceleration_body_raw", 10);
-  relative_obstacle_info_pub_ =
-      create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
-          "psdk_ros2/relative_obstacle_info", 10);
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/fpv_camera_stream", rclcpp::SensorDataQoS());
-  control_mode_pub_ = create_publisher<psdk_interfaces::msg::ControlMode>(
-      "psdk_ros2/control_mode", 10);
-  home_point_pub_ =
-      create_publisher<sensor_msgs::msg::NavSatFix>("psdk_ros2/home_point", 10);
-  home_point_status_pub_ =
-      create_publisher<std_msgs::msg::Bool>("psdk_ros2/home_point_status", 10);
-  home_point_altitude_pub_ = create_publisher<std_msgs::msg::Float32>(
-      "psdk_ros2/home_point_altitude", 10);
-  altitude_sl_pub_ = create_publisher<std_msgs::msg::Float32>(
-      "psdk_ros2/altitude_sea_level", 10);
-  altitude_barometric_pub_ = create_publisher<std_msgs::msg::Float32>(
-      "psdk_ros2/altitude_barometric", 10);
   hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
       "psdk_ros2/hms_info_table", 10);
-
   gimbal_rotation_sub_ =
       create_subscription<psdk_interfaces::msg::GimbalRotation>(
           "psdk_ros2/gimbal_rotation", 10,
@@ -950,9 +861,6 @@ PSDKWrapper::initialize_ros_elements()
                     std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Creating services");
-  set_local_position_ref_srv_ = create_service<Trigger>(
-      "psdk_ros2/set_local_position_ref",
-      std::bind(&PSDKWrapper::set_local_position_ref_cb, this, _1, _2));
 
   /* Camera */
   camera_shoot_single_photo_service_ = create_service<CameraShootSinglePhoto>(
@@ -1089,51 +997,9 @@ void
 PSDKWrapper::activate_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Activating ROS elements");
-  attitude_pub_->on_activate();
-  imu_pub_->on_activate();
-  velocity_ground_fused_pub_->on_activate();
-  position_fused_pub_->on_activate();
-  gps_fused_pub_->on_activate();
-  gps_position_pub_->on_activate();
-  gps_velocity_pub_->on_activate();
-  gps_details_pub_->on_activate();
-  gps_signal_pub_->on_activate();
-  gps_control_pub_->on_activate();
-  rtk_position_pub_->on_activate();
-  rtk_velocity_pub_->on_activate();
-  rtk_yaw_pub_->on_activate();
-  rtk_position_info_pub_->on_activate();
-  rtk_yaw_info_pub_->on_activate();
-  rtk_connection_status_pub_->on_activate();
-  magnetic_field_pub_->on_activate();
-  rc_pub_->on_activate();
-  esc_pub_->on_activate();
-  rc_connection_status_pub_->on_activate();
-  gimbal_angles_pub_->on_activate();
-  gimbal_status_pub_->on_activate();
-  flight_status_pub_->on_activate();
-  display_mode_pub_->on_activate();
-  landing_gear_pub_->on_activate();
-  motor_start_error_pub_->on_activate();
-  flight_anomaly_pub_->on_activate();
-  battery_pub_->on_activate();
-  single_battery_index1_pub_->on_activate();
-  single_battery_index2_pub_->on_activate();
-  height_fused_pub_->on_activate();
-  angular_rate_body_raw_pub_->on_activate();
-  angular_rate_ground_fused_pub_->on_activate();
-  acceleration_ground_fused_pub_->on_activate();
-  acceleration_body_fused_pub_->on_activate();
-  acceleration_body_raw_pub_->on_activate();
+
   main_camera_stream_pub_->on_activate();
   fpv_camera_stream_pub_->on_activate();
-  control_mode_pub_->on_activate();
-  home_point_pub_->on_activate();
-  home_point_status_pub_->on_activate();
-  relative_obstacle_info_pub_->on_activate();
-  home_point_altitude_pub_->on_activate();
-  altitude_sl_pub_->on_activate();
-  altitude_barometric_pub_->on_activate();
   hms_info_table_pub_->on_activate();
 
   camera_download_file_by_index_server_->activate();
@@ -1144,51 +1010,10 @@ void
 PSDKWrapper::deactivate_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Deactivating ROS elements");
-  attitude_pub_->on_deactivate();
-  imu_pub_->on_deactivate();
-  velocity_ground_fused_pub_->on_deactivate();
-  position_fused_pub_->on_deactivate();
-  gps_fused_pub_->on_deactivate();
-  gps_position_pub_->on_deactivate();
-  gps_velocity_pub_->on_deactivate();
-  gps_details_pub_->on_deactivate();
-  gps_signal_pub_->on_deactivate();
-  gps_control_pub_->on_deactivate();
-  rtk_position_pub_->on_deactivate();
-  rtk_velocity_pub_->on_deactivate();
-  rtk_yaw_pub_->on_deactivate();
-  rtk_position_info_pub_->on_deactivate();
-  rtk_yaw_info_pub_->on_deactivate();
-  rtk_connection_status_pub_->on_deactivate();
-  magnetic_field_pub_->on_deactivate();
-  rc_pub_->on_deactivate();
-  esc_pub_->on_deactivate();
-  rc_connection_status_pub_->on_deactivate();
-  gimbal_angles_pub_->on_deactivate();
-  gimbal_status_pub_->on_deactivate();
-  flight_status_pub_->on_deactivate();
-  display_mode_pub_->on_deactivate();
-  motor_start_error_pub_->on_deactivate();
-  landing_gear_pub_->on_deactivate();
-  flight_anomaly_pub_->on_deactivate();
-  battery_pub_->on_deactivate();
-  single_battery_index1_pub_->on_deactivate();
-  single_battery_index2_pub_->on_deactivate();
-  height_fused_pub_->on_deactivate();
-  angular_rate_body_raw_pub_->on_deactivate();
-  angular_rate_ground_fused_pub_->on_deactivate();
-  acceleration_ground_fused_pub_->on_deactivate();
-  acceleration_body_fused_pub_->on_deactivate();
-  acceleration_body_raw_pub_->on_deactivate();
+
   main_camera_stream_pub_->on_deactivate();
   fpv_camera_stream_pub_->on_deactivate();
-  control_mode_pub_->on_deactivate();
-  home_point_pub_->on_deactivate();
-  home_point_status_pub_->on_deactivate();
-  relative_obstacle_info_pub_->on_deactivate();
-  home_point_altitude_pub_->on_deactivate();
-  altitude_sl_pub_->on_deactivate();
-  altitude_barometric_pub_->on_deactivate();
+
   hms_info_table_pub_->on_deactivate();
 
   camera_download_file_by_index_server_->deactivate();
@@ -1204,8 +1029,6 @@ PSDKWrapper::clean_ros_elements()
   camera_download_file_by_index_server_.reset();
   camera_delete_file_by_index_server_.reset();
   // Services
-  // General
-  set_local_position_ref_srv_.reset();
   // Camera
   camera_shoot_single_photo_service_.reset();
   camera_shoot_burst_photo_service_.reset();
@@ -1242,51 +1065,10 @@ PSDKWrapper::clean_ros_elements()
   tf_broadcaster_.reset();
 
   // Publishers
-  attitude_pub_.reset();
-  imu_pub_.reset();
-  velocity_ground_fused_pub_.reset();
-  position_fused_pub_.reset();
-  gps_fused_pub_.reset();
-  gps_position_pub_.reset();
-  gps_velocity_pub_.reset();
-  gps_details_pub_.reset();
-  gps_signal_pub_.reset();
-  gps_control_pub_.reset();
-  rtk_position_pub_.reset();
-  rtk_velocity_pub_.reset();
-  rtk_yaw_pub_.reset();
-  rtk_position_info_pub_.reset();
-  rtk_yaw_info_pub_.reset();
-  rtk_connection_status_pub_.reset();
-  magnetic_field_pub_.reset();
-  rc_pub_.reset();
-  esc_pub_.reset();
-  rc_connection_status_pub_.reset();
-  gimbal_angles_pub_.reset();
-  gimbal_status_pub_.reset();
-  flight_status_pub_.reset();
-  display_mode_pub_.reset();
-  landing_gear_pub_.reset();
-  motor_start_error_pub_.reset();
-  flight_anomaly_pub_.reset();
-  battery_pub_.reset();
-  single_battery_index1_pub_.reset();
-  single_battery_index2_pub_.reset();
-  height_fused_pub_.reset();
-  angular_rate_body_raw_pub_.reset();
-  angular_rate_ground_fused_pub_.reset();
-  acceleration_ground_fused_pub_.reset();
-  acceleration_body_fused_pub_.reset();
-  acceleration_body_raw_pub_.reset();
+
   main_camera_stream_pub_.reset();
   fpv_camera_stream_pub_.reset();
-  control_mode_pub_.reset();
-  home_point_pub_.reset();
-  home_point_status_pub_.reset();
-  relative_obstacle_info_pub_.reset();
-  home_point_altitude_pub_.reset();
-  altitude_sl_pub_.reset();
-  altitude_barometric_pub_.reset();
+
   hms_info_table_pub_.reset();
 }
 
@@ -1421,46 +1203,6 @@ std::string
 PSDKWrapper::add_tf_prefix(const std::string &frame_name)
 {
   return params_.tf_frame_prefix + frame_name;
-}
-
-void
-PSDKWrapper::set_local_position_ref_cb(
-    const std::shared_ptr<Trigger::Request> request,
-    const std::shared_ptr<Trigger::Response> response)
-{
-  (void)request;
-  /** The check for the z_health flag is temporarly removed as it is always 0 in
-   * real scenarios (not HITL) */
-  if (current_state_.local_position.x_health &&
-      current_state_.local_position.y_health)
-  {
-    local_position_reference_.vector.x =
-        current_state_.local_position.position.x;
-    local_position_reference_.vector.y =
-        current_state_.local_position.position.y;
-    local_position_reference_.vector.z =
-        current_state_.local_position.position.z;
-    RCLCPP_INFO(get_logger(),
-                "Set local position reference to x:%f, y:%f, z:%f",
-                current_state_.local_position.position.x,
-                current_state_.local_position.position.y,
-                current_state_.local_position.position.z);
-    set_local_position_ref_ = true;
-    response->success = true;
-    return;
-  }
-  else
-  {
-    RCLCPP_ERROR(
-        get_logger(),
-        "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
-        current_state_.local_position.x_health,
-        current_state_.local_position.y_health,
-        current_state_.local_position.z_health);
-    set_local_position_ref_ = false;
-    response->success = false;
-    return;
-  }
 }
 
 }  // namespace psdk_ros2

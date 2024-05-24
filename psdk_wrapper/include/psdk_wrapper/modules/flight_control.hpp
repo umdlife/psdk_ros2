@@ -14,6 +14,7 @@
 #include "psdk_interfaces/srv/set_go_home_altitude.hpp"
 #include "psdk_interfaces/srv/set_home_from_gps.hpp"
 #include "psdk_interfaces/srv/set_obstacle_avoidance.hpp"
+#include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
 namespace psdk_ros2
 {
 class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
