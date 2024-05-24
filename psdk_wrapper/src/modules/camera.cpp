@@ -40,7 +40,6 @@ PSDKWrapper::init_camera_manager()
   if (get_camera_type(&camera_type, main_payload_index))
   {
     RCLCPP_INFO(get_logger(), "Camera type %s detected", camera_type.c_str());
-    publish_camera_transforms_ = true;
   }
   return true;
 }

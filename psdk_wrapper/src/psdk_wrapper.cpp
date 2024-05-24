@@ -17,6 +17,8 @@
 
 #include "psdk_wrapper/psdk_wrapper.hpp"
 
+std::shared_ptr<psdk_ros2::TelemetryModule> psdk_ros2::global_telemetry_ptr_;
+
 using namespace std::placeholders;  // NOLINT
 
 namespace psdk_ros2
@@ -86,17 +88,19 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
-  load_parameters();
   if (!set_environment())
   {
     return CallbackReturn::FAILURE;
   }
 
+  // Create module nodes
   flight_control_module_ =
       std::make_shared<FlightControlModule>("flight_control_node");
-  telemetry_module_ =
-      std::make_shared<TelemetryModule>("telemetry_node", global_ptr_);
-  current_state_.initialize_state();
+  telemetry_module_ = std::make_shared<TelemetryModule>("telemetry_node");
+  psdk_ros2::global_telemetry_ptr_ = telemetry_module_;
+
+  load_parameters();
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -121,18 +125,30 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  // Initialize and activate ROS elements only after the DJI modules are
-  // initialized
-  initialize_ros_elements();
-  activate_ros_elements();
-  subscribe_psdk_topics();
+  telemetry_module_->set_aircraft_base(aircraft_base_info_);
+  if (attached_camera_type_ != DJI_CAMERA_TYPE_UNKNOWN)
+  {
+    telemetry_module_->set_camera_type(attached_camera_type_);
+  }
 
+  // Configure the modules
+  initialize_ros_elements();
+  telemetry_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
   flight_control_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
+
+  // Activate the modules
+  activate_ros_elements();
+  telemetry_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
+  telemetry_module_->subscribe_psdk_topics();
   flight_control_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
+
+  // Start the threads
+  telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
   flight_control_thread_ =
       std::make_unique<utils::NodeThread>(flight_control_module_);
 
-  if (!flight_control_module_->init(current_state_.gps_position) &&
+  // Delay the initialization of some modules due to dependencies
+  if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
       is_flight_control_module_mandatory_)
   {
     rclcpp::shutdown();
@@ -145,11 +161,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  if (params_.publish_transforms)
-  {
-    publish_static_transforms();
-  }
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -158,14 +169,13 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
-  unsubscribe_psdk_topics();
+  telemetry_module_->unsubscribe_psdk_topics();
   deactivate_ros_elements();
 
+  // Deactivate the modules
   flight_control_module_->on_deactivate(
       rclcpp_lifecycle::State(2, "deactivate"));
-  flight_control_thread_.reset();
   telemetry_module_->on_deactivate(rclcpp_lifecycle::State(2, "deactivate"));
-  telemetry_thread_.reset();
   return CallbackReturn::SUCCESS;
 }
 
@@ -176,9 +186,7 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
   clean_ros_elements();
   flight_control_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
-  flight_control_thread_.reset();
   telemetry_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
-  telemetry_thread_.reset();
 
   return CallbackReturn::SUCCESS;
 }
@@ -198,7 +206,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   }
 
   // Deinitialize all remaining modules
-  if (!deinit_telemetry() || !flight_control_module_->deinit() ||
+  if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
       !deinit_camera_manager() || !deinit_gimbal_manager() ||
       !deinit_liveview() || !deinit_hms())
   {
@@ -365,46 +373,19 @@ void
 PSDKWrapper::load_parameters()
 {
   RCLCPP_INFO(get_logger(), "Loading parameters");
-  if (!get_parameter("app_name", params_.app_name))
-  {
-    RCLCPP_ERROR(get_logger(), "app_name param not defined");
-    exit(-1);
-  }
+  get_mandatory_param("app_name", params_.app_name);
   RCLCPP_INFO(get_logger(), "App name: %s", params_.app_name.c_str());
-  if (!get_parameter("app_id", params_.app_id))
-  {
-    RCLCPP_ERROR(get_logger(), "app_id param not defined");
-    exit(-1);
-  }
+  get_mandatory_param("app_id", params_.app_id);
   RCLCPP_INFO(get_logger(), "App id: %s", params_.app_id.c_str());
-  if (!get_parameter("app_key", params_.app_key))
-  {
-    RCLCPP_ERROR(get_logger(), "app_key param not defined");
-    exit(-1);
-  }
+  get_mandatory_param("app_key", params_.app_key);
   RCLCPP_INFO(get_logger(), "App key: %s", params_.app_key.c_str());
-  if (!get_parameter("app_license", params_.app_license))
-  {
-    RCLCPP_ERROR(get_logger(), "app_license param not defined");
-    exit(-1);
-  }
-  if (!get_parameter("developer_account", params_.developer_account))
-  {
-    RCLCPP_ERROR(get_logger(), "developer_account param not defined");
-    exit(-1);
-  }
-  if (!get_parameter("baudrate", params_.baudrate))
-  {
-    RCLCPP_ERROR(get_logger(), "baudrate param not defined");
-    exit(-1);
-  }
+  get_mandatory_param("app_license", params_.app_license);
+  get_mandatory_param("developer_account", params_.developer_account);
+  get_mandatory_param("baudrate", params_.baudrate);
   RCLCPP_INFO(get_logger(), "Baudrate: %s", params_.baudrate.c_str());
-  if (!get_parameter("link_config_file_path", params_.link_config_file_path))
-  {
-    RCLCPP_WARN(get_logger(),
-                "link_config_file_path param not defined, using default %s",
-                params_.link_config_file_path.c_str());
-  }
+
+  get_non_mandatory_param("link_config_file_path",
+                          params_.link_config_file_path);
   RCLCPP_INFO(get_logger(), "Using connection configuration file: %s",
               params_.link_config_file_path.c_str());
 
@@ -416,333 +397,77 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
   get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
 
-  if (!get_parameter("tf_frame_prefix", params_.tf_frame_prefix))
-  {
-    RCLCPP_WARN(get_logger(),
-                "tf_frame_prefix param not defined, using default one: %s",
-                params_.tf_frame_prefix.c_str());
-  }
-  if (!get_parameter("imu_frame", params_.imu_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "imu_frame param not defined, using default one: %s",
-                params_.imu_frame.c_str());
-  }
-  params_.imu_frame = add_tf_prefix(params_.imu_frame);
-  if (!get_parameter("body_frame", params_.body_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "body_frame param not defined, using default one: %s",
-                params_.body_frame.c_str());
-  }
-  params_.body_frame = add_tf_prefix(params_.body_frame);
-  if (!get_parameter("map_frame", params_.map_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "map_frame param not defined, using default one: %s",
-                params_.map_frame.c_str());
-  }
-  params_.map_frame = add_tf_prefix(params_.map_frame);
-  if (!get_parameter("gimbal_frame", params_.gimbal_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "gimbal_frame param not defined, using default one: %s",
-                params_.gimbal_frame.c_str());
-  }
-  params_.gimbal_frame = add_tf_prefix(params_.gimbal_frame);
-  if (!get_parameter("camera_frame", params_.camera_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "camera_frame param not defined, using default one: %s",
-                params_.camera_frame.c_str());
-  }
-  params_.camera_frame = add_tf_prefix(params_.camera_frame);
-  if (!get_parameter("publish_transforms", params_.publish_transforms))
-  {
-    RCLCPP_WARN(get_logger(),
-                "publish_transforms param not defined, using default one: %d",
-                params_.publish_transforms);
-  }
-  if (!get_parameter("hms_return_codes_path", params_.hms_return_codes_path))
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "hms_return_codes_path param not defined, using default one: %s",
-        params_.hms_return_codes_path.c_str());
-  }
-  if (!get_parameter("file_path", params_.file_path))
-  {
-    RCLCPP_WARN(get_logger(),
-                "file_path param not defined, using default one: %s",
-                params_.file_path.c_str());
-  }
-
-  // Get data frequency
-  if (!get_parameter("data_frequency.imu", params_.imu_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "imu frequency param not defined");
-    exit(-1);
-  }
-  if (params_.imu_frequency > IMU_TOPIC_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the imu topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        IMU_TOPIC_MAX_FREQ);
-    params_.imu_frequency = IMU_TOPIC_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.attitude", params_.attitude_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "attitude param not defined");
-    exit(-1);
-  }
-  if (params_.attitude_frequency > ATTITUDE_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the attitude topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        ATTITUDE_TOPICS_MAX_FREQ);
-    params_.attitude_frequency = ATTITUDE_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.acceleration",
-                     params_.acceleration_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "acceleration param not defined");
-    exit(-1);
-  }
-  if (params_.acceleration_frequency > ACCELERATION_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the acceleration topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                ACCELERATION_TOPICS_MAX_FREQ);
-    params_.acceleration_frequency = ACCELERATION_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.velocity", params_.velocity_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "velocity param not defined");
-    exit(-1);
-  }
-  if (params_.velocity_frequency > VELOCITY_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the velocity topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        VELOCITY_TOPICS_MAX_FREQ);
-    params_.velocity_frequency = VELOCITY_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.angular_velocity",
-                     params_.angular_rate_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
-    exit(-1);
-  }
-  if (params_.angular_rate_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the angular velocity topics is higher "
-                "than the maximum "
-                "allowed %d. Tha maximum value is set",
-                ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
-    params_.angular_rate_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.position", params_.position_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "position param not defined");
-    exit(-1);
-  }
-  if (params_.position_frequency > POSITION_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the position topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        POSITION_TOPICS_MAX_FREQ);
-    params_.position_frequency = POSITION_TOPICS_MAX_FREQ;
-  }
-  if (!get_parameter("data_frequency.altitude", params_.altitude_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "altitude frequency param not defined");
-    exit(-1);
-  }
-  if (params_.altitude_frequency > ALTITUDE_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the altitude topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        ALTITUDE_TOPICS_MAX_FREQ);
-    params_.altitude_frequency = ALTITUDE_TOPICS_MAX_FREQ;
-  }
-  if (!get_parameter("data_frequency.gps_fused_position",
-                     params_.gps_fused_position_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "gps_fused_position param not defined");
-    exit(-1);
-  }
-  if (params_.gps_fused_position_frequency > GPS_FUSED_POSITION_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the GPS fused position is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
-    params_.gps_fused_position_frequency = GPS_DATA_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.gps_data", params_.gps_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "gps_data param not defined");
-    exit(-1);
-  }
-  if (params_.gps_data_frequency > GPS_DATA_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the GPS topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        GPS_DATA_TOPICS_MAX_FREQ);
-    params_.gps_data_frequency = GPS_DATA_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.rtk_data", params_.rtk_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "rtk_data param not defined");
-    exit(-1);
-  }
-  if (params_.rtk_data_frequency > RTK_DATA_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the RTK topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        RTK_DATA_TOPICS_MAX_FREQ);
-    params_.rtk_data_frequency = RTK_DATA_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.magnetometer",
-                     params_.magnetometer_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "magnetometer param not defined");
-    exit(-1);
-  }
-  if (params_.magnetometer_frequency > MAGNETOMETER_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the magnetometer topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                MAGNETOMETER_TOPICS_MAX_FREQ);
-    params_.magnetometer_frequency = MAGNETOMETER_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.rc_channels_data",
-                     params_.rc_channels_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "rc_channels_data param not defined");
-    exit(-1);
-  }
-  if (params_.rc_channels_data_frequency > RC_CHANNELS_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the RC channel topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                RC_CHANNELS_TOPICS_MAX_FREQ);
-    params_.rc_channels_data_frequency = RC_CHANNELS_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.esc_data_frequency",
-                     params_.esc_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "esc_data_frequency param not defined");
-    exit(-1);
-  }
-  if (params_.esc_data_frequency > ESC_DATA_TOPICS_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the ESC channel topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                ESC_DATA_TOPICS_FREQ);
-    params_.esc_data_frequency = ESC_DATA_TOPICS_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.gimbal_data",
-                     params_.gimbal_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "gimbal_data param not defined");
-    exit(-1);
-  }
-  if (params_.gimbal_data_frequency > GIMBAL_DATA_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the gimbal topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        GIMBAL_DATA_TOPICS_MAX_FREQ);
-    params_.gimbal_data_frequency = GIMBAL_DATA_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.flight_status",
-                     params_.flight_status_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "flight_status param not defined");
-    exit(-1);
-  }
-  if (params_.flight_status_frequency > FLIGHT_STATUS_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the flight status topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                FLIGHT_STATUS_TOPICS_MAX_FREQ);
-    params_.flight_status_frequency = FLIGHT_STATUS_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.battery_level",
-                     params_.battery_level_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "battery_level param not defined");
-    exit(-1);
-  }
-  if (params_.battery_level_frequency > BATTERY_STATUS_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the battery status topics is higher "
-                "than the maximum "
-                "allowed %d. Tha maximum value is set",
-                BATTERY_STATUS_TOPICS_MAX_FREQ);
-    params_.battery_level_frequency = BATTERY_STATUS_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.control_information",
-                     params_.control_information_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "control_information param not defined");
-    exit(-1);
-  }
-  if (params_.control_information_frequency > CONTROL_DATA_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the control topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        CONTROL_DATA_TOPICS_MAX_FREQ);
-    params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
-  }
-
+  get_non_mandatory_param("tf_frame_prefix",
+                          telemetry_module_->params_.tf_frame_prefix);
+  get_non_mandatory_param("imu_frame", telemetry_module_->params_.imu_frame);
+  get_non_mandatory_param("body_frame", telemetry_module_->params_.body_frame);
+  get_non_mandatory_param("map_frame", telemetry_module_->params_.map_frame);
+  get_non_mandatory_param("gimbal_frame",
+                          telemetry_module_->params_.gimbal_frame);
+  get_non_mandatory_param("camera_frame",
+                          telemetry_module_->params_.camera_frame);
+  get_parameter("publish_transforms",
+                telemetry_module_->params_.publish_transforms);
+  get_non_mandatory_param("hms_return_codes_path",
+                          params_.hms_return_codes_path);
+  get_non_mandatory_param("file_path", params_.file_path);
   get_parameter("num_of_initialization_retries",
                 num_of_initialization_retries_);
+  // Get data frequency
+  get_and_validate_frequency("data_frequency.imu",
+                             telemetry_module_->params_.imu_frequency,
+                             IMU_TOPIC_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.attitude",
+                             telemetry_module_->params_.attitude_frequency,
+                             ATTITUDE_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.acceleration",
+                             telemetry_module_->params_.acceleration_frequency,
+                             ACCELERATION_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.velocity",
+                             telemetry_module_->params_.velocity_frequency,
+                             VELOCITY_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.angular_velocity",
+                             telemetry_module_->params_.angular_rate_frequency,
+                             ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.position",
+                             telemetry_module_->params_.position_frequency,
+                             POSITION_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.altitude",
+                             telemetry_module_->params_.altitude_frequency,
+                             ALTITUDE_TOPICS_MAX_FREQ);
+  get_and_validate_frequency(
+      "data_frequency.gps_fused_position",
+      telemetry_module_->params_.gps_fused_position_frequency,
+      GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.gps_data",
+                             telemetry_module_->params_.gps_data_frequency,
+                             GPS_DATA_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.rtk_data",
+                             telemetry_module_->params_.rtk_data_frequency,
+                             RTK_DATA_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.magnetometer",
+                             telemetry_module_->params_.magnetometer_frequency,
+                             MAGNETOMETER_TOPICS_MAX_FREQ);
+  get_and_validate_frequency(
+      "data_frequency.rc_channels_data",
+      telemetry_module_->params_.rc_channels_data_frequency,
+      RC_CHANNELS_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.esc_data_frequency",
+                             telemetry_module_->params_.esc_data_frequency,
+                             ESC_DATA_TOPICS_FREQ);
+  get_and_validate_frequency("data_frequency.gimbal_data",
+                             telemetry_module_->params_.gimbal_data_frequency,
+                             GIMBAL_DATA_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.flight_status",
+                             telemetry_module_->params_.flight_status_frequency,
+                             FLIGHT_STATUS_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.battery_level",
+                             telemetry_module_->params_.battery_level_frequency,
+                             BATTERY_STATUS_TOPICS_MAX_FREQ);
+  get_and_validate_frequency(
+      "data_frequency.control_information",
+      telemetry_module_->params_.control_information_frequency,
+      CONTROL_DATA_TOPICS_MAX_FREQ);
 }
 
 bool
@@ -841,12 +566,6 @@ void
 PSDKWrapper::initialize_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Initializing ROS publishers");
-
-  // Create TF broadcasters
-  tf_static_broadcaster_ =
-      std::make_shared<tf2_ros::StaticTransformBroadcaster>(shared_from_this());
-  tf_broadcaster_ =
-      std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
 
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
@@ -1060,10 +779,6 @@ PSDKWrapper::clean_ros_elements()
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();
 
-  // TF broadcasters
-  tf_static_broadcaster_.reset();
-  tf_broadcaster_.reset();
-
   // Publishers
 
   main_camera_stream_pub_.reset();
@@ -1072,114 +787,12 @@ PSDKWrapper::clean_ros_elements()
   hms_info_table_pub_.reset();
 }
 
-/*@todo Generalize the functions related to TFs for different copter, gimbal
- * and payload types and move it to a separate dedicated file
- */
-void
-PSDKWrapper::publish_static_transforms()
-{
-  RCLCPP_INFO(get_logger(), "Publishing static transforms");
-
-  if (aircraft_base_info_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK)
-  {
-    geometry_msgs::msg::TransformStamped tf_base_link_gimbal;
-    tf_base_link_gimbal.header.stamp = this->get_clock()->now();
-    tf_base_link_gimbal.header.frame_id = params_.body_frame;
-    tf_base_link_gimbal.child_frame_id = params_.gimbal_frame;
-    tf_base_link_gimbal.transform.translation.x =
-        psdk_utils::T_M300_BASE_GIMBAL[0];
-    tf_base_link_gimbal.transform.translation.y =
-        psdk_utils::T_M300_BASE_GIMBAL[1];
-    tf_base_link_gimbal.transform.translation.z =
-        psdk_utils::T_M300_BASE_GIMBAL[2];
-    tf_base_link_gimbal.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
-    tf_base_link_gimbal.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
-    tf_base_link_gimbal.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
-    tf_base_link_gimbal.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
-    tf_static_broadcaster_->sendTransform(tf_base_link_gimbal);
-  }
-
-  if (publish_camera_transforms_)
-  {
-    if (attached_camera_type_ == DJI_CAMERA_TYPE_H20)
-    {
-      // Publish TF between H20 - Zoom lens
-      geometry_msgs::msg::TransformStamped tf_H20_zoom;
-      tf_H20_zoom.header.stamp = this->get_clock()->now();
-      tf_H20_zoom.header.frame_id = params_.camera_frame;
-      tf_H20_zoom.child_frame_id = add_tf_prefix("h20_zoom_optical_link");
-      tf_H20_zoom.transform.translation.x = psdk_utils::T_H20_ZOOM[0];
-      tf_H20_zoom.transform.translation.y = psdk_utils::T_H20_ZOOM[1];
-      tf_H20_zoom.transform.translation.z = psdk_utils::T_H20_ZOOM[2];
-      tf_H20_zoom.transform.rotation.x = psdk_utils::Q_FLU2OPTIC.getX();
-      tf_H20_zoom.transform.rotation.y = psdk_utils::Q_FLU2OPTIC.getY();
-      tf_H20_zoom.transform.rotation.z = psdk_utils::Q_FLU2OPTIC.getZ();
-      tf_H20_zoom.transform.rotation.w = psdk_utils::Q_FLU2OPTIC.getW();
-      tf_static_broadcaster_->sendTransform(tf_H20_zoom);
-      // Publish TF between H20 - Wide lens
-      geometry_msgs::msg::TransformStamped tf_H20_wide;
-      tf_H20_wide.header.stamp = this->get_clock()->now();
-      tf_H20_wide.header.frame_id = params_.camera_frame;
-      tf_H20_wide.child_frame_id = add_tf_prefix("h20_wide_optical_link");
-      tf_H20_wide.transform.translation.x = psdk_utils::T_H20_WIDE[0];
-      tf_H20_wide.transform.translation.y = psdk_utils::T_H20_WIDE[1];
-      tf_H20_wide.transform.translation.z = psdk_utils::T_H20_WIDE[2];
-      tf_H20_wide.transform.rotation.x = psdk_utils::Q_FLU2OPTIC.getX();
-      tf_H20_wide.transform.rotation.y = psdk_utils::Q_FLU2OPTIC.getY();
-      tf_H20_wide.transform.rotation.z = psdk_utils::Q_FLU2OPTIC.getZ();
-      tf_H20_wide.transform.rotation.w = psdk_utils::Q_FLU2OPTIC.getW();
-      tf_static_broadcaster_->sendTransform(tf_H20_wide);
-    }
-  }
-}
-
-void
-PSDKWrapper::publish_dynamic_transforms()
-{
-  if (attached_camera_type_ == DJI_CAMERA_TYPE_H20)
-  {
-    // Publish TF between Gimbal - H20
-    geometry_msgs::msg::TransformStamped tf_gimbal_H20;
-    tf_gimbal_H20.header.stamp = this->get_clock()->now();
-    tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
-    tf_gimbal_H20.child_frame_id = params_.camera_frame;
-    tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
-    tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
-    tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
-
-    tf2::Quaternion q_gimbal_h20;
-    q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
-                        current_state_.gimbal_angles.vector.y,
-                        get_yaw_gimbal_camera());
-    tf_gimbal_H20.transform.rotation.x = q_gimbal_h20.getX();
-    tf_gimbal_H20.transform.rotation.y = q_gimbal_h20.getY();
-    tf_gimbal_H20.transform.rotation.z = q_gimbal_h20.getZ();
-    tf_gimbal_H20.transform.rotation.w = q_gimbal_h20.getW();
-    tf_broadcaster_->sendTransform(tf_gimbal_H20);
-  }
-}
-
-double
-PSDKWrapper::get_yaw_gimbal_camera()
-{
-  /* Get current copter yaw wrt. to East */
-  tf2::Matrix3x3 rotation_mat(current_state_.attitude);
-  double current_roll;
-  double current_pitch;
-  double current_yaw;
-  rotation_mat.getRPY(current_roll, current_pitch, current_yaw);
-
-  /* Get current gimbal yaw wrt to East */
-  double current_gimbal_yaw = current_state_.gimbal_angles.vector.z;
-  return current_gimbal_yaw - current_yaw;
-}
-
 bool
 PSDKWrapper::initialize_psdk_modules()
 {
   using ModuleInitializer = std::pair<std::function<bool()>, bool>;
   std::vector<ModuleInitializer> module_initializers = {
-      {std::bind(&PSDKWrapper::init_telemetry, this),
+      {std::bind(&TelemetryModule::init, telemetry_module_),
        is_telemetry_module_mandatory_},
       {std::bind(&PSDKWrapper::init_camera_manager, this),
        is_camera_module_mandatory_},
@@ -1199,10 +812,45 @@ PSDKWrapper::initialize_psdk_modules()
   return true;
 }
 
-std::string
-PSDKWrapper::add_tf_prefix(const std::string &frame_name)
+void
+PSDKWrapper::get_and_validate_frequency(const std::string &param_name,
+                                        int &frequency, const int max_frequency)
 {
-  return params_.tf_frame_prefix + frame_name;
+  if (!get_parameter(param_name, frequency))
+  {
+    RCLCPP_ERROR(get_logger(), "%s param not defined", param_name.c_str());
+    exit(-1);
+  }
+  if (frequency > max_frequency)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for %s is higher than the maximum allowed "
+                "%d. The maximum value is set",
+                param_name.c_str(), max_frequency);
+    frequency = max_frequency;
+  }
+}
+
+void
+PSDKWrapper::get_non_mandatory_param(const std::string &param_name,
+                                     std::string &param_string)
+{
+  if (!get_parameter(param_name, param_string))
+  {
+    RCLCPP_WARN(get_logger(), "%s param not defined, using default one: %s",
+                param_name.c_str(), param_string.c_str());
+  }
+}
+
+void
+PSDKWrapper::get_mandatory_param(const std::string &param_name,
+                                 std::string &param_string)
+{
+  if (!get_parameter(param_name, param_string))
+  {
+    RCLCPP_ERROR(get_logger(), "%s param not defined", param_name.c_str());
+    exit(-1);
+  }
 }
 
 }  // namespace psdk_ros2

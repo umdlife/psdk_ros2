@@ -25,8 +25,6 @@
 #include <dji_logger.h>
 #include <dji_platform.h>
 #include <dji_typedef.h>
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <tf2_ros/transform_broadcaster.h>
 
 #include <cmath>
 #include <fstream>
@@ -201,32 +199,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string developer_account;
     std::string baudrate;
     std::string link_config_file_path;
-    std::string tf_frame_prefix;
-    std::string imu_frame;
-    std::string body_frame;
-    std::string map_frame;
-    std::string gimbal_frame;
-    std::string camera_frame;
     std::string hms_return_codes_path;
     std::string file_path;
-    bool publish_transforms;
-    int imu_frequency;
-    int attitude_frequency;
-    int acceleration_frequency;
-    int velocity_frequency;
-    int angular_rate_frequency;
-    int position_frequency;
-    int altitude_frequency;
-    int gps_fused_position_frequency;
-    int gps_data_frequency;
-    int rtk_data_frequency;
-    int magnetometer_frequency;
-    int rc_channels_data_frequency;
-    int gimbal_data_frequency;
-    int flight_status_frequency;
-    int battery_level_frequency;
-    int control_information_frequency;
-    int esc_data_frequency;
   };
 
   std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder*>
@@ -304,13 +278,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool deinit_hms();
 
   /**
-   * @brief Get the DJI frequency object associated with a certain frequency
-   * @param frequency variable to store the output frequency
-   * @return E_DjiDataSubscriptionTopicFreq
-   */
-  E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
-
-  /**
    * @brief Initializes all ROS elements (e.g. subscribers, publishers,
    * services)
    */
@@ -330,22 +297,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @brief Cleans all ROS elements
    */
   void clean_ros_elements();
-  /**
-   * @brief Subscribe to telemetry topics exposed by the DJI PSDK library
-   */
-  void subscribe_psdk_topics();
-
-  /**
-   * @brief Unsubscribe the telemetry topics
-   */
-  void unsubscribe_psdk_topics();
-
-  friend T_DjiReturnCode c_gimbal_angles_callback(
-      const uint8_t* data, uint16_t data_size,
-      const T_DjiDataTimestamp* timestamp);
-  friend T_DjiReturnCode c_gimbal_status_callback(
-      const uint8_t* data, uint16_t data_size,
-      const T_DjiDataTimestamp* timestamp);
 
   friend T_DjiReturnCode c_hms_callback(T_DjiHmsInfoTable hms_info_table);
   friend T_DjiReturnCode c_camera_manager_download_file_data_callback(
@@ -359,24 +310,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   friend void c_LiveviewConvertH264ToRgbCallback(
       E_DjiLiveViewCameraPosition position, const uint8_t* buffer,
       uint32_t buffer_length);
-
-  T_DjiReturnCode gimbal_angles_callback(const uint8_t* data,
-                                         uint16_t data_size,
-                                         const T_DjiDataTimestamp* timestamp);
-  /**
-   * @brief Retrieves the gimbal status data provided by DJI PSDK lib and
-   * publishes it on a ROS 2 topic. Provides the gimbal status data following
-   * data up to 50 Hz. More information regarding the gimbal status data can be
-   * found in psdk_interfaces::msg::GimbalStatus.
-   * @param data pointer to T_DjiFcSubscriptionGimbalStatus data
-   * @param data_size size of data. Unused parameter.
-   * @param timestamp  timestamp provided by DJI
-   * @return T_DjiReturnCode error code indicating if the subscription has been
-   * done correctly
-   */
-  T_DjiReturnCode gimbal_status_callback(const uint8_t* data,
-                                         uint16_t data_size,
-                                         const T_DjiDataTimestamp* timestamp);
 
   /**
    * @brief Callback function registered to retrieve HMS information.
@@ -767,21 +700,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   bool get_camera_type(std::string* camera_type,
                        const E_DjiMountPosition index);
-  /**
-   * @brief Publish all static transforms for a given copter
-   */
-  void publish_static_transforms();
-  /**
-   * @brief Method which publishes the dynamic transforms for a given copter
-   */
-  void publish_dynamic_transforms();
-  /**
-   * @brief Method which computes the yaw angle difference between the gimbal
-   * (static frame attached to the robot) and a given camera payload attached to
-   * the gimbal
-   * @return the yaw angle difference between these two frames.
-   */
-  double get_yaw_gimbal_camera();
 
   /* ROS 2 publishers */
   rclcpp_lifecycle::LifecyclePublisher<
@@ -955,49 +873,19 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
       const T_DjiHmsInfoTable& hms_info_table, const nlohmann::json& codes,
       const char* language = "en");
 
-  /**
-   * @brief Method to generate a tf adding the tf_prefix to the frame name
-   * @param frame_name name of the frame to be transformed
-   * @return string with the tf name
-   */
-  std::string add_tf_prefix(const std::string& frame_name);
+  void get_and_validate_frequency(const std::string& param_name, int& frequency,
+                                  const int max_frequency);
+
+  void get_non_mandatory_param(const std::string& param_name,
+                               std::string& param_string);
+  void get_mandatory_param(const std::string& param_name,
+                           std::string& param_string);
 
   /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
 
-  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-
-  bool set_local_position_ref_{false};
   FILE* s_downloadMediaFile_ = NULL;
-  struct CopterState
-  {
-    psdk_interfaces::msg::PositionFused local_position;
-    sensor_msgs::msg::NavSatFix gps_position;
-    tf2::Quaternion attitude;
-    geometry_msgs::msg::Vector3Stamped gimbal_angles;
-
-    void
-    initialize_state()
-    {
-      local_position.position.x = 0.0;
-      local_position.position.y = 0.0;
-      local_position.position.z = 0.0;
-
-      gps_position.latitude = 40.0;
-      gps_position.longitude = 2.0;
-      gps_position.altitude = 100.0;
-
-      attitude.setRPY(0.0, 0.0, 0.0);
-
-      gimbal_angles.vector.x = 0.0;
-      gimbal_angles.vector.y = 0.0;
-      gimbal_angles.vector.z = 0.0;
-    }
-  };
-
-  CopterState current_state_;
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 
@@ -1009,7 +897,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   std::string file_path_to_download_;
 
   nlohmann::json hms_return_codes_json_;
-  bool publish_camera_transforms_{false};
   bool decode_stream_{true};
   int num_of_initialization_retries_{0};
 

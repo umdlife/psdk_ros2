@@ -18,14 +18,12 @@
 #include "psdk_wrapper/modules/telemetry.hpp"
 namespace psdk_ros2
 {
-TelemetryModule::TelemetryModule(const std::string &name,
-                                 const std::shared_ptr<PSDKWrapper> global_ptr)
+TelemetryModule::TelemetryModule(const std::string &name)
     : rclcpp_lifecycle::LifecycleNode(
           name, "",
           rclcpp::NodeOptions().arguments(
               {"--ros-args", "-r",
-               name + ":" + std::string("__node:=") + name})),
-      global_ptr_(global_ptr)
+               name + ":" + std::string("__node:=") + name}))
 
 {
   RCLCPP_INFO(get_logger(), "Creating TelemetryModule...");
@@ -41,6 +39,8 @@ TelemetryModule::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Configuring TelemetryModule...");
+
+  // Create ROS 2 publishers
   attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
       "psdk_ros2/attitude", 10);
   imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("psdk_ros2/imu", 10);
@@ -136,10 +136,18 @@ TelemetryModule::on_configure(const rclcpp_lifecycle::State &state)
   altitude_barometric_pub_ = create_publisher<std_msgs::msg::Float32>(
       "psdk_ros2/altitude_barometric", 10);
 
+  // Create TF broadcasters
+  tf_static_broadcaster_ =
+      std::make_shared<tf2_ros::StaticTransformBroadcaster>(shared_from_this());
+  tf_broadcaster_ =
+      std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
+
   set_local_position_ref_srv_ = create_service<Trigger>(
       "psdk_ros2/set_local_position_ref",
       std::bind(&TelemetryModule::set_local_position_ref_cb, this,
                 std::placeholders::_1, std::placeholders::_2));
+
+  current_state_.initialize_state();
 
   return CallbackReturn::SUCCESS;
 }
@@ -149,6 +157,18 @@ TelemetryModule::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Activating TelemetryModule...");
+
+  params_.imu_frame = add_tf_prefix(params_.imu_frame);
+  params_.body_frame = add_tf_prefix(params_.body_frame);
+  params_.map_frame = add_tf_prefix(params_.map_frame);
+  params_.gimbal_frame = add_tf_prefix(params_.gimbal_frame);
+  params_.camera_frame = add_tf_prefix(params_.camera_frame);
+
+  if (params_.publish_transforms)
+  {
+    publish_static_transforms();
+  }
+
   attitude_pub_->on_activate();
   imu_pub_->on_activate();
   velocity_ground_fused_pub_->on_activate();
@@ -255,6 +275,11 @@ TelemetryModule::on_cleanup(const rclcpp_lifecycle::State &state)
   RCLCPP_INFO(get_logger(), "Cleaning up TelemetryModule...");
   set_local_position_ref_srv_.reset();
 
+  // TF broadcasters
+  tf_static_broadcaster_.reset();
+  tf_broadcaster_.reset();
+
+  // Publishers
   attitude_pub_.reset();
   imu_pub_.reset();
   velocity_ground_fused_pub_.reset();
@@ -307,6 +332,7 @@ TelemetryModule::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Shutting down TelemetryModule...");
+  global_telemetry_ptr_.reset();
   return CallbackReturn::SUCCESS;
 }
 
@@ -353,298 +379,322 @@ T_DjiReturnCode
 c_attitude_callback(const uint8_t *data, uint16_t data_size,
                     const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->attitude_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->attitude_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_velocity_callback(const uint8_t *data, uint16_t data_size,
                     const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->velocity_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->velocity_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_angular_rate_ground_fused_callback(const uint8_t *data, uint16_t data_size,
                                      const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->angular_rate_ground_fused_callback(data, data_size,
-                                                         timestamp);
+  return global_telemetry_ptr_->angular_rate_ground_fused_callback(
+      data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_angular_rate_body_raw_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->angular_rate_body_raw_callback(data, data_size,
-                                                     timestamp);
+  return global_telemetry_ptr_->angular_rate_body_raw_callback(data, data_size,
+                                                               timestamp);
 }
 
 T_DjiReturnCode
 c_imu_callback(const uint8_t *data, uint16_t data_size,
                const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->imu_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->imu_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_vo_position_callback(const uint8_t *data, uint16_t data_size,
                        const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->vo_position_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->vo_position_callback(data, data_size,
+                                                     timestamp);
 }
 
 T_DjiReturnCode
 c_gps_fused_callback(const uint8_t *data, uint16_t data_size,
                      const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->gps_fused_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->gps_fused_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_gps_position_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->gps_position_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->gps_position_callback(data, data_size,
+                                                      timestamp);
 }
 
 T_DjiReturnCode
 c_gps_velocity_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->gps_velocity_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->gps_velocity_callback(data, data_size,
+                                                      timestamp);
 }
 
 T_DjiReturnCode
 c_gps_details_callback(const uint8_t *data, uint16_t data_size,
                        const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->gps_details_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->gps_details_callback(data, data_size,
+                                                     timestamp);
 }
 
 T_DjiReturnCode
 c_gps_signal_callback(const uint8_t *data, uint16_t data_size,
                       const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->gps_signal_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->gps_signal_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_gps_control_callback(const uint8_t *data, uint16_t data_size,
                        const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->gps_control_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->gps_control_callback(data, data_size,
+                                                     timestamp);
 }
 
 T_DjiReturnCode
 c_rtk_position_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->rtk_position_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->rtk_position_callback(data, data_size,
+                                                      timestamp);
 }
 T_DjiReturnCode
 c_rtk_velocity_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->rtk_velocity_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->rtk_velocity_callback(data, data_size,
+                                                      timestamp);
 }
 T_DjiReturnCode
 c_rtk_yaw_callback(const uint8_t *data, uint16_t data_size,
                    const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->rtk_yaw_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->rtk_yaw_callback(data, data_size, timestamp);
 }
 T_DjiReturnCode
 c_rtk_position_info_callback(const uint8_t *data, uint16_t data_size,
                              const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->rtk_position_info_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->rtk_position_info_callback(data, data_size,
+                                                           timestamp);
 }
 T_DjiReturnCode
 c_rtk_yaw_info_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->rtk_yaw_info_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->rtk_yaw_info_callback(data, data_size,
+                                                      timestamp);
 }
 T_DjiReturnCode
 c_rtk_connection_status_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->rtk_connection_status_callback(data, data_size,
-                                                     timestamp);
+  return global_telemetry_ptr_->rtk_connection_status_callback(data, data_size,
+                                                               timestamp);
 }
 T_DjiReturnCode
 c_magnetometer_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->magnetometer_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->magnetometer_callback(data, data_size,
+                                                      timestamp);
 }
 T_DjiReturnCode
 c_rc_callback(const uint8_t *data, uint16_t data_size,
               const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->rc_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->rc_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_esc_callback(const uint8_t *data, uint16_t data_size,
                const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->esc_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->esc_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_rc_connection_status_callback(const uint8_t *data, uint16_t data_size,
                                 const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->rc_connection_status_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->rc_connection_status_callback(data, data_size,
+                                                              timestamp);
 }
 
 T_DjiReturnCode
 c_gimbal_angles_callback(const uint8_t *data, uint16_t data_size,
                          const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->gimbal_angles_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->gimbal_angles_callback(data, data_size,
+                                                       timestamp);
 }
 
 T_DjiReturnCode
 c_gimbal_status_callback(const uint8_t *data, uint16_t data_size,
                          const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->gimbal_status_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->gimbal_status_callback(data, data_size,
+                                                       timestamp);
 }
 
 T_DjiReturnCode
 c_flight_status_callback(const uint8_t *data, uint16_t data_size,
                          const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->flight_status_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->flight_status_callback(data, data_size,
+                                                       timestamp);
 }
 
 T_DjiReturnCode
 c_display_mode_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->display_mode_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->display_mode_callback(data, data_size,
+                                                      timestamp);
 }
 
 T_DjiReturnCode
 c_landing_gear_status_callback(const uint8_t *data, uint16_t data_size,
                                const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->landing_gear_status_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->landing_gear_status_callback(data, data_size,
+                                                             timestamp);
 }
 
 T_DjiReturnCode
 c_motor_start_error_callback(const uint8_t *data, uint16_t data_size,
                              const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->motor_start_error_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->motor_start_error_callback(data, data_size,
+                                                           timestamp);
 }
 
 T_DjiReturnCode
 c_flight_anomaly_callback(const uint8_t *data, uint16_t data_size,
                           const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->flight_anomaly_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->flight_anomaly_callback(data, data_size,
+                                                        timestamp);
 }
 
 T_DjiReturnCode
 c_battery_callback(const uint8_t *data, uint16_t data_size,
                    const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->battery_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->battery_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_height_fused_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->height_fused_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->height_fused_callback(data, data_size,
+                                                      timestamp);
 }
 T_DjiReturnCode
 c_control_mode_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->control_mode_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->control_mode_callback(data, data_size,
+                                                      timestamp);
 }
 T_DjiReturnCode
 c_home_point_callback(const uint8_t *data, uint16_t data_size,
                       const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->home_point_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->home_point_callback(data, data_size, timestamp);
 }
 T_DjiReturnCode
 c_home_point_status_callback(const uint8_t *data, uint16_t data_size,
                              const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->home_point_status_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->home_point_status_callback(data, data_size,
+                                                           timestamp);
 }
 
 T_DjiReturnCode
 c_acceleration_ground_fused_callback(const uint8_t *data, uint16_t data_size,
                                      const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->acceleration_ground_fused_callback(data, data_size,
-                                                         timestamp);
+  return global_telemetry_ptr_->acceleration_ground_fused_callback(
+      data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_acceleration_body_fused_callback(const uint8_t *data, uint16_t data_size,
                                    const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->acceleration_body_fused_callback(data, data_size,
-                                                       timestamp);
+  return global_telemetry_ptr_->acceleration_body_fused_callback(
+      data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_acceleration_body_raw_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->acceleration_body_raw_callback(data, data_size,
-                                                     timestamp);
+  return global_telemetry_ptr_->acceleration_body_raw_callback(data, data_size,
+                                                               timestamp);
 }
 T_DjiReturnCode
 c_avoid_data_callback(const uint8_t *data, uint16_t data_size,
                       const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->avoid_data_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->avoid_data_callback(data, data_size, timestamp);
 }
 
 T_DjiReturnCode
 c_altitude_sl_callback(const uint8_t *data, uint16_t data_size,
                        const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->altitude_sl_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->altitude_sl_callback(data, data_size,
+                                                     timestamp);
 }
 
 T_DjiReturnCode
 c_altitude_barometric_callback(const uint8_t *data, uint16_t data_size,
                                const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->altitude_barometric_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->altitude_barometric_callback(data, data_size,
+                                                             timestamp);
 }
 
 T_DjiReturnCode
 c_single_battery_index1_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->single_battery_index1_callback(data, data_size,
-                                                     timestamp);
+  return global_telemetry_ptr_->single_battery_index1_callback(data, data_size,
+                                                               timestamp);
 }
 
 T_DjiReturnCode
 c_single_battery_index2_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->single_battery_index2_callback(data, data_size,
-                                                     timestamp);
+  return global_telemetry_ptr_->single_battery_index2_callback(data, data_size,
+                                                               timestamp);
 }
 
 T_DjiReturnCode
 c_home_point_altitude_callback(const uint8_t *data, uint16_t data_size,
                                const T_DjiDataTimestamp *timestamp)
 {
-  return global_ptr_->home_point_altitude_callback(data, data_size, timestamp);
+  return global_telemetry_ptr_->home_point_altitude_callback(data, data_size,
+                                                             timestamp);
 }
 
 T_DjiReturnCode
@@ -2397,6 +2447,128 @@ TelemetryModule::set_local_position_ref_cb(
     response->success = false;
     return;
   }
+}
+
+/*@todo Generalize the functions related to TFs for different copter, gimbal
+ * and payload types and move it to a separate dedicated file
+ */
+void
+TelemetryModule::publish_static_transforms()
+{
+  RCLCPP_INFO(get_logger(), "Publishing static transforms");
+
+  if (aircraft_base_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK)
+  {
+    geometry_msgs::msg::TransformStamped tf_base_link_gimbal;
+    tf_base_link_gimbal.header.stamp = this->get_clock()->now();
+    tf_base_link_gimbal.header.frame_id = params_.body_frame;
+    tf_base_link_gimbal.child_frame_id = params_.gimbal_frame;
+    tf_base_link_gimbal.transform.translation.x =
+        psdk_utils::T_M300_BASE_GIMBAL[0];
+    tf_base_link_gimbal.transform.translation.y =
+        psdk_utils::T_M300_BASE_GIMBAL[1];
+    tf_base_link_gimbal.transform.translation.z =
+        psdk_utils::T_M300_BASE_GIMBAL[2];
+    tf_base_link_gimbal.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
+    tf_base_link_gimbal.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
+    tf_base_link_gimbal.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
+    tf_base_link_gimbal.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+    tf_static_broadcaster_->sendTransform(tf_base_link_gimbal);
+  }
+
+  if (publish_camera_transforms_)
+  {
+    if (camera_type_ == DJI_CAMERA_TYPE_H20)
+    {
+      // Publish TF between H20 - Zoom lens
+      geometry_msgs::msg::TransformStamped tf_H20_zoom;
+      tf_H20_zoom.header.stamp = this->get_clock()->now();
+      tf_H20_zoom.header.frame_id = params_.camera_frame;
+      tf_H20_zoom.child_frame_id = add_tf_prefix("h20_zoom_optical_link");
+      tf_H20_zoom.transform.translation.x = psdk_utils::T_H20_ZOOM[0];
+      tf_H20_zoom.transform.translation.y = psdk_utils::T_H20_ZOOM[1];
+      tf_H20_zoom.transform.translation.z = psdk_utils::T_H20_ZOOM[2];
+      tf_H20_zoom.transform.rotation.x = psdk_utils::Q_FLU2OPTIC.getX();
+      tf_H20_zoom.transform.rotation.y = psdk_utils::Q_FLU2OPTIC.getY();
+      tf_H20_zoom.transform.rotation.z = psdk_utils::Q_FLU2OPTIC.getZ();
+      tf_H20_zoom.transform.rotation.w = psdk_utils::Q_FLU2OPTIC.getW();
+      tf_static_broadcaster_->sendTransform(tf_H20_zoom);
+      // Publish TF between H20 - Wide lens
+      geometry_msgs::msg::TransformStamped tf_H20_wide;
+      tf_H20_wide.header.stamp = this->get_clock()->now();
+      tf_H20_wide.header.frame_id = params_.camera_frame;
+      tf_H20_wide.child_frame_id = add_tf_prefix("h20_wide_optical_link");
+      tf_H20_wide.transform.translation.x = psdk_utils::T_H20_WIDE[0];
+      tf_H20_wide.transform.translation.y = psdk_utils::T_H20_WIDE[1];
+      tf_H20_wide.transform.translation.z = psdk_utils::T_H20_WIDE[2];
+      tf_H20_wide.transform.rotation.x = psdk_utils::Q_FLU2OPTIC.getX();
+      tf_H20_wide.transform.rotation.y = psdk_utils::Q_FLU2OPTIC.getY();
+      tf_H20_wide.transform.rotation.z = psdk_utils::Q_FLU2OPTIC.getZ();
+      tf_H20_wide.transform.rotation.w = psdk_utils::Q_FLU2OPTIC.getW();
+      tf_static_broadcaster_->sendTransform(tf_H20_wide);
+    }
+  }
+}
+
+void
+TelemetryModule::publish_dynamic_transforms()
+{
+  if (camera_type_ == DJI_CAMERA_TYPE_H20)
+  {
+    // Publish TF between Gimbal - H20
+    geometry_msgs::msg::TransformStamped tf_gimbal_H20;
+    tf_gimbal_H20.header.stamp = this->get_clock()->now();
+    tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
+    tf_gimbal_H20.child_frame_id = params_.camera_frame;
+    tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
+    tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
+    tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
+
+    tf2::Quaternion q_gimbal_h20;
+    q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
+                        current_state_.gimbal_angles.vector.y,
+                        get_yaw_gimbal_camera());
+    tf_gimbal_H20.transform.rotation.x = q_gimbal_h20.getX();
+    tf_gimbal_H20.transform.rotation.y = q_gimbal_h20.getY();
+    tf_gimbal_H20.transform.rotation.z = q_gimbal_h20.getZ();
+    tf_gimbal_H20.transform.rotation.w = q_gimbal_h20.getW();
+    tf_broadcaster_->sendTransform(tf_gimbal_H20);
+  }
+}
+
+double
+TelemetryModule::get_yaw_gimbal_camera()
+{
+  /* Get current copter yaw wrt. to East */
+  tf2::Matrix3x3 rotation_mat(current_state_.attitude);
+  double current_roll;
+  double current_pitch;
+  double current_yaw;
+  rotation_mat.getRPY(current_roll, current_pitch, current_yaw);
+
+  /* Get current gimbal yaw wrt to East */
+  double current_gimbal_yaw = current_state_.gimbal_angles.vector.z;
+  return current_gimbal_yaw - current_yaw;
+}
+
+std::string
+TelemetryModule::add_tf_prefix(const std::string &frame_name)
+{
+  return params_.tf_frame_prefix + frame_name;
+}
+
+void
+TelemetryModule::set_aircraft_base(
+    const T_DjiAircraftInfoBaseInfo aircraft_base)
+{
+  aircraft_base_ = aircraft_base;
+}
+
+void
+TelemetryModule::set_camera_type(const E_DjiCameraType camera_type)
+{
+  publish_camera_transforms_ = true;
+  camera_type_ = camera_type;
 }
 
 }  // namespace psdk_ros2

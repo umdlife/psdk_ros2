@@ -1,8 +1,12 @@
 #ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP
 #define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP
 
+#include <dji_aircraft_info.h>    //NOLINT
 #include <dji_fc_subscription.h>  //NOLINT
+#include <dji_typedef.h>          //NOLINT
 #include <math.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <geometry_msgs/msg/accel_stamped.hpp>
 #include <geometry_msgs/msg/quaternion_stamped.hpp>
@@ -50,8 +54,7 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
    * @brief Construct a new TelemetryModule object
    * @param node_name Name of the node
    */
-  explicit TelemetryModule(const std::string& name,
-                           const std::shared_ptr<PSDKWrapper> global_ptr);
+  explicit TelemetryModule(const std::string& name);
 
   /**
    * @brief Destroy the telemetry module object
@@ -220,6 +223,87 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
   friend T_DjiReturnCode c_home_point_altitude_callback(
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gimbal_angles_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+  friend T_DjiReturnCode c_gimbal_status_callback(
+      const uint8_t* data, uint16_t data_size,
+      const T_DjiDataTimestamp* timestamp);
+
+  inline sensor_msgs::msg::NavSatFix
+  get_current_gps()
+  {
+    return current_state_.gps_position;
+  }
+
+  /**
+   * @brief Subscribe to telemetry topics exposed by the DJI PSDK library
+   */
+  void subscribe_psdk_topics();
+
+  /**
+   * @brief Unsubscribe the telemetry topics
+   */
+  void unsubscribe_psdk_topics();
+
+  void set_aircraft_base(const T_DjiAircraftInfoBaseInfo aircraft_base);
+  void set_camera_type(const E_DjiCameraType camera_type);
+
+  struct TelemetryParams
+  {
+    std::string imu_frame;
+    std::string body_frame;
+    std::string map_frame;
+    std::string gimbal_frame;
+    std::string camera_frame;
+    std::string tf_frame_prefix;
+    bool publish_transforms;
+    int imu_frequency;
+    int attitude_frequency;
+    int acceleration_frequency;
+    int velocity_frequency;
+    int angular_rate_frequency;
+    int position_frequency;
+    int altitude_frequency;
+    int gps_fused_position_frequency;
+    int gps_data_frequency;
+    int rtk_data_frequency;
+    int magnetometer_frequency;
+    int rc_channels_data_frequency;
+    int gimbal_data_frequency;
+    int flight_status_frequency;
+    int battery_level_frequency;
+    int control_information_frequency;
+    int esc_data_frequency;
+  };
+  struct CopterState
+  {
+    psdk_interfaces::msg::PositionFused local_position;
+    sensor_msgs::msg::NavSatFix gps_position;
+    tf2::Quaternion attitude;
+    geometry_msgs::msg::Vector3Stamped gimbal_angles;
+
+    void
+    initialize_state()
+    {
+      local_position.position.x = 0.0;
+      local_position.position.y = 0.0;
+      local_position.position.z = 0.0;
+
+      gps_position.latitude = 40.0;
+      gps_position.longitude = 2.0;
+      gps_position.altitude = 100.0;
+
+      attitude.setRPY(0.0, 0.0, 0.0);
+
+      gimbal_angles.vector.x = 0.0;
+      gimbal_angles.vector.y = 0.0;
+      gimbal_angles.vector.z = 0.0;
+    }
+  };
+
+  CopterState current_state_;
+  TelemetryParams params_;
 
  private:
   /*C++ type DJI topic subscriber callbacks*/
@@ -775,6 +859,31 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
 
+  T_DjiReturnCode gimbal_angles_callback(const uint8_t* data,
+                                         uint16_t data_size,
+                                         const T_DjiDataTimestamp* timestamp);
+  /**
+   * @brief Retrieves the gimbal status data provided by DJI PSDK lib and
+   * publishes it on a ROS 2 topic. Provides the gimbal status data following
+   * data up to 50 Hz. More information regarding the gimbal status data can be
+   * found in psdk_interfaces::msg::GimbalStatus.
+   * @param data pointer to T_DjiFcSubscriptionGimbalStatus data
+   * @param data_size size of data. Unused parameter.
+   * @param timestamp  timestamp provided by DJI
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  T_DjiReturnCode gimbal_status_callback(const uint8_t* data,
+                                         uint16_t data_size,
+                                         const T_DjiDataTimestamp* timestamp);
+
+  /**
+   * @brief Get the DJI frequency object associated with a certain frequency
+   * @param frequency variable to store the output frequency
+   * @return E_DjiDataSubscriptionTopicFreq
+   */
+  E_DjiDataSubscriptionTopicFreq get_frequency(const int frequency);
+
   /**
    * @brief Sets the current position as the new origin for the local position.
    * @param request Trigger service request
@@ -831,6 +940,32 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
    */
   void set_local_altitude_reference(const float altitude);
 
+  /**
+   * @brief Publish all static transforms for a given copter
+   */
+  void publish_static_transforms();
+  /**
+   * @brief Method which publishes the dynamic transforms for a given copter
+   */
+  void publish_dynamic_transforms();
+
+  /**
+   * @brief Method which computes the yaw angle difference between the gimbal
+   * (static frame attached to the robot) and a given camera payload attached to
+   * the gimbal
+   * @return the yaw angle difference between these two frames.
+   */
+  double get_yaw_gimbal_camera();
+
+  /**
+   * @brief Method to generate a tf adding the tf_prefix to the frame name
+   * @param frame_name name of the frame to be transformed
+   * @return string with the tf name
+   */
+  std::string add_tf_prefix(const std::string& frame_name);
+
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   /* ROS 2 publishers */
   rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::QuaternionStamped>::SharedPtr attitude_pub_;
@@ -930,9 +1065,14 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
   float local_altitude_reference_{0};
   bool local_altitude_reference_set_{false};
   geometry_msgs::msg::Vector3Stamped local_position_reference_;
+  bool set_local_position_ref_{false};
 
-  std::shared_ptr<PSDKWrapper> global_ptr_;
+  T_DjiAircraftInfoBaseInfo aircraft_base_;
+  E_DjiCameraType camera_type_;
+  bool publish_camera_transforms_{false};
 };
+
+extern std::shared_ptr<TelemetryModule> global_telemetry_ptr_;
 
 }  // namespace psdk_ros2
 
