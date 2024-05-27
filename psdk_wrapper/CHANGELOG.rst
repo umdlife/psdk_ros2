@@ -2,6 +2,9 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.1 (2024-05-24)
+------------------
+
 1.2.0 (2024-05-23)
 ------------------
 * Merge pull request `#81 <https://github.com/umdlife/psdk_ros2/issues/81>`_ from umdlife/feat/sd_images

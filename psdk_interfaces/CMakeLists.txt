@@ -21,6 +21,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(action_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DisplayMode.msg"
@@ -79,7 +80,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetObstacleAvoidance.srv"
   "action/CameraDeleteFileByIndex.action"
   "action/CameraDownloadFileByIndex.action"
-  DEPENDENCIES std_msgs geometry_msgs
+  DEPENDENCIES std_msgs geometry_msgs action_msgs
 )
 
 if(BUILD_TESTING)

@@ -2,6 +2,12 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.2.1 (2024-05-24)
+------------------
+* Merge pull request `#101 <https://github.com/umdlife/psdk_ros2/issues/101>`_ from umdlife/hotfix/build-farm
+  Add action_msgs as dependency
+* Contributors: biancabnd, vicmassy
+
 1.2.0 (2024-05-23)
 ------------------
 * Merge pull request `#81 <https://github.com/umdlife/psdk_ros2/issues/81>`_ from umdlife/feat/sd_images
