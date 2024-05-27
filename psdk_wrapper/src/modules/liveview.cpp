@@ -8,22 +8,89 @@
 /**
  * @file liveview.cpp
  *
- * @brief
+ * @brief Liveview module implementation. This module is responsible for
+ * handling the liveview stream from the drone's cameras.
  *
  * @authors Lidia de la Torre Vazquez, Bianca Bendris
  * Contact: lidia@unmanned.life
  *
  */
 
-#include "psdk_wrapper/psdk_wrapper.hpp"
-
-std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder *>
-    stream_decoder;
+#include "psdk_wrapper/modules/liveview.hpp"
 
 namespace psdk_ros2
 {
+LiveviewModule::LiveviewModule(const std::string &name)
+    : rclcpp_lifecycle::LifecycleNode(
+          name, "",
+          rclcpp::NodeOptions().arguments(
+              {"--ros-args", "-r",
+               name + ":" + std::string("__node:=") + name}))
+
+{
+  RCLCPP_INFO(get_logger(), "Creating LiveviewModule...");
+}
+
+LiveviewModule::~LiveviewModule()
+{
+  RCLCPP_INFO(get_logger(), "Destroying LiveviewModule...");
+}
+
+LiveviewModule::CallbackReturn
+LiveviewModule::on_configure(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Configuring LiveviewModule...");
+  main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
+      "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
+  fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
+      "psdk_ros2/fpv_camera_stream", rclcpp::SensorDataQoS());
+  camera_setup_streaming_service_ = create_service<CameraSetupStreaming>(
+      "psdk_ros2/camera_setup_streaming",
+      std::bind(&LiveviewModule::camera_setup_streaming_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+}
+
+LiveviewModule::CallbackReturn
+LiveviewModule::on_activate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Activating LiveviewModule...");
+  main_camera_stream_pub_->on_activate();
+  fpv_camera_stream_pub_->on_activate();
+}
+
+LiveviewModule::CallbackReturn
+LiveviewModule::on_deactivate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Deactivating LiveviewModule...");
+  main_camera_stream_pub_->on_deactivate();
+  fpv_camera_stream_pub_->on_deactivate();
+}
+
+LiveviewModule::CallbackReturn
+LiveviewModule::on_cleanup(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Cleaning up LiveviewModule...");
+  camera_setup_streaming_service_.reset();
+  main_camera_stream_pub_.reset();
+  fpv_camera_stream_pub_.reset();
+}
+
+LiveviewModule::CallbackReturn
+LiveviewModule::on_shutdown(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Shutting down LiveviewModule...");
+  global_liveview_ptr_.reset();
+  return CallbackReturn::SUCCESS;
+}
+
 bool
-PSDKWrapper::init_liveview()
+LiveviewModule::init()
 {
   RCLCPP_INFO(get_logger(), "Initiating liveview module...");
   T_DjiReturnCode return_code = DjiLiveview_Init();
@@ -35,7 +102,7 @@ PSDKWrapper::init_liveview()
     return false;
   }
   /* Start decoders*/
-  stream_decoder = {
+  stream_decoder_ = {
       {DJI_LIVEVIEW_CAMERA_POSITION_FPV, (new DJICameraStreamDecoder())},
       {DJI_LIVEVIEW_CAMERA_POSITION_NO_1, (new DJICameraStreamDecoder())},
       {DJI_LIVEVIEW_CAMERA_POSITION_NO_2, (new DJICameraStreamDecoder())},
@@ -46,7 +113,7 @@ PSDKWrapper::init_liveview()
 }
 
 bool
-PSDKWrapper::deinit_liveview()
+LiveviewModule::deinit()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing liveview module...");
   T_DjiReturnCode return_code = DjiLiveview_Deinit();
@@ -65,21 +132,22 @@ c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
                                    const uint8_t *buffer,
                                    uint32_t buffer_length)
 {
-  if (global_ptr_->decode_stream_)
+  if (global_liveview_ptr_->decode_stream_)
   {
-    return global_ptr_->LiveviewConvertH264ToRgbCallback(position, buffer,
-                                                         buffer_length);
+    return global_liveview_ptr_->LiveviewConvertH264ToRgbCallback(
+        position, buffer, buffer_length);
   }
-  return global_ptr_->publish_main_camera_images(buffer, buffer_length);
+  return global_liveview_ptr_->publish_main_camera_images(buffer,
+                                                          buffer_length);
 }
 
 void
-PSDKWrapper::LiveviewConvertH264ToRgbCallback(
+LiveviewModule::LiveviewConvertH264ToRgbCallback(
     E_DjiLiveViewCameraPosition position, const uint8_t *buffer,
     uint32_t buffer_length)
 {
-  auto decoder = stream_decoder.find(position);
-  if ((decoder != stream_decoder.end()) && decoder->second)
+  auto decoder =  stream_decoder_.find(position);
+  if ((decoder !=  stream_decoder_.end()) && decoder->second)
   {
     decoder->second->decodeBuffer(buffer, buffer_length);
   }
@@ -88,17 +156,17 @@ PSDKWrapper::LiveviewConvertH264ToRgbCallback(
 void
 c_publish_main_streaming_callback(CameraRGBImage img, void *user_data)
 {
-  return global_ptr_->publish_main_camera_images(img, user_data);
+  return global_liveview_ptr_->publish_main_camera_images(img, user_data);
 }
 
 void
 c_publish_fpv_streaming_callback(CameraRGBImage img, void *user_data)
 {
-  return global_ptr_->publish_fpv_camera_images(img, user_data);
+  return global_liveview_ptr_->publish_fpv_camera_images(img, user_data);
 }
 
 void
-PSDKWrapper::camera_setup_streaming_cb(
+LiveviewModule::camera_setup_streaming_cb(
     const std::shared_ptr<CameraSetupStreaming::Request> request,
     const std::shared_ptr<CameraSetupStreaming::Response> response)
 {
@@ -160,14 +228,15 @@ PSDKWrapper::camera_setup_streaming_cb(
 }
 
 bool
-PSDKWrapper::start_camera_stream(CameraImageCallback callback, void *user_data,
-                                 E_DjiLiveViewCameraPosition payload_index,
-                                 E_DjiLiveViewCameraSource camera_source)
+LiveviewModule::start_camera_stream(CameraImageCallback callback,
+                                    void *user_data,
+                                    E_DjiLiveViewCameraPosition payload_index,
+                                    E_DjiLiveViewCameraSource camera_source)
 {
   if (decode_stream_)
   {
-    auto decoder = stream_decoder.find(payload_index);
-    if ((decoder != stream_decoder.end()) && decoder->second)
+    auto decoder =  stream_decoder_.find(payload_index);
+    if ((decoder !=  stream_decoder_.end()) && decoder->second)
     {
       decoder->second->init();
       decoder->second->registerCallback(callback, user_data);
@@ -196,7 +265,7 @@ PSDKWrapper::start_camera_stream(CameraImageCallback callback, void *user_data,
 }
 
 bool
-PSDKWrapper::stop_main_camera_stream(
+LiveviewModule::stop_main_camera_stream(
     const E_DjiLiveViewCameraPosition payload_index,
     const E_DjiLiveViewCameraSource camera_source)
 {
@@ -211,8 +280,8 @@ PSDKWrapper::stop_main_camera_stream(
   }
   else
   {
-    auto decoder = stream_decoder.find(payload_index);
-    if ((decoder != stream_decoder.end()) && decoder->second)
+    auto decoder =  stream_decoder_.find(payload_index);
+    if ((decoder !=  stream_decoder_.end()) && decoder->second)
     {
       decoder->second->cleanup();
     }
@@ -222,20 +291,20 @@ PSDKWrapper::stop_main_camera_stream(
 }
 
 void
-PSDKWrapper::publish_main_camera_images(const uint8_t *buffer,
-                                        uint32_t buffer_length)
+LiveviewModule::publish_main_camera_images(const uint8_t *buffer,
+                                           uint32_t buffer_length)
 {
   auto img = std::make_unique<sensor_msgs::msg::Image>();
   img->encoding = "h264";
   img->data = std::vector<uint8_t>(buffer, buffer + buffer_length);
   img->header.stamp = this->get_clock()->now();
-  img->header.frame_id = "";  // get_optical_frame_id();
+  img->header.frame_id = get_optical_frame_id();
   main_camera_stream_pub_->publish(std::move(img));
 }
 
 void
-PSDKWrapper::publish_fpv_camera_images(const uint8_t *buffer,
-                                       uint32_t buffer_length)
+LiveviewModule::publish_fpv_camera_images(const uint8_t *buffer,
+                                          uint32_t buffer_length)
 {
   auto img = std::make_unique<sensor_msgs::msg::Image>();
   img->encoding = "h264";
@@ -246,7 +315,8 @@ PSDKWrapper::publish_fpv_camera_images(const uint8_t *buffer,
 }
 
 void
-PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
+LiveviewModule::publish_main_camera_images(CameraRGBImage rgb_img,
+                                           void *user_data)
 {
   (void)user_data;
   auto img = std::make_unique<sensor_msgs::msg::Image>();
@@ -257,12 +327,13 @@ PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
   img->data = rgb_img.rawData;
 
   img->header.stamp = this->get_clock()->now();
-  img->header.frame_id = "";  // get_optical_frame_id();
+  img->header.frame_id = get_optical_frame_id();
   main_camera_stream_pub_->publish(std::move(img));
 }
 
 void
-PSDKWrapper::publish_fpv_camera_images(CameraRGBImage rgb_img, void *user_data)
+LiveviewModule::publish_fpv_camera_images(CameraRGBImage rgb_img,
+                                          void *user_data)
 {
   (void)user_data;
   auto img = std::make_unique<sensor_msgs::msg::Image>();
@@ -277,16 +348,16 @@ PSDKWrapper::publish_fpv_camera_images(CameraRGBImage rgb_img, void *user_data)
   fpv_camera_stream_pub_->publish(std::move(img));
 }
 
-// std::string
-// LiveviewModule::get_optical_frame_id()
-// {
-//   for (auto &it : psdk_utils::camera_source_str)
-//   {
-//     if (it.first == selected_camera_source_)
-//     {
-//       return it.second;
-//     }
-//   }
-// }
+std::string
+LiveviewModule::get_optical_frame_id()
+{
+  for (auto &it : psdk_utils::camera_source_str)
+  {
+    if (it.first == selected_camera_source_)
+    {
+      return it.second;
+    }
+  }
+}
 
 }  // namespace psdk_ros2

@@ -36,7 +36,6 @@
 #include "psdk_interfaces/srv/camera_set_iso.hpp"
 #include "psdk_interfaces/srv/camera_set_optical_zoom.hpp"
 #include "psdk_interfaces/srv/camera_set_shutter_speed.hpp"
-#include "psdk_interfaces/srv/camera_setup_streaming.hpp"
 #include "psdk_interfaces/srv/camera_shoot_burst_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_interval_photo.hpp"
 #include "psdk_interfaces/srv/camera_shoot_single_photo.hpp"
@@ -471,11 +470,6 @@ class CameraModule : public rclcpp_lifecycle::LifecycleNode
   T_DjiReturnCode camera_manager_download_file_data_callback(
       T_DjiDownloadFilePacketInfo packetInfo, const uint8_t* data,
       uint16_t len);
-  /**
-   * @brief Get the optical frame id for a certain lens
-   * @return string with the optical frame id name
-   */
-  std::string get_optical_frame_id();
 
   /**
    * @brief Register the callback for downloading files from the sd card

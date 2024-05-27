@@ -22,7 +22,6 @@
 #include <dji_core.h>
 #include <dji_gimbal_manager.h>  //NOLINT
 #include <dji_hms.h>
-#include <dji_liveview.h>
 #include <dji_logger.h>
 #include <dji_platform.h>
 #include <dji_typedef.h>
@@ -35,14 +34,12 @@
 #include <utils/dji_config_manager.h>  //NOLINT
 
 #include <cmath>
-#include <dji_camera_stream_decoder.hpp>  //NOLINT
 #include <map>
 #include <memory>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nlohmann/json.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
-#include <sensor_msgs/msg/image.hpp>
 #include <string>
 
 // PSDK wrapper interfaces
@@ -54,6 +51,7 @@
 #include "psdk_interfaces/srv/gimbal_set_mode.hpp"
 #include "psdk_wrapper/modules/camera.hpp"
 #include "psdk_wrapper/modules/flight_control.hpp"
+#include "psdk_wrapper/modules/liveview.hpp"
 #include "psdk_wrapper/modules/telemetry.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
 
@@ -69,8 +67,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
  public:
   using CallbackReturn =
       rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
-  // Streaming
-  using CameraSetupStreaming = psdk_interfaces::srv::CameraSetupStreaming;
   // Gimbal
   using GimbalSetMode = psdk_interfaces::srv::GimbalSetMode;
   using GimbalReset = psdk_interfaces::srv::GimbalReset;
@@ -178,16 +174,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   bool deinit_gimbal_manager();
   /**
-   * @brief Initialize the liveview streaming module
-   * @return true/false
-   */
-  bool init_liveview();
-  /**
-   * @brief Deinitialize the liveview streaming module
-   * @return true/false
-   */
-  bool deinit_liveview();
-  /**
    * @brief Initialize the health monitoring system (HMS) module
    * @note Since the HMS module callback function involves a ROS2
    * publisher, this init method should be invoked **after** ROS2
@@ -223,14 +209,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   void clean_ros_elements();
 
   friend T_DjiReturnCode c_hms_callback(T_DjiHmsInfoTable hms_info_table);
-  /* Streaming */
-  friend void c_publish_main_streaming_callback(CameraRGBImage img,
-                                                void* user_data);
-  friend void c_publish_fpv_streaming_callback(CameraRGBImage img,
-                                               void* user_data);
-  friend void c_LiveviewConvertH264ToRgbCallback(
-      E_DjiLiveViewCameraPosition position, const uint8_t* buffer,
-      uint32_t buffer_length);
 
   /**
    * @brief Callback function registered to retrieve HMS information.
@@ -251,24 +229,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   void gimbal_rotation_cb(
       const psdk_interfaces::msg::GimbalRotation::SharedPtr msg);
-
-  /* Streaming callbacks */
-  void LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
-                                        const uint8_t* buffer,
-                                        uint32_t buffer_length);
-
-  /* Streaming*/
-  /**
-   * @brief Request to start/stop streming of a certain camera.
-   * @param request CameraSetupStreaming service request. The camera
-   * mounted position for which the request is made needs to be specified as
-   * well as the camera source (e.g. using the wide or the zoom camera).
-   * Moreover, the user can choose to stream the images raw or decoded.
-   * @param response CameraSetupStreaming service response.
-   */
-  void camera_setup_streaming_cb(
-      const std::shared_ptr<CameraSetupStreaming::Request> request,
-      const std::shared_ptr<CameraSetupStreaming::Response> response);
 
   /* Gimbal*/
   /**
@@ -296,10 +256,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   /* ROS 2 publishers */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::HmsInfoTable>::SharedPtr hms_info_table_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
-      main_camera_stream_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
-      fpv_camera_stream_pub_;
 
   // Gimbal
   rclcpp::Subscription<psdk_interfaces::msg::GimbalRotation>::SharedPtr
@@ -307,70 +263,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   /* ROS 2 Services */
 
-  // Streaming
-  rclcpp::Service<CameraSetupStreaming>::SharedPtr
-      camera_setup_streaming_service_;
   // Gimbal
   rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
-
-  /**
-   * @brief Starts the camera streaming.
-   * @param callback  function to be executed when a frame is received
-   * @param user_data unused parameter
-   * @param payload_index select which camera to use to retrieve the streaming.
-   * See enum E_DjiLiveViewCameraPosition in dji_liveview.h for more details.
-   * @param camera_source select which sub-camera to use to retrieve the
-   * streaming (e.g. zoom, wide). See enum E_DjiLiveViewCameraSource for more
-   * details.
-   * @return true/false Returns true if the streaming has been started
-   * correctly and False otherwise.
-   */
-  bool start_camera_stream(CameraImageCallback callback, void* user_data,
-                           const E_DjiLiveViewCameraPosition payload_index,
-                           const E_DjiLiveViewCameraSource camera_source);
-  /**
-   * @brief Stops the main camera streaming.
-   * @param payload_index select which camera to use to retrieve the streaming.
-   * See enum E_DjiLiveViewCameraPosition in dji_liveview.h for more details.
-   * @param camera_source select which sub-camera to use to retrieve the
-   * streaming (e.g. zoom, wide). See enum E_DjiLiveViewCameraSource for more
-   * details.
-   * @return true/false Returns true if the streaming has been stopped
-   * correctly and False otherwise.
-   */
-  bool stop_main_camera_stream(const E_DjiLiveViewCameraPosition payload_index,
-                               const E_DjiLiveViewCameraSource camera_source);
-  /**
-   * @brief Publishes the main camera streaming to a ROS 2 topic
-   * @param rgb_img  decoded RGB frame retrieved from the camera
-   * @param user_data unused parameter
-   */
-  void publish_main_camera_images(CameraRGBImage rgb_img, void* user_data);
-
-  /**
-   * @brief Publishes the raw (not decoded) main camera streaming to a ROS 2
-   * topic
-   * @param buffer  raw buffer retrieved from the camera
-   * @param buffer_length length of the buffer
-   */
-  void publish_main_camera_images(const uint8_t* buffer,
-                                  uint32_t buffer_length);
-
-  /**
-   * @brief Publishes the FPV camera streaming to a ROS 2 topic
-   * @param rgb_img  decoded RGB frame retrieved from the camera
-   * @param user_data unused parameter
-   */
-  void publish_fpv_camera_images(CameraRGBImage rgb_img, void* user_data);
-
-  /**
-   * @brief Publishes the raw (not decoded) FPV camera streaming to a ROS 2
-   * topic
-   * @param buffer  raw buffer retrieved from the camera
-   * @param buffer_length length of the buffer
-   */
-  void publish_fpv_camera_images(const uint8_t* buffer, uint32_t buffer_length);
 
   /**
    * @brief Method to initialize all psdk modules
@@ -410,7 +305,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
 
   nlohmann::json hms_return_codes_json_;
-  bool decode_stream_{true};
   int num_of_initialization_retries_{0};
 
   bool is_telemetry_module_mandatory_{true};
@@ -426,8 +320,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   std::unique_ptr<utils::NodeThread> telemetry_thread_;
   std::shared_ptr<CameraModule> camera_module_;
   std::unique_ptr<utils::NodeThread> camera_thread_;
+  std::shared_ptr<LiveviewModule> liveview_module_;
+  std::unique_ptr<utils::NodeThread> liveview_thread_;
 
-  E_DjiLiveViewCameraSource selected_camera_source_;
 };
 
 /**
