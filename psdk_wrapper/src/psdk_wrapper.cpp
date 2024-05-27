@@ -22,6 +22,7 @@
 std::shared_ptr<psdk_ros2::TelemetryModule> psdk_ros2::global_telemetry_ptr_;
 std::shared_ptr<psdk_ros2::CameraModule> psdk_ros2::global_camera_ptr_;
 std::shared_ptr<psdk_ros2::LiveviewModule> psdk_ros2::global_liveview_ptr_;
+std::shared_ptr<psdk_ros2::HmsModule> psdk_ros2::global_hms_ptr_;
 
 using namespace std::placeholders;  // NOLINT
 
@@ -103,6 +104,8 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   liveview_module_ = std::make_shared<LiveviewModule>("liveview_node");
   psdk_ros2::global_liveview_ptr_ = liveview_module_;
   gimbal_module_ = std::make_shared<GimbalModule>("gimbal_node");
+  hms_module_ = std::make_shared<HmsModule>("hms_node");
+  psdk_ros2::global_hms_ptr_ = hms_module_;
 
   load_parameters();
   if (!set_environment())
@@ -145,6 +148,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   camera_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
   liveview_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
   gimbal_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
+  hms_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
 
   // Activate the modules
   activate_ros_elements();
@@ -154,6 +158,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   camera_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
   liveview_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
   gimbal_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
+  hms_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
 
   // Start the threads
   telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
@@ -162,6 +167,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   camera_thread_ = std::make_unique<utils::NodeThread>(camera_module_);
   liveview_thread_ = std::make_unique<utils::NodeThread>(liveview_module_);
   gimbal_thread_ = std::make_unique<utils::NodeThread>(gimbal_module_);
+  hms_thread_ = std::make_unique<utils::NodeThread>(hms_module_);
 
   // Delay the initialization of some modules due to dependencies
   if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
@@ -171,7 +177,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  if (!init_hms() && is_hms_module_mandatory_)
+  if (!hms_module_->init() && is_hms_module_mandatory_)
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
@@ -206,6 +212,7 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
   camera_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
   liveview_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
   gimbal_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
+  hms_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
 
   return CallbackReturn::SUCCESS;
 }
@@ -227,7 +234,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   // Deinitialize all remaining modules
   if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
       !camera_module_->deinit() || !gimbal_module_->deinit() ||
-      !liveview_module_->deinit() || !deinit_hms())
+      !liveview_module_->deinit() || !hms_module_->deinit())
   {
     return CallbackReturn::FAILURE;
   }
@@ -428,7 +435,7 @@ PSDKWrapper::load_parameters()
   get_parameter("publish_transforms",
                 telemetry_module_->params_.publish_transforms);
   get_non_mandatory_param("hms_return_codes_path",
-                          params_.hms_return_codes_path);
+                          hms_module_->hms_return_codes_path_);
   get_non_mandatory_param("file_path",
                           camera_module_->default_path_to_download_media_);
   get_parameter("num_of_initialization_retries",
@@ -585,37 +592,24 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
 void
 PSDKWrapper::initialize_ros_elements()
 {
-  RCLCPP_INFO(get_logger(), "Initializing ROS publishers");
-
-  hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
-      "psdk_ros2/hms_info_table", 10);
-
-  RCLCPP_INFO(get_logger(), "Creating services");
 }
 
 void
 PSDKWrapper::activate_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Activating ROS elements");
-
-  hms_info_table_pub_->on_activate();
 }
 
 void
 PSDKWrapper::deactivate_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Deactivating ROS elements");
-
-  hms_info_table_pub_->on_deactivate();
 }
 
 void
 PSDKWrapper::clean_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Cleaning ROS elements");
-
-  // Publishers
-  hms_info_table_pub_.reset();
 }
 
 bool

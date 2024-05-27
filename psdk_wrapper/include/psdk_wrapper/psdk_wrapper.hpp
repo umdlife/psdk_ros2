@@ -20,7 +20,6 @@
 
 #include <dji_aircraft_info.h>
 #include <dji_core.h>
-#include <dji_hms.h>
 #include <dji_logger.h>
 #include <dji_platform.h>
 #include <dji_typedef.h>
@@ -36,18 +35,16 @@
 #include <map>
 #include <memory>
 #include <nav_msgs/msg/odometry.hpp>
-#include <nlohmann/json.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <string>
 
 // PSDK wrapper interfaces
 
-#include "psdk_interfaces/msg/hms_info_msg.hpp"
-#include "psdk_interfaces/msg/hms_info_table.hpp"
 #include "psdk_wrapper/modules/camera.hpp"
 #include "psdk_wrapper/modules/flight_control.hpp"
 #include "psdk_wrapper/modules/gimbal.hpp"
+#include "psdk_wrapper/modules/hms.hpp"
 #include "psdk_wrapper/modules/liveview.hpp"
 #include "psdk_wrapper/modules/telemetry.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
@@ -153,19 +150,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
    */
   bool init(T_DjiUserInfo* user_info);
-  /**
-   * @brief Initialize the health monitoring system (HMS) module
-   * @note Since the HMS module callback function involves a ROS2
-   * publisher, this init method should be invoked **after** ROS2
-   * elements have been initialized.
-   * @return true/false
-   */
-  bool init_hms();
-  /**
-   * @brief Deinitialize the health monitoring system (HMS) module
-   * @return true/false
-   */
-  bool deinit_hms();
 
   /**
    * @brief Initializes all ROS elements (e.g. subscribers, publishers,
@@ -188,43 +172,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   void clean_ros_elements();
 
-  friend T_DjiReturnCode c_hms_callback(T_DjiHmsInfoTable hms_info_table);
-
-  /**
-   * @brief Callback function registered to retrieve HMS information.
-   * DJI pushes data at a fixed frequency of 1Hz.
-   * @param hms_info_table  Array of HMS info messages
-   * @return T_DjiReturnCode error code indicating whether there have been any
-   * issues processing the HMS info table
-   */
-  T_DjiReturnCode hms_callback(T_DjiHmsInfoTable hms_info_table);
-
-  /* ROS 2 Subscriber callbacks */
-
-  /* ROS 2 publishers */
-  rclcpp_lifecycle::LifecyclePublisher<
-      psdk_interfaces::msg::HmsInfoTable>::SharedPtr hms_info_table_pub_;
-
   /**
    * @brief Method to initialize all psdk modules
    * @return true if all mandatory modules have been correctly initialized,
    * false otherwise
    */
   bool initialize_psdk_modules();
-
-  /**
-   * @brief Create a 'psdk_interfaces::msg::HmsInfoTable' from a
-   * PSDK HMS message of type 'T_DjiHmsInfoTable', given a JSON
-   * with all known return codes and a language to retrieve
-   * the return code messages in.
-   * @param hms_info_table HMS message from PSDK.
-   * @param codes JSON containing known return codes.
-   * @param language Language to fetch the return codes in.
-   * @return psdk_interfaces::msg::HmsInfoTable
-   */
-  psdk_interfaces::msg::HmsInfoTable to_ros2_msg(
-      const T_DjiHmsInfoTable& hms_info_table, const nlohmann::json& codes,
-      const char* language = "en");
 
   void get_and_validate_frequency(const std::string& param_name, int& frequency,
                                   const int max_frequency);
@@ -242,7 +195,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
 
-  nlohmann::json hms_return_codes_json_;
   int num_of_initialization_retries_{0};
 
   bool is_telemetry_module_mandatory_{true};
@@ -262,6 +214,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   std::unique_ptr<utils::NodeThread> liveview_thread_;
   std::shared_ptr<GimbalModule> gimbal_module_;
   std::unique_ptr<utils::NodeThread> gimbal_thread_;
+  std::shared_ptr<HmsModule> hms_module_;
+  std::unique_ptr<utils::NodeThread> hms_thread_;
 };
 
 /**

@@ -15,25 +15,77 @@
  *
  */
 
-#include <dji_hms_info_table.h>
-#include <math.h>
-
-#include <fstream>
-
-#include "psdk_wrapper/psdk_wrapper.hpp"
-#include "psdk_wrapper/utils/json_utils.hpp"
+#include "psdk_wrapper/modules/hms.hpp"
 
 namespace psdk_ros2
 {
+
+HmsModule::HmsModule(const std::string &name)
+    : rclcpp_lifecycle::LifecycleNode(
+          name, "",
+          rclcpp::NodeOptions().arguments(
+              {"--ros-args", "-r",
+               name + ":" + std::string("__node:=") + name}))
+
+{
+  RCLCPP_INFO(get_logger(), "Creating HmsModule...");
+}
+
+HmsModule::~HmsModule()
+{
+  RCLCPP_INFO(get_logger(), "Destroying HmsModule...");
+}
+
+HmsModule::CallbackReturn
+HmsModule::on_configure(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Configuring HmsModule...");
+  hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
+      "psdk_ros2/hms_info_table", 10);
+}
+
+HmsModule::CallbackReturn
+HmsModule::on_activate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Activating HmsModule...");
+  hms_info_table_pub_->on_activate();
+}
+
+HmsModule::CallbackReturn
+HmsModule::on_deactivate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Deactivating HmsModule...");
+  hms_info_table_pub_->on_deactivate();
+}
+
+HmsModule::CallbackReturn
+HmsModule::on_cleanup(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Cleaning up HmsModule...");
+  hms_info_table_pub_.reset();
+}
+
+HmsModule::CallbackReturn
+HmsModule::on_shutdown(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Shutting down HmsModule...");
+  return CallbackReturn::SUCCESS;
+}
+
 T_DjiReturnCode
 c_hms_callback(T_DjiHmsInfoTable hms_info_table)
 {
-  return global_ptr_->hms_callback(hms_info_table);
+  return global_hms_ptr_->hms_callback(hms_info_table);
 }
 
 psdk_interfaces::msg::HmsInfoTable
-PSDKWrapper::to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
-                         const nlohmann::json& codes, const char* language)
+HmsModule::to_ros2_msg(const T_DjiHmsInfoTable &hms_info_table,
+                       const nlohmann::json &codes, const char *language)
 {
   psdk_interfaces::msg::HmsInfoTable ros2_hms;
   ros2_hms.num_msg = hms_info_table.hmsInfoNum;
@@ -101,13 +153,12 @@ PSDKWrapper::to_ros2_msg(const T_DjiHmsInfoTable& hms_info_table,
   return ros2_hms;
 }
 bool
-PSDKWrapper::init_hms()
+HmsModule::init()
 {
   RCLCPP_INFO(get_logger(), "Initiating HMS...");
 
   // Read JSON file with known HMS error codes
-  if (!json_utils::parse_file(params_.hms_return_codes_path,
-                              hms_return_codes_json_))
+  if (!json_utils::parse_file(hms_return_codes_path_, hms_return_codes_json_))
   {
     RCLCPP_ERROR(get_logger(),
                  "Could not parse JSON file with HMS error codes. Unknown "
@@ -134,7 +185,7 @@ PSDKWrapper::init_hms()
 }
 
 bool
-PSDKWrapper::deinit_hms()
+HmsModule::deinit()
 {
   RCLCPP_INFO(get_logger(), "Deinitializing HMS...");
   T_DjiReturnCode return_code = DjiHmsManager_DeInit();
@@ -149,7 +200,7 @@ PSDKWrapper::deinit_hms()
 }
 
 T_DjiReturnCode
-PSDKWrapper::hms_callback(T_DjiHmsInfoTable hms_info_table)
+HmsModule::hms_callback(T_DjiHmsInfoTable hms_info_table)
 {
   if (!hms_info_table.hmsInfo)
   {
