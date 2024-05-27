@@ -88,10 +88,6 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
-  if (!set_environment())
-  {
-    return CallbackReturn::FAILURE;
-  }
 
   // Create module nodes
   flight_control_module_ =
@@ -100,6 +96,10 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   psdk_ros2::global_telemetry_ptr_ = telemetry_module_;
 
   load_parameters();
+  if (!set_environment())
+  {
+    return CallbackReturn::FAILURE;
+  }
 
   return CallbackReturn::SUCCESS;
 }
