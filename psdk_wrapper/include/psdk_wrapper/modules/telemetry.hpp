@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2024 Unmanned Life
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/**
+ * @file telemetry.hpp
+ *
+ * @brief Header file for the TelemetryModule class
+ *
+ * @authors Bianca Bendris Greab
+ * Contact: bianca@unmanned.life
+ *
+ */
 #ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP
 #define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP
 

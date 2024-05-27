@@ -102,6 +102,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   psdk_ros2::global_camera_ptr_ = camera_module_;
   liveview_module_ = std::make_shared<LiveviewModule>("liveview_node");
   psdk_ros2::global_liveview_ptr_ = liveview_module_;
+  gimbal_module_ = std::make_shared<GimbalModule>("gimbal_node");
 
   load_parameters();
   if (!set_environment())
@@ -143,6 +144,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   flight_control_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
   camera_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
   liveview_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
+  gimbal_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
 
   // Activate the modules
   activate_ros_elements();
@@ -151,6 +153,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   flight_control_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
   camera_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
   liveview_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
+  gimbal_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
 
   // Start the threads
   telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
@@ -158,6 +161,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
       std::make_unique<utils::NodeThread>(flight_control_module_);
   camera_thread_ = std::make_unique<utils::NodeThread>(camera_module_);
   liveview_thread_ = std::make_unique<utils::NodeThread>(liveview_module_);
+  gimbal_thread_ = std::make_unique<utils::NodeThread>(gimbal_module_);
 
   // Delay the initialization of some modules due to dependencies
   if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
@@ -201,6 +205,7 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
   telemetry_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
   camera_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
   liveview_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
+  gimbal_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
 
   return CallbackReturn::SUCCESS;
 }
@@ -221,7 +226,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 
   // Deinitialize all remaining modules
   if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
-      !camera_module_->deinit() || !deinit_gimbal_manager() ||
+      !camera_module_->deinit() || !gimbal_module_->deinit() ||
       !liveview_module_->deinit() || !deinit_hms())
   {
     return CallbackReturn::FAILURE;
@@ -584,21 +589,8 @@ PSDKWrapper::initialize_ros_elements()
 
   hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
       "psdk_ros2/hms_info_table", 10);
-  gimbal_rotation_sub_ =
-      create_subscription<psdk_interfaces::msg::GimbalRotation>(
-          "psdk_ros2/gimbal_rotation", 10,
-          std::bind(&PSDKWrapper::gimbal_rotation_cb, this,
-                    std::placeholders::_1));
 
   RCLCPP_INFO(get_logger(), "Creating services");
-
-  /* Gimbal */
-  gimbal_set_mode_service_ = create_service<GimbalSetMode>(
-      "psdk_ros2/gimbal_set_mode",
-      std::bind(&PSDKWrapper::gimbal_set_mode_cb, this, _1, _2), qos_profile_);
-  gimbal_reset_service_ = create_service<GimbalReset>(
-      "psdk_ros2/gimbal_reset",
-      std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2), qos_profile_);
 }
 
 void
@@ -622,12 +614,6 @@ PSDKWrapper::clean_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Cleaning ROS elements");
 
-  // Services
-  // Streaming
-  // Gimbal
-  gimbal_set_mode_service_.reset();
-  gimbal_reset_service_.reset();
-
   // Publishers
   hms_info_table_pub_.reset();
 }
@@ -641,7 +627,7 @@ PSDKWrapper::initialize_psdk_modules()
        is_telemetry_module_mandatory_},
       {std::bind(&CameraModule::init, camera_module_),
        is_camera_module_mandatory_},
-      {std::bind(&PSDKWrapper::init_gimbal_manager, this),
+      {std::bind(&GimbalModule::init, gimbal_module_),
        is_gimbal_module_mandatory_},
       {std::bind(&LiveviewModule::init, liveview_module_),
        is_liveview_module_mandatory_}};

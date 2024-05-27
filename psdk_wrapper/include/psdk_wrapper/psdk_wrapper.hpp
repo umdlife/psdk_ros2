@@ -20,7 +20,6 @@
 
 #include <dji_aircraft_info.h>
 #include <dji_core.h>
-#include <dji_gimbal_manager.h>  //NOLINT
 #include <dji_hms.h>
 #include <dji_logger.h>
 #include <dji_platform.h>
@@ -44,13 +43,11 @@
 
 // PSDK wrapper interfaces
 
-#include "psdk_interfaces/msg/gimbal_rotation.hpp"
 #include "psdk_interfaces/msg/hms_info_msg.hpp"
 #include "psdk_interfaces/msg/hms_info_table.hpp"
-#include "psdk_interfaces/srv/gimbal_reset.hpp"
-#include "psdk_interfaces/srv/gimbal_set_mode.hpp"
 #include "psdk_wrapper/modules/camera.hpp"
 #include "psdk_wrapper/modules/flight_control.hpp"
+#include "psdk_wrapper/modules/gimbal.hpp"
 #include "psdk_wrapper/modules/liveview.hpp"
 #include "psdk_wrapper/modules/telemetry.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
@@ -67,10 +64,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
  public:
   using CallbackReturn =
       rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
-  // Gimbal
-  using GimbalSetMode = psdk_interfaces::srv::GimbalSetMode;
-  using GimbalReset = psdk_interfaces::srv::GimbalReset;
-
   /**
    * @brief Construct a new PSDKWrapper object
    *
@@ -133,9 +126,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string file_path;
   };
 
-  std::map<::E_DjiLiveViewCameraPosition, DJICameraStreamDecoder*>
-      stream_decoder;
-
   /**
    * @brief Set the environment handlers
    * @return true/false
@@ -163,16 +153,6 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @return true/false
    */
   bool init(T_DjiUserInfo* user_info);
-  /**
-   * @brief Initialize the gimbal module
-   * @return true/false
-   */
-  bool init_gimbal_manager();
-  /**
-   * @brief Deinitialize the gimbal module
-   * @return true/false
-   */
-  bool deinit_gimbal_manager();
   /**
    * @brief Initialize the health monitoring system (HMS) module
    * @note Since the HMS module callback function involves a ROS2
@@ -221,51 +201,9 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 
   /* ROS 2 Subscriber callbacks */
 
-  /**
-   * @brief Callback function to control roll, pitch, yaw and time.
-   * @param msg  psdk_interfaces::msg::GimbalRotation.
-   * Rotation mode allows to set incremental, absolute or speed mode
-   * command.(see T_DjiGimbalManagerRotation for more information).
-   */
-  void gimbal_rotation_cb(
-      const psdk_interfaces::msg::GimbalRotation::SharedPtr msg);
-
-  /* Gimbal*/
-  /**
-   * @brief Set gimbal mode
-   * @param request GimbalSetMode service request. The camera
-   * mounted position for which the request is made needs to be specified as
-   * well as the desired gimbal mode. (see enum E_DjiGimbalMode for more
-   * information).
-   * @param response GimbalSetMode service response.
-   */
-  void gimbal_set_mode_cb(
-      const std::shared_ptr<GimbalSetMode::Request> request,
-      const std::shared_ptr<GimbalSetMode::Response> response);
-  /**
-   * @brief Reset gimbal orientation to neutral point.
-   * @param request GimbalSetMode service request. The camera
-   * mounted position for which the request is made needs to be specified as
-   * well as the desired gimbal mode. (see enum E_DjiGimbalMode for more
-   * information).
-   * @param response GimbalSetMode service response.
-   */
-  void gimbal_reset_cb(const std::shared_ptr<GimbalReset::Request> request,
-                       const std::shared_ptr<GimbalReset::Response> response);
-
   /* ROS 2 publishers */
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::HmsInfoTable>::SharedPtr hms_info_table_pub_;
-
-  // Gimbal
-  rclcpp::Subscription<psdk_interfaces::msg::GimbalRotation>::SharedPtr
-      gimbal_rotation_sub_;
-
-  /* ROS 2 Services */
-
-  // Gimbal
-  rclcpp::Service<GimbalSetMode>::SharedPtr gimbal_set_mode_service_;
-  rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
 
   /**
    * @brief Method to initialize all psdk modules
@@ -322,7 +260,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   std::unique_ptr<utils::NodeThread> camera_thread_;
   std::shared_ptr<LiveviewModule> liveview_module_;
   std::unique_ptr<utils::NodeThread> liveview_thread_;
-
+  std::shared_ptr<GimbalModule> gimbal_module_;
+  std::unique_ptr<utils::NodeThread> gimbal_thread_;
 };
 
 /**

@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2024 Unmanned Life
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/**
+ * @file camera.hpp
+ *
+ * @brief Header file for the CameraModule class
+ *
+ * @authors Bianca Bendris Greab
+ * Contact: bianca@unmanned.life
+ *
+ */
+
 #ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_CAMERA_HPP
 #define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_CAMERA_HPP
 
@@ -87,12 +104,12 @@ class CameraModule : public rclcpp_lifecycle::LifecycleNode
   explicit CameraModule(const std::string& name);
 
   /**
-   * @brief Destroy the telemetry module object
+   * @brief Destroy the camera module object
    */
   ~CameraModule();
 
   /**
-   * @brief Configures the telemetry module. Creates the ROS 2 subscribers
+   * @brief Configures the camera module. Creates the ROS 2 subscribers
    * and services.
    * @param state rclcpp_lifecycle::State. Current state of the node.
    * @return CallbackReturn SUCCESS or FAILURE
@@ -100,34 +117,39 @@ class CameraModule : public rclcpp_lifecycle::LifecycleNode
   CallbackReturn on_configure(const rclcpp_lifecycle::State& state);
 
   /**
-   * @brief Activates the telemetry module.
+   * @brief Activates the camera module.
    * @param state rclcpp_lifecycle::State. Current state of the node.
    * @return CallbackReturn SUCCESS or FAILURE
    */
   CallbackReturn on_activate(const rclcpp_lifecycle::State& state);
   /**
-   * @brief Cleans the telemetry module. Resets the ROS 2 subscribers and
+   * @brief Cleans the camera module. Resets the ROS 2 subscribers and
    * services.
    * @param state rclcpp_lifecycle::State. Current state of the node.
    * @return CallbackReturn SUCCESS or FAILURE
    */
   CallbackReturn on_cleanup(const rclcpp_lifecycle::State& state);
   /**
-   * @brief Deactivates the telemetry module.
+   * @brief Deactivates the camera module.
    * @param state rclcpp_lifecycle::State. Current state of the node.
    * @return CallbackReturn SUCCESS or FAILURE
    */
   CallbackReturn on_deactivate(const rclcpp_lifecycle::State& state);
+  /**
+   * @brief Shuts down the camera module.
+   * @param state rclcpp_lifecycle::State. Current state of the node.
+   * @return CallbackReturn SUCCESS or FAILURE
+   */
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state);
 
   /**
-   * @brief Initialize the telemetry module.
+   * @brief Initialize the camera module.
    * @return true/false
    */
   bool init();
 
   /**
-   * @brief Deinitialize the telemetry module
+   * @brief Deinitialize the camera module
    * @return true/false
    */
   bool deinit();

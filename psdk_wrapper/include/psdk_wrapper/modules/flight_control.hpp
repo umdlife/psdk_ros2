@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2024 Unmanned Life
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/**
+ * @file flight_control.hpp
+ *
+ * @brief Header file for the FlightControlModule class
+ *
+ * @authors Bianca Bendris Greab
+ * Contact: bianca@unmanned.life
+ *
+ */
+
 #ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_FLIGHT_CONTROL_HPP
 #define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_FLIGHT_CONTROL_HPP
 
@@ -65,6 +82,11 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
    * @return CallbackReturn SUCCESS or FAILURE
    */
   CallbackReturn on_deactivate(const rclcpp_lifecycle::State &state);
+  /**
+   * @brief Shuts down the flight control module.
+   * @param state rclcpp_lifecycle::State. Current state of the node.
+   * @return CallbackReturn SUCCESS or FAILURE
+   */
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State &state);
 
   /**
