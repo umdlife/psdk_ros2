@@ -229,7 +229,7 @@ PSDKWrapper::publish_main_camera_images(const uint8_t *buffer,
   img->encoding = "h264";
   img->data = std::vector<uint8_t>(buffer, buffer + buffer_length);
   img->header.stamp = this->get_clock()->now();
-  img->header.frame_id = get_optical_frame_id();
+  img->header.frame_id = "";  // get_optical_frame_id();
   main_camera_stream_pub_->publish(std::move(img));
 }
 
@@ -257,7 +257,7 @@ PSDKWrapper::publish_main_camera_images(CameraRGBImage rgb_img, void *user_data)
   img->data = rgb_img.rawData;
 
   img->header.stamp = this->get_clock()->now();
-  img->header.frame_id = get_optical_frame_id();
+  img->header.frame_id = "";  // get_optical_frame_id();
   main_camera_stream_pub_->publish(std::move(img));
 }
 
@@ -276,4 +276,17 @@ PSDKWrapper::publish_fpv_camera_images(CameraRGBImage rgb_img, void *user_data)
   img->header.frame_id = "fpv_camera_link";
   fpv_camera_stream_pub_->publish(std::move(img));
 }
+
+// std::string
+// LiveviewModule::get_optical_frame_id()
+// {
+//   for (auto &it : psdk_utils::camera_source_str)
+//   {
+//     if (it.first == selected_camera_source_)
+//     {
+//       return it.second;
+//     }
+//   }
+// }
+
 }  // namespace psdk_ros2

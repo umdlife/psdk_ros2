@@ -42,9 +42,6 @@
 
 namespace psdk_ros2
 {
-
-class PSDKWrapper;
-
 class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
 {
  public:
@@ -230,6 +227,10 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
 
+  /**
+   * @brief Get the current gps object
+   * @return sensor_msgs::msg::NavSatFix
+   */
   inline sensor_msgs::msg::NavSatFix
   get_current_gps()
   {
@@ -246,7 +247,15 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
    */
   void unsubscribe_psdk_topics();
 
+  /**
+   * @brief Set the aircraft base object
+   * @param aircraft_base the type of aircraft base
+   */
   void set_aircraft_base(const T_DjiAircraftInfoBaseInfo aircraft_base);
+  /**
+   * @brief Set the camera type object
+   * @param camera_type the type of camera attached to the aircraft
+   */
   void set_camera_type(const E_DjiCameraType camera_type);
 
   struct TelemetryParams

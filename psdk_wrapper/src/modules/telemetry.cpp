@@ -2567,8 +2567,11 @@ TelemetryModule::set_aircraft_base(
 void
 TelemetryModule::set_camera_type(const E_DjiCameraType camera_type)
 {
-  publish_camera_transforms_ = true;
-  camera_type_ = camera_type;
+  if (camera_type != DJI_CAMERA_TYPE_UNKNOWN)
+  {
+    publish_camera_transforms_ = true;
+    camera_type_ = camera_type;
+  }
 }
 
 }  // namespace psdk_ros2

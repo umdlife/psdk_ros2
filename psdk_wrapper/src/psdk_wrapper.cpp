@@ -8,7 +8,9 @@
 /**
  * @file psdk_wrapper.cpp
  *
- * @brief
+ * @brief Implementation of the PSDKWrapper class. This class is the main
+ * interface between the Payload SDK and ROS 2. It initializes the modules and
+ * the environment.
  *
  * @author Bianca Bendris
  * Contact: bianca@unmanned.life
@@ -18,6 +20,7 @@
 #include "psdk_wrapper/psdk_wrapper.hpp"
 
 std::shared_ptr<psdk_ros2::TelemetryModule> psdk_ros2::global_telemetry_ptr_;
+std::shared_ptr<psdk_ros2::CameraModule> psdk_ros2::global_camera_ptr_;
 
 using namespace std::placeholders;  // NOLINT
 
@@ -94,6 +97,8 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
       std::make_shared<FlightControlModule>("flight_control_node");
   telemetry_module_ = std::make_shared<TelemetryModule>("telemetry_node");
   psdk_ros2::global_telemetry_ptr_ = telemetry_module_;
+  camera_module_ = std::make_shared<CameraModule>("camera_node");
+  psdk_ros2::global_camera_ptr_ = camera_module_;
 
   load_parameters();
   if (!set_environment())
@@ -126,26 +131,27 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   }
 
   telemetry_module_->set_aircraft_base(aircraft_base_info_);
-  if (attached_camera_type_ != DJI_CAMERA_TYPE_UNKNOWN)
-  {
-    telemetry_module_->set_camera_type(attached_camera_type_);
-  }
+  telemetry_module_->set_camera_type(
+      camera_module_->get_attached_camera_type());
 
   // Configure the modules
   initialize_ros_elements();
   telemetry_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
   flight_control_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
+  camera_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
 
   // Activate the modules
   activate_ros_elements();
   telemetry_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
   telemetry_module_->subscribe_psdk_topics();
   flight_control_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
+  camera_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
 
   // Start the threads
   telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
   flight_control_thread_ =
       std::make_unique<utils::NodeThread>(flight_control_module_);
+  camera_thread_ = std::make_unique<utils::NodeThread>(camera_module_);
 
   // Delay the initialization of some modules due to dependencies
   if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
@@ -207,7 +213,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 
   // Deinitialize all remaining modules
   if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
-      !deinit_camera_manager() || !deinit_gimbal_manager() ||
+      !camera_module_->deinit() || !deinit_gimbal_manager() ||
       !deinit_liveview() || !deinit_hms())
   {
     return CallbackReturn::FAILURE;
@@ -410,7 +416,8 @@ PSDKWrapper::load_parameters()
                 telemetry_module_->params_.publish_transforms);
   get_non_mandatory_param("hms_return_codes_path",
                           params_.hms_return_codes_path);
-  get_non_mandatory_param("file_path", params_.file_path);
+  get_non_mandatory_param("file_path",
+                          camera_module_->default_path_to_download_media_);
   get_parameter("num_of_initialization_retries",
                 num_of_initialization_retries_);
   // Get data frequency
@@ -581,109 +588,6 @@ PSDKWrapper::initialize_ros_elements()
 
   RCLCPP_INFO(get_logger(), "Creating services");
 
-  /* Camera */
-  camera_shoot_single_photo_service_ = create_service<CameraShootSinglePhoto>(
-      "psdk_ros2/camera_shoot_single_photo",
-      std::bind(&PSDKWrapper::camera_shoot_single_photo_cb, this, _1, _2),
-      qos_profile_);
-  camera_shoot_burst_photo_service_ = create_service<CameraShootBurstPhoto>(
-      "psdk_ros2/camera_shoot_burst_photo",
-      std::bind(&PSDKWrapper::camera_shoot_burst_photo_cb, this, _1, _2),
-      qos_profile_);
-  camera_shoot_interval_photo_service_ =
-      create_service<CameraShootIntervalPhoto>(
-          "psdk_ros2/camera_shoot_interval_photo",
-          std::bind(&PSDKWrapper::camera_shoot_interval_photo_cb, this, _1, _2),
-          qos_profile_);
-  camera_stop_shoot_photo_service_ = create_service<CameraStopShootPhoto>(
-      "psdk_ros2/camera_stop_shoot_photo",
-      std::bind(&PSDKWrapper::camera_stop_shoot_photo_cb, this, _1, _2),
-      qos_profile_);
-  camera_record_video_service_ = create_service<CameraRecordVideo>(
-      "psdk_ros2/camera_record_video",
-      std::bind(&PSDKWrapper::camera_record_video_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_laser_ranging_info_service_ =
-      create_service<CameraGetLaserRangingInfo>(
-          "psdk_ros2/camera_get_laser_ranging_info",
-          std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this, _1,
-                    _2),
-          qos_profile_);
-  camera_get_file_list_info_service_ = create_service<CameraGetFileListInfo>(
-      "psdk_ros2/camera_get_file_list_info",
-      std::bind(&PSDKWrapper::camera_get_file_list_info_cb, this, _1, _2),
-      qos_profile_);
-  camera_format_sd_card_service_ = create_service<CameraFormatSdCard>(
-      "psdk_ros2/camera_format_sd_card",
-      std::bind(&PSDKWrapper::camera_format_sd_card_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_sd_storage_info_service_ = create_service<CameraGetSDStorageInfo>(
-      "psdk_ros2/camera_get_sd_storage_info",
-      std::bind(&PSDKWrapper::camera_get_sd_storage_info_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_type_service_ = create_service<CameraGetType>(
-      "psdk_ros2/camera_get_type",
-      std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2), qos_profile_);
-  camera_set_exposure_mode_ev_service_ =
-      create_service<CameraSetExposureModeEV>(
-          "psdk_ros2/camera_set_exposure_mode_ev",
-          std::bind(&PSDKWrapper::camera_set_exposure_mode_ev_cb, this, _1, _2),
-          qos_profile_);
-  camera_get_exposure_mode_ev_service_ =
-      create_service<CameraGetExposureModeEV>(
-          "psdk_ros2/camera_get_exposure_mode_ev",
-          std::bind(&PSDKWrapper::camera_get_exposure_mode_ev_cb, this, _1, _2),
-          qos_profile_);
-  camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
-      "psdk_ros2/camera_set_shutter_speed",
-      std::bind(&PSDKWrapper::camera_set_shutter_speed_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_shutter_speed_service_ = create_service<CameraGetShutterSpeed>(
-      "psdk_ros2/camera_get_shutter_speed",
-      std::bind(&PSDKWrapper::camera_get_shutter_speed_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_iso_service_ = create_service<CameraSetISO>(
-      "psdk_ros2/camera_set_iso",
-      std::bind(&PSDKWrapper::camera_set_iso_cb, this, _1, _2), qos_profile_);
-  camera_get_iso_service_ = create_service<CameraGetISO>(
-      "psdk_ros2/camera_get_iso",
-      std::bind(&PSDKWrapper::camera_get_iso_cb, this, _1, _2), qos_profile_);
-  camera_set_focus_target_service_ = create_service<CameraSetFocusTarget>(
-      "psdk_ros2/camera_set_focus_target",
-      std::bind(&PSDKWrapper::camera_set_focus_target_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_focus_target_service_ = create_service<CameraGetFocusTarget>(
-      "psdk_ros2/camera_get_focus_target",
-      std::bind(&PSDKWrapper::camera_get_focus_target_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_focus_mode_service_ = create_service<CameraSetFocusMode>(
-      "psdk_ros2/camera_set_focus_mode",
-      std::bind(&PSDKWrapper::camera_set_focus_mode_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_focus_mode_service_ = create_service<CameraGetFocusMode>(
-      "psdk_ros2/camera_get_focus_mode",
-      std::bind(&PSDKWrapper::camera_get_focus_mode_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_optical_zoom_service_ = create_service<CameraSetOpticalZoom>(
-      "psdk_ros2/camera_set_optical_zoom",
-      std::bind(&PSDKWrapper::camera_set_optical_zoom_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_optical_zoom_service_ = create_service<CameraGetOpticalZoom>(
-      "psdk_ros2/camera_get_optical_zoom",
-      std::bind(&PSDKWrapper::camera_get_optical_zoom_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_infrared_zoom_service_ = create_service<CameraSetInfraredZoom>(
-      "psdk_ros2/camera_set_infrared_zoom",
-      std::bind(&PSDKWrapper::camera_set_infrared_zoom_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_aperture_service_ = create_service<CameraSetAperture>(
-      "psdk_ros2/camera_set_aperture",
-      std::bind(&PSDKWrapper::camera_set_aperture_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_aperture_service_ = create_service<CameraGetAperture>(
-      "psdk_ros2/camera_get_aperture",
-      std::bind(&PSDKWrapper::camera_get_aperture_cb, this, _1, _2),
-      qos_profile_);
   /* Streaming */
   camera_setup_streaming_service_ = create_service<CameraSetupStreaming>(
       "psdk_ros2/camera_setup_streaming",
@@ -696,20 +600,6 @@ PSDKWrapper::initialize_ros_elements()
   gimbal_reset_service_ = create_service<GimbalReset>(
       "psdk_ros2/gimbal_reset",
       std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2), qos_profile_);
-
-  // Camera action servers
-  camera_download_file_by_index_server_ =
-      std::make_unique<utils::ActionServer<CameraDownloadFileByIndex>>(
-          get_node_base_interface(), get_node_clock_interface(),
-          get_node_logging_interface(), get_node_waitables_interface(),
-          "psdk_ros2/camera_download_file_by_index",
-          std::bind(&PSDKWrapper::execute_download_file_by_index, this));
-  camera_delete_file_by_index_server_ =
-      std::make_unique<utils::ActionServer<CameraDeleteFileByIndex>>(
-          get_node_base_interface(), get_node_clock_interface(),
-          get_node_logging_interface(), get_node_waitables_interface(),
-          "psdk_ros2/camera_delete_file_by_index",
-          std::bind(&PSDKWrapper::execute_delete_file_by_index, this));
 }
 
 void
@@ -720,9 +610,6 @@ PSDKWrapper::activate_ros_elements()
   main_camera_stream_pub_->on_activate();
   fpv_camera_stream_pub_->on_activate();
   hms_info_table_pub_->on_activate();
-
-  camera_download_file_by_index_server_->activate();
-  camera_delete_file_by_index_server_->activate();
 }
 
 void
@@ -734,9 +621,6 @@ PSDKWrapper::deactivate_ros_elements()
   fpv_camera_stream_pub_->on_deactivate();
 
   hms_info_table_pub_->on_deactivate();
-
-  camera_download_file_by_index_server_->deactivate();
-  camera_delete_file_by_index_server_->deactivate();
 }
 
 void
@@ -744,35 +628,7 @@ PSDKWrapper::clean_ros_elements()
 {
   RCLCPP_INFO(get_logger(), "Cleaning ROS elements");
 
-  // Action servers
-  camera_download_file_by_index_server_.reset();
-  camera_delete_file_by_index_server_.reset();
   // Services
-  // Camera
-  camera_shoot_single_photo_service_.reset();
-  camera_shoot_burst_photo_service_.reset();
-  camera_shoot_interval_photo_service_.reset();
-  camera_stop_shoot_photo_service_.reset();
-  camera_record_video_service_.reset();
-  camera_get_type_service_.reset();
-  camera_set_exposure_mode_ev_service_.reset();
-  camera_get_exposure_mode_ev_service_.reset();
-  camera_set_shutter_speed_service_.reset();
-  camera_get_shutter_speed_service_.reset();
-  camera_set_iso_service_.reset();
-  camera_get_iso_service_.reset();
-  camera_set_focus_target_service_.reset();
-  camera_get_focus_target_service_.reset();
-  camera_set_focus_mode_service_.reset();
-  camera_get_focus_mode_service_.reset();
-  camera_set_optical_zoom_service_.reset();
-  camera_get_optical_zoom_service_.reset();
-  camera_set_infrared_zoom_service_.reset();
-  camera_set_aperture_service_.reset();
-  camera_get_laser_ranging_info_service_.reset();
-  camera_get_file_list_info_service_.reset();
-  camera_format_sd_card_service_.reset();
-  camera_get_sd_storage_info_service_.reset();
   // Streaming
   camera_setup_streaming_service_.reset();
   // Gimbal
@@ -780,7 +636,6 @@ PSDKWrapper::clean_ros_elements()
   gimbal_reset_service_.reset();
 
   // Publishers
-
   main_camera_stream_pub_.reset();
   fpv_camera_stream_pub_.reset();
 
@@ -794,7 +649,7 @@ PSDKWrapper::initialize_psdk_modules()
   std::vector<ModuleInitializer> module_initializers = {
       {std::bind(&TelemetryModule::init, telemetry_module_),
        is_telemetry_module_mandatory_},
-      {std::bind(&PSDKWrapper::init_camera_manager, this),
+      {std::bind(&CameraModule::init, camera_module_),
        is_camera_module_mandatory_},
       {std::bind(&PSDKWrapper::init_gimbal_manager, this),
        is_gimbal_module_mandatory_},
