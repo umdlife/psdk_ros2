@@ -26,19 +26,22 @@ TelemetryModule::TelemetryModule(const std::string &name)
                name + ":" + std::string("__node:=") + name}))
 
 {
-  RCLCPP_INFO(get_logger(), "Creating TelemetryModule...");
+  RCLCPP_INFO(get_logger(), "Creating TelemetryModule");
+  current_state_.initialize_state();
+  initialize_aircraft_base_info();
+  camera_type_ = DJI_CAMERA_TYPE_UNKNOWN;
 }
 
 TelemetryModule::~TelemetryModule()
 {
-  RCLCPP_INFO(get_logger(), "Destroying TelemetryModule...");
+  RCLCPP_INFO(get_logger(), "Destroying TelemetryModule");
 }
 
 TelemetryModule::CallbackReturn
 TelemetryModule::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Configuring TelemetryModule...");
+  RCLCPP_INFO(get_logger(), "Configuring TelemetryModule");
 
   // Create ROS 2 publishers
   attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
@@ -147,8 +150,6 @@ TelemetryModule::on_configure(const rclcpp_lifecycle::State &state)
       std::bind(&TelemetryModule::set_local_position_ref_cb, this,
                 std::placeholders::_1, std::placeholders::_2));
 
-  current_state_.initialize_state();
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -156,7 +157,7 @@ TelemetryModule::CallbackReturn
 TelemetryModule::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Activating TelemetryModule...");
+  RCLCPP_INFO(get_logger(), "Activating TelemetryModule");
 
   params_.imu_frame = add_tf_prefix(params_.imu_frame);
   params_.body_frame = add_tf_prefix(params_.body_frame);
@@ -220,7 +221,7 @@ TelemetryModule::CallbackReturn
 TelemetryModule::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Deactivating TelemetryModule...");
+  RCLCPP_INFO(get_logger(), "Deactivating TelemetryModule");
   attitude_pub_->on_deactivate();
   imu_pub_->on_deactivate();
   velocity_ground_fused_pub_->on_deactivate();
@@ -272,7 +273,7 @@ TelemetryModule::CallbackReturn
 TelemetryModule::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Cleaning up TelemetryModule...");
+  RCLCPP_INFO(get_logger(), "Cleaning up TelemetryModule");
   set_local_position_ref_srv_.reset();
 
   // TF broadcasters
@@ -324,6 +325,14 @@ TelemetryModule::on_cleanup(const rclcpp_lifecycle::State &state)
   gimbal_angles_pub_.reset();
   gimbal_status_pub_.reset();
 
+  // Reset global variables
+  {
+    std::unique_lock<std::shared_mutex> lock(current_state_mutex_);
+    current_state_.initialize_state();
+  }
+
+  initialize_aircraft_base_info();
+  camera_type_ = DJI_CAMERA_TYPE_UNKNOWN;
   return CallbackReturn::SUCCESS;
 }
 
@@ -331,7 +340,8 @@ TelemetryModule::CallbackReturn
 TelemetryModule::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Shutting down TelemetryModule...");
+  RCLCPP_INFO(get_logger(), "Shutting down TelemetryModule");
+  std::unique_lock<std::shared_mutex> lock(global_ptr_mutex_);
   global_telemetry_ptr_.reset();
   return CallbackReturn::SUCCESS;
 }
@@ -379,6 +389,8 @@ T_DjiReturnCode
 c_attitude_callback(const uint8_t *data, uint16_t data_size,
                     const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->attitude_callback(data, data_size, timestamp);
 }
 
@@ -386,6 +398,8 @@ T_DjiReturnCode
 c_velocity_callback(const uint8_t *data, uint16_t data_size,
                     const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->velocity_callback(data, data_size, timestamp);
 }
 
@@ -393,6 +407,8 @@ T_DjiReturnCode
 c_angular_rate_ground_fused_callback(const uint8_t *data, uint16_t data_size,
                                      const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->angular_rate_ground_fused_callback(
       data, data_size, timestamp);
 }
@@ -401,6 +417,8 @@ T_DjiReturnCode
 c_angular_rate_body_raw_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->angular_rate_body_raw_callback(data, data_size,
                                                                timestamp);
 }
@@ -409,6 +427,8 @@ T_DjiReturnCode
 c_imu_callback(const uint8_t *data, uint16_t data_size,
                const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->imu_callback(data, data_size, timestamp);
 }
 
@@ -416,6 +436,8 @@ T_DjiReturnCode
 c_vo_position_callback(const uint8_t *data, uint16_t data_size,
                        const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->vo_position_callback(data, data_size,
                                                      timestamp);
 }
@@ -424,6 +446,8 @@ T_DjiReturnCode
 c_gps_fused_callback(const uint8_t *data, uint16_t data_size,
                      const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->gps_fused_callback(data, data_size, timestamp);
 }
 
@@ -431,6 +455,8 @@ T_DjiReturnCode
 c_gps_position_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->gps_position_callback(data, data_size,
                                                       timestamp);
 }
@@ -439,6 +465,8 @@ T_DjiReturnCode
 c_gps_velocity_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->gps_velocity_callback(data, data_size,
                                                       timestamp);
 }
@@ -447,6 +475,8 @@ T_DjiReturnCode
 c_gps_details_callback(const uint8_t *data, uint16_t data_size,
                        const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->gps_details_callback(data, data_size,
                                                      timestamp);
 }
@@ -455,6 +485,8 @@ T_DjiReturnCode
 c_gps_signal_callback(const uint8_t *data, uint16_t data_size,
                       const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->gps_signal_callback(data, data_size, timestamp);
 }
 
@@ -462,6 +494,8 @@ T_DjiReturnCode
 c_gps_control_callback(const uint8_t *data, uint16_t data_size,
                        const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->gps_control_callback(data, data_size,
                                                      timestamp);
 }
@@ -470,6 +504,8 @@ T_DjiReturnCode
 c_rtk_position_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->rtk_position_callback(data, data_size,
                                                       timestamp);
 }
@@ -477,6 +513,8 @@ T_DjiReturnCode
 c_rtk_velocity_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->rtk_velocity_callback(data, data_size,
                                                       timestamp);
 }
@@ -484,12 +522,16 @@ T_DjiReturnCode
 c_rtk_yaw_callback(const uint8_t *data, uint16_t data_size,
                    const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->rtk_yaw_callback(data, data_size, timestamp);
 }
 T_DjiReturnCode
 c_rtk_position_info_callback(const uint8_t *data, uint16_t data_size,
                              const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->rtk_position_info_callback(data, data_size,
                                                            timestamp);
 }
@@ -497,6 +539,8 @@ T_DjiReturnCode
 c_rtk_yaw_info_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->rtk_yaw_info_callback(data, data_size,
                                                       timestamp);
 }
@@ -504,6 +548,8 @@ T_DjiReturnCode
 c_rtk_connection_status_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->rtk_connection_status_callback(data, data_size,
                                                                timestamp);
 }
@@ -511,6 +557,8 @@ T_DjiReturnCode
 c_magnetometer_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->magnetometer_callback(data, data_size,
                                                       timestamp);
 }
@@ -518,6 +566,8 @@ T_DjiReturnCode
 c_rc_callback(const uint8_t *data, uint16_t data_size,
               const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->rc_callback(data, data_size, timestamp);
 }
 
@@ -525,6 +575,8 @@ T_DjiReturnCode
 c_esc_callback(const uint8_t *data, uint16_t data_size,
                const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->esc_callback(data, data_size, timestamp);
 }
 
@@ -532,6 +584,8 @@ T_DjiReturnCode
 c_rc_connection_status_callback(const uint8_t *data, uint16_t data_size,
                                 const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->rc_connection_status_callback(data, data_size,
                                                               timestamp);
 }
@@ -540,6 +594,8 @@ T_DjiReturnCode
 c_gimbal_angles_callback(const uint8_t *data, uint16_t data_size,
                          const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->gimbal_angles_callback(data, data_size,
                                                        timestamp);
 }
@@ -548,6 +604,8 @@ T_DjiReturnCode
 c_gimbal_status_callback(const uint8_t *data, uint16_t data_size,
                          const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->gimbal_status_callback(data, data_size,
                                                        timestamp);
 }
@@ -556,6 +614,8 @@ T_DjiReturnCode
 c_flight_status_callback(const uint8_t *data, uint16_t data_size,
                          const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->flight_status_callback(data, data_size,
                                                        timestamp);
 }
@@ -564,6 +624,8 @@ T_DjiReturnCode
 c_display_mode_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->display_mode_callback(data, data_size,
                                                       timestamp);
 }
@@ -572,6 +634,8 @@ T_DjiReturnCode
 c_landing_gear_status_callback(const uint8_t *data, uint16_t data_size,
                                const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->landing_gear_status_callback(data, data_size,
                                                              timestamp);
 }
@@ -580,6 +644,8 @@ T_DjiReturnCode
 c_motor_start_error_callback(const uint8_t *data, uint16_t data_size,
                              const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->motor_start_error_callback(data, data_size,
                                                            timestamp);
 }
@@ -588,6 +654,8 @@ T_DjiReturnCode
 c_flight_anomaly_callback(const uint8_t *data, uint16_t data_size,
                           const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->flight_anomaly_callback(data, data_size,
                                                         timestamp);
 }
@@ -596,6 +664,8 @@ T_DjiReturnCode
 c_battery_callback(const uint8_t *data, uint16_t data_size,
                    const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->battery_callback(data, data_size, timestamp);
 }
 
@@ -603,6 +673,8 @@ T_DjiReturnCode
 c_height_fused_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->height_fused_callback(data, data_size,
                                                       timestamp);
 }
@@ -610,6 +682,8 @@ T_DjiReturnCode
 c_control_mode_callback(const uint8_t *data, uint16_t data_size,
                         const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->control_mode_callback(data, data_size,
                                                       timestamp);
 }
@@ -617,12 +691,16 @@ T_DjiReturnCode
 c_home_point_callback(const uint8_t *data, uint16_t data_size,
                       const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->home_point_callback(data, data_size, timestamp);
 }
 T_DjiReturnCode
 c_home_point_status_callback(const uint8_t *data, uint16_t data_size,
                              const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->home_point_status_callback(data, data_size,
                                                            timestamp);
 }
@@ -631,6 +709,8 @@ T_DjiReturnCode
 c_acceleration_ground_fused_callback(const uint8_t *data, uint16_t data_size,
                                      const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->acceleration_ground_fused_callback(
       data, data_size, timestamp);
 }
@@ -639,6 +719,8 @@ T_DjiReturnCode
 c_acceleration_body_fused_callback(const uint8_t *data, uint16_t data_size,
                                    const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->acceleration_body_fused_callback(
       data, data_size, timestamp);
 }
@@ -647,6 +729,8 @@ T_DjiReturnCode
 c_acceleration_body_raw_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->acceleration_body_raw_callback(data, data_size,
                                                                timestamp);
 }
@@ -654,6 +738,8 @@ T_DjiReturnCode
 c_avoid_data_callback(const uint8_t *data, uint16_t data_size,
                       const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->avoid_data_callback(data, data_size, timestamp);
 }
 
@@ -661,6 +747,8 @@ T_DjiReturnCode
 c_altitude_sl_callback(const uint8_t *data, uint16_t data_size,
                        const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->altitude_sl_callback(data, data_size,
                                                      timestamp);
 }
@@ -669,6 +757,8 @@ T_DjiReturnCode
 c_altitude_barometric_callback(const uint8_t *data, uint16_t data_size,
                                const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->altitude_barometric_callback(data, data_size,
                                                              timestamp);
 }
@@ -677,6 +767,8 @@ T_DjiReturnCode
 c_single_battery_index1_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->single_battery_index1_callback(data, data_size,
                                                                timestamp);
 }
@@ -685,6 +777,8 @@ T_DjiReturnCode
 c_single_battery_index2_callback(const uint8_t *data, uint16_t data_size,
                                  const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->single_battery_index2_callback(data, data_size,
                                                                timestamp);
 }
@@ -693,6 +787,8 @@ T_DjiReturnCode
 c_home_point_altitude_callback(const uint8_t *data, uint16_t data_size,
                                const T_DjiDataTimestamp *timestamp)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_telemetry_ptr_->global_ptr_mutex_);
   return global_telemetry_ptr_->home_point_altitude_callback(data, data_size,
                                                              timestamp);
 }
@@ -730,6 +826,7 @@ TelemetryModule::attitude_callback(const uint8_t *data, uint16_t data_size,
   attitude_pub_->publish(quaternion_msg);
 
   /* Save current attitude */
+  std::unique_lock<std::shared_mutex> lock(current_state_mutex_);
   current_state_.attitude = current_quat_FLU2ENU;
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -898,7 +995,10 @@ TelemetryModule::vo_position_callback(const uint8_t *data, uint16_t data_size,
       position_msg.position.z - get_local_altitude_reference();
 
   // Save current local position
-  current_state_.local_position = position_msg;
+  {
+    std::unique_lock<std::shared_mutex> lock(current_state_mutex_);
+    current_state_.local_position = position_msg;
+  }
 
   if (set_local_position_ref_)
   {
@@ -1269,7 +1369,10 @@ TelemetryModule::gimbal_angles_callback(const uint8_t *data, uint16_t data_size,
   if (params_.publish_transforms)
   {
     /* Save gimbal angles for TF publishing and publish dynamic transform */
-    current_state_.gimbal_angles = gimbal_angles_msg;
+    {
+      std::unique_lock<std::shared_mutex> lock(current_state_mutex_);
+      current_state_.gimbal_angles = gimbal_angles_msg;
+    }
     publish_dynamic_transforms();
   }
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
@@ -2417,6 +2520,7 @@ TelemetryModule::set_local_position_ref_cb(
   (void)request;
   /** The check for the z_health flag is temporarly removed as it is always 0 in
    * real scenarios (not HITL) */
+  std::unique_lock<std::shared_mutex> lock(current_state_mutex_);
   if (current_state_.local_position.x_health &&
       current_state_.local_position.y_health)
   {
@@ -2455,7 +2559,7 @@ TelemetryModule::set_local_position_ref_cb(
 void
 TelemetryModule::publish_static_transforms()
 {
-  RCLCPP_INFO(get_logger(), "Publishing static transforms");
+  RCLCPP_DEBUG(get_logger(), "Publishing static transforms");
 
   if (aircraft_base_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK)
   {
@@ -2540,6 +2644,7 @@ double
 TelemetryModule::get_yaw_gimbal_camera()
 {
   /* Get current copter yaw wrt. to East */
+  std::unique_lock<std::shared_mutex> lock(current_state_mutex_);
   tf2::Matrix3x3 rotation_mat(current_state_.attitude);
   double current_roll;
   double current_pitch;
@@ -2572,6 +2677,16 @@ TelemetryModule::set_camera_type(const E_DjiCameraType camera_type)
     publish_camera_transforms_ = true;
     camera_type_ = camera_type;
   }
+}
+
+void
+TelemetryModule::initialize_aircraft_base_info()
+{
+  aircraft_base_.aircraftSeries = DJI_AIRCRAFT_SERIES_UNKNOWN;
+  aircraft_base_.mountPositionType = DJI_MOUNT_POSITION_TYPE_UNKNOWN;
+  aircraft_base_.aircraftType = DJI_AIRCRAFT_TYPE_UNKNOWN;
+  aircraft_base_.djiAdapterType = DJI_SDK_ADAPTER_TYPE_UNKNOWN;
+  aircraft_base_.mountPosition = DJI_MOUNT_POSITION_UNKNOWN;
 }
 
 }  // namespace psdk_ros2

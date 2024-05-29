@@ -23,6 +23,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <shared_mutex>
 
 #include "psdk_interfaces/srv/camera_setup_streaming.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
@@ -192,6 +193,8 @@ class LiveviewModule : public rclcpp_lifecycle::LifecycleNode
   E_DjiLiveViewCameraSource selected_camera_source_;
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
   bool decode_stream_{true};
+
+  mutable std::shared_mutex global_ptr_mutex_;
 };
 
 extern std::shared_ptr<LiveviewModule> global_liveview_ptr_;

@@ -28,58 +28,66 @@ HmsModule::HmsModule(const std::string &name)
                name + ":" + std::string("__node:=") + name}))
 
 {
-  RCLCPP_INFO(get_logger(), "Creating HmsModule...");
+  RCLCPP_INFO(get_logger(), "Creating HmsModule");
 }
 
-HmsModule::~HmsModule()
-{
-  RCLCPP_INFO(get_logger(), "Destroying HmsModule...");
-}
+HmsModule::~HmsModule() { RCLCPP_INFO(get_logger(), "Destroying HmsModule"); }
 
 HmsModule::CallbackReturn
 HmsModule::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Configuring HmsModule...");
+  RCLCPP_INFO(get_logger(), "Configuring HmsModule");
   hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
       "psdk_ros2/hms_info_table", 10);
+
+  return CallbackReturn::SUCCESS;
 }
 
 HmsModule::CallbackReturn
 HmsModule::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Activating HmsModule...");
+  RCLCPP_INFO(get_logger(), "Activating HmsModule");
+  std::lock_guard<std::mutex> lock(publisher_mutex_);
   hms_info_table_pub_->on_activate();
+  return CallbackReturn::SUCCESS;
 }
 
 HmsModule::CallbackReturn
 HmsModule::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Deactivating HmsModule...");
+  RCLCPP_INFO(get_logger(), "Deactivating HmsModule");
+  std::lock_guard<std::mutex> lock(publisher_mutex_);
   hms_info_table_pub_->on_deactivate();
+  return CallbackReturn::SUCCESS;
 }
 
 HmsModule::CallbackReturn
 HmsModule::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Cleaning up HmsModule...");
+  RCLCPP_INFO(get_logger(), "Cleaning up HmsModule");
+  std::lock_guard<std::mutex> lock(publisher_mutex_);
   hms_info_table_pub_.reset();
+  return CallbackReturn::SUCCESS;
 }
 
 HmsModule::CallbackReturn
 HmsModule::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Shutting down HmsModule...");
+  RCLCPP_INFO(get_logger(), "Shutting down HmsModule");
+  std::unique_lock<std::shared_mutex> lock(global_ptr_mutex_);
+  global_hms_ptr_.reset();
   return CallbackReturn::SUCCESS;
 }
 
 T_DjiReturnCode
 c_hms_callback(T_DjiHmsInfoTable hms_info_table)
 {
+  std::unique_lock<std::shared_mutex> lock(global_hms_ptr_->global_ptr_mutex_);
   return global_hms_ptr_->hms_callback(hms_info_table);
 }
 
@@ -209,6 +217,7 @@ HmsModule::hms_callback(T_DjiHmsInfoTable hms_info_table)
   }
 
   // Only process the data when the ROS2 publisher is active
+  std::lock_guard<std::mutex> lock(publisher_mutex_);
   if (hms_info_table_pub_->is_activated())
   {
     psdk_interfaces::msg::HmsInfoTable ros2_hms =

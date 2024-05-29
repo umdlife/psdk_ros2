@@ -22,9 +22,11 @@
 #include <math.h>
 
 #include <fstream>
+#include <mutex>
 #include <nlohmann/json.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <shared_mutex>
 
 #include "psdk_interfaces/msg/hms_info_msg.hpp"
 #include "psdk_interfaces/msg/hms_info_table.hpp"
@@ -126,6 +128,8 @@ class HmsModule : public rclcpp_lifecycle::LifecycleNode
 
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::HmsInfoTable>::SharedPtr hms_info_table_pub_;
+  std::mutex publisher_mutex_;
+  mutable std::shared_mutex global_ptr_mutex_;
 
   nlohmann::json hms_return_codes_json_;
 };

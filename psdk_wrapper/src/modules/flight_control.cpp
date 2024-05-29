@@ -31,19 +31,19 @@ FlightControlModule::FlightControlModule(const std::string &name)
                name + ":" + std::string("__node:=") + name}))
 
 {
-  RCLCPP_INFO(get_logger(), "Creating FlightControlModule...");
+  RCLCPP_INFO(get_logger(), "Creating FlightControlModule");
 }
 
 FlightControlModule::~FlightControlModule()
 {
-  RCLCPP_INFO(get_logger(), "Destroying FlightControlModule...");
+  RCLCPP_INFO(get_logger(), "Destroying FlightControlModule");
 }
 
 FlightControlModule::CallbackReturn
 FlightControlModule::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Configuring FlightControlModule...");
+  RCLCPP_INFO(get_logger(), "Configuring FlightControlModule");
 
   flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
       "psdk_ros2/flight_control_setpoint_generic", 10,
@@ -195,7 +195,7 @@ FlightControlModule::CallbackReturn
 FlightControlModule::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Activating FlightControlModule...");
+  RCLCPP_INFO(get_logger(), "Activating FlightControlModule");
   return CallbackReturn::SUCCESS;
 }
 
@@ -203,7 +203,7 @@ FlightControlModule::CallbackReturn
 FlightControlModule::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Deactivating FlightControlModule...");
+  RCLCPP_INFO(get_logger(), "Deactivating FlightControlModule");
   return CallbackReturn::SUCCESS;
 }
 
@@ -211,7 +211,7 @@ FlightControlModule::CallbackReturn
 FlightControlModule::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Cleaning up FlightControlModule...");
+  RCLCPP_INFO(get_logger(), "Cleaning up FlightControlModule");
   // ROS 2 subscribers
   flight_control_generic_sub_.reset();
   flight_control_position_yaw_sub_.reset();
@@ -251,7 +251,7 @@ FlightControlModule::on_cleanup(const rclcpp_lifecycle::State &state)
 FlightControlModule::CallbackReturn
 FlightControlModule::on_shutdown(const rclcpp_lifecycle::State &state)
 {
-  RCLCPP_INFO(get_logger(), "Shutting down FlightControlModule...");
+  RCLCPP_INFO(get_logger(), "Shutting down FlightControlModule");
   return CallbackReturn::SUCCESS;
 }
 

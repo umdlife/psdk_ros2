@@ -35,6 +35,7 @@
 #include <sensor_msgs/msg/joy.hpp>
 #include <sensor_msgs/msg/magnetic_field.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <shared_mutex>
 #include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/u_int16.hpp>
@@ -101,6 +102,11 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
    * @return CallbackReturn SUCCESS or FAILURE
    */
   CallbackReturn on_deactivate(const rclcpp_lifecycle::State& state);
+  /**
+   * @brief Shuts down the telemetry module.
+   * @param state rclcpp_lifecycle::State. Current state of the node.
+   * @return CallbackReturn SUCCESS or FAILURE
+   */
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state);
 
   /**
@@ -989,6 +995,11 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
    */
   std::string add_tf_prefix(const std::string& frame_name);
 
+  /**
+   * @brief Set default unknown values for the aircraft base info
+   */
+  void initialize_aircraft_base_info();
+
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   /* ROS 2 publishers */
@@ -1095,6 +1106,9 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
   T_DjiAircraftInfoBaseInfo aircraft_base_;
   E_DjiCameraType camera_type_;
   bool publish_camera_transforms_{false};
+
+  mutable std::shared_mutex current_state_mutex_;
+  mutable std::shared_mutex global_ptr_mutex_;
 };
 
 extern std::shared_ptr<TelemetryModule> global_telemetry_ptr_;

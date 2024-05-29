@@ -27,19 +27,19 @@ GimbalModule::GimbalModule(const std::string &name)
                name + ":" + std::string("__node:=") + name}))
 
 {
-  RCLCPP_INFO(get_logger(), "Creating GimbalModule...");
+  RCLCPP_INFO(get_logger(), "Creating GimbalModule");
 }
 
 GimbalModule::~GimbalModule()
 {
-  RCLCPP_INFO(get_logger(), "Destroying GimbalModule...");
+  RCLCPP_INFO(get_logger(), "Destroying GimbalModule");
 }
 
 GimbalModule::CallbackReturn
 GimbalModule::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Configuring GimbalModule...");
+  RCLCPP_INFO(get_logger(), "Configuring GimbalModule");
   gimbal_rotation_sub_ =
       create_subscription<psdk_interfaces::msg::GimbalRotation>(
           "psdk_ros2/gimbal_rotation", 10,
@@ -55,35 +55,40 @@ GimbalModule::on_configure(const rclcpp_lifecycle::State &state)
       std::bind(&GimbalModule::gimbal_reset_cb, this, std::placeholders::_1,
                 std::placeholders::_2),
       qos_profile_);
+  return CallbackReturn::SUCCESS;
 }
 GimbalModule::CallbackReturn
 GimbalModule::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Activating GimbalModule...");
+  RCLCPP_INFO(get_logger(), "Activating GimbalModule");
+  return CallbackReturn::SUCCESS;
 }
 
 GimbalModule::CallbackReturn
 GimbalModule::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Deactivating GimbalModule...");
+  RCLCPP_INFO(get_logger(), "Deactivating GimbalModule");
+  return CallbackReturn::SUCCESS;
 }
 
 GimbalModule::CallbackReturn
 GimbalModule::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Cleaning up GimbalModule...");
+  RCLCPP_INFO(get_logger(), "Cleaning up GimbalModule");
   gimbal_set_mode_service_.reset();
   gimbal_reset_service_.reset();
+  gimbal_rotation_sub_.reset();
+  return CallbackReturn::SUCCESS;
 }
 
 GimbalModule::CallbackReturn
 GimbalModule::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Shutting down GimbalModule...");
+  RCLCPP_INFO(get_logger(), "Shutting down GimbalModule");
   return CallbackReturn::SUCCESS;
 }
 

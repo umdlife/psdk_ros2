@@ -33,19 +33,19 @@ CameraModule::CameraModule(const std::string &name)
                name + ":" + std::string("__node:=") + name}))
 
 {
-  RCLCPP_INFO(get_logger(), "Creating CameraModule...");
+  RCLCPP_INFO(get_logger(), "Creating CameraModule");
 }
 
 CameraModule::~CameraModule()
 {
-  RCLCPP_INFO(get_logger(), "Destroying CameraModule...");
+  RCLCPP_INFO(get_logger(), "Destroying CameraModule");
 }
 
 CameraModule::CallbackReturn
 CameraModule::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Configuring CameraModule...");
+  RCLCPP_INFO(get_logger(), "Configuring CameraModule");
 
   camera_shoot_single_photo_service_ = create_service<CameraShootSinglePhoto>(
       "psdk_ros2/camera_shoot_single_photo",
@@ -190,32 +190,35 @@ CameraModule::on_configure(const rclcpp_lifecycle::State &state)
           get_node_logging_interface(), get_node_waitables_interface(),
           "psdk_ros2/camera_delete_file_by_index",
           std::bind(&CameraModule::execute_delete_file_by_index, this));
+  return CallbackReturn::SUCCESS;
 }
 
 CameraModule::CallbackReturn
 CameraModule::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Activating CameraModule...");
+  RCLCPP_INFO(get_logger(), "Activating CameraModule");
   camera_download_file_by_index_server_->activate();
   camera_delete_file_by_index_server_->activate();
+  return CallbackReturn::SUCCESS;
 }
 
 CameraModule::CallbackReturn
 CameraModule::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Deactivating CameraModule...");
+  RCLCPP_INFO(get_logger(), "Deactivating CameraModule");
 
   camera_download_file_by_index_server_->deactivate();
   camera_delete_file_by_index_server_->deactivate();
+  return CallbackReturn::SUCCESS;
 }
 
 CameraModule::CallbackReturn
 CameraModule::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Cleaning up CameraModule...");
+  RCLCPP_INFO(get_logger(), "Cleaning up CameraModule");
 
   // Action servers
   camera_download_file_by_index_server_.reset();
@@ -245,13 +248,17 @@ CameraModule::on_cleanup(const rclcpp_lifecycle::State &state)
   camera_get_file_list_info_service_.reset();
   camera_format_sd_card_service_.reset();
   camera_get_sd_storage_info_service_.reset();
+  camera_get_aperture_service_.reset();
+
+  return CallbackReturn::SUCCESS;
 }
 
 CameraModule::CallbackReturn
 CameraModule::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Shutting down CameraModule...");
+  RCLCPP_INFO(get_logger(), "Shutting down CameraModule");
+  std::unique_lock<std::shared_mutex> lock(global_ptr_mutex_);
   global_camera_ptr_.reset();
   return CallbackReturn::SUCCESS;
 }
@@ -1291,6 +1298,8 @@ T_DjiReturnCode
 c_camera_manager_download_file_data_callback(
     T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_camera_ptr_->global_ptr_mutex_);
   return global_camera_ptr_->camera_manager_download_file_data_callback(
       packetInfo, data, len);
 }

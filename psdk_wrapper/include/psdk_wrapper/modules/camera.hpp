@@ -26,6 +26,7 @@
 #include <iostream>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <shared_mutex>
 
 #include "psdk_interfaces/action/camera_delete_file_by_index.hpp"
 #include "psdk_interfaces/action/camera_download_file_by_index.hpp"
@@ -567,6 +568,8 @@ class CameraModule : public rclcpp_lifecycle::LifecycleNode
   std::string file_name_to_download_;
   std::string file_path_to_download_;
   FILE* s_downloadMediaFile_ = NULL;
+
+  mutable std::shared_mutex global_ptr_mutex_;
 };
 
 extern std::shared_ptr<CameraModule> global_camera_ptr_;

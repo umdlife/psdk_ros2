@@ -28,19 +28,19 @@ LiveviewModule::LiveviewModule(const std::string &name)
                name + ":" + std::string("__node:=") + name}))
 
 {
-  RCLCPP_INFO(get_logger(), "Creating LiveviewModule...");
+  RCLCPP_INFO(get_logger(), "Creating LiveviewModule");
 }
 
 LiveviewModule::~LiveviewModule()
 {
-  RCLCPP_INFO(get_logger(), "Destroying LiveviewModule...");
+  RCLCPP_INFO(get_logger(), "Destroying LiveviewModule");
 }
 
 LiveviewModule::CallbackReturn
 LiveviewModule::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Configuring LiveviewModule...");
+  RCLCPP_INFO(get_logger(), "Configuring LiveviewModule");
   main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
   fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
@@ -50,41 +50,46 @@ LiveviewModule::on_configure(const rclcpp_lifecycle::State &state)
       std::bind(&LiveviewModule::camera_setup_streaming_cb, this,
                 std::placeholders::_1, std::placeholders::_2),
       qos_profile_);
+  return CallbackReturn::SUCCESS;
 }
 
 LiveviewModule::CallbackReturn
 LiveviewModule::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Activating LiveviewModule...");
+  RCLCPP_INFO(get_logger(), "Activating LiveviewModule");
   main_camera_stream_pub_->on_activate();
   fpv_camera_stream_pub_->on_activate();
+  return CallbackReturn::SUCCESS;
 }
 
 LiveviewModule::CallbackReturn
 LiveviewModule::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Deactivating LiveviewModule...");
+  RCLCPP_INFO(get_logger(), "Deactivating LiveviewModule");
   main_camera_stream_pub_->on_deactivate();
   fpv_camera_stream_pub_->on_deactivate();
+  return CallbackReturn::SUCCESS;
 }
 
 LiveviewModule::CallbackReturn
 LiveviewModule::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Cleaning up LiveviewModule...");
+  RCLCPP_INFO(get_logger(), "Cleaning up LiveviewModule");
   camera_setup_streaming_service_.reset();
   main_camera_stream_pub_.reset();
   fpv_camera_stream_pub_.reset();
+  return CallbackReturn::SUCCESS;
 }
 
 LiveviewModule::CallbackReturn
 LiveviewModule::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
-  RCLCPP_INFO(get_logger(), "Shutting down LiveviewModule...");
+  RCLCPP_INFO(get_logger(), "Shutting down LiveviewModule");
+  std::unique_lock<std::shared_mutex> lock(global_ptr_mutex_);
   global_liveview_ptr_.reset();
   return CallbackReturn::SUCCESS;
 }
@@ -92,7 +97,7 @@ LiveviewModule::on_shutdown(const rclcpp_lifecycle::State &state)
 bool
 LiveviewModule::init()
 {
-  RCLCPP_INFO(get_logger(), "Initiating liveview module...");
+  RCLCPP_INFO(get_logger(), "Initiating liveview module");
   T_DjiReturnCode return_code = DjiLiveview_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -115,7 +120,7 @@ LiveviewModule::init()
 bool
 LiveviewModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing liveview module...");
+  RCLCPP_INFO(get_logger(), "Deinitializing liveview module");
   T_DjiReturnCode return_code = DjiLiveview_Deinit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -132,6 +137,9 @@ c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
                                    const uint8_t *buffer,
                                    uint32_t buffer_length)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_liveview_ptr_->global_ptr_mutex_);
+
   if (global_liveview_ptr_->decode_stream_)
   {
     return global_liveview_ptr_->LiveviewConvertH264ToRgbCallback(
@@ -146,8 +154,8 @@ LiveviewModule::LiveviewConvertH264ToRgbCallback(
     E_DjiLiveViewCameraPosition position, const uint8_t *buffer,
     uint32_t buffer_length)
 {
-  auto decoder =  stream_decoder_.find(position);
-  if ((decoder !=  stream_decoder_.end()) && decoder->second)
+  auto decoder = stream_decoder_.find(position);
+  if ((decoder != stream_decoder_.end()) && decoder->second)
   {
     decoder->second->decodeBuffer(buffer, buffer_length);
   }
@@ -156,12 +164,16 @@ LiveviewModule::LiveviewConvertH264ToRgbCallback(
 void
 c_publish_main_streaming_callback(CameraRGBImage img, void *user_data)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_liveview_ptr_->global_ptr_mutex_);
   return global_liveview_ptr_->publish_main_camera_images(img, user_data);
 }
 
 void
 c_publish_fpv_streaming_callback(CameraRGBImage img, void *user_data)
 {
+  std::unique_lock<std::shared_mutex> lock(
+      global_liveview_ptr_->global_ptr_mutex_);
   return global_liveview_ptr_->publish_fpv_camera_images(img, user_data);
 }
 
@@ -235,8 +247,8 @@ LiveviewModule::start_camera_stream(CameraImageCallback callback,
 {
   if (decode_stream_)
   {
-    auto decoder =  stream_decoder_.find(payload_index);
-    if ((decoder !=  stream_decoder_.end()) && decoder->second)
+    auto decoder = stream_decoder_.find(payload_index);
+    if ((decoder != stream_decoder_.end()) && decoder->second)
     {
       decoder->second->init();
       decoder->second->registerCallback(callback, user_data);
@@ -280,8 +292,8 @@ LiveviewModule::stop_main_camera_stream(
   }
   else
   {
-    auto decoder =  stream_decoder_.find(payload_index);
-    if ((decoder !=  stream_decoder_.end()) && decoder->second)
+    auto decoder = stream_decoder_.find(payload_index);
+    if ((decoder != stream_decoder_.end()) && decoder->second)
     {
       decoder->second->cleanup();
     }

@@ -152,47 +152,57 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool init(T_DjiUserInfo* user_info);
 
   /**
-   * @brief Initializes all ROS elements (e.g. subscribers, publishers,
-   * services)
-   */
-  void initialize_ros_elements();
-
-  /**
-   * @brief Activates all ROS elements
-   */
-  void activate_ros_elements();
-
-  /**
-   * @brief Deactivates all ROS elements
-   */
-  void deactivate_ros_elements();
-
-  /**
-   * @brief Cleans all ROS elements
-   */
-  void clean_ros_elements();
-
-  /**
    * @brief Method to initialize all psdk modules
    * @return true if all mandatory modules have been correctly initialized,
    * false otherwise
    */
   bool initialize_psdk_modules();
 
+  /**
+   * @brief Get the frequency parameters and validate their value
+   * @param param_name name of the parameter to be retrieved
+   * @param frequency variable where to store the frequency
+   * @param max_frequency maximum frequency allowed
+   */
   void get_and_validate_frequency(const std::string& param_name, int& frequency,
                                   const int max_frequency);
 
+  /**
+   * @brief Retrieve non mandatory parameters of string type
+   * @param param_name name of the parameter to be retrieved
+   * @param param_string variable to store the parameter
+   */
   void get_non_mandatory_param(const std::string& param_name,
                                std::string& param_string);
+  /**
+   * @brief Retrieve mandatory parameters. Issue an error if the parameter is
+   * not found.
+   * @param param_name name of the parameter to be retrieved
+   * @param param_string variable to store the parameter
+   */
   void get_mandatory_param(const std::string& param_name,
                            std::string& param_string);
+
+  enum class LifecycleState
+  {
+    CONFIGURE,
+    ACTIVATE,
+    DEACTIVATE,
+    CLEANUP,
+    SHUTDOWN
+  };
+
+  /**
+   * @brief Transition all modules to a specific state
+   * @param state state to transition the modules as defined by the enum
+   * LifecycleState
+   * @return true if all module transitions are successful, false otherwise
+   */
+  bool transition_modules_to_state(LifecycleState state);
 
   /* Global variables */
   PSDKParams params_;
   rclcpp::Node::SharedPtr node_;
-
-  const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
-
   T_DjiAircraftInfoBaseInfo aircraft_base_info_;
 
   int num_of_initialization_retries_{0};
@@ -205,25 +215,20 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   bool is_hms_module_mandatory_{true};
 
   std::shared_ptr<FlightControlModule> flight_control_module_;
-  std::unique_ptr<utils::NodeThread> flight_control_thread_;
   std::shared_ptr<TelemetryModule> telemetry_module_;
-  std::unique_ptr<utils::NodeThread> telemetry_thread_;
   std::shared_ptr<CameraModule> camera_module_;
-  std::unique_ptr<utils::NodeThread> camera_thread_;
   std::shared_ptr<LiveviewModule> liveview_module_;
-  std::unique_ptr<utils::NodeThread> liveview_thread_;
   std::shared_ptr<GimbalModule> gimbal_module_;
-  std::unique_ptr<utils::NodeThread> gimbal_thread_;
   std::shared_ptr<HmsModule> hms_module_;
+
+  std::unique_ptr<utils::NodeThread> flight_control_thread_;
+  std::unique_ptr<utils::NodeThread> telemetry_thread_;
+  std::unique_ptr<utils::NodeThread> camera_thread_;
+  std::unique_ptr<utils::NodeThread> liveview_thread_;
+  std::unique_ptr<utils::NodeThread> gimbal_thread_;
   std::unique_ptr<utils::NodeThread> hms_thread_;
 };
 
-/**
- * @brief Global pointer to the class object. It is initialized in the main.cpp
- * file. This pointer is needed to access member functions from non-member
- * functions, such as the C-type callbacks
- */
-extern std::shared_ptr<PSDKWrapper> global_ptr_;
 }  // namespace psdk_ros2
 
 #endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_PSDK_WRAPPER_HPP_

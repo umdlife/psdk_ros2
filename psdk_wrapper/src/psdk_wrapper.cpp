@@ -78,21 +78,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
   declare_parameter("data_frequency.esc_data_frequency", 1);
-
   declare_parameter("num_of_initialization_retries", 1);
-}
-PSDKWrapper::~PSDKWrapper()
-{
-  RCLCPP_INFO(get_logger(), "Destroying PSDKWrapper");
-  rclcpp_lifecycle::State state;
-  PSDKWrapper::on_shutdown(state);
-}
-
-PSDKWrapper::CallbackReturn
-PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
-{
-  (void)state;
-  RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
 
   // Create module nodes
   flight_control_module_ =
@@ -107,12 +93,36 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   hms_module_ = std::make_shared<HmsModule>("hms_node");
   psdk_ros2::global_hms_ptr_ = hms_module_;
 
+  // Start the threads
+  telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
+  flight_control_thread_ =
+      std::make_unique<utils::NodeThread>(flight_control_module_);
+  camera_thread_ = std::make_unique<utils::NodeThread>(camera_module_);
+  liveview_thread_ = std::make_unique<utils::NodeThread>(liveview_module_);
+  gimbal_thread_ = std::make_unique<utils::NodeThread>(gimbal_module_);
+  hms_thread_ = std::make_unique<utils::NodeThread>(hms_module_);
+}
+
+PSDKWrapper::~PSDKWrapper()
+{
+  RCLCPP_INFO(get_logger(), "Destroying PSDKWrapper");
+  rclcpp_lifecycle::State state;
+  PSDKWrapper::on_shutdown(state);
+}
+
+PSDKWrapper::CallbackReturn
+PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
+
   load_parameters();
-  if (!set_environment())
+  if (!set_environment() ||
+      !transition_modules_to_state(LifecycleState::CONFIGURE))
   {
+    rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -125,13 +135,8 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   T_DjiUserInfo user_info;
   set_user_info(&user_info);
 
-  if (!init(&user_info))
-  {
-    rclcpp::shutdown();
-    return CallbackReturn::FAILURE;
-  }
-
-  if (!initialize_psdk_modules())
+  if (!init(&user_info) || !initialize_psdk_modules() ||
+      !transition_modules_to_state(LifecycleState::ACTIVATE))
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
@@ -140,34 +145,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   telemetry_module_->set_aircraft_base(aircraft_base_info_);
   telemetry_module_->set_camera_type(
       camera_module_->get_attached_camera_type());
-
-  // Configure the modules
-  initialize_ros_elements();
-  telemetry_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
-  flight_control_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
-  camera_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
-  liveview_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
-  gimbal_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
-  hms_module_->on_configure(rclcpp_lifecycle::State(1, "configure"));
-
-  // Activate the modules
-  activate_ros_elements();
-  telemetry_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
   telemetry_module_->subscribe_psdk_topics();
-  flight_control_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
-  camera_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
-  liveview_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
-  gimbal_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
-  hms_module_->on_activate(rclcpp_lifecycle::State(3, "activate"));
-
-  // Start the threads
-  telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
-  flight_control_thread_ =
-      std::make_unique<utils::NodeThread>(flight_control_module_);
-  camera_thread_ = std::make_unique<utils::NodeThread>(camera_module_);
-  liveview_thread_ = std::make_unique<utils::NodeThread>(liveview_module_);
-  gimbal_thread_ = std::make_unique<utils::NodeThread>(gimbal_module_);
-  hms_thread_ = std::make_unique<utils::NodeThread>(hms_module_);
 
   // Delay the initialization of some modules due to dependencies
   if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
@@ -176,13 +154,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
-
-  if (!hms_module_->init() && is_hms_module_mandatory_)
-  {
-    rclcpp::shutdown();
-    return CallbackReturn::FAILURE;
-  }
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -192,12 +163,13 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
   (void)state;
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
   telemetry_module_->unsubscribe_psdk_topics();
-  deactivate_ros_elements();
 
   // Deactivate the modules
-  flight_control_module_->on_deactivate(
-      rclcpp_lifecycle::State(2, "deactivate"));
-  telemetry_module_->on_deactivate(rclcpp_lifecycle::State(2, "deactivate"));
+  if (!transition_modules_to_state(LifecycleState::DEACTIVATE))
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -206,14 +178,11 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
-  clean_ros_elements();
-  flight_control_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
-  telemetry_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
-  camera_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
-  liveview_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
-  gimbal_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
-  hms_module_->on_cleanup(rclcpp_lifecycle::State(1, "cleanup"));
-
+  if (!transition_modules_to_state(LifecycleState::CLEANUP))
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -221,7 +190,17 @@ PSDKWrapper::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
+  RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
 
+  // Deinitialize all modules
+  if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
+      !camera_module_->deinit() || !gimbal_module_->deinit() ||
+      !liveview_module_->deinit() || !hms_module_->deinit())
+  {
+    return CallbackReturn::FAILURE;
+  }
+
+  // Deinitialize the core
   auto deinit_result = DjiCore_DeInit();
   if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -231,16 +210,27 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  // Deinitialize all remaining modules
-  if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
-      !camera_module_->deinit() || !gimbal_module_->deinit() ||
-      !liveview_module_->deinit() || !hms_module_->deinit())
+  if (!transition_modules_to_state(LifecycleState::SHUTDOWN))
   {
     return CallbackReturn::FAILURE;
   }
 
-  global_ptr_.reset();
-  RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
+  // Stop the threads
+  telemetry_thread_.reset();
+  flight_control_thread_.reset();
+  camera_thread_.reset();
+  liveview_thread_.reset();
+  gimbal_thread_.reset();
+  hms_thread_.reset();
+
+  // Destroy the modules
+  telemetry_module_.reset();
+  flight_control_module_.reset();
+  camera_module_.reset();
+  liveview_module_.reset();
+  gimbal_module_.reset();
+  hms_module_.reset();
+
   rclcpp::shutdown();
   return CallbackReturn::SUCCESS;
 }
@@ -589,29 +579,6 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
   return true;
 }
 
-void
-PSDKWrapper::initialize_ros_elements()
-{
-}
-
-void
-PSDKWrapper::activate_ros_elements()
-{
-  RCLCPP_INFO(get_logger(), "Activating ROS elements");
-}
-
-void
-PSDKWrapper::deactivate_ros_elements()
-{
-  RCLCPP_INFO(get_logger(), "Deactivating ROS elements");
-}
-
-void
-PSDKWrapper::clean_ros_elements()
-{
-  RCLCPP_INFO(get_logger(), "Cleaning ROS elements");
-}
-
 bool
 PSDKWrapper::initialize_psdk_modules()
 {
@@ -624,7 +591,8 @@ PSDKWrapper::initialize_psdk_modules()
       {std::bind(&GimbalModule::init, gimbal_module_),
        is_gimbal_module_mandatory_},
       {std::bind(&LiveviewModule::init, liveview_module_),
-       is_liveview_module_mandatory_}};
+       is_liveview_module_mandatory_},
+      {std::bind(&HmsModule::init, hms_module_), is_hms_module_mandatory_}};
 
   for (const auto &initializer : module_initializers)
   {
@@ -676,6 +644,49 @@ PSDKWrapper::get_mandatory_param(const std::string &param_name,
     RCLCPP_ERROR(get_logger(), "%s param not defined", param_name.c_str());
     exit(-1);
   }
+}
+
+bool
+PSDKWrapper::transition_modules_to_state(LifecycleState state)
+{
+  std::function<CallbackReturn(
+      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>)>
+      transition;
+
+  switch (state)
+  {
+    case LifecycleState::ACTIVATE:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_activate(rclcpp_lifecycle::State()); };
+      break;
+    case LifecycleState::DEACTIVATE:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_deactivate(rclcpp_lifecycle::State()); };
+      break;
+    case LifecycleState::CONFIGURE:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_configure(rclcpp_lifecycle::State()); };
+      break;
+    case LifecycleState::CLEANUP:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_cleanup(rclcpp_lifecycle::State()); };
+      break;
+    case LifecycleState::SHUTDOWN:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_shutdown(rclcpp_lifecycle::State()); };
+      break;
+  }
+
+  if (transition(telemetry_module_) != CallbackReturn::SUCCESS ||
+      transition(flight_control_module_) != CallbackReturn::SUCCESS ||
+      transition(camera_module_) != CallbackReturn::SUCCESS ||
+      transition(liveview_module_) != CallbackReturn::SUCCESS ||
+      transition(gimbal_module_) != CallbackReturn::SUCCESS ||
+      transition(hms_module_) != CallbackReturn::SUCCESS)
+  {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace psdk_ros2
