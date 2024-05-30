@@ -244,6 +244,7 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string imu_frame;
     std::string body_frame;
     std::string map_frame;
+    std::string gimbal_base_frame;
     std::string gimbal_frame;
     std::string camera_frame;
     std::string hms_return_codes_path;
@@ -1773,12 +1774,12 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    */
   void publish_dynamic_transforms();
   /**
-   * @brief Method which computes the yaw angle difference between the gimbal
-   * (static frame attached to the robot) and a given camera payload attached to
-   * the gimbal
+   * @brief Method which computes the yaw angle difference between the gimbal base
+   * (static frame attached to the robot) and the gimbal frame (frame attached to the
+   * gimbal).
    * @return the yaw angle difference between these two frames.
    */
-  double get_yaw_gimbal_camera();
+  double get_yaw_gimbal();
 
   /* ROS 2 publishers */
   rclcpp_lifecycle::LifecyclePublisher<
