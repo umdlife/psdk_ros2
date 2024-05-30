@@ -422,6 +422,8 @@ PSDKWrapper::load_parameters()
   get_non_mandatory_param("map_frame", telemetry_module_->params_.map_frame);
   get_non_mandatory_param("gimbal_frame",
                           telemetry_module_->params_.gimbal_frame);
+  get_non_mandatory_param("gimbal_base_frame",
+                          telemetry_module_->params_.gimbal_base_frame);
   get_non_mandatory_param("camera_frame",
                           telemetry_module_->params_.camera_frame);
   get_parameter("publish_transforms",

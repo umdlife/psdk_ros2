@@ -2576,12 +2576,13 @@ TelemetryModule::publish_static_transforms()
 {
   RCLCPP_DEBUG(get_logger(), "Publishing static transforms");
 
-  if (aircraft_base_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK)
+  if (aircraft_base_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK ||
+      aircraft_base_.aircraftType == DJI_AIRCRAFT_TYPE_M350_RTK)
   {
     geometry_msgs::msg::TransformStamped tf_base_link_gimbal;
     tf_base_link_gimbal.header.stamp = this->get_clock()->now();
     tf_base_link_gimbal.header.frame_id = params_.body_frame;
-    tf_base_link_gimbal.child_frame_id = params_.gimbal_frame;
+    tf_base_link_gimbal.child_frame_id = params_.gimbal_base_frame;
     tf_base_link_gimbal.transform.translation.x =
         psdk_utils::T_M300_BASE_GIMBAL[0];
     tf_base_link_gimbal.transform.translation.y =
@@ -2599,6 +2600,25 @@ TelemetryModule::publish_static_transforms()
   {
     if (camera_type_ == DJI_CAMERA_TYPE_H20)
     {
+      // Publish TF between Gimbal - H20
+      geometry_msgs::msg::TransformStamped tf_gimbal_H20;
+      tf_gimbal_H20.header.stamp = this->get_clock()->now();
+      tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
+      tf_gimbal_H20.child_frame_id = params_.camera_frame;
+      tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
+      tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
+      tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
+
+      tf2::Quaternion q_gimbal_h20;
+      q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
+                          current_state_.gimbal_angles.vector.y,
+                          get_yaw_gimbal());
+      tf_gimbal_H20.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
+      tf_gimbal_H20.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
+      tf_gimbal_H20.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
+      tf_gimbal_H20.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
+      tf_static_broadcaster_->sendTransform(tf_gimbal_H20);
+
       // Publish TF between H20 - Zoom lens
       geometry_msgs::msg::TransformStamped tf_H20_zoom;
       tf_H20_zoom.header.stamp = this->get_clock()->now();
@@ -2632,31 +2652,31 @@ TelemetryModule::publish_static_transforms()
 void
 TelemetryModule::publish_dynamic_transforms()
 {
-  if (camera_type_ == DJI_CAMERA_TYPE_H20)
+  if (aircraft_base_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK ||
+      aircraft_base_.aircraftType == DJI_AIRCRAFT_TYPE_M350_RTK)
   {
-    // Publish TF between Gimbal - H20
-    geometry_msgs::msg::TransformStamped tf_gimbal_H20;
-    tf_gimbal_H20.header.stamp = this->get_clock()->now();
-    tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
-    tf_gimbal_H20.child_frame_id = params_.camera_frame;
-    tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
-    tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
-    tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
+    // Publish TF between Gimbal Base - Gimbal
+    geometry_msgs::msg::TransformStamped tf_gimbal_base_gimbal;
+    tf_gimbal_base_gimbal.header.stamp = this->get_clock()->now();
+    tf_gimbal_base_gimbal.header.frame_id = params_.gimbal_base_frame;
+    tf_gimbal_base_gimbal.child_frame_id = params_.gimbal_frame;
+    tf_gimbal_base_gimbal.transform.translation.x = 0.0;
+    tf_gimbal_base_gimbal.transform.translation.y = 0.0;
+    tf_gimbal_base_gimbal.transform.translation.z = 0.0;
 
-    tf2::Quaternion q_gimbal_h20;
-    q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
-                        current_state_.gimbal_angles.vector.y,
-                        get_yaw_gimbal_camera());
-    tf_gimbal_H20.transform.rotation.x = q_gimbal_h20.getX();
-    tf_gimbal_H20.transform.rotation.y = q_gimbal_h20.getY();
-    tf_gimbal_H20.transform.rotation.z = q_gimbal_h20.getZ();
-    tf_gimbal_H20.transform.rotation.w = q_gimbal_h20.getW();
-    tf_broadcaster_->sendTransform(tf_gimbal_H20);
+    tf2::Quaternion q_gimbal;
+    q_gimbal.setRPY(current_state_.gimbal_angles.vector.x,
+                    current_state_.gimbal_angles.vector.y, get_yaw_gimbal());
+    tf_gimbal_base_gimbal.transform.rotation.x = q_gimbal.getX();
+    tf_gimbal_base_gimbal.transform.rotation.y = q_gimbal.getY();
+    tf_gimbal_base_gimbal.transform.rotation.z = q_gimbal.getZ();
+    tf_gimbal_base_gimbal.transform.rotation.w = q_gimbal.getW();
+    tf_broadcaster_->sendTransform(tf_gimbal_base_gimbal);
   }
 }
 
 double
-TelemetryModule::get_yaw_gimbal_camera()
+TelemetryModule::get_yaw_gimbal()
 {
   /* Get current copter yaw wrt. to East */
   std::unique_lock<std::shared_mutex> lock(current_state_mutex_);
