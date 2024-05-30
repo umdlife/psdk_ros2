@@ -119,8 +119,7 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
 
   load_parameters();
-  if (!set_environment() ||
-      !transition_modules_to_state(LifecycleState::CONFIGURE))
+  if (!set_environment())
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
@@ -137,8 +136,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   T_DjiUserInfo user_info;
   set_user_info(&user_info);
 
-  if (!init(&user_info) || !initialize_psdk_modules() ||
-      !transition_modules_to_state(LifecycleState::ACTIVATE))
+  if (!init(&user_info) || !initialize_psdk_modules())
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
@@ -147,7 +145,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   telemetry_module_->set_aircraft_base(aircraft_base_info_);
   telemetry_module_->set_camera_type(
       camera_module_->get_attached_camera_type());
-  telemetry_module_->subscribe_psdk_topics();
 
   // Delay the initialization of some modules due to dependencies
   if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
@@ -156,6 +153,15 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
+
+  if (!transition_modules_to_state(LifecycleState::CONFIGURE) ||
+      !transition_modules_to_state(LifecycleState::ACTIVATE))
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
+  telemetry_module_->subscribe_psdk_topics();
+
   return CallbackReturn::SUCCESS;
 }
 
