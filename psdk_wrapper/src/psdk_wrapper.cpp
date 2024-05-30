@@ -1170,13 +1170,15 @@ PSDKWrapper::initialize_ros_elements()
           get_node_base_interface(), get_node_clock_interface(),
           get_node_logging_interface(), get_node_waitables_interface(),
           "psdk_ros2/camera_download_file_by_index",
-          std::bind(&PSDKWrapper::execute_download_file_by_index, this));
+          std::bind(&PSDKWrapper::execute_download_file_by_index, this),
+          nullptr, std::chrono::milliseconds(10000));
   camera_delete_file_by_index_server_ =
       std::make_unique<utils::ActionServer<CameraDeleteFileByIndex>>(
           get_node_base_interface(), get_node_clock_interface(),
           get_node_logging_interface(), get_node_waitables_interface(),
           "psdk_ros2/camera_delete_file_by_index",
-          std::bind(&PSDKWrapper::execute_delete_file_by_index, this));
+          std::bind(&PSDKWrapper::execute_delete_file_by_index, this), nullptr,
+          std::chrono::milliseconds(10000));
 }
 
 void
