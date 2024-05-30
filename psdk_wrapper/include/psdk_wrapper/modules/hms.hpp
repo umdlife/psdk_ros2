@@ -23,7 +23,6 @@
 
 #include <fstream>
 #include <memory>
-#include <mutex>
 #include <nlohmann/json.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
@@ -130,7 +129,7 @@ class HmsModule : public rclcpp_lifecycle::LifecycleNode
 
   rclcpp_lifecycle::LifecyclePublisher<
       psdk_interfaces::msg::HmsInfoTable>::SharedPtr hms_info_table_pub_;
-  std::mutex publisher_mutex_;
+  std::shared_mutex publisher_mutex_;
   mutable std::shared_mutex global_ptr_mutex_;
   bool is_module_initialized_{false};
 

@@ -79,6 +79,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | body_frame                    | String    | "psdk_base_link"                   | -                                           |
 | map_frame                     | String    | "psdk_map_enu"                     | -                                           |
 | gimbal_frame                  | String    | "psdk_gimbal_link"                 | -                                           |
+| gimbal_base_frame             | String    | "psdk_gimbal_base_link"            | -                                           |
 | camera_frame                  | String    | "psdk_camera_link"                 | -                                           |
 | file download path            | String    | "/logs/media"                      | -                                           |
 | mandatory_modules             |           |                                    |                                             |

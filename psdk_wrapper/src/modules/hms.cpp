@@ -49,7 +49,7 @@ HmsModule::on_activate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Activating HmsModule");
-  std::lock_guard<std::mutex> lock(publisher_mutex_);
+  std::unique_lock<std::shared_mutex> lock(publisher_mutex_);
   hms_info_table_pub_->on_activate();
   return CallbackReturn::SUCCESS;
 }
@@ -59,7 +59,7 @@ HmsModule::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Deactivating HmsModule");
-  std::lock_guard<std::mutex> lock(publisher_mutex_);
+  std::unique_lock<std::shared_mutex> lock(publisher_mutex_);
   hms_info_table_pub_->on_deactivate();
   return CallbackReturn::SUCCESS;
 }
@@ -69,7 +69,7 @@ HmsModule::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Cleaning up HmsModule");
-  std::lock_guard<std::mutex> lock(publisher_mutex_);
+  std::unique_lock<std::shared_mutex> lock(publisher_mutex_);
   hms_info_table_pub_.reset();
   return CallbackReturn::SUCCESS;
 }
@@ -222,13 +222,12 @@ HmsModule::hms_callback(T_DjiHmsInfoTable hms_info_table)
     RCLCPP_ERROR(get_logger(), "Pointer to HMS info table is NULL");
     return DJI_ERROR_SYSTEM_MODULE_CODE_OUT_OF_RANGE;
   }
-
+  std::unique_lock<std::shared_mutex> lock(publisher_mutex_);
   if (!hms_info_table_pub_)
   {
     return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
   }
   // Only process the data when the ROS2 publisher is active
-  std::lock_guard<std::mutex> lock(publisher_mutex_);
   if (hms_info_table_pub_->is_activated())
   {
     psdk_interfaces::msg::HmsInfoTable ros2_hms =
