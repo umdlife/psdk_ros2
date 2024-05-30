@@ -563,6 +563,7 @@ class CameraModule : public rclcpp_lifecycle::LifecycleNode
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
 
+  bool is_module_initialized_{false};
   E_DjiCameraType attached_camera_type_;
   int32_t file_index_to_download_{0};
   std::string file_name_to_download_;

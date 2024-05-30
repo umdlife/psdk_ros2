@@ -131,6 +131,8 @@ class GimbalModule : public rclcpp_lifecycle::LifecycleNode
   rclcpp::Service<GimbalReset>::SharedPtr gimbal_reset_service_;
 
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
+
+  bool is_module_initialized_{false};
 };
 
 }  // namespace psdk_ros2

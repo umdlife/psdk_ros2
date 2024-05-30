@@ -130,6 +130,7 @@ class HmsModule : public rclcpp_lifecycle::LifecycleNode
       psdk_interfaces::msg::HmsInfoTable>::SharedPtr hms_info_table_pub_;
   std::mutex publisher_mutex_;
   mutable std::shared_mutex global_ptr_mutex_;
+  bool is_module_initialized_{false};
 
   nlohmann::json hms_return_codes_json_;
 };

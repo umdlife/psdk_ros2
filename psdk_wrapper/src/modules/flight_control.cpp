@@ -259,7 +259,13 @@ bool
 FlightControlModule::init(
     const sensor_msgs::msg::NavSatFix &current_gps_position)
 {
-  RCLCPP_INFO(get_logger(), "Initiating flight control module...");
+  if (is_module_initialized_)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Flight control module is already initialized, skipping.");
+    return true;
+  }
+  RCLCPP_INFO(get_logger(), "Initiating flight control module");
   T_DjiFlightControllerRidInfo rid_info;
   rid_info.latitude = psdk_utils::deg_to_rad(current_gps_position.latitude);
   rid_info.longitude = psdk_utils::deg_to_rad(current_gps_position.longitude);
@@ -274,13 +280,14 @@ FlightControlModule::init(
         return_code);
     return false;
   }
+  is_module_initialized_ = true;
   return true;
 }
 
 bool
 FlightControlModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing flight control module...");
+  RCLCPP_INFO(get_logger(), "Deinitializing flight control module");
   T_DjiReturnCode return_code = DjiFlightController_DeInit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -290,6 +297,7 @@ FlightControlModule::deinit()
         return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 

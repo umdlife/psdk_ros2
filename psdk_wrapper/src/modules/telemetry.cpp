@@ -349,7 +349,12 @@ TelemetryModule::on_shutdown(const rclcpp_lifecycle::State &state)
 bool
 TelemetryModule::init()
 {
-  RCLCPP_INFO(get_logger(), "Initiating telemetry...");
+  if (is_module_initialized_)
+  {
+    RCLCPP_INFO(get_logger(), "Telemetry already initialized, skipping.");
+    return true;
+  }
+  RCLCPP_INFO(get_logger(), "Initiating telemetry");
   T_DjiReturnCode return_code = DjiFcSubscription_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -358,13 +363,14 @@ TelemetryModule::init()
                  return_code);
     return false;
   }
+  is_module_initialized_ = true;
   return true;
 }
 
 bool
 TelemetryModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing telemetry...");
+  RCLCPP_INFO(get_logger(), "Deinitializing telemetry");
   T_DjiReturnCode return_code = DjiFcSubscription_DeInit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -373,6 +379,7 @@ TelemetryModule::deinit()
                  return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 
@@ -1799,7 +1806,11 @@ TelemetryModule::single_battery_index1_callback(
       single_battery_info->batteryState.batteryCommunicationAbnormal;
   single_battery_info_msg.is_embed =
       single_battery_info->batteryState.isBatteryEmbed;
-  single_battery_index1_pub_->publish(single_battery_info_msg);
+  if (single_battery_index1_pub_ && single_battery_index1_pub_->is_activated())
+  {
+    single_battery_index1_pub_->publish(single_battery_info_msg);
+  }
+
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -1846,7 +1857,10 @@ TelemetryModule::single_battery_index2_callback(
       single_battery_info->batteryState.batteryCommunicationAbnormal;
   single_battery_info_msg.is_embed =
       single_battery_info->batteryState.isBatteryEmbed;
-  single_battery_index2_pub_->publish(single_battery_info_msg);
+  if (single_battery_index2_pub_ && single_battery_index2_pub_->is_activated())
+  {
+    single_battery_index2_pub_->publish(single_battery_info_msg);
+  }
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -2455,9 +2469,10 @@ TelemetryModule::unsubscribe_psdk_topics()
     return_code = DjiFcSubscription_UnSubscribeTopic(topic.label);
     if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
     {
-      RCLCPP_ERROR(get_logger(),
-                   "Could not unsubscribe successfully from topic %d",
-                   topic.label);
+      RCLCPP_ERROR(
+          get_logger(),
+          "Could not unsubscribe successfully from topic %d, error %ld",
+          topic.label, return_code);
     }
   }
 }

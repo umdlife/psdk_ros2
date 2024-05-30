@@ -163,8 +163,13 @@ HmsModule::to_ros2_msg(const T_DjiHmsInfoTable &hms_info_table,
 bool
 HmsModule::init()
 {
-  RCLCPP_INFO(get_logger(), "Initiating HMS...");
+  if (is_module_initialized_)
+  {
+    RCLCPP_INFO(get_logger(), "HMS already initialized, skipping.");
+    return true;
+  }
 
+  RCLCPP_INFO(get_logger(), "Initiating HMS");
   // Read JSON file with known HMS error codes
   if (!json_utils::parse_file(hms_return_codes_path_, hms_return_codes_json_))
   {
@@ -189,13 +194,14 @@ HmsModule::init()
                  return_code);
     return false;
   }
+  is_module_initialized_ = true;
   return true;
 }
 
 bool
 HmsModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing HMS...");
+  RCLCPP_INFO(get_logger(), "Deinitializing HMS");
   T_DjiReturnCode return_code = DjiHmsManager_DeInit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -204,6 +210,7 @@ HmsModule::deinit()
                  return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 
@@ -216,6 +223,10 @@ HmsModule::hms_callback(T_DjiHmsInfoTable hms_info_table)
     return DJI_ERROR_SYSTEM_MODULE_CODE_OUT_OF_RANGE;
   }
 
+  if (!hms_info_table_pub_)
+  {
+    return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+  }
   // Only process the data when the ROS2 publisher is active
   std::lock_guard<std::mutex> lock(publisher_mutex_);
   if (hms_info_table_pub_->is_activated())

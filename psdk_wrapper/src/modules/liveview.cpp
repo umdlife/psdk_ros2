@@ -97,6 +97,12 @@ LiveviewModule::on_shutdown(const rclcpp_lifecycle::State &state)
 bool
 LiveviewModule::init()
 {
+  if (is_module_initialized_)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Liveview module is already initialized, skipping.");
+    return true;
+  }
   RCLCPP_INFO(get_logger(), "Initiating liveview module");
   T_DjiReturnCode return_code = DjiLiveview_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -114,6 +120,7 @@ LiveviewModule::init()
       {DJI_LIVEVIEW_CAMERA_POSITION_NO_3, (new DJICameraStreamDecoder())},
   };
   decode_stream_ = true;
+  is_module_initialized_ = true;
   return true;
 }
 
@@ -129,6 +136,7 @@ LiveviewModule::deinit()
                  return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 

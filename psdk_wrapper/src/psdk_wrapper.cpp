@@ -528,6 +528,11 @@ PSDKWrapper::set_user_info(T_DjiUserInfo *user_info)
 bool
 PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
+  if (is_core_initialized_)
+  {
+    RCLCPP_INFO(get_logger(), "DJI Core already initialized, skipping.");
+    return true;
+  }
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
   int current_num_retries = 0;
   T_DjiReturnCode result;
@@ -576,6 +581,7 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
     RCLCPP_ERROR(get_logger(), "Could not start application.");
     return false;
   }
+  is_core_initialized_ = true;
   return true;
 }
 
@@ -601,7 +607,6 @@ PSDKWrapper::initialize_psdk_modules()
       return false;
     }
   }
-
   return true;
 }
 

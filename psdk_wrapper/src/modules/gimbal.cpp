@@ -95,7 +95,13 @@ GimbalModule::on_shutdown(const rclcpp_lifecycle::State &state)
 bool
 GimbalModule::init()
 {
-  RCLCPP_INFO(get_logger(), "Initiating gimbal manager...");
+  if (is_module_initialized_)
+  {
+    RCLCPP_INFO(get_logger(), "Gimbal manager already initialized, skipping.");
+    return true;
+  }
+
+  RCLCPP_INFO(get_logger(), "Initiating gimbal manager");
   T_DjiReturnCode return_code = DjiGimbalManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -104,13 +110,14 @@ GimbalModule::init()
                  return_code);
     return false;
   }
+  is_module_initialized_ = true;
   return true;
 }
 
 bool
 GimbalModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing gimbal manager...");
+  RCLCPP_INFO(get_logger(), "Deinitializing gimbal manager");
   T_DjiReturnCode return_code = DjiGimbalManager_Deinit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -119,6 +126,7 @@ GimbalModule::deinit()
                  return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 

@@ -436,6 +436,8 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
       get_downwards_vo_obstacle_avoidance_srv_;
   rclcpp::Service<GetObstacleAvoidance>::SharedPtr
       get_horizontal_radar_obstacle_avoidance_srv_;
+
+  bool is_module_initialized_{false};
 };
 
 }  // namespace psdk_ros2

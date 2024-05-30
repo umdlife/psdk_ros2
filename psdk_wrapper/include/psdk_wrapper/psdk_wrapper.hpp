@@ -227,6 +227,8 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
   std::unique_ptr<utils::NodeThread> liveview_thread_;
   std::unique_ptr<utils::NodeThread> gimbal_thread_;
   std::unique_ptr<utils::NodeThread> hms_thread_;
+
+  bool is_core_initialized_{false};
 };
 
 }  // namespace psdk_ros2

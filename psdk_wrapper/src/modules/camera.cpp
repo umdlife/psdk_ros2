@@ -266,7 +266,14 @@ CameraModule::on_shutdown(const rclcpp_lifecycle::State &state)
 bool
 CameraModule::init()
 {
-  RCLCPP_INFO(get_logger(), "Initiating camera manager...");
+  if (is_module_initialized_)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Camera module is already initialized, skipping.");
+    return true;
+  }
+
+  RCLCPP_INFO(get_logger(), "Initiating camera manager");
   T_DjiReturnCode return_code = DjiCameraManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -283,13 +290,14 @@ CameraModule::init()
   {
     RCLCPP_INFO(get_logger(), "Camera type %s detected", camera_type.c_str());
   }
+  is_module_initialized_ = true;
   return true;
 }
 
 bool
 CameraModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing camera manager...");
+  RCLCPP_INFO(get_logger(), "Deinitializing camera manager");
   T_DjiReturnCode return_code = DjiCameraManager_DeInit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -298,6 +306,7 @@ CameraModule::deinit()
                  return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 

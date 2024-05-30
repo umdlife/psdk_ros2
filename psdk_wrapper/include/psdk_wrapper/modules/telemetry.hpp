@@ -1106,6 +1106,7 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
   T_DjiAircraftInfoBaseInfo aircraft_base_;
   E_DjiCameraType camera_type_;
   bool publish_camera_transforms_{false};
+  bool is_module_initialized_{false};
 
   mutable std::shared_mutex current_state_mutex_;
   mutable std::shared_mutex global_ptr_mutex_;
