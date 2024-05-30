@@ -162,24 +162,25 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
    * @param frequency variable where to store the frequency
    * @param max_frequency maximum frequency allowed
    */
-  void get_and_validate_frequency(const std::string& param_name, int& frequency,
-                                  const int max_frequency);
+  void get_and_validate_frequency(const std::string& param_name,
+                                  int& frequency,            // NOLINT
+                                  const int max_frequency);  // NOLINT
 
   /**
    * @brief Retrieve non mandatory parameters of string type
    * @param param_name name of the parameter to be retrieved
    * @param param_string variable to store the parameter
    */
-  void get_non_mandatory_param(const std::string& param_name,
-                               std::string& param_string);
+  void get_non_mandatory_param(const std::string& param_name,  // NOLINT
+                               std::string& param_string);     // NOLINT
   /**
    * @brief Retrieve mandatory parameters. Issue an error if the parameter is
    * not found.
    * @param param_name name of the parameter to be retrieved
    * @param param_string variable to store the parameter
    */
-  void get_mandatory_param(const std::string& param_name,
-                           std::string& param_string);
+  void get_mandatory_param(const std::string& param_name,  // NOLINT
+                           std::string& param_string);     // NOLINT
 
   enum class LifecycleState
   {

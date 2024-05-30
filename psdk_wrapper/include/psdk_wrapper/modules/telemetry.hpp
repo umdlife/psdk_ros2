@@ -14,8 +14,8 @@
  * Contact: bianca@unmanned.life
  *
  */
-#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP
-#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP_
 
 #include <dji_aircraft_info.h>    //NOLINT
 #include <dji_fc_subscription.h>  //NOLINT
@@ -28,6 +28,7 @@
 #include <geometry_msgs/msg/quaternion_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
@@ -41,6 +42,7 @@
 #include <std_msgs/msg/u_int16.hpp>
 #include <std_msgs/msg/u_int8.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <string>
 
 #include "psdk_interfaces/msg/control_mode.hpp"
 #include "psdk_interfaces/msg/display_mode.hpp"
@@ -982,9 +984,9 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
   void publish_dynamic_transforms();
 
   /**
-   * @brief Method which computes the yaw angle difference between the gimbal base
-   * (static frame attached to the robot) and the gimbal frame (frame attached to
-   * the gimbal).
+   * @brief Method which computes the yaw angle difference between the gimbal
+   * base (static frame attached to the robot) and the gimbal frame (frame
+   * attached to the gimbal).
    * @return the yaw angle difference between these two frames.
    */
   double get_yaw_gimbal();
@@ -1117,4 +1119,4 @@ extern std::shared_ptr<TelemetryModule> global_telemetry_ptr_;
 
 }  // namespace psdk_ros2
 
-#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_TELEMETRY_HPP_

@@ -14,19 +14,21 @@
  * Contact: bianca@unmanned.life
  *
  */
-#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_HMS_HPP
-#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_HMS_HPP
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_HMS_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_HMS_HPP_
 
 #include <dji_hms.h>             //NOLINT
 #include <dji_hms_info_table.h>  //NOLINT
 #include <math.h>
 
 #include <fstream>
+#include <memory>
 #include <mutex>
 #include <nlohmann/json.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <shared_mutex>
+#include <string>
 
 #include "psdk_interfaces/msg/hms_info_msg.hpp"
 #include "psdk_interfaces/msg/hms_info_table.hpp"
@@ -138,4 +140,4 @@ extern std::shared_ptr<HmsModule> global_hms_ptr_;
 
 }  // namespace psdk_ros2
 
-#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_HMS_HPP
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_HMS_HPP_

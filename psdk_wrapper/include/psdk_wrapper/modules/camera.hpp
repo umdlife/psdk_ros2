@@ -15,8 +15,8 @@
  *
  */
 
-#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_CAMERA_HPP
-#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_CAMERA_HPP
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_CAMERA_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_CAMERA_HPP_
 
 #include <dji_camera_manager.h>  //NOLINT
 #include <osal.h>                //NOLINT
@@ -24,9 +24,11 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <shared_mutex>
+#include <string>
 
 #include "psdk_interfaces/action/camera_delete_file_by_index.hpp"
 #include "psdk_interfaces/action/camera_download_file_by_index.hpp"
@@ -577,4 +579,4 @@ extern std::shared_ptr<CameraModule> global_camera_ptr_;
 
 }  // namespace psdk_ros2
 
-#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_CAMERA_HPP
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_CAMERA_HPP_

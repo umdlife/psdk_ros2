@@ -14,13 +14,15 @@
  * Contact: bianca@unmanned.life
  *
  */
-#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_GIMBAL_HPP
-#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_GIMBAL_HPP
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_GIMBAL_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_GIMBAL_HPP_
 
 #include <dji_gimbal_manager.h>  //NOLINT
 
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <string>
 
 #include "psdk_interfaces/msg/gimbal_rotation.hpp"
 #include "psdk_interfaces/srv/gimbal_reset.hpp"
@@ -137,4 +139,4 @@ class GimbalModule : public rclcpp_lifecycle::LifecycleNode
 
 }  // namespace psdk_ros2
 
-#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_GIMBAL_HPP
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_GIMBAL_HPP_

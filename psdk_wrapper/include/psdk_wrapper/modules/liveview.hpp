@@ -14,16 +14,19 @@
  * Contact: bianca@unmanned.life
  *
  */
-#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_LIVEVIEW_HPP
-#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_LIVEVIEW_HPP
+#ifndef PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_LIVEVIEW_HPP_
+#define PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_LIVEVIEW_HPP_
 
 #include <dji_liveview.h>
 
 #include <dji_camera_stream_decoder.hpp>  //NOLINT
+#include <map>
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <shared_mutex>
+#include <string>
 
 #include "psdk_interfaces/srv/camera_setup_streaming.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
@@ -202,4 +205,4 @@ extern std::shared_ptr<LiveviewModule> global_liveview_ptr_;
 
 }  // namespace psdk_ros2
 
-#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_LIVEVIEW_HPP
+#endif  // PSDK_WRAPPER_INCLUDE_PSDK_WRAPPER_MODULES_LIVEVIEW_HPP_
