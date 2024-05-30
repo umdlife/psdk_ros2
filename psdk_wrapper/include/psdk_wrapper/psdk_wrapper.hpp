@@ -119,6 +119,13 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string developer_account;
     std::string baudrate;
     std::string link_config_file_path;
+    std::string tf_frame_prefix;
+    std::string imu_frame;
+    std::string body_frame;
+    std::string map_frame;
+    std::string gimbal_base_frame;
+    std::string gimbal_frame;
+    std::string camera_frame;
     std::string hms_return_codes_path;
     std::string file_path;
   };

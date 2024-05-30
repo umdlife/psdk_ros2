@@ -286,6 +286,7 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
     std::string body_frame;
     std::string map_frame;
     std::string gimbal_frame;
+    std::string gimbal_base_frame;
     std::string camera_frame;
     std::string tf_frame_prefix;
     bool publish_transforms;
