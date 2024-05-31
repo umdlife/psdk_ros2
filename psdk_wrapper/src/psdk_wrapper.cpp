@@ -8,7 +8,9 @@
 /**
  * @file psdk_wrapper.cpp
  *
- * @brief
+ * @brief Implementation of the PSDKWrapper class. This class is the main
+ * interface between the Payload SDK and ROS 2. It initializes the modules and
+ * the environment.
  *
  * @author Bianca Bendris
  * Contact: bianca@unmanned.life
@@ -16,6 +18,11 @@
  */
 
 #include "psdk_wrapper/psdk_wrapper.hpp"
+
+std::shared_ptr<psdk_ros2::TelemetryModule> psdk_ros2::global_telemetry_ptr_;
+std::shared_ptr<psdk_ros2::CameraModule> psdk_ros2::global_camera_ptr_;
+std::shared_ptr<psdk_ros2::LiveviewModule> psdk_ros2::global_liveview_ptr_;
+std::shared_ptr<psdk_ros2::HmsModule> psdk_ros2::global_hms_ptr_;
 
 using namespace std::placeholders;  // NOLINT
 
@@ -73,9 +80,31 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.battery_level", 1);
   declare_parameter("data_frequency.control_information", 1);
   declare_parameter("data_frequency.esc_data_frequency", 1);
-
   declare_parameter("num_of_initialization_retries", 1);
+
+  // Create module nodes
+  flight_control_module_ =
+      std::make_shared<FlightControlModule>("flight_control_node");
+  telemetry_module_ = std::make_shared<TelemetryModule>("telemetry_node");
+  psdk_ros2::global_telemetry_ptr_ = telemetry_module_;
+  camera_module_ = std::make_shared<CameraModule>("camera_node");
+  psdk_ros2::global_camera_ptr_ = camera_module_;
+  liveview_module_ = std::make_shared<LiveviewModule>("liveview_node");
+  psdk_ros2::global_liveview_ptr_ = liveview_module_;
+  gimbal_module_ = std::make_shared<GimbalModule>("gimbal_node");
+  hms_module_ = std::make_shared<HmsModule>("hms_node");
+  psdk_ros2::global_hms_ptr_ = hms_module_;
+
+  // Start the threads
+  telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
+  flight_control_thread_ =
+      std::make_unique<utils::NodeThread>(flight_control_module_);
+  camera_thread_ = std::make_unique<utils::NodeThread>(camera_module_);
+  liveview_thread_ = std::make_unique<utils::NodeThread>(liveview_module_);
+  gimbal_thread_ = std::make_unique<utils::NodeThread>(gimbal_module_);
+  hms_thread_ = std::make_unique<utils::NodeThread>(hms_module_);
 }
+
 PSDKWrapper::~PSDKWrapper()
 {
   RCLCPP_INFO(get_logger(), "Destroying PSDKWrapper");
@@ -88,12 +117,13 @@ PSDKWrapper::on_configure(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Configuring PSDKWrapper");
+
   load_parameters();
   if (!set_environment())
   {
+    rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -106,36 +136,32 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   T_DjiUserInfo user_info;
   set_user_info(&user_info);
 
-  if (!init(&user_info))
+  if (!init(&user_info) || !initialize_psdk_modules())
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
 
-  if (!initialize_psdk_modules())
+  telemetry_module_->set_aircraft_base(aircraft_base_info_);
+  telemetry_module_->set_camera_type(
+      camera_module_->get_attached_camera_type());
+
+  // Delay the initialization of some modules due to dependencies
+  if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
+      is_flight_control_module_mandatory_)
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
 
-  // Initialize and activate ROS elements only after the DJI modules are
-  // initialized
-  initialize_ros_elements();
-  current_state_.initialize_state();
-  activate_ros_elements();
-
-  if (params_.publish_transforms)
-  {
-    publish_static_transforms();
-  }
-
-  if (!init_hms() && is_hms_module_mandatory_)
+  if (!transition_modules_to_state(LifecycleState::CONFIGURE) ||
+      !transition_modules_to_state(LifecycleState::ACTIVATE))
   {
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
+  telemetry_module_->subscribe_psdk_topics();
 
-  subscribe_psdk_topics();
   return CallbackReturn::SUCCESS;
 }
 
@@ -144,9 +170,14 @@ PSDKWrapper::on_deactivate(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Deactivating PSDKWrapper");
-  unsubscribe_psdk_topics();
-  deactivate_ros_elements();
+  telemetry_module_->unsubscribe_psdk_topics();
 
+  // Deactivate the modules
+  if (!transition_modules_to_state(LifecycleState::DEACTIVATE))
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -155,7 +186,11 @@ PSDKWrapper::on_cleanup(const rclcpp_lifecycle::State &state)
 {
   (void)state;
   RCLCPP_INFO(get_logger(), "Cleaning up PSDKWrapper");
-  clean_ros_elements();
+  if (!transition_modules_to_state(LifecycleState::CLEANUP))
+  {
+    rclcpp::shutdown();
+    return CallbackReturn::FAILURE;
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -163,7 +198,17 @@ PSDKWrapper::CallbackReturn
 PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
 {
   (void)state;
+  RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
 
+  // Deinitialize all modules
+  if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
+      !camera_module_->deinit() || !gimbal_module_->deinit() ||
+      !liveview_module_->deinit() || !hms_module_->deinit())
+  {
+    return CallbackReturn::FAILURE;
+  }
+
+  // Deinitialize the core
   auto deinit_result = DjiCore_DeInit();
   if (deinit_result != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -173,16 +218,27 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  // Deinitialize all remaining modules
-  if (!deinit_telemetry() || !deinit_flight_control() ||
-      !deinit_camera_manager() || !deinit_gimbal_manager() ||
-      !deinit_liveview() || !deinit_hms())
+  if (!transition_modules_to_state(LifecycleState::SHUTDOWN))
   {
     return CallbackReturn::FAILURE;
   }
 
-  global_ptr_.reset();
-  RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
+  // Stop the threads
+  telemetry_thread_.reset();
+  flight_control_thread_.reset();
+  camera_thread_.reset();
+  liveview_thread_.reset();
+  gimbal_thread_.reset();
+  hms_thread_.reset();
+
+  // Destroy the modules
+  telemetry_module_.reset();
+  flight_control_module_.reset();
+  camera_module_.reset();
+  liveview_module_.reset();
+  gimbal_module_.reset();
+  hms_module_.reset();
+
   rclcpp::shutdown();
   return CallbackReturn::SUCCESS;
 }
@@ -341,46 +397,19 @@ void
 PSDKWrapper::load_parameters()
 {
   RCLCPP_INFO(get_logger(), "Loading parameters");
-  if (!get_parameter("app_name", params_.app_name))
-  {
-    RCLCPP_ERROR(get_logger(), "app_name param not defined");
-    exit(-1);
-  }
+  get_mandatory_param("app_name", params_.app_name);
   RCLCPP_INFO(get_logger(), "App name: %s", params_.app_name.c_str());
-  if (!get_parameter("app_id", params_.app_id))
-  {
-    RCLCPP_ERROR(get_logger(), "app_id param not defined");
-    exit(-1);
-  }
+  get_mandatory_param("app_id", params_.app_id);
   RCLCPP_INFO(get_logger(), "App id: %s", params_.app_id.c_str());
-  if (!get_parameter("app_key", params_.app_key))
-  {
-    RCLCPP_ERROR(get_logger(), "app_key param not defined");
-    exit(-1);
-  }
+  get_mandatory_param("app_key", params_.app_key);
   RCLCPP_INFO(get_logger(), "App key: %s", params_.app_key.c_str());
-  if (!get_parameter("app_license", params_.app_license))
-  {
-    RCLCPP_ERROR(get_logger(), "app_license param not defined");
-    exit(-1);
-  }
-  if (!get_parameter("developer_account", params_.developer_account))
-  {
-    RCLCPP_ERROR(get_logger(), "developer_account param not defined");
-    exit(-1);
-  }
-  if (!get_parameter("baudrate", params_.baudrate))
-  {
-    RCLCPP_ERROR(get_logger(), "baudrate param not defined");
-    exit(-1);
-  }
+  get_mandatory_param("app_license", params_.app_license);
+  get_mandatory_param("developer_account", params_.developer_account);
+  get_mandatory_param("baudrate", params_.baudrate);
   RCLCPP_INFO(get_logger(), "Baudrate: %s", params_.baudrate.c_str());
-  if (!get_parameter("link_config_file_path", params_.link_config_file_path))
-  {
-    RCLCPP_WARN(get_logger(),
-                "link_config_file_path param not defined, using default %s",
-                params_.link_config_file_path.c_str());
-  }
+
+  get_non_mandatory_param("link_config_file_path",
+                          params_.link_config_file_path);
   RCLCPP_INFO(get_logger(), "Using connection configuration file: %s",
               params_.link_config_file_path.c_str());
 
@@ -392,340 +421,80 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
   get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
 
-  if (!get_parameter("tf_frame_prefix", params_.tf_frame_prefix))
-  {
-    RCLCPP_WARN(get_logger(),
-                "tf_frame_prefix param not defined, using default one: %s",
-                params_.tf_frame_prefix.c_str());
-  }
-  if (!get_parameter("imu_frame", params_.imu_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "imu_frame param not defined, using default one: %s",
-                params_.imu_frame.c_str());
-  }
-  params_.imu_frame = add_tf_prefix(params_.imu_frame);
-  if (!get_parameter("body_frame", params_.body_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "body_frame param not defined, using default one: %s",
-                params_.body_frame.c_str());
-  }
-  params_.body_frame = add_tf_prefix(params_.body_frame);
-  if (!get_parameter("map_frame", params_.map_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "map_frame param not defined, using default one: %s",
-                params_.map_frame.c_str());
-  }
-  params_.map_frame = add_tf_prefix(params_.map_frame);
-  if (!get_parameter("gimbal_base_frame", params_.gimbal_base_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "gimbal_base_frame param not defined, using default one: %s",
-                params_.gimbal_base_frame.c_str());
-  }
-  params_.gimbal_base_frame = add_tf_prefix(params_.gimbal_base_frame);
-  if (!get_parameter("gimbal_frame", params_.gimbal_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "gimbal_frame param not defined, using default one: %s",
-                params_.gimbal_frame.c_str());
-  }
-  params_.gimbal_frame = add_tf_prefix(params_.gimbal_frame);
-  if (!get_parameter("camera_frame", params_.camera_frame))
-  {
-    RCLCPP_WARN(get_logger(),
-                "camera_frame param not defined, using default one: %s",
-                params_.camera_frame.c_str());
-  }
-  params_.camera_frame = add_tf_prefix(params_.camera_frame);
-  if (!get_parameter("publish_transforms", params_.publish_transforms))
-  {
-    RCLCPP_WARN(get_logger(),
-                "publish_transforms param not defined, using default one: %d",
-                params_.publish_transforms);
-  }
-  if (!get_parameter("hms_return_codes_path", params_.hms_return_codes_path))
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "hms_return_codes_path param not defined, using default one: %s",
-        params_.hms_return_codes_path.c_str());
-  }
-  if (!get_parameter("file_path", params_.file_path))
-  {
-    RCLCPP_WARN(get_logger(),
-                "file_path param not defined, using default one: %s",
-                params_.file_path.c_str());
-  }
-
-  // Get data frequency
-  if (!get_parameter("data_frequency.imu", params_.imu_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "imu frequency param not defined");
-    exit(-1);
-  }
-  if (params_.imu_frequency > IMU_TOPIC_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the imu topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        IMU_TOPIC_MAX_FREQ);
-    params_.imu_frequency = IMU_TOPIC_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.attitude", params_.attitude_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "attitude param not defined");
-    exit(-1);
-  }
-  if (params_.attitude_frequency > ATTITUDE_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the attitude topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        ATTITUDE_TOPICS_MAX_FREQ);
-    params_.attitude_frequency = ATTITUDE_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.acceleration",
-                     params_.acceleration_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "acceleration param not defined");
-    exit(-1);
-  }
-  if (params_.acceleration_frequency > ACCELERATION_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the acceleration topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                ACCELERATION_TOPICS_MAX_FREQ);
-    params_.acceleration_frequency = ACCELERATION_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.velocity", params_.velocity_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "velocity param not defined");
-    exit(-1);
-  }
-  if (params_.velocity_frequency > VELOCITY_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the velocity topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        VELOCITY_TOPICS_MAX_FREQ);
-    params_.velocity_frequency = VELOCITY_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.angular_velocity",
-                     params_.angular_rate_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "angular_velocity param not defined");
-    exit(-1);
-  }
-  if (params_.angular_rate_frequency > ANGULAR_VELOCITY_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the angular velocity topics is higher "
-                "than the maximum "
-                "allowed %d. Tha maximum value is set",
-                ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
-    params_.angular_rate_frequency = ANGULAR_VELOCITY_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.position", params_.position_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "position param not defined");
-    exit(-1);
-  }
-  if (params_.position_frequency > POSITION_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the position topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        POSITION_TOPICS_MAX_FREQ);
-    params_.position_frequency = POSITION_TOPICS_MAX_FREQ;
-  }
-  if (!get_parameter("data_frequency.altitude", params_.altitude_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "altitude frequency param not defined");
-    exit(-1);
-  }
-  if (params_.altitude_frequency > ALTITUDE_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the altitude topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        ALTITUDE_TOPICS_MAX_FREQ);
-    params_.altitude_frequency = ALTITUDE_TOPICS_MAX_FREQ;
-  }
-  if (!get_parameter("data_frequency.gps_fused_position",
-                     params_.gps_fused_position_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "gps_fused_position param not defined");
-    exit(-1);
-  }
-  if (params_.gps_fused_position_frequency > GPS_FUSED_POSITION_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the GPS fused position is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
-    params_.gps_fused_position_frequency = GPS_DATA_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.gps_data", params_.gps_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "gps_data param not defined");
-    exit(-1);
-  }
-  if (params_.gps_data_frequency > GPS_DATA_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the GPS topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        GPS_DATA_TOPICS_MAX_FREQ);
-    params_.gps_data_frequency = GPS_DATA_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.rtk_data", params_.rtk_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "rtk_data param not defined");
-    exit(-1);
-  }
-  if (params_.rtk_data_frequency > RTK_DATA_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the RTK topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        RTK_DATA_TOPICS_MAX_FREQ);
-    params_.rtk_data_frequency = RTK_DATA_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.magnetometer",
-                     params_.magnetometer_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "magnetometer param not defined");
-    exit(-1);
-  }
-  if (params_.magnetometer_frequency > MAGNETOMETER_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the magnetometer topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                MAGNETOMETER_TOPICS_MAX_FREQ);
-    params_.magnetometer_frequency = MAGNETOMETER_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.rc_channels_data",
-                     params_.rc_channels_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "rc_channels_data param not defined");
-    exit(-1);
-  }
-  if (params_.rc_channels_data_frequency > RC_CHANNELS_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the RC channel topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                RC_CHANNELS_TOPICS_MAX_FREQ);
-    params_.rc_channels_data_frequency = RC_CHANNELS_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.esc_data_frequency",
-                     params_.esc_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "esc_data_frequency param not defined");
-    exit(-1);
-  }
-  if (params_.esc_data_frequency > ESC_DATA_TOPICS_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the ESC channel topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                ESC_DATA_TOPICS_FREQ);
-    params_.esc_data_frequency = ESC_DATA_TOPICS_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.gimbal_data",
-                     params_.gimbal_data_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "gimbal_data param not defined");
-    exit(-1);
-  }
-  if (params_.gimbal_data_frequency > GIMBAL_DATA_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the gimbal topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        GIMBAL_DATA_TOPICS_MAX_FREQ);
-    params_.gimbal_data_frequency = GIMBAL_DATA_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.flight_status",
-                     params_.flight_status_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "flight_status param not defined");
-    exit(-1);
-  }
-  if (params_.flight_status_frequency > FLIGHT_STATUS_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the flight status topics is higher than "
-                "the maximum "
-                "allowed %d. Tha maximum value is set",
-                FLIGHT_STATUS_TOPICS_MAX_FREQ);
-    params_.flight_status_frequency = FLIGHT_STATUS_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.battery_level",
-                     params_.battery_level_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "battery_level param not defined");
-    exit(-1);
-  }
-  if (params_.battery_level_frequency > BATTERY_STATUS_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(get_logger(),
-                "Frequency defined for the battery status topics is higher "
-                "than the maximum "
-                "allowed %d. Tha maximum value is set",
-                BATTERY_STATUS_TOPICS_MAX_FREQ);
-    params_.battery_level_frequency = BATTERY_STATUS_TOPICS_MAX_FREQ;
-  }
-
-  if (!get_parameter("data_frequency.control_information",
-                     params_.control_information_frequency))
-  {
-    RCLCPP_ERROR(get_logger(), "control_information param not defined");
-    exit(-1);
-  }
-  if (params_.control_information_frequency > CONTROL_DATA_TOPICS_MAX_FREQ)
-  {
-    RCLCPP_WARN(
-        get_logger(),
-        "Frequency defined for the control topics is higher than the maximum "
-        "allowed %d. Tha maximum value is set",
-        CONTROL_DATA_TOPICS_MAX_FREQ);
-    params_.control_information_frequency = CONTROL_DATA_TOPICS_MAX_FREQ;
-  }
-
+  get_non_mandatory_param("tf_frame_prefix",
+                          telemetry_module_->params_.tf_frame_prefix);
+  get_non_mandatory_param("imu_frame", telemetry_module_->params_.imu_frame);
+  get_non_mandatory_param("body_frame", telemetry_module_->params_.body_frame);
+  get_non_mandatory_param("map_frame", telemetry_module_->params_.map_frame);
+  get_non_mandatory_param("gimbal_frame",
+                          telemetry_module_->params_.gimbal_frame);
+  get_non_mandatory_param("gimbal_base_frame",
+                          telemetry_module_->params_.gimbal_base_frame);
+  get_non_mandatory_param("camera_frame",
+                          telemetry_module_->params_.camera_frame);
+  get_parameter("publish_transforms",
+                telemetry_module_->params_.publish_transforms);
+  get_non_mandatory_param("hms_return_codes_path",
+                          hms_module_->hms_return_codes_path_);
+  get_non_mandatory_param("file_path",
+                          camera_module_->default_path_to_download_media_);
   get_parameter("num_of_initialization_retries",
                 num_of_initialization_retries_);
+  // Get data frequency
+  get_and_validate_frequency("data_frequency.imu",
+                             telemetry_module_->params_.imu_frequency,
+                             IMU_TOPIC_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.attitude",
+                             telemetry_module_->params_.attitude_frequency,
+                             ATTITUDE_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.acceleration",
+                             telemetry_module_->params_.acceleration_frequency,
+                             ACCELERATION_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.velocity",
+                             telemetry_module_->params_.velocity_frequency,
+                             VELOCITY_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.angular_velocity",
+                             telemetry_module_->params_.angular_rate_frequency,
+                             ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.position",
+                             telemetry_module_->params_.position_frequency,
+                             POSITION_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.altitude",
+                             telemetry_module_->params_.altitude_frequency,
+                             ALTITUDE_TOPICS_MAX_FREQ);
+  get_and_validate_frequency(
+      "data_frequency.gps_fused_position",
+      telemetry_module_->params_.gps_fused_position_frequency,
+      GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.gps_data",
+                             telemetry_module_->params_.gps_data_frequency,
+                             GPS_DATA_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.rtk_data",
+                             telemetry_module_->params_.rtk_data_frequency,
+                             RTK_DATA_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.magnetometer",
+                             telemetry_module_->params_.magnetometer_frequency,
+                             MAGNETOMETER_TOPICS_MAX_FREQ);
+  get_and_validate_frequency(
+      "data_frequency.rc_channels_data",
+      telemetry_module_->params_.rc_channels_data_frequency,
+      RC_CHANNELS_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.esc_data_frequency",
+                             telemetry_module_->params_.esc_data_frequency,
+                             ESC_DATA_TOPICS_FREQ);
+  get_and_validate_frequency("data_frequency.gimbal_data",
+                             telemetry_module_->params_.gimbal_data_frequency,
+                             GIMBAL_DATA_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.flight_status",
+                             telemetry_module_->params_.flight_status_frequency,
+                             FLIGHT_STATUS_TOPICS_MAX_FREQ);
+  get_and_validate_frequency("data_frequency.battery_level",
+                             telemetry_module_->params_.battery_level_frequency,
+                             BATTERY_STATUS_TOPICS_MAX_FREQ);
+  get_and_validate_frequency(
+      "data_frequency.control_information",
+      telemetry_module_->params_.control_information_frequency,
+      CONTROL_DATA_TOPICS_MAX_FREQ);
 }
 
 bool
@@ -769,6 +538,11 @@ PSDKWrapper::set_user_info(T_DjiUserInfo *user_info)
 bool
 PSDKWrapper::init(T_DjiUserInfo *user_info)
 {
+  if (is_core_initialized_)
+  {
+    RCLCPP_INFO(get_logger(), "DJI Core already initialized, skipping.");
+    return true;
+  }
   RCLCPP_INFO(get_logger(), "Init DJI Core...");
   int current_num_retries = 0;
   T_DjiReturnCode result;
@@ -817,734 +591,8 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
     RCLCPP_ERROR(get_logger(), "Could not start application.");
     return false;
   }
+  is_core_initialized_ = true;
   return true;
-}
-
-void
-PSDKWrapper::initialize_ros_elements()
-{
-  RCLCPP_INFO(get_logger(), "Initializing ROS publishers");
-
-  // Create TF broadcasters
-  tf_static_broadcaster_ =
-      std::make_shared<tf2_ros::StaticTransformBroadcaster>(shared_from_this());
-  tf_broadcaster_ =
-      std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
-
-  attitude_pub_ = create_publisher<geometry_msgs::msg::QuaternionStamped>(
-      "psdk_ros2/attitude", 10);
-  imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("psdk_ros2/imu", 10);
-  velocity_ground_fused_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
-          "psdk_ros2/velocity_ground_fused", 10);
-  position_fused_pub_ = create_publisher<psdk_interfaces::msg::PositionFused>(
-      "psdk_ros2/position_fused", 10);
-  gps_fused_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
-      "psdk_ros2/gps_position_fused", 10);
-  gps_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
-      "psdk_ros2/gps_position", 10);
-  gps_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
-      "psdk_ros2/gps_velocity", 10);
-  gps_details_pub_ = create_publisher<psdk_interfaces::msg::GPSDetails>(
-      "psdk_ros2/gps_details", 10);
-  gps_signal_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/gps_signal_level", 10);
-  gps_control_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/gps_control_level", 10);
-  rtk_position_pub_ = create_publisher<sensor_msgs::msg::NavSatFix>(
-      "psdk_ros2/rtk_position", 10);
-  rtk_velocity_pub_ = create_publisher<geometry_msgs::msg::TwistStamped>(
-      "psdk_ros2/rtk_velocity", 10);
-  rtk_yaw_pub_ =
-      create_publisher<psdk_interfaces::msg::RTKYaw>("psdk_ros2/rtk_yaw", 10);
-  rtk_position_info_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_position_info", 10);
-  rtk_yaw_info_pub_ =
-      create_publisher<std_msgs::msg::UInt8>("psdk_ros2/rtk_yaw_info", 10);
-  rtk_connection_status_pub_ = create_publisher<std_msgs::msg::UInt16>(
-      "psdk_ros2/rtk_connection_status", 10);
-  magnetic_field_pub_ = create_publisher<sensor_msgs::msg::MagneticField>(
-      "psdk_ros2/magnetic_field", 10);
-  rc_pub_ = create_publisher<sensor_msgs::msg::Joy>("psdk_ros2/rc", 10);
-  rc_connection_status_pub_ =
-      create_publisher<psdk_interfaces::msg::RCConnectionStatus>(
-          "psdk_ros2/rc_connection_status", 10);
-  esc_pub_ =
-      create_publisher<psdk_interfaces::msg::EscData>("psdk_ros2/esc_data", 1);
-  gimbal_angles_pub_ = create_publisher<geometry_msgs::msg::Vector3Stamped>(
-      "psdk_ros2/gimbal_angles", 10);
-  gimbal_status_pub_ = create_publisher<psdk_interfaces::msg::GimbalStatus>(
-      "psdk_ros2/gimbal_status", 10);
-  flight_status_pub_ = create_publisher<psdk_interfaces::msg::FlightStatus>(
-      "psdk_ros2/flight_status", 10);
-  display_mode_pub_ = create_publisher<psdk_interfaces::msg::DisplayMode>(
-      "psdk_ros2/display_mode", 10);
-  landing_gear_pub_ = create_publisher<std_msgs::msg::UInt8>(
-      "psdk_ros2/landing_gear_status", 10);
-  motor_start_error_pub_ = create_publisher<std_msgs::msg::UInt16>(
-      "psdk_ros2/motor_start_error", 10);
-  flight_anomaly_pub_ = create_publisher<psdk_interfaces::msg::FlightAnomaly>(
-      "psdk_ros2/flight_anomaly", 10);
-  battery_pub_ =
-      create_publisher<sensor_msgs::msg::BatteryState>("psdk_ros2/battery", 10);
-  single_battery_index1_pub_ =
-      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>(
-          "psdk_ros2/single_battery_index1", 10);
-  single_battery_index2_pub_ =
-      create_publisher<psdk_interfaces::msg::SingleBatteryInfo>(
-          "psdk_ros2/single_battery_index2", 10);
-  height_fused_pub_ = create_publisher<std_msgs::msg::Float32>(
-      "psdk_ros2/height_above_ground", 10);
-  angular_rate_body_raw_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
-          "psdk_ros2/angular_rate_body_raw", 10);
-  angular_rate_ground_fused_pub_ =
-      create_publisher<geometry_msgs::msg::Vector3Stamped>(
-          "psdk_ros2/angular_rate_ground_fused", 10);
-  acceleration_ground_fused_pub_ =
-      create_publisher<geometry_msgs::msg::AccelStamped>(
-          "psdk_ros2/acceleration_ground_fused", 10);
-  acceleration_body_fused_pub_ =
-      create_publisher<geometry_msgs::msg::AccelStamped>(
-          "psdk_ros2/acceleration_body_fused", 10);
-  acceleration_body_raw_pub_ =
-      create_publisher<geometry_msgs::msg::AccelStamped>(
-          "psdk_ros2/acceleration_body_raw", 10);
-  relative_obstacle_info_pub_ =
-      create_publisher<psdk_interfaces::msg::RelativeObstacleInfo>(
-          "psdk_ros2/relative_obstacle_info", 10);
-  main_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/main_camera_stream", rclcpp::SensorDataQoS());
-  fpv_camera_stream_pub_ = create_publisher<sensor_msgs::msg::Image>(
-      "psdk_ros2/fpv_camera_stream", rclcpp::SensorDataQoS());
-  control_mode_pub_ = create_publisher<psdk_interfaces::msg::ControlMode>(
-      "psdk_ros2/control_mode", 10);
-  home_point_pub_ =
-      create_publisher<sensor_msgs::msg::NavSatFix>("psdk_ros2/home_point", 10);
-  home_point_status_pub_ =
-      create_publisher<std_msgs::msg::Bool>("psdk_ros2/home_point_status", 10);
-  home_point_altitude_pub_ = create_publisher<std_msgs::msg::Float32>(
-      "psdk_ros2/home_point_altitude", 10);
-  altitude_sl_pub_ = create_publisher<std_msgs::msg::Float32>(
-      "psdk_ros2/altitude_sea_level", 10);
-  altitude_barometric_pub_ = create_publisher<std_msgs::msg::Float32>(
-      "psdk_ros2/altitude_barometric", 10);
-  hms_info_table_pub_ = create_publisher<psdk_interfaces::msg::HmsInfoTable>(
-      "psdk_ros2/hms_info_table", 10);
-
-  RCLCPP_INFO(get_logger(), "Creating subscribers");
-  flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "psdk_ros2/flight_control_setpoint_generic", 10,
-      std::bind(&PSDKWrapper::flight_control_generic_cb, this, _1));
-  flight_control_position_yaw_sub_ = create_subscription<sensor_msgs::msg::Joy>(
-      "psdk_ros2/flight_control_setpoint_ENUposition_yaw", 10,
-      std::bind(&PSDKWrapper::flight_control_position_yaw_cb, this, _1));
-  flight_control_velocity_yawrate_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
-          "psdk_ros2/flight_control_setpoint_ENUvelocity_yawrate", 10,
-          std::bind(&PSDKWrapper::flight_control_velocity_yawrate_cb, this,
-                    _1));
-  flight_control_body_velocity_yawrate_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
-          "psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate", 10,
-          std::bind(&PSDKWrapper::flight_control_body_velocity_yawrate_cb, this,
-                    _1));
-  flight_control_rollpitch_yawrate_thrust_sub_ =
-      create_subscription<sensor_msgs::msg::Joy>(
-          "psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust", 10,
-          std::bind(&PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb,
-                    this, _1));
-  gimbal_rotation_sub_ =
-      create_subscription<psdk_interfaces::msg::GimbalRotation>(
-          "psdk_ros2/gimbal_rotation", 10,
-          std::bind(&PSDKWrapper::gimbal_rotation_cb, this,
-                    std::placeholders::_1));
-
-  RCLCPP_INFO(get_logger(), "Creating services");
-  set_local_position_ref_srv_ = create_service<Trigger>(
-      "psdk_ros2/set_local_position_ref",
-      std::bind(&PSDKWrapper::set_local_position_ref_cb, this, _1, _2));
-  set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
-      "psdk_ros2/set_home_from_gps",
-      std::bind(&PSDKWrapper::set_home_from_gps_cb, this, _1, _2));
-  set_home_from_current_location_srv_ = create_service<Trigger>(
-      "psdk_ros2/set_home_from_current_location",
-      std::bind(&PSDKWrapper::set_home_from_current_location_cb, this, _1, _2));
-  set_go_home_altitude_srv_ = create_service<SetGoHomeAltitude>(
-      "psdk_ros2/set_go_home_altitude",
-      std::bind(&PSDKWrapper::set_go_home_altitude_cb, this, _1, _2));
-  get_go_home_altitude_srv_ = create_service<GetGoHomeAltitude>(
-      "psdk_ros2/get_go_home_altitude",
-      std::bind(&PSDKWrapper::get_go_home_altitude_cb, this, _1, _2));
-  start_go_home_srv_ = create_service<Trigger>(
-      "psdk_ros2/start_go_home",
-      std::bind(&PSDKWrapper::start_go_home_cb, this, _1, _2));
-  cancel_go_home_srv_ = create_service<Trigger>(
-      "psdk_ros2/cancel_go_home",
-      std::bind(&PSDKWrapper::cancel_go_home_cb, this, _1, _2));
-  obtain_ctrl_authority_srv_ = create_service<Trigger>(
-      "psdk_ros2/obtain_ctrl_authority",
-      std::bind(&PSDKWrapper::obtain_ctrl_authority_cb, this, _1, _2));
-  release_ctrl_authority_srv_ = create_service<Trigger>(
-      "psdk_ros2/release_ctrl_authority",
-      std::bind(&PSDKWrapper::release_ctrl_authority_cb, this, _1, _2));
-  turn_on_motors_srv_ = create_service<Trigger>(
-      "psdk_ros2/turn_on_motors",
-      std::bind(&PSDKWrapper::turn_on_motors_cb, this, _1, _2));
-  turn_off_motors_srv_ = create_service<Trigger>(
-      "psdk_ros2/turn_off_motors",
-      std::bind(&PSDKWrapper::turn_off_motors_cb, this, _1, _2));
-  takeoff_srv_ = create_service<Trigger>(
-      "psdk_ros2/takeoff",
-      std::bind(&PSDKWrapper::start_takeoff_cb, this, _1, _2));
-  land_srv_ = create_service<Trigger>(
-      "psdk_ros2/land",
-      std::bind(&PSDKWrapper::start_landing_cb, this, _1, _2));
-  cancel_landing_srv_ = create_service<Trigger>(
-      "psdk_ros2/cancel_landing",
-      std::bind(&PSDKWrapper::cancel_landing_cb, this, _1, _2));
-  start_confirm_landing_srv_ = create_service<Trigger>(
-      "psdk_ros2/start_confirm_landing",
-      std::bind(&PSDKWrapper::start_confirm_landing_cb, this, _1, _2));
-  start_force_landing_srv_ = create_service<Trigger>(
-      "psdk_ros2/start_force_landing",
-      std::bind(&PSDKWrapper::start_force_landing_cb, this, _1, _2));
-  set_horizontal_vo_obstacle_avoidance_srv_ =
-      create_service<SetObstacleAvoidance>(
-          "psdk_ros2/set_horizontal_vo_obstacle_avoidance",
-          std::bind(&PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb, this,
-                    _1, _2));
-  set_horizontal_radar_obstacle_avoidance_srv_ =
-      create_service<SetObstacleAvoidance>(
-          "psdk_ros2/set_horizontal_radar_obstacle_avoidance",
-          std::bind(&PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb,
-                    this, _1, _2));
-  set_upwards_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
-      "psdk_ros2/set_upwards_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb, this, _1,
-                _2));
-  set_upwards_radar_obstacle_avoidance_srv_ =
-      create_service<SetObstacleAvoidance>(
-          "psdk_ros2/set_upwards_radar_obstacle_avoidance",
-          std::bind(&PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb, this,
-                    _1, _2));
-  set_downwards_vo_obstacle_avoidance_srv_ =
-      create_service<SetObstacleAvoidance>(
-          "psdk_ros2/set_downwards_vo_obstacle_avoidance",
-          std::bind(&PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb, this,
-                    _1, _2));
-  get_horizontal_vo_obstacle_avoidance_srv_ =
-      create_service<GetObstacleAvoidance>(
-          "psdk_ros2/get_horizontal_vo_obstacle_avoidance",
-          std::bind(&PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb, this,
-                    _1, _2));
-  get_upwards_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
-      "psdk_ros2/get_upwards_vo_obstacle_avoidance",
-      std::bind(&PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb, this, _1,
-                _2));
-  get_upwards_radar_obstacle_avoidance_srv_ =
-      create_service<GetObstacleAvoidance>(
-          "psdk_ros2/get_upwards_radar_obstacle_avoidance",
-          std::bind(&PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb, this,
-                    _1, _2));
-  get_downwards_vo_obstacle_avoidance_srv_ =
-      create_service<GetObstacleAvoidance>(
-          "psdk_ros2/get_downwards_vo_obstacle_avoidance",
-          std::bind(&PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb, this,
-                    _1, _2));
-  get_horizontal_radar_obstacle_avoidance_srv_ =
-      create_service<GetObstacleAvoidance>(
-          "psdk_ros2/get_horizontal_radar_obstacle_avoidance",
-          std::bind(&PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb,
-                    this, _1, _2));
-  /* Camera */
-  camera_shoot_single_photo_service_ = create_service<CameraShootSinglePhoto>(
-      "psdk_ros2/camera_shoot_single_photo",
-      std::bind(&PSDKWrapper::camera_shoot_single_photo_cb, this, _1, _2),
-      qos_profile_);
-  camera_shoot_burst_photo_service_ = create_service<CameraShootBurstPhoto>(
-      "psdk_ros2/camera_shoot_burst_photo",
-      std::bind(&PSDKWrapper::camera_shoot_burst_photo_cb, this, _1, _2),
-      qos_profile_);
-  camera_shoot_interval_photo_service_ =
-      create_service<CameraShootIntervalPhoto>(
-          "psdk_ros2/camera_shoot_interval_photo",
-          std::bind(&PSDKWrapper::camera_shoot_interval_photo_cb, this, _1, _2),
-          qos_profile_);
-  camera_stop_shoot_photo_service_ = create_service<CameraStopShootPhoto>(
-      "psdk_ros2/camera_stop_shoot_photo",
-      std::bind(&PSDKWrapper::camera_stop_shoot_photo_cb, this, _1, _2),
-      qos_profile_);
-  camera_record_video_service_ = create_service<CameraRecordVideo>(
-      "psdk_ros2/camera_record_video",
-      std::bind(&PSDKWrapper::camera_record_video_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_laser_ranging_info_service_ =
-      create_service<CameraGetLaserRangingInfo>(
-          "psdk_ros2/camera_get_laser_ranging_info",
-          std::bind(&PSDKWrapper::camera_get_laser_ranging_info_cb, this, _1,
-                    _2),
-          qos_profile_);
-  camera_get_file_list_info_service_ = create_service<CameraGetFileListInfo>(
-      "psdk_ros2/camera_get_file_list_info",
-      std::bind(&PSDKWrapper::camera_get_file_list_info_cb, this, _1, _2),
-      qos_profile_);
-  camera_format_sd_card_service_ = create_service<CameraFormatSdCard>(
-      "psdk_ros2/camera_format_sd_card",
-      std::bind(&PSDKWrapper::camera_format_sd_card_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_sd_storage_info_service_ = create_service<CameraGetSDStorageInfo>(
-      "psdk_ros2/camera_get_sd_storage_info",
-      std::bind(&PSDKWrapper::camera_get_sd_storage_info_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_type_service_ = create_service<CameraGetType>(
-      "psdk_ros2/camera_get_type",
-      std::bind(&PSDKWrapper::camera_get_type_cb, this, _1, _2), qos_profile_);
-  camera_set_exposure_mode_ev_service_ =
-      create_service<CameraSetExposureModeEV>(
-          "psdk_ros2/camera_set_exposure_mode_ev",
-          std::bind(&PSDKWrapper::camera_set_exposure_mode_ev_cb, this, _1, _2),
-          qos_profile_);
-  camera_get_exposure_mode_ev_service_ =
-      create_service<CameraGetExposureModeEV>(
-          "psdk_ros2/camera_get_exposure_mode_ev",
-          std::bind(&PSDKWrapper::camera_get_exposure_mode_ev_cb, this, _1, _2),
-          qos_profile_);
-  camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
-      "psdk_ros2/camera_set_shutter_speed",
-      std::bind(&PSDKWrapper::camera_set_shutter_speed_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_shutter_speed_service_ = create_service<CameraGetShutterSpeed>(
-      "psdk_ros2/camera_get_shutter_speed",
-      std::bind(&PSDKWrapper::camera_get_shutter_speed_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_iso_service_ = create_service<CameraSetISO>(
-      "psdk_ros2/camera_set_iso",
-      std::bind(&PSDKWrapper::camera_set_iso_cb, this, _1, _2), qos_profile_);
-  camera_get_iso_service_ = create_service<CameraGetISO>(
-      "psdk_ros2/camera_get_iso",
-      std::bind(&PSDKWrapper::camera_get_iso_cb, this, _1, _2), qos_profile_);
-  camera_set_focus_target_service_ = create_service<CameraSetFocusTarget>(
-      "psdk_ros2/camera_set_focus_target",
-      std::bind(&PSDKWrapper::camera_set_focus_target_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_focus_target_service_ = create_service<CameraGetFocusTarget>(
-      "psdk_ros2/camera_get_focus_target",
-      std::bind(&PSDKWrapper::camera_get_focus_target_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_focus_mode_service_ = create_service<CameraSetFocusMode>(
-      "psdk_ros2/camera_set_focus_mode",
-      std::bind(&PSDKWrapper::camera_set_focus_mode_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_focus_mode_service_ = create_service<CameraGetFocusMode>(
-      "psdk_ros2/camera_get_focus_mode",
-      std::bind(&PSDKWrapper::camera_get_focus_mode_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_optical_zoom_service_ = create_service<CameraSetOpticalZoom>(
-      "psdk_ros2/camera_set_optical_zoom",
-      std::bind(&PSDKWrapper::camera_set_optical_zoom_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_optical_zoom_service_ = create_service<CameraGetOpticalZoom>(
-      "psdk_ros2/camera_get_optical_zoom",
-      std::bind(&PSDKWrapper::camera_get_optical_zoom_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_infrared_zoom_service_ = create_service<CameraSetInfraredZoom>(
-      "psdk_ros2/camera_set_infrared_zoom",
-      std::bind(&PSDKWrapper::camera_set_infrared_zoom_cb, this, _1, _2),
-      qos_profile_);
-  camera_set_aperture_service_ = create_service<CameraSetAperture>(
-      "psdk_ros2/camera_set_aperture",
-      std::bind(&PSDKWrapper::camera_set_aperture_cb, this, _1, _2),
-      qos_profile_);
-  camera_get_aperture_service_ = create_service<CameraGetAperture>(
-      "psdk_ros2/camera_get_aperture",
-      std::bind(&PSDKWrapper::camera_get_aperture_cb, this, _1, _2),
-      qos_profile_);
-  /* Streaming */
-  camera_setup_streaming_service_ = create_service<CameraSetupStreaming>(
-      "psdk_ros2/camera_setup_streaming",
-      std::bind(&PSDKWrapper::camera_setup_streaming_cb, this, _1, _2),
-      qos_profile_);
-  /* Gimbal */
-  gimbal_set_mode_service_ = create_service<GimbalSetMode>(
-      "psdk_ros2/gimbal_set_mode",
-      std::bind(&PSDKWrapper::gimbal_set_mode_cb, this, _1, _2), qos_profile_);
-  gimbal_reset_service_ = create_service<GimbalReset>(
-      "psdk_ros2/gimbal_reset",
-      std::bind(&PSDKWrapper::gimbal_reset_cb, this, _1, _2), qos_profile_);
-
-  // Camera action servers
-  camera_download_file_by_index_server_ =
-      std::make_unique<utils::ActionServer<CameraDownloadFileByIndex>>(
-          get_node_base_interface(), get_node_clock_interface(),
-          get_node_logging_interface(), get_node_waitables_interface(),
-          "psdk_ros2/camera_download_file_by_index",
-          std::bind(&PSDKWrapper::execute_download_file_by_index, this));
-  camera_delete_file_by_index_server_ =
-      std::make_unique<utils::ActionServer<CameraDeleteFileByIndex>>(
-          get_node_base_interface(), get_node_clock_interface(),
-          get_node_logging_interface(), get_node_waitables_interface(),
-          "psdk_ros2/camera_delete_file_by_index",
-          std::bind(&PSDKWrapper::execute_delete_file_by_index, this));
-}
-
-void
-PSDKWrapper::activate_ros_elements()
-{
-  RCLCPP_INFO(get_logger(), "Activating ROS elements");
-  attitude_pub_->on_activate();
-  imu_pub_->on_activate();
-  velocity_ground_fused_pub_->on_activate();
-  position_fused_pub_->on_activate();
-  gps_fused_pub_->on_activate();
-  gps_position_pub_->on_activate();
-  gps_velocity_pub_->on_activate();
-  gps_details_pub_->on_activate();
-  gps_signal_pub_->on_activate();
-  gps_control_pub_->on_activate();
-  rtk_position_pub_->on_activate();
-  rtk_velocity_pub_->on_activate();
-  rtk_yaw_pub_->on_activate();
-  rtk_position_info_pub_->on_activate();
-  rtk_yaw_info_pub_->on_activate();
-  rtk_connection_status_pub_->on_activate();
-  magnetic_field_pub_->on_activate();
-  rc_pub_->on_activate();
-  esc_pub_->on_activate();
-  rc_connection_status_pub_->on_activate();
-  gimbal_angles_pub_->on_activate();
-  gimbal_status_pub_->on_activate();
-  flight_status_pub_->on_activate();
-  display_mode_pub_->on_activate();
-  landing_gear_pub_->on_activate();
-  motor_start_error_pub_->on_activate();
-  flight_anomaly_pub_->on_activate();
-  battery_pub_->on_activate();
-  single_battery_index1_pub_->on_activate();
-  single_battery_index2_pub_->on_activate();
-  height_fused_pub_->on_activate();
-  angular_rate_body_raw_pub_->on_activate();
-  angular_rate_ground_fused_pub_->on_activate();
-  acceleration_ground_fused_pub_->on_activate();
-  acceleration_body_fused_pub_->on_activate();
-  acceleration_body_raw_pub_->on_activate();
-  main_camera_stream_pub_->on_activate();
-  fpv_camera_stream_pub_->on_activate();
-  control_mode_pub_->on_activate();
-  home_point_pub_->on_activate();
-  home_point_status_pub_->on_activate();
-  relative_obstacle_info_pub_->on_activate();
-  home_point_altitude_pub_->on_activate();
-  altitude_sl_pub_->on_activate();
-  altitude_barometric_pub_->on_activate();
-  hms_info_table_pub_->on_activate();
-
-  camera_download_file_by_index_server_->activate();
-  camera_delete_file_by_index_server_->activate();
-}
-
-void
-PSDKWrapper::deactivate_ros_elements()
-{
-  RCLCPP_INFO(get_logger(), "Deactivating ROS elements");
-  attitude_pub_->on_deactivate();
-  imu_pub_->on_deactivate();
-  velocity_ground_fused_pub_->on_deactivate();
-  position_fused_pub_->on_deactivate();
-  gps_fused_pub_->on_deactivate();
-  gps_position_pub_->on_deactivate();
-  gps_velocity_pub_->on_deactivate();
-  gps_details_pub_->on_deactivate();
-  gps_signal_pub_->on_deactivate();
-  gps_control_pub_->on_deactivate();
-  rtk_position_pub_->on_deactivate();
-  rtk_velocity_pub_->on_deactivate();
-  rtk_yaw_pub_->on_deactivate();
-  rtk_position_info_pub_->on_deactivate();
-  rtk_yaw_info_pub_->on_deactivate();
-  rtk_connection_status_pub_->on_deactivate();
-  magnetic_field_pub_->on_deactivate();
-  rc_pub_->on_deactivate();
-  esc_pub_->on_deactivate();
-  rc_connection_status_pub_->on_deactivate();
-  gimbal_angles_pub_->on_deactivate();
-  gimbal_status_pub_->on_deactivate();
-  flight_status_pub_->on_deactivate();
-  display_mode_pub_->on_deactivate();
-  motor_start_error_pub_->on_deactivate();
-  landing_gear_pub_->on_deactivate();
-  flight_anomaly_pub_->on_deactivate();
-  battery_pub_->on_deactivate();
-  single_battery_index1_pub_->on_deactivate();
-  single_battery_index2_pub_->on_deactivate();
-  height_fused_pub_->on_deactivate();
-  angular_rate_body_raw_pub_->on_deactivate();
-  angular_rate_ground_fused_pub_->on_deactivate();
-  acceleration_ground_fused_pub_->on_deactivate();
-  acceleration_body_fused_pub_->on_deactivate();
-  acceleration_body_raw_pub_->on_deactivate();
-  main_camera_stream_pub_->on_deactivate();
-  fpv_camera_stream_pub_->on_deactivate();
-  control_mode_pub_->on_deactivate();
-  home_point_pub_->on_deactivate();
-  home_point_status_pub_->on_deactivate();
-  relative_obstacle_info_pub_->on_deactivate();
-  home_point_altitude_pub_->on_deactivate();
-  altitude_sl_pub_->on_deactivate();
-  altitude_barometric_pub_->on_deactivate();
-  hms_info_table_pub_->on_deactivate();
-
-  camera_download_file_by_index_server_->deactivate();
-  camera_delete_file_by_index_server_->deactivate();
-}
-
-void
-PSDKWrapper::clean_ros_elements()
-{
-  RCLCPP_INFO(get_logger(), "Cleaning ROS elements");
-
-  // Action servers
-  camera_download_file_by_index_server_.reset();
-  camera_delete_file_by_index_server_.reset();
-  // Services
-  // General
-  set_local_position_ref_srv_.reset();
-  set_home_from_gps_srv_.reset();
-  set_home_from_current_location_srv_.reset();
-  set_go_home_altitude_srv_.reset();
-  get_go_home_altitude_srv_.reset();
-  start_go_home_srv_.reset();
-  cancel_go_home_srv_.reset();
-  obtain_ctrl_authority_srv_.reset();
-  release_ctrl_authority_srv_.reset();
-  turn_on_motors_srv_.reset();
-  turn_off_motors_srv_.reset();
-  takeoff_srv_.reset();
-  land_srv_.reset();
-  cancel_landing_srv_.reset();
-  start_confirm_landing_srv_.reset();
-  start_force_landing_srv_.reset();
-  set_horizontal_vo_obstacle_avoidance_srv_.reset();
-  set_horizontal_radar_obstacle_avoidance_srv_.reset();
-  set_upwards_vo_obstacle_avoidance_srv_.reset();
-  set_upwards_radar_obstacle_avoidance_srv_.reset();
-  set_downwards_vo_obstacle_avoidance_srv_.reset();
-  get_horizontal_vo_obstacle_avoidance_srv_.reset();
-  get_upwards_vo_obstacle_avoidance_srv_.reset();
-  get_upwards_radar_obstacle_avoidance_srv_.reset();
-  get_downwards_vo_obstacle_avoidance_srv_.reset();
-  get_horizontal_radar_obstacle_avoidance_srv_.reset();
-  // Camera
-  camera_shoot_single_photo_service_.reset();
-  camera_shoot_burst_photo_service_.reset();
-  camera_shoot_interval_photo_service_.reset();
-  camera_stop_shoot_photo_service_.reset();
-  camera_record_video_service_.reset();
-  camera_get_type_service_.reset();
-  camera_set_exposure_mode_ev_service_.reset();
-  camera_get_exposure_mode_ev_service_.reset();
-  camera_set_shutter_speed_service_.reset();
-  camera_get_shutter_speed_service_.reset();
-  camera_set_iso_service_.reset();
-  camera_get_iso_service_.reset();
-  camera_set_focus_target_service_.reset();
-  camera_get_focus_target_service_.reset();
-  camera_set_focus_mode_service_.reset();
-  camera_get_focus_mode_service_.reset();
-  camera_set_optical_zoom_service_.reset();
-  camera_get_optical_zoom_service_.reset();
-  camera_set_infrared_zoom_service_.reset();
-  camera_set_aperture_service_.reset();
-  camera_get_laser_ranging_info_service_.reset();
-  camera_get_file_list_info_service_.reset();
-  camera_format_sd_card_service_.reset();
-  camera_get_sd_storage_info_service_.reset();
-  // Streaming
-  camera_setup_streaming_service_.reset();
-  // Gimbal
-  gimbal_set_mode_service_.reset();
-  gimbal_reset_service_.reset();
-
-  // Subscribers
-  flight_control_generic_sub_.reset();
-  flight_control_position_yaw_sub_.reset();
-  flight_control_velocity_yawrate_sub_.reset();
-  flight_control_body_velocity_yawrate_sub_.reset();
-  flight_control_rollpitch_yawrate_thrust_sub_.reset();
-
-  // TF broadcasters
-  tf_static_broadcaster_.reset();
-  tf_broadcaster_.reset();
-
-  // Publishers
-  attitude_pub_.reset();
-  imu_pub_.reset();
-  velocity_ground_fused_pub_.reset();
-  position_fused_pub_.reset();
-  gps_fused_pub_.reset();
-  gps_position_pub_.reset();
-  gps_velocity_pub_.reset();
-  gps_details_pub_.reset();
-  gps_signal_pub_.reset();
-  gps_control_pub_.reset();
-  rtk_position_pub_.reset();
-  rtk_velocity_pub_.reset();
-  rtk_yaw_pub_.reset();
-  rtk_position_info_pub_.reset();
-  rtk_yaw_info_pub_.reset();
-  rtk_connection_status_pub_.reset();
-  magnetic_field_pub_.reset();
-  rc_pub_.reset();
-  esc_pub_.reset();
-  rc_connection_status_pub_.reset();
-  gimbal_angles_pub_.reset();
-  gimbal_status_pub_.reset();
-  flight_status_pub_.reset();
-  display_mode_pub_.reset();
-  landing_gear_pub_.reset();
-  motor_start_error_pub_.reset();
-  flight_anomaly_pub_.reset();
-  battery_pub_.reset();
-  single_battery_index1_pub_.reset();
-  single_battery_index2_pub_.reset();
-  height_fused_pub_.reset();
-  angular_rate_body_raw_pub_.reset();
-  angular_rate_ground_fused_pub_.reset();
-  acceleration_ground_fused_pub_.reset();
-  acceleration_body_fused_pub_.reset();
-  acceleration_body_raw_pub_.reset();
-  main_camera_stream_pub_.reset();
-  fpv_camera_stream_pub_.reset();
-  control_mode_pub_.reset();
-  home_point_pub_.reset();
-  home_point_status_pub_.reset();
-  relative_obstacle_info_pub_.reset();
-  home_point_altitude_pub_.reset();
-  altitude_sl_pub_.reset();
-  altitude_barometric_pub_.reset();
-  hms_info_table_pub_.reset();
-}
-
-/*@todo Generalize the functions related to TFs for different copter, gimbal
- * and payload types and move it to a separate dedicated file
- */
-void
-PSDKWrapper::publish_static_transforms()
-{
-  RCLCPP_INFO(get_logger(), "Publishing static transforms");
-
-  if (aircraft_base_info_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK ||
-      aircraft_base_info_.aircraftType == DJI_AIRCRAFT_TYPE_M350_RTK)
-  {
-    geometry_msgs::msg::TransformStamped tf_base_link_gimbal;
-    tf_base_link_gimbal.header.stamp = this->get_clock()->now();
-    tf_base_link_gimbal.header.frame_id = params_.body_frame;
-    tf_base_link_gimbal.child_frame_id = params_.gimbal_base_frame;
-    tf_base_link_gimbal.transform.translation.x =
-        psdk_utils::T_M300_BASE_GIMBAL[0];
-    tf_base_link_gimbal.transform.translation.y =
-        psdk_utils::T_M300_BASE_GIMBAL[1];
-    tf_base_link_gimbal.transform.translation.z =
-        psdk_utils::T_M300_BASE_GIMBAL[2];
-    tf_base_link_gimbal.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
-    tf_base_link_gimbal.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
-    tf_base_link_gimbal.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
-    tf_base_link_gimbal.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
-    tf_static_broadcaster_->sendTransform(tf_base_link_gimbal);
-  }
-
-  if (publish_camera_transforms_)
-  {
-    if (attached_camera_type_ == DJI_CAMERA_TYPE_H20)
-    {
-      // Publish TF between Gimbal - H20
-      geometry_msgs::msg::TransformStamped tf_gimbal_H20;
-      tf_gimbal_H20.header.stamp = this->get_clock()->now();
-      tf_gimbal_H20.header.frame_id = params_.gimbal_frame;
-      tf_gimbal_H20.child_frame_id = params_.camera_frame;
-      tf_gimbal_H20.transform.translation.x = psdk_utils::T_M300_GIMBAL_H20[0];
-      tf_gimbal_H20.transform.translation.y = psdk_utils::T_M300_GIMBAL_H20[1];
-      tf_gimbal_H20.transform.translation.z = psdk_utils::T_M300_GIMBAL_H20[2];
-
-      tf2::Quaternion q_gimbal_h20;
-      q_gimbal_h20.setRPY(current_state_.gimbal_angles.vector.x,
-                          current_state_.gimbal_angles.vector.y,
-                          get_yaw_gimbal());
-      tf_gimbal_H20.transform.rotation.x = psdk_utils::Q_NO_ROTATION.getX();
-      tf_gimbal_H20.transform.rotation.y = psdk_utils::Q_NO_ROTATION.getY();
-      tf_gimbal_H20.transform.rotation.z = psdk_utils::Q_NO_ROTATION.getZ();
-      tf_gimbal_H20.transform.rotation.w = psdk_utils::Q_NO_ROTATION.getW();
-      tf_static_broadcaster_->sendTransform(tf_gimbal_H20);
-
-      // Publish TF between H20 - Zoom lens
-      geometry_msgs::msg::TransformStamped tf_H20_zoom;
-      tf_H20_zoom.header.stamp = this->get_clock()->now();
-      tf_H20_zoom.header.frame_id = params_.camera_frame;
-      tf_H20_zoom.child_frame_id = add_tf_prefix("h20_zoom_optical_link");
-      tf_H20_zoom.transform.translation.x = psdk_utils::T_H20_ZOOM[0];
-      tf_H20_zoom.transform.translation.y = psdk_utils::T_H20_ZOOM[1];
-      tf_H20_zoom.transform.translation.z = psdk_utils::T_H20_ZOOM[2];
-      tf_H20_zoom.transform.rotation.x = psdk_utils::Q_FLU2OPTIC.getX();
-      tf_H20_zoom.transform.rotation.y = psdk_utils::Q_FLU2OPTIC.getY();
-      tf_H20_zoom.transform.rotation.z = psdk_utils::Q_FLU2OPTIC.getZ();
-      tf_H20_zoom.transform.rotation.w = psdk_utils::Q_FLU2OPTIC.getW();
-      tf_static_broadcaster_->sendTransform(tf_H20_zoom);
-      // Publish TF between H20 - Wide lens
-      geometry_msgs::msg::TransformStamped tf_H20_wide;
-      tf_H20_wide.header.stamp = this->get_clock()->now();
-      tf_H20_wide.header.frame_id = params_.camera_frame;
-      tf_H20_wide.child_frame_id = add_tf_prefix("h20_wide_optical_link");
-      tf_H20_wide.transform.translation.x = psdk_utils::T_H20_WIDE[0];
-      tf_H20_wide.transform.translation.y = psdk_utils::T_H20_WIDE[1];
-      tf_H20_wide.transform.translation.z = psdk_utils::T_H20_WIDE[2];
-      tf_H20_wide.transform.rotation.x = psdk_utils::Q_FLU2OPTIC.getX();
-      tf_H20_wide.transform.rotation.y = psdk_utils::Q_FLU2OPTIC.getY();
-      tf_H20_wide.transform.rotation.z = psdk_utils::Q_FLU2OPTIC.getZ();
-      tf_H20_wide.transform.rotation.w = psdk_utils::Q_FLU2OPTIC.getW();
-      tf_static_broadcaster_->sendTransform(tf_H20_wide);
-    }
-  }
-}
-
-void
-PSDKWrapper::publish_dynamic_transforms()
-{
-  if (aircraft_base_info_.aircraftType == DJI_AIRCRAFT_TYPE_M300_RTK ||
-      aircraft_base_info_.aircraftType == DJI_AIRCRAFT_TYPE_M350_RTK)
-  {
-    // Publish TF between Gimbal Base - Gimbal
-    geometry_msgs::msg::TransformStamped tf_gimbal_base_gimbal;
-    tf_gimbal_base_gimbal.header.stamp = this->get_clock()->now();
-    tf_gimbal_base_gimbal.header.frame_id = params_.gimbal_base_frame;
-    tf_gimbal_base_gimbal.child_frame_id = params_.gimbal_frame;
-    tf_gimbal_base_gimbal.transform.translation.x = 0.0;
-    tf_gimbal_base_gimbal.transform.translation.y = 0.0;
-    tf_gimbal_base_gimbal.transform.translation.z = 0.0;
-
-    tf2::Quaternion q_gimbal;
-    q_gimbal.setRPY(current_state_.gimbal_angles.vector.x,
-                    current_state_.gimbal_angles.vector.y, get_yaw_gimbal());
-    tf_gimbal_base_gimbal.transform.rotation.x = q_gimbal.getX();
-    tf_gimbal_base_gimbal.transform.rotation.y = q_gimbal.getY();
-    tf_gimbal_base_gimbal.transform.rotation.z = q_gimbal.getZ();
-    tf_gimbal_base_gimbal.transform.rotation.w = q_gimbal.getW();
-    tf_broadcaster_->sendTransform(tf_gimbal_base_gimbal);
-  }
-}
-
-double
-PSDKWrapper::get_yaw_gimbal()
-{
-  /* Get current copter yaw wrt. to East */
-  tf2::Matrix3x3 rotation_mat(current_state_.attitude);
-  double current_roll;
-  double current_pitch;
-  double current_yaw;
-  rotation_mat.getRPY(current_roll, current_pitch, current_yaw);
-
-  /* Get current gimbal yaw wrt to East */
-  double current_gimbal_yaw = current_state_.gimbal_angles.vector.z;
-  return current_gimbal_yaw - current_yaw;
 }
 
 bool
@@ -1552,16 +600,15 @@ PSDKWrapper::initialize_psdk_modules()
 {
   using ModuleInitializer = std::pair<std::function<bool()>, bool>;
   std::vector<ModuleInitializer> module_initializers = {
-      {std::bind(&PSDKWrapper::init_telemetry, this),
+      {std::bind(&TelemetryModule::init, telemetry_module_),
        is_telemetry_module_mandatory_},
-      {std::bind(&PSDKWrapper::init_flight_control, this),
-       is_flight_control_module_mandatory_},
-      {std::bind(&PSDKWrapper::init_camera_manager, this),
+      {std::bind(&CameraModule::init, camera_module_),
        is_camera_module_mandatory_},
-      {std::bind(&PSDKWrapper::init_gimbal_manager, this),
+      {std::bind(&GimbalModule::init, gimbal_module_),
        is_gimbal_module_mandatory_},
-      {std::bind(&PSDKWrapper::init_liveview, this),
-       is_liveview_module_mandatory_}};
+      {std::bind(&LiveviewModule::init, liveview_module_),
+       is_liveview_module_mandatory_},
+      {std::bind(&HmsModule::init, hms_module_), is_hms_module_mandatory_}};
 
   for (const auto &initializer : module_initializers)
   {
@@ -1570,14 +617,91 @@ PSDKWrapper::initialize_psdk_modules()
       return false;
     }
   }
-
   return true;
 }
 
-std::string
-PSDKWrapper::add_tf_prefix(const std::string &frame_name)
+void
+PSDKWrapper::get_and_validate_frequency(const std::string &param_name,
+                                        int &frequency, const int max_frequency)
 {
-  return params_.tf_frame_prefix + frame_name;
+  if (!get_parameter(param_name, frequency))
+  {
+    RCLCPP_ERROR(get_logger(), "%s param not defined", param_name.c_str());
+    exit(-1);
+  }
+  if (frequency > max_frequency)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Frequency defined for %s is higher than the maximum allowed "
+                "%d. The maximum value is set",
+                param_name.c_str(), max_frequency);
+    frequency = max_frequency;
+  }
+}
+
+void
+PSDKWrapper::get_non_mandatory_param(const std::string &param_name,
+                                     std::string &param_string)
+{
+  if (!get_parameter(param_name, param_string))
+  {
+    RCLCPP_WARN(get_logger(), "%s param not defined, using default one: %s",
+                param_name.c_str(), param_string.c_str());
+  }
+}
+
+void
+PSDKWrapper::get_mandatory_param(const std::string &param_name,
+                                 std::string &param_string)
+{
+  if (!get_parameter(param_name, param_string))
+  {
+    RCLCPP_ERROR(get_logger(), "%s param not defined", param_name.c_str());
+    exit(-1);
+  }
+}
+
+bool
+PSDKWrapper::transition_modules_to_state(LifecycleState state)
+{
+  std::function<CallbackReturn(
+      std::shared_ptr<rclcpp_lifecycle::LifecycleNode>)>
+      transition;
+
+  switch (state)
+  {
+    case LifecycleState::ACTIVATE:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_activate(rclcpp_lifecycle::State()); };
+      break;
+    case LifecycleState::DEACTIVATE:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_deactivate(rclcpp_lifecycle::State()); };
+      break;
+    case LifecycleState::CONFIGURE:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_configure(rclcpp_lifecycle::State()); };
+      break;
+    case LifecycleState::CLEANUP:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_cleanup(rclcpp_lifecycle::State()); };
+      break;
+    case LifecycleState::SHUTDOWN:
+      transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
+      { return module->on_shutdown(rclcpp_lifecycle::State()); };
+      break;
+  }
+
+  if (transition(telemetry_module_) != CallbackReturn::SUCCESS ||
+      transition(flight_control_module_) != CallbackReturn::SUCCESS ||
+      transition(camera_module_) != CallbackReturn::SUCCESS ||
+      transition(liveview_module_) != CallbackReturn::SUCCESS ||
+      transition(gimbal_module_) != CallbackReturn::SUCCESS ||
+      transition(hms_module_) != CallbackReturn::SUCCESS)
+  {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace psdk_ros2

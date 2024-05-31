@@ -15,15 +15,93 @@
  *
  */
 
-#include "psdk_wrapper/psdk_wrapper.hpp"
-#include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
-
+#include "psdk_wrapper/modules/gimbal.hpp"
 namespace psdk_ros2
 {
-bool
-PSDKWrapper::init_gimbal_manager()
+
+GimbalModule::GimbalModule(const std::string &name)
+    : rclcpp_lifecycle::LifecycleNode(
+          name, "",
+          rclcpp::NodeOptions().arguments(
+              {"--ros-args", "-r",
+               name + ":" + std::string("__node:=") + name}))
+
 {
-  RCLCPP_INFO(get_logger(), "Initiating gimbal manager...");
+  RCLCPP_INFO(get_logger(), "Creating GimbalModule");
+}
+
+GimbalModule::~GimbalModule()
+{
+  RCLCPP_INFO(get_logger(), "Destroying GimbalModule");
+}
+
+GimbalModule::CallbackReturn
+GimbalModule::on_configure(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Configuring GimbalModule");
+  gimbal_rotation_sub_ =
+      create_subscription<psdk_interfaces::msg::GimbalRotation>(
+          "psdk_ros2/gimbal_rotation", 10,
+          std::bind(&GimbalModule::gimbal_rotation_cb, this,
+                    std::placeholders::_1));
+  gimbal_set_mode_service_ = create_service<GimbalSetMode>(
+      "psdk_ros2/gimbal_set_mode",
+      std::bind(&GimbalModule::gimbal_set_mode_cb, this, std::placeholders::_1,
+                std::placeholders::_2),
+      qos_profile_);
+  gimbal_reset_service_ = create_service<GimbalReset>(
+      "psdk_ros2/gimbal_reset",
+      std::bind(&GimbalModule::gimbal_reset_cb, this, std::placeholders::_1,
+                std::placeholders::_2),
+      qos_profile_);
+  return CallbackReturn::SUCCESS;
+}
+GimbalModule::CallbackReturn
+GimbalModule::on_activate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Activating GimbalModule");
+  return CallbackReturn::SUCCESS;
+}
+
+GimbalModule::CallbackReturn
+GimbalModule::on_deactivate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Deactivating GimbalModule");
+  return CallbackReturn::SUCCESS;
+}
+
+GimbalModule::CallbackReturn
+GimbalModule::on_cleanup(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Cleaning up GimbalModule");
+  gimbal_set_mode_service_.reset();
+  gimbal_reset_service_.reset();
+  gimbal_rotation_sub_.reset();
+  return CallbackReturn::SUCCESS;
+}
+
+GimbalModule::CallbackReturn
+GimbalModule::on_shutdown(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Shutting down GimbalModule");
+  return CallbackReturn::SUCCESS;
+}
+
+bool
+GimbalModule::init()
+{
+  if (is_module_initialized_)
+  {
+    RCLCPP_INFO(get_logger(), "Gimbal manager already initialized, skipping.");
+    return true;
+  }
+
+  RCLCPP_INFO(get_logger(), "Initiating gimbal manager");
   T_DjiReturnCode return_code = DjiGimbalManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -32,13 +110,14 @@ PSDKWrapper::init_gimbal_manager()
                  return_code);
     return false;
   }
+  is_module_initialized_ = true;
   return true;
 }
 
 bool
-PSDKWrapper::deinit_gimbal_manager()
+GimbalModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing gimbal manager...");
+  RCLCPP_INFO(get_logger(), "Deinitializing gimbal manager");
   T_DjiReturnCode return_code = DjiGimbalManager_Deinit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -47,11 +126,12 @@ PSDKWrapper::deinit_gimbal_manager()
                  return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 
 void
-PSDKWrapper::gimbal_set_mode_cb(
+GimbalModule::gimbal_set_mode_cb(
     const std::shared_ptr<GimbalSetMode::Request> request,
     const std::shared_ptr<GimbalSetMode::Response> response)
 {
@@ -78,7 +158,7 @@ PSDKWrapper::gimbal_set_mode_cb(
 }
 
 void
-PSDKWrapper::gimbal_reset_cb(
+GimbalModule::gimbal_reset_cb(
     const std::shared_ptr<GimbalReset::Request> request,
     const std::shared_ptr<GimbalReset::Response> response)
 {
@@ -104,7 +184,7 @@ PSDKWrapper::gimbal_reset_cb(
 }
 
 void
-PSDKWrapper::gimbal_rotation_cb(
+GimbalModule::gimbal_rotation_cb(
     const psdk_interfaces::msg::GimbalRotation::SharedPtr msg)
 {
   (void)msg;

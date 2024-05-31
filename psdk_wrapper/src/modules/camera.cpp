@@ -8,23 +8,272 @@
 /**
  * @file camera.cpp
  *
- * @brief
+ * @brief This file contains the implementation of the CameraModule class. This
+ * class is responsible for handling the camera module of the Payload-SDK.
+ * It provides services to set and get camera parameters, such as exposure mode,
+ * shutter speed, ISO, focus target, etc. among others.
+ * It also provides services to shoot single, burst, and interval photos.
  *
  * @author Lidia de la Torre Vazquez
  * Contact: lidia@unmanned.life
  *
  */
 
-#include "psdk_wrapper/psdk_wrapper.hpp"
+#include "psdk_wrapper/modules/camera.hpp"
+
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
 
 namespace psdk_ros2
 {
+CameraModule::CameraModule(const std::string &name)
+    : rclcpp_lifecycle::LifecycleNode(
+          name, "",
+          rclcpp::NodeOptions().arguments(
+              {"--ros-args", "-r",
+               name + ":" + std::string("__node:=") + name}))
+
+{
+  RCLCPP_INFO(get_logger(), "Creating CameraModule");
+}
+
+CameraModule::~CameraModule()
+{
+  RCLCPP_INFO(get_logger(), "Destroying CameraModule");
+}
+
+CameraModule::CallbackReturn
+CameraModule::on_configure(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Configuring CameraModule");
+
+  camera_shoot_single_photo_service_ = create_service<CameraShootSinglePhoto>(
+      "psdk_ros2/camera_shoot_single_photo",
+      std::bind(&CameraModule::camera_shoot_single_photo_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_shoot_burst_photo_service_ = create_service<CameraShootBurstPhoto>(
+      "psdk_ros2/camera_shoot_burst_photo",
+      std::bind(&CameraModule::camera_shoot_burst_photo_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_shoot_interval_photo_service_ =
+      create_service<CameraShootIntervalPhoto>(
+          "psdk_ros2/camera_shoot_interval_photo",
+          std::bind(&CameraModule::camera_shoot_interval_photo_cb, this,
+                    std::placeholders::_1, std::placeholders::_2),
+          qos_profile_);
+  camera_stop_shoot_photo_service_ = create_service<CameraStopShootPhoto>(
+      "psdk_ros2/camera_stop_shoot_photo",
+      std::bind(&CameraModule::camera_stop_shoot_photo_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_record_video_service_ = create_service<CameraRecordVideo>(
+      "psdk_ros2/camera_record_video",
+      std::bind(&CameraModule::camera_record_video_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_get_laser_ranging_info_service_ =
+      create_service<CameraGetLaserRangingInfo>(
+          "psdk_ros2/camera_get_laser_ranging_info",
+          std::bind(&CameraModule::camera_get_laser_ranging_info_cb, this,
+                    std::placeholders::_1, std::placeholders::_2),
+          qos_profile_);
+  camera_get_file_list_info_service_ = create_service<CameraGetFileListInfo>(
+      "psdk_ros2/camera_get_file_list_info",
+      std::bind(&CameraModule::camera_get_file_list_info_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_format_sd_card_service_ = create_service<CameraFormatSdCard>(
+      "psdk_ros2/camera_format_sd_card",
+      std::bind(&CameraModule::camera_format_sd_card_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_get_sd_storage_info_service_ = create_service<CameraGetSDStorageInfo>(
+      "psdk_ros2/camera_get_sd_storage_info",
+      std::bind(&CameraModule::camera_get_sd_storage_info_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_get_type_service_ = create_service<CameraGetType>(
+      "psdk_ros2/camera_get_type",
+      std::bind(&CameraModule::camera_get_type_cb, this, std::placeholders::_1,
+                std::placeholders::_2),
+      qos_profile_);
+  camera_set_exposure_mode_ev_service_ =
+      create_service<CameraSetExposureModeEV>(
+          "psdk_ros2/camera_set_exposure_mode_ev",
+          std::bind(&CameraModule::camera_set_exposure_mode_ev_cb, this,
+                    std::placeholders::_1, std::placeholders::_2),
+          qos_profile_);
+  camera_get_exposure_mode_ev_service_ =
+      create_service<CameraGetExposureModeEV>(
+          "psdk_ros2/camera_get_exposure_mode_ev",
+          std::bind(&CameraModule::camera_get_exposure_mode_ev_cb, this,
+                    std::placeholders::_1, std::placeholders::_2),
+          qos_profile_);
+  camera_set_shutter_speed_service_ = create_service<CameraSetShutterSpeed>(
+      "psdk_ros2/camera_set_shutter_speed",
+      std::bind(&CameraModule::camera_set_shutter_speed_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_get_shutter_speed_service_ = create_service<CameraGetShutterSpeed>(
+      "psdk_ros2/camera_get_shutter_speed",
+      std::bind(&CameraModule::camera_get_shutter_speed_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_set_iso_service_ = create_service<CameraSetISO>(
+      "psdk_ros2/camera_set_iso",
+      std::bind(&CameraModule::camera_set_iso_cb, this, std::placeholders::_1,
+                std::placeholders::_2),
+      qos_profile_);
+  camera_get_iso_service_ = create_service<CameraGetISO>(
+      "psdk_ros2/camera_get_iso",
+      std::bind(&CameraModule::camera_get_iso_cb, this, std::placeholders::_1,
+                std::placeholders::_2),
+      qos_profile_);
+  camera_set_focus_target_service_ = create_service<CameraSetFocusTarget>(
+      "psdk_ros2/camera_set_focus_target",
+      std::bind(&CameraModule::camera_set_focus_target_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_get_focus_target_service_ = create_service<CameraGetFocusTarget>(
+      "psdk_ros2/camera_get_focus_target",
+      std::bind(&CameraModule::camera_get_focus_target_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_set_focus_mode_service_ = create_service<CameraSetFocusMode>(
+      "psdk_ros2/camera_set_focus_mode",
+      std::bind(&CameraModule::camera_set_focus_mode_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_get_focus_mode_service_ = create_service<CameraGetFocusMode>(
+      "psdk_ros2/camera_get_focus_mode",
+      std::bind(&CameraModule::camera_get_focus_mode_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_set_optical_zoom_service_ = create_service<CameraSetOpticalZoom>(
+      "psdk_ros2/camera_set_optical_zoom",
+      std::bind(&CameraModule::camera_set_optical_zoom_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_get_optical_zoom_service_ = create_service<CameraGetOpticalZoom>(
+      "psdk_ros2/camera_get_optical_zoom",
+      std::bind(&CameraModule::camera_get_optical_zoom_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_set_infrared_zoom_service_ = create_service<CameraSetInfraredZoom>(
+      "psdk_ros2/camera_set_infrared_zoom",
+      std::bind(&CameraModule::camera_set_infrared_zoom_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_set_aperture_service_ = create_service<CameraSetAperture>(
+      "psdk_ros2/camera_set_aperture",
+      std::bind(&CameraModule::camera_set_aperture_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+  camera_get_aperture_service_ = create_service<CameraGetAperture>(
+      "psdk_ros2/camera_get_aperture",
+      std::bind(&CameraModule::camera_get_aperture_cb, this,
+                std::placeholders::_1, std::placeholders::_2),
+      qos_profile_);
+
+  // Camera action servers
+  camera_download_file_by_index_server_ =
+      std::make_unique<utils::ActionServer<CameraDownloadFileByIndex>>(
+          get_node_base_interface(), get_node_clock_interface(),
+          get_node_logging_interface(), get_node_waitables_interface(),
+          "psdk_ros2/camera_download_file_by_index",
+          std::bind(&CameraModule::execute_download_file_by_index, this));
+  camera_delete_file_by_index_server_ =
+      std::make_unique<utils::ActionServer<CameraDeleteFileByIndex>>(
+          get_node_base_interface(), get_node_clock_interface(),
+          get_node_logging_interface(), get_node_waitables_interface(),
+          "psdk_ros2/camera_delete_file_by_index",
+          std::bind(&CameraModule::execute_delete_file_by_index, this));
+  return CallbackReturn::SUCCESS;
+}
+
+CameraModule::CallbackReturn
+CameraModule::on_activate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Activating CameraModule");
+  camera_download_file_by_index_server_->activate();
+  camera_delete_file_by_index_server_->activate();
+  return CallbackReturn::SUCCESS;
+}
+
+CameraModule::CallbackReturn
+CameraModule::on_deactivate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Deactivating CameraModule");
+
+  camera_download_file_by_index_server_->deactivate();
+  camera_delete_file_by_index_server_->deactivate();
+  return CallbackReturn::SUCCESS;
+}
+
+CameraModule::CallbackReturn
+CameraModule::on_cleanup(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Cleaning up CameraModule");
+
+  // Action servers
+  camera_download_file_by_index_server_.reset();
+  camera_delete_file_by_index_server_.reset();
+  // Service servers
+  camera_shoot_single_photo_service_.reset();
+  camera_shoot_burst_photo_service_.reset();
+  camera_shoot_interval_photo_service_.reset();
+  camera_stop_shoot_photo_service_.reset();
+  camera_record_video_service_.reset();
+  camera_get_type_service_.reset();
+  camera_set_exposure_mode_ev_service_.reset();
+  camera_get_exposure_mode_ev_service_.reset();
+  camera_set_shutter_speed_service_.reset();
+  camera_get_shutter_speed_service_.reset();
+  camera_set_iso_service_.reset();
+  camera_get_iso_service_.reset();
+  camera_set_focus_target_service_.reset();
+  camera_get_focus_target_service_.reset();
+  camera_set_focus_mode_service_.reset();
+  camera_get_focus_mode_service_.reset();
+  camera_set_optical_zoom_service_.reset();
+  camera_get_optical_zoom_service_.reset();
+  camera_set_infrared_zoom_service_.reset();
+  camera_set_aperture_service_.reset();
+  camera_get_laser_ranging_info_service_.reset();
+  camera_get_file_list_info_service_.reset();
+  camera_format_sd_card_service_.reset();
+  camera_get_sd_storage_info_service_.reset();
+  camera_get_aperture_service_.reset();
+
+  return CallbackReturn::SUCCESS;
+}
+
+CameraModule::CallbackReturn
+CameraModule::on_shutdown(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Shutting down CameraModule");
+  std::unique_lock<std::shared_mutex> lock(global_ptr_mutex_);
+  global_camera_ptr_.reset();
+  return CallbackReturn::SUCCESS;
+}
 
 bool
-PSDKWrapper::init_camera_manager()
+CameraModule::init()
 {
-  RCLCPP_INFO(get_logger(), "Initiating camera manager...");
+  if (is_module_initialized_)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Camera module is already initialized, skipping.");
+    return true;
+  }
+
+  RCLCPP_INFO(get_logger(), "Initiating camera manager");
   T_DjiReturnCode return_code = DjiCameraManager_Init();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -40,15 +289,15 @@ PSDKWrapper::init_camera_manager()
   if (get_camera_type(&camera_type, main_payload_index))
   {
     RCLCPP_INFO(get_logger(), "Camera type %s detected", camera_type.c_str());
-    publish_camera_transforms_ = true;
   }
+  is_module_initialized_ = true;
   return true;
 }
 
 bool
-PSDKWrapper::deinit_camera_manager()
+CameraModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing camera manager...");
+  RCLCPP_INFO(get_logger(), "Deinitializing camera manager");
   T_DjiReturnCode return_code = DjiCameraManager_DeInit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -57,12 +306,13 @@ PSDKWrapper::deinit_camera_manager()
                  return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 
 bool
-PSDKWrapper::get_camera_type(std::string *camera_type,
-                             const E_DjiMountPosition index)
+CameraModule::get_camera_type(std::string *camera_type,
+                              const E_DjiMountPosition index)
 {
   T_DjiReturnCode return_code =
       DjiCameraManager_GetCameraType(index, &attached_camera_type_);
@@ -91,7 +341,7 @@ PSDKWrapper::get_camera_type(std::string *camera_type,
 }
 
 void
-PSDKWrapper::camera_get_type_cb(
+CameraModule::camera_get_type_cb(
     const std::shared_ptr<CameraGetType::Request> request,
     const std::shared_ptr<CameraGetType::Response> response)
 {
@@ -111,7 +361,7 @@ PSDKWrapper::camera_get_type_cb(
 }
 
 void
-PSDKWrapper::camera_set_exposure_mode_ev_cb(
+CameraModule::camera_set_exposure_mode_ev_cb(
     const std::shared_ptr<CameraSetExposureModeEV::Request> request,
     const std::shared_ptr<CameraSetExposureModeEV::Response> response)
 {
@@ -165,7 +415,7 @@ PSDKWrapper::camera_set_exposure_mode_ev_cb(
 }
 
 void
-PSDKWrapper::camera_get_exposure_mode_ev_cb(
+CameraModule::camera_get_exposure_mode_ev_cb(
     const std::shared_ptr<CameraGetExposureModeEV::Request> request,
     const std::shared_ptr<CameraGetExposureModeEV::Response> response)
 {
@@ -206,7 +456,7 @@ PSDKWrapper::camera_get_exposure_mode_ev_cb(
 }
 
 void
-PSDKWrapper::camera_set_shutter_speed_cb(
+CameraModule::camera_set_shutter_speed_cb(
     const std::shared_ptr<CameraSetShutterSpeed::Request> request,
     const std::shared_ptr<CameraSetShutterSpeed::Response> response)
 {
@@ -262,7 +512,7 @@ PSDKWrapper::camera_set_shutter_speed_cb(
 }
 
 void
-PSDKWrapper::camera_get_shutter_speed_cb(
+CameraModule::camera_get_shutter_speed_cb(
     const std::shared_ptr<CameraGetShutterSpeed::Request> request,
     const std::shared_ptr<CameraGetShutterSpeed::Response> response)
 {
@@ -290,7 +540,7 @@ PSDKWrapper::camera_get_shutter_speed_cb(
 }
 
 void
-PSDKWrapper::camera_set_iso_cb(
+CameraModule::camera_set_iso_cb(
     const std::shared_ptr<CameraSetISO::Request> request,
     const std::shared_ptr<CameraSetISO::Response> response)
 {
@@ -344,7 +594,7 @@ PSDKWrapper::camera_set_iso_cb(
 }
 
 void
-PSDKWrapper::camera_get_iso_cb(
+CameraModule::camera_get_iso_cb(
     const std::shared_ptr<CameraGetISO::Request> request,
     const std::shared_ptr<CameraGetISO::Response> response)
 {
@@ -372,7 +622,7 @@ PSDKWrapper::camera_get_iso_cb(
 }
 
 void
-PSDKWrapper::camera_set_focus_target_cb(
+CameraModule::camera_set_focus_target_cb(
     const std::shared_ptr<CameraSetFocusTarget::Request> request,
     const std::shared_ptr<CameraSetFocusTarget::Response> response)
 {
@@ -429,7 +679,7 @@ PSDKWrapper::camera_set_focus_target_cb(
 }
 
 void
-PSDKWrapper::camera_get_focus_target_cb(
+CameraModule::camera_get_focus_target_cb(
     const std::shared_ptr<CameraGetFocusTarget::Request> request,
     const std::shared_ptr<CameraGetFocusTarget::Response> response)
 {
@@ -458,7 +708,7 @@ PSDKWrapper::camera_get_focus_target_cb(
 }
 
 void
-PSDKWrapper::camera_set_focus_mode_cb(
+CameraModule::camera_set_focus_mode_cb(
     const std::shared_ptr<CameraSetFocusMode::Request> request,
     const std::shared_ptr<CameraSetFocusMode::Response> response)
 {
@@ -489,7 +739,7 @@ PSDKWrapper::camera_set_focus_mode_cb(
 }
 
 void
-PSDKWrapper::camera_get_focus_mode_cb(
+CameraModule::camera_get_focus_mode_cb(
     const std::shared_ptr<CameraGetFocusMode::Request> request,
     const std::shared_ptr<CameraGetFocusMode::Response> response)
 {
@@ -518,7 +768,7 @@ PSDKWrapper::camera_get_focus_mode_cb(
 }
 
 void
-PSDKWrapper::camera_set_optical_zoom_cb(
+CameraModule::camera_set_optical_zoom_cb(
     const std::shared_ptr<CameraSetOpticalZoom::Request> request,
     const std::shared_ptr<CameraSetOpticalZoom::Response> response)
 {
@@ -550,7 +800,7 @@ PSDKWrapper::camera_set_optical_zoom_cb(
 }
 
 void
-PSDKWrapper::camera_get_optical_zoom_cb(
+CameraModule::camera_get_optical_zoom_cb(
     const std::shared_ptr<CameraGetOpticalZoom::Request> request,
     const std::shared_ptr<CameraGetOpticalZoom::Response> response)
 {
@@ -578,7 +828,7 @@ PSDKWrapper::camera_get_optical_zoom_cb(
 }
 
 void
-PSDKWrapper::camera_set_infrared_zoom_cb(
+CameraModule::camera_set_infrared_zoom_cb(
     const std::shared_ptr<CameraSetInfraredZoom::Request> request,
     const std::shared_ptr<CameraSetInfraredZoom::Response> response)
 {
@@ -610,7 +860,7 @@ PSDKWrapper::camera_set_infrared_zoom_cb(
 }
 
 void
-PSDKWrapper::camera_set_aperture_cb(
+CameraModule::camera_set_aperture_cb(
     const std::shared_ptr<CameraSetAperture::Request> request,
     const std::shared_ptr<CameraSetAperture::Response> response)
 {
@@ -642,7 +892,7 @@ PSDKWrapper::camera_set_aperture_cb(
 }
 
 void
-PSDKWrapper::camera_get_aperture_cb(
+CameraModule::camera_get_aperture_cb(
     const std::shared_ptr<CameraGetAperture::Request> request,
     const std::shared_ptr<CameraGetAperture::Response> response)
 {
@@ -674,7 +924,7 @@ PSDKWrapper::camera_get_aperture_cb(
 }
 
 void
-PSDKWrapper::camera_shoot_single_photo_cb(
+CameraModule::camera_shoot_single_photo_cb(
     const std::shared_ptr<CameraShootSinglePhoto::Request> request,
     const std::shared_ptr<CameraShootSinglePhoto::Response> response)
 {
@@ -732,7 +982,7 @@ PSDKWrapper::camera_shoot_single_photo_cb(
 }
 
 void
-PSDKWrapper::camera_shoot_burst_photo_cb(
+CameraModule::camera_shoot_burst_photo_cb(
     const std::shared_ptr<CameraShootBurstPhoto::Request> request,
     const std::shared_ptr<CameraShootBurstPhoto::Response> response)
 {
@@ -816,7 +1066,7 @@ PSDKWrapper::camera_shoot_burst_photo_cb(
 }
 
 void
-PSDKWrapper::camera_shoot_interval_photo_cb(
+CameraModule::camera_shoot_interval_photo_cb(
     const std::shared_ptr<CameraShootIntervalPhoto::Request> request,
     const std::shared_ptr<CameraShootIntervalPhoto::Response> response)
 {
@@ -913,7 +1163,7 @@ PSDKWrapper::camera_shoot_interval_photo_cb(
 }
 
 void
-PSDKWrapper::camera_stop_shoot_photo_cb(
+CameraModule::camera_stop_shoot_photo_cb(
     const std::shared_ptr<CameraStopShootPhoto::Request> request,
     const std::shared_ptr<CameraStopShootPhoto::Response> response)
 {
@@ -943,7 +1193,7 @@ PSDKWrapper::camera_stop_shoot_photo_cb(
 }
 
 void
-PSDKWrapper::camera_record_video_cb(
+CameraModule::camera_record_video_cb(
     const std::shared_ptr<CameraRecordVideo::Request> request,
     const std::shared_ptr<CameraRecordVideo::Response> response)
 {
@@ -1014,7 +1264,7 @@ PSDKWrapper::camera_record_video_cb(
 }
 
 void
-PSDKWrapper::camera_get_laser_ranging_info_cb(
+CameraModule::camera_get_laser_ranging_info_cb(
     const std::shared_ptr<CameraGetLaserRangingInfo::Request> request,
     const std::shared_ptr<CameraGetLaserRangingInfo::Response> response)
 {
@@ -1053,32 +1303,18 @@ PSDKWrapper::camera_get_laser_ranging_info_cb(
   }
 }
 
-std::string
-PSDKWrapper::get_optical_frame_id()
-{
-  for (auto &it : psdk_utils::camera_source_str)
-  {
-    if (it.first == selected_camera_source_)
-    {
-      return it.second;
-    }
-  }
-}
-
-/**
- * FILE MANAGEMENT METHODS
- */
-
 T_DjiReturnCode
 c_camera_manager_download_file_data_callback(
     T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len)
 {
-  return global_ptr_->camera_manager_download_file_data_callback(packetInfo,
-                                                                 data, len);
+  std::unique_lock<std::shared_mutex> lock(
+      global_camera_ptr_->global_ptr_mutex_);
+  return global_camera_ptr_->camera_manager_download_file_data_callback(
+      packetInfo, data, len);
 }
 
 void
-PSDKWrapper::camera_format_sd_card_cb(
+CameraModule::camera_format_sd_card_cb(
     const std::shared_ptr<CameraFormatSdCard::Request> request,
     const std::shared_ptr<CameraFormatSdCard::Response> response)
 {
@@ -1102,7 +1338,7 @@ PSDKWrapper::camera_format_sd_card_cb(
 }
 
 void
-PSDKWrapper::camera_get_sd_storage_info_cb(
+CameraModule::camera_get_sd_storage_info_cb(
     const std::shared_ptr<CameraGetSDStorageInfo::Request> request,
     const std::shared_ptr<CameraGetSDStorageInfo::Response> response)
 {
@@ -1153,7 +1389,7 @@ PSDKWrapper::camera_get_sd_storage_info_cb(
 }
 
 void
-PSDKWrapper::register_file_data_callback(E_DjiMountPosition index)
+CameraModule::register_file_data_callback(E_DjiMountPosition index)
 {
   T_DjiReturnCode return_code;
   return_code = DjiCameraManager_RegDownloadFileDataCallback(
@@ -1174,7 +1410,7 @@ PSDKWrapper::register_file_data_callback(E_DjiMountPosition index)
 }
 
 void
-PSDKWrapper::obtain_downloader_rights(E_DjiMountPosition index)
+CameraModule::obtain_downloader_rights(E_DjiMountPosition index)
 {
   T_DjiReturnCode return_code;
   return_code = DjiCameraManager_ObtainDownloaderRights(index);
@@ -1192,7 +1428,7 @@ PSDKWrapper::obtain_downloader_rights(E_DjiMountPosition index)
 }
 
 void
-PSDKWrapper::release_downloader_rights(E_DjiMountPosition index)
+CameraModule::release_downloader_rights(E_DjiMountPosition index)
 {
   T_DjiReturnCode return_code;
   return_code = DjiCameraManager_ReleaseDownloaderRights(index);
@@ -1210,7 +1446,7 @@ PSDKWrapper::release_downloader_rights(E_DjiMountPosition index)
 }
 
 void
-PSDKWrapper::camera_get_file_list_info_cb(
+CameraModule::camera_get_file_list_info_cb(
     const std::shared_ptr<CameraGetFileListInfo::Request> request,
     const std::shared_ptr<CameraGetFileListInfo::Response> response)
 {
@@ -1253,7 +1489,7 @@ PSDKWrapper::camera_get_file_list_info_cb(
 }
 
 void
-PSDKWrapper::execute_download_file_by_index()
+CameraModule::execute_download_file_by_index()
 {
   auto result = std::make_shared<CameraDownloadFileByIndex::Result>();
   auto goal = camera_download_file_by_index_server_->get_current_goal();
@@ -1294,7 +1530,7 @@ PSDKWrapper::execute_download_file_by_index()
 }
 
 void
-PSDKWrapper::execute_delete_file_by_index()
+CameraModule::execute_delete_file_by_index()
 {
   auto result = std::make_shared<CameraDeleteFileByIndex::Result>();
   auto goal = camera_delete_file_by_index_server_->get_current_goal();
@@ -1322,7 +1558,7 @@ PSDKWrapper::execute_delete_file_by_index()
 }
 
 psdk_interfaces::msg::FileInfo
-PSDKWrapper::set_file_info(const T_DjiCameraManagerFileListInfo file_info)
+CameraModule::set_file_info(const T_DjiCameraManagerFileListInfo file_info)
 {
   psdk_interfaces::msg::FileInfo file;
   file.name = std::string(file_info.fileName);
@@ -1356,7 +1592,7 @@ PSDKWrapper::set_file_info(const T_DjiCameraManagerFileListInfo file_info)
 }
 
 std::time_t
-PSDKWrapper::get_unix_time(const T_DjiCameraManagerFileCreateTime &time)
+CameraModule::get_unix_time(const T_DjiCameraManagerFileCreateTime &time)
 {
   std::tm timeinfo = {};
   timeinfo.tm_year = time.year - 1900;
@@ -1369,7 +1605,7 @@ PSDKWrapper::get_unix_time(const T_DjiCameraManagerFileCreateTime &time)
 }
 
 psdk_interfaces::msg::FileAttributes
-PSDKWrapper::set_file_attributes(
+CameraModule::set_file_attributes(
     const T_DjiCameraManagerFileAttributeData &attributes)
 {
   psdk_interfaces::msg::FileAttributes att_msg;
@@ -1383,7 +1619,7 @@ PSDKWrapper::set_file_attributes(
 }
 
 T_DjiReturnCode
-PSDKWrapper::camera_manager_download_file_data_callback(
+CameraModule::camera_manager_download_file_data_callback(
     T_DjiDownloadFilePacketInfo packetInfo, const uint8_t *data, uint16_t len)
 {
   float download_speed = 0.0f;
@@ -1397,7 +1633,7 @@ PSDKWrapper::camera_manager_download_file_data_callback(
   }
   if (file_path_to_download_.empty())
   {
-    file_path_to_download_ = params_.file_path;
+    file_path_to_download_ = default_path_to_download_media_;
   }
 
   if (!create_directory(file_path_to_download_))
@@ -1457,7 +1693,7 @@ PSDKWrapper::camera_manager_download_file_data_callback(
 }
 
 bool
-PSDKWrapper::write_to_file(const uint8_t *data, uint16_t len)
+CameraModule::write_to_file(const uint8_t *data, uint16_t len)
 {
   if (s_downloadMediaFile_ != NULL)
   {
@@ -1469,7 +1705,7 @@ PSDKWrapper::write_to_file(const uint8_t *data, uint16_t len)
 }
 
 bool
-PSDKWrapper::create_directory(const std::string &path)
+CameraModule::create_directory(const std::string &path)
 {
   if (!std::filesystem::exists(path))
   {

@@ -8,27 +8,268 @@
 /**
  * @file flight_control.cpp
  *
- * @brief
+ * @brief Flight control module implementation. This module is responsible for
+ * handling the flight control commands and implementating the basic flight
+ * behaviors such as takeoff, landing, return to home. Moreover, it enables and
+ * disables the obstacle avoidance functionality.
  *
  * @author Bianca Bendris
  * Contact: bianca@unmanned.life
  *
  */
 
-#include "psdk_wrapper/psdk_wrapper.hpp"
-#include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
+#include "psdk_wrapper/modules/flight_control.hpp"
 
 namespace psdk_ros2
 {
 
-bool
-PSDKWrapper::init_flight_control()
+FlightControlModule::FlightControlModule(const std::string &name)
+    : rclcpp_lifecycle::LifecycleNode(
+          name, "",
+          rclcpp::NodeOptions().arguments(
+              {"--ros-args", "-r",
+               name + ":" + std::string("__node:=") + name}))
+
 {
-  RCLCPP_INFO(get_logger(), "Initiating flight control module...");
+  RCLCPP_INFO(get_logger(), "Creating FlightControlModule");
+}
+
+FlightControlModule::~FlightControlModule()
+{
+  RCLCPP_INFO(get_logger(), "Destroying FlightControlModule");
+}
+
+FlightControlModule::CallbackReturn
+FlightControlModule::on_configure(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Configuring FlightControlModule");
+
+  flight_control_generic_sub_ = create_subscription<sensor_msgs::msg::Joy>(
+      "psdk_ros2/flight_control_setpoint_generic", 10,
+      std::bind(&FlightControlModule::flight_control_generic_cb, this,
+                std::placeholders::_1));
+  flight_control_position_yaw_sub_ = create_subscription<sensor_msgs::msg::Joy>(
+      "psdk_ros2/flight_control_setpoint_ENUposition_yaw", 10,
+      std::bind(&FlightControlModule::flight_control_position_yaw_cb, this,
+                std::placeholders::_1));
+  flight_control_velocity_yawrate_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "psdk_ros2/flight_control_setpoint_ENUvelocity_yawrate", 10,
+          std::bind(&FlightControlModule::flight_control_velocity_yawrate_cb,
+                    this, std::placeholders::_1));
+  flight_control_body_velocity_yawrate_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "psdk_ros2/flight_control_setpoint_FLUvelocity_yawrate", 10,
+          std::bind(
+              &FlightControlModule::flight_control_body_velocity_yawrate_cb,
+              this, std::placeholders::_1));
+  flight_control_rollpitch_yawrate_thrust_sub_ =
+      create_subscription<sensor_msgs::msg::Joy>(
+          "psdk_ros2/flight_control_setpoint_rollpitch_yawrate_thrust", 10,
+          std::bind(
+              &FlightControlModule::flight_control_rollpitch_yawrate_thrust_cb,
+              this, std::placeholders::_1));
+
+  // ROS 2 Services
+  set_home_from_gps_srv_ = create_service<SetHomeFromGPS>(
+      "psdk_ros2/set_home_from_gps",
+      std::bind(&FlightControlModule::set_home_from_gps_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  set_home_from_current_location_srv_ = create_service<Trigger>(
+      "psdk_ros2/set_home_from_current_location",
+      std::bind(&FlightControlModule::set_home_from_current_location_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  set_go_home_altitude_srv_ = create_service<SetGoHomeAltitude>(
+      "psdk_ros2/set_go_home_altitude",
+      std::bind(&FlightControlModule::set_go_home_altitude_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  get_go_home_altitude_srv_ = create_service<GetGoHomeAltitude>(
+      "psdk_ros2/get_go_home_altitude",
+      std::bind(&FlightControlModule::get_go_home_altitude_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  start_go_home_srv_ = create_service<Trigger>(
+      "psdk_ros2/start_go_home",
+      std::bind(&FlightControlModule::start_go_home_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  cancel_go_home_srv_ = create_service<Trigger>(
+      "psdk_ros2/cancel_go_home",
+      std::bind(&FlightControlModule::cancel_go_home_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  obtain_ctrl_authority_srv_ = create_service<Trigger>(
+      "psdk_ros2/obtain_ctrl_authority",
+      std::bind(&FlightControlModule::obtain_ctrl_authority_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  release_ctrl_authority_srv_ = create_service<Trigger>(
+      "psdk_ros2/release_ctrl_authority",
+      std::bind(&FlightControlModule::release_ctrl_authority_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  turn_on_motors_srv_ = create_service<Trigger>(
+      "psdk_ros2/turn_on_motors",
+      std::bind(&FlightControlModule::turn_on_motors_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  turn_off_motors_srv_ = create_service<Trigger>(
+      "psdk_ros2/turn_off_motors",
+      std::bind(&FlightControlModule::turn_off_motors_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  takeoff_srv_ = create_service<Trigger>(
+      "psdk_ros2/takeoff",
+      std::bind(&FlightControlModule::start_takeoff_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  land_srv_ = create_service<Trigger>(
+      "psdk_ros2/land",
+      std::bind(&FlightControlModule::start_landing_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  cancel_landing_srv_ = create_service<Trigger>(
+      "psdk_ros2/cancel_landing",
+      std::bind(&FlightControlModule::cancel_landing_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  start_confirm_landing_srv_ = create_service<Trigger>(
+      "psdk_ros2/start_confirm_landing",
+      std::bind(&FlightControlModule::start_confirm_landing_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  start_force_landing_srv_ = create_service<Trigger>(
+      "psdk_ros2/start_force_landing",
+      std::bind(&FlightControlModule::start_force_landing_cb, this,
+                std::placeholders::_1, std::placeholders::_2));
+  set_horizontal_vo_obstacle_avoidance_srv_ =
+      create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_horizontal_vo_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::set_horizontal_vo_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  set_horizontal_radar_obstacle_avoidance_srv_ =
+      create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_horizontal_radar_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::set_horizontal_radar_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  set_upwards_vo_obstacle_avoidance_srv_ = create_service<SetObstacleAvoidance>(
+      "psdk_ros2/set_upwards_vo_obstacle_avoidance",
+      std::bind(&FlightControlModule::set_upwards_vo_obstacle_avoidance_cb,
+                this, std::placeholders::_1, std::placeholders::_2));
+  set_upwards_radar_obstacle_avoidance_srv_ =
+      create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_upwards_radar_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::set_upwards_radar_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  set_downwards_vo_obstacle_avoidance_srv_ =
+      create_service<SetObstacleAvoidance>(
+          "psdk_ros2/set_downwards_vo_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::set_downwards_vo_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  get_horizontal_vo_obstacle_avoidance_srv_ =
+      create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_horizontal_vo_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::get_horizontal_vo_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  get_upwards_vo_obstacle_avoidance_srv_ = create_service<GetObstacleAvoidance>(
+      "psdk_ros2/get_upwards_vo_obstacle_avoidance",
+      std::bind(&FlightControlModule::get_upwards_vo_obstacle_avoidance_cb,
+                this, std::placeholders::_1, std::placeholders::_2));
+  get_upwards_radar_obstacle_avoidance_srv_ =
+      create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_upwards_radar_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::get_upwards_radar_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  get_downwards_vo_obstacle_avoidance_srv_ =
+      create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_downwards_vo_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::get_downwards_vo_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  get_horizontal_radar_obstacle_avoidance_srv_ =
+      create_service<GetObstacleAvoidance>(
+          "psdk_ros2/get_horizontal_radar_obstacle_avoidance",
+          std::bind(
+              &FlightControlModule::get_horizontal_radar_obstacle_avoidance_cb,
+              this, std::placeholders::_1, std::placeholders::_2));
+  return CallbackReturn::SUCCESS;
+}
+
+FlightControlModule::CallbackReturn
+FlightControlModule::on_activate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Activating FlightControlModule");
+  return CallbackReturn::SUCCESS;
+}
+
+FlightControlModule::CallbackReturn
+FlightControlModule::on_deactivate(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Deactivating FlightControlModule");
+  return CallbackReturn::SUCCESS;
+}
+
+FlightControlModule::CallbackReturn
+FlightControlModule::on_cleanup(const rclcpp_lifecycle::State &state)
+{
+  (void)state;
+  RCLCPP_INFO(get_logger(), "Cleaning up FlightControlModule");
+  // ROS 2 subscribers
+  flight_control_generic_sub_.reset();
+  flight_control_position_yaw_sub_.reset();
+  flight_control_velocity_yawrate_sub_.reset();
+  flight_control_body_velocity_yawrate_sub_.reset();
+  flight_control_rollpitch_yawrate_thrust_sub_.reset();
+
+  // ROS 2 services
+  set_home_from_gps_srv_.reset();
+  set_home_from_current_location_srv_.reset();
+  set_go_home_altitude_srv_.reset();
+  get_go_home_altitude_srv_.reset();
+  start_go_home_srv_.reset();
+  cancel_go_home_srv_.reset();
+  obtain_ctrl_authority_srv_.reset();
+  release_ctrl_authority_srv_.reset();
+  turn_on_motors_srv_.reset();
+  turn_off_motors_srv_.reset();
+  takeoff_srv_.reset();
+  land_srv_.reset();
+  cancel_landing_srv_.reset();
+  start_confirm_landing_srv_.reset();
+  start_force_landing_srv_.reset();
+  set_horizontal_vo_obstacle_avoidance_srv_.reset();
+  set_horizontal_radar_obstacle_avoidance_srv_.reset();
+  set_upwards_vo_obstacle_avoidance_srv_.reset();
+  set_upwards_radar_obstacle_avoidance_srv_.reset();
+  set_downwards_vo_obstacle_avoidance_srv_.reset();
+  get_horizontal_vo_obstacle_avoidance_srv_.reset();
+  get_upwards_vo_obstacle_avoidance_srv_.reset();
+  get_upwards_radar_obstacle_avoidance_srv_.reset();
+  get_downwards_vo_obstacle_avoidance_srv_.reset();
+  get_horizontal_radar_obstacle_avoidance_srv_.reset();
+  return CallbackReturn::SUCCESS;
+}
+
+FlightControlModule::CallbackReturn
+FlightControlModule::on_shutdown(const rclcpp_lifecycle::State &state)
+{
+  RCLCPP_INFO(get_logger(), "Shutting down FlightControlModule");
+  return CallbackReturn::SUCCESS;
+}
+
+bool
+FlightControlModule::init(
+    const sensor_msgs::msg::NavSatFix &current_gps_position)
+{
+  if (is_module_initialized_)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Flight control module is already initialized, skipping.");
+    return true;
+  }
+  RCLCPP_INFO(get_logger(), "Initiating flight control module");
   T_DjiFlightControllerRidInfo rid_info;
-  rid_info.latitude = current_state_.gps_position.latitude;
-  rid_info.longitude = current_state_.gps_position.longitude;
-  rid_info.altitude = current_state_.gps_position.altitude;
+  rid_info.latitude = psdk_utils::deg_to_rad(current_gps_position.latitude);
+  rid_info.longitude = psdk_utils::deg_to_rad(current_gps_position.longitude);
+  rid_info.altitude = current_gps_position.altitude;
 
   T_DjiReturnCode return_code = DjiFlightController_Init(rid_info);
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
@@ -39,13 +280,14 @@ PSDKWrapper::init_flight_control()
         return_code);
     return false;
   }
+  is_module_initialized_ = true;
   return true;
 }
 
 bool
-PSDKWrapper::deinit_flight_control()
+FlightControlModule::deinit()
 {
-  RCLCPP_INFO(get_logger(), "Deinitializing flight control module...");
+  RCLCPP_INFO(get_logger(), "Deinitializing flight control module");
   T_DjiReturnCode return_code = DjiFlightController_DeInit();
   if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
   {
@@ -55,51 +297,12 @@ PSDKWrapper::deinit_flight_control()
         return_code);
     return false;
   }
+  is_module_initialized_ = false;
   return true;
 }
 
 void
-PSDKWrapper::set_local_position_ref_cb(
-    const std::shared_ptr<Trigger::Request> request,
-    const std::shared_ptr<Trigger::Response> response)
-{
-  (void)request;
-  /** The check for the z_health flag is temporarly removed as it is always 0 in
-   * real scenarios (not HITL) */
-  if (current_state_.local_position.x_health &&
-      current_state_.local_position.y_health)
-  {
-    local_position_reference_.vector.x =
-        current_state_.local_position.position.x;
-    local_position_reference_.vector.y =
-        current_state_.local_position.position.y;
-    local_position_reference_.vector.z =
-        current_state_.local_position.position.z;
-    RCLCPP_INFO(get_logger(),
-                "Set local position reference to x:%f, y:%f, z:%f",
-                current_state_.local_position.position.x,
-                current_state_.local_position.position.y,
-                current_state_.local_position.position.z);
-    set_local_position_ref_ = true;
-    response->success = true;
-    return;
-  }
-  else
-  {
-    RCLCPP_ERROR(
-        get_logger(),
-        "Could not set local position reference. Health axis x:%d, y:%d, z:%d",
-        current_state_.local_position.x_health,
-        current_state_.local_position.y_health,
-        current_state_.local_position.z_health);
-    set_local_position_ref_ = false;
-    response->success = false;
-    return;
-  }
-}
-
-void
-PSDKWrapper::set_home_from_gps_cb(
+FlightControlModule::set_home_from_gps_cb(
     const std::shared_ptr<SetHomeFromGPS::Request> request,
     const std::shared_ptr<SetHomeFromGPS::Response> response)
 {
@@ -124,7 +327,7 @@ PSDKWrapper::set_home_from_gps_cb(
   response->success = true;
 }
 void
-PSDKWrapper::set_home_from_current_location_cb(
+FlightControlModule::set_home_from_current_location_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -146,7 +349,7 @@ PSDKWrapper::set_home_from_current_location_cb(
 }
 
 void
-PSDKWrapper::set_go_home_altitude_cb(
+FlightControlModule::set_go_home_altitude_cb(
     const std::shared_ptr<SetGoHomeAltitude::Request> request,
     const std::shared_ptr<SetGoHomeAltitude::Response> response)
 {
@@ -168,7 +371,7 @@ PSDKWrapper::set_go_home_altitude_cb(
 }
 
 void
-PSDKWrapper::get_go_home_altitude_cb(
+FlightControlModule::get_go_home_altitude_cb(
     const std::shared_ptr<GetGoHomeAltitude::Request> request,
     const std::shared_ptr<GetGoHomeAltitude::Response> response)
 {
@@ -189,8 +392,9 @@ PSDKWrapper::get_go_home_altitude_cb(
 }
 
 void
-PSDKWrapper::start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
-                              const std::shared_ptr<Trigger::Response> response)
+FlightControlModule::start_go_home_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_StartGoHome();
@@ -206,7 +410,7 @@ PSDKWrapper::start_go_home_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::cancel_go_home_cb(
+FlightControlModule::cancel_go_home_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -224,7 +428,7 @@ PSDKWrapper::cancel_go_home_cb(
 }
 
 void
-PSDKWrapper::obtain_ctrl_authority_cb(
+FlightControlModule::obtain_ctrl_authority_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -244,7 +448,7 @@ PSDKWrapper::obtain_ctrl_authority_cb(
 }
 
 void
-PSDKWrapper::release_ctrl_authority_cb(
+FlightControlModule::release_ctrl_authority_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -264,7 +468,7 @@ PSDKWrapper::release_ctrl_authority_cb(
 }
 
 void
-PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb(
+FlightControlModule::set_horizontal_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -295,7 +499,7 @@ PSDKWrapper::set_horizontal_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb(
+FlightControlModule::set_horizontal_radar_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -327,7 +531,7 @@ PSDKWrapper::set_horizontal_radar_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb(
+FlightControlModule::set_downwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -359,7 +563,7 @@ PSDKWrapper::set_downwards_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb(
+FlightControlModule::set_upwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -390,7 +594,7 @@ PSDKWrapper::set_upwards_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb(
+FlightControlModule::set_upwards_radar_obstacle_avoidance_cb(
     const std::shared_ptr<SetObstacleAvoidance::Request> request,
     const std::shared_ptr<SetObstacleAvoidance::Response> response)
 {
@@ -420,7 +624,7 @@ PSDKWrapper::set_upwards_radar_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb(
+FlightControlModule::get_horizontal_vo_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -450,7 +654,7 @@ PSDKWrapper::get_horizontal_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb(
+FlightControlModule::get_horizontal_radar_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -481,7 +685,7 @@ PSDKWrapper::get_horizontal_radar_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb(
+FlightControlModule::get_downwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -511,7 +715,7 @@ PSDKWrapper::get_downwards_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb(
+FlightControlModule::get_upwards_vo_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -541,7 +745,7 @@ PSDKWrapper::get_upwards_vo_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb(
+FlightControlModule::get_upwards_radar_obstacle_avoidance_cb(
     const std::shared_ptr<GetObstacleAvoidance::Request> request,
     const std::shared_ptr<GetObstacleAvoidance::Response> response)
 {
@@ -570,7 +774,7 @@ PSDKWrapper::get_upwards_radar_obstacle_avoidance_cb(
 }
 
 void
-PSDKWrapper::turn_on_motors_cb(
+FlightControlModule::turn_on_motors_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -588,7 +792,7 @@ PSDKWrapper::turn_on_motors_cb(
 }
 
 void
-PSDKWrapper::turn_off_motors_cb(
+FlightControlModule::turn_off_motors_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -606,8 +810,9 @@ PSDKWrapper::turn_off_motors_cb(
 }
 
 void
-PSDKWrapper::start_takeoff_cb(const std::shared_ptr<Trigger::Request> request,
-                              const std::shared_ptr<Trigger::Response> response)
+FlightControlModule::start_takeoff_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_StartTakeoff();
@@ -623,8 +828,9 @@ PSDKWrapper::start_takeoff_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::start_landing_cb(const std::shared_ptr<Trigger::Request> request,
-                              const std::shared_ptr<Trigger::Response> response)
+FlightControlModule::start_landing_cb(
+    const std::shared_ptr<Trigger::Request> request,
+    const std::shared_ptr<Trigger::Response> response)
 {
   (void)request;
   auto result = DjiFlightController_StartLanding();
@@ -640,7 +846,7 @@ PSDKWrapper::start_landing_cb(const std::shared_ptr<Trigger::Request> request,
 }
 
 void
-PSDKWrapper::cancel_landing_cb(
+FlightControlModule::cancel_landing_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -658,7 +864,7 @@ PSDKWrapper::cancel_landing_cb(
 }
 
 void
-PSDKWrapper::start_confirm_landing_cb(
+FlightControlModule::start_confirm_landing_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -676,7 +882,7 @@ PSDKWrapper::start_confirm_landing_cb(
 }
 
 void
-PSDKWrapper::start_force_landing_cb(
+FlightControlModule::start_force_landing_cb(
     const std::shared_ptr<Trigger::Request> request,
     const std::shared_ptr<Trigger::Response> response)
 {
@@ -694,7 +900,7 @@ PSDKWrapper::start_force_landing_cb(
 }
 
 void
-PSDKWrapper::flight_control_generic_cb(
+FlightControlModule::flight_control_generic_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   /** @todo implemnent generic control functionality */
@@ -704,7 +910,7 @@ PSDKWrapper::flight_control_generic_cb(
 }
 
 void
-PSDKWrapper::flight_control_position_yaw_cb(
+FlightControlModule::flight_control_position_yaw_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
@@ -750,7 +956,7 @@ PSDKWrapper::flight_control_position_yaw_cb(
 }
 
 void
-PSDKWrapper::flight_control_velocity_yawrate_cb(
+FlightControlModule::flight_control_velocity_yawrate_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
@@ -787,7 +993,7 @@ PSDKWrapper::flight_control_velocity_yawrate_cb(
 }
 
 void
-PSDKWrapper::flight_control_body_velocity_yawrate_cb(
+FlightControlModule::flight_control_body_velocity_yawrate_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
@@ -822,7 +1028,7 @@ PSDKWrapper::flight_control_body_velocity_yawrate_cb(
 }
 
 void
-PSDKWrapper::flight_control_rollpitch_yawrate_thrust_cb(
+FlightControlModule::flight_control_rollpitch_yawrate_thrust_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   T_DjiFlightControllerJoystickMode joystick_mode = {
