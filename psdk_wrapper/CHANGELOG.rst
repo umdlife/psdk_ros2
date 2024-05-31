@@ -2,8 +2,8 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.0 (2024-05-31)
+------------------
 * Merge pull request `#108 <https://github.com/umdlife/psdk_ros2/issues/108>`_ from umdlife/feat/multi-thread-all
   Separate PSDK modules in different nodes and threads
 * Merge pull request `#62 <https://github.com/umdlife/psdk_ros2/issues/62>`_ from RPS98/gimbal_base_frame
