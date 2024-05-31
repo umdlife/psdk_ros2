@@ -2,6 +2,11 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Separate each module with an individual thread
+* Contributors: Rafael Perez-Segui, biancabnd
+
 1.2.1 (2024-05-24)
 ------------------
 * Merge pull request `#101 <https://github.com/umdlife/psdk_ros2/issues/101>`_ from umdlife/hotfix/build-farm

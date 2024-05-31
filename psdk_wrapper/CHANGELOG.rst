@@ -2,6 +2,14 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#108 <https://github.com/umdlife/psdk_ros2/issues/108>`_ from umdlife/feat/multi-thread-all
+  Separate PSDK modules in different nodes and threads
+* Merge pull request `#62 <https://github.com/umdlife/psdk_ros2/issues/62>`_ from RPS98/gimbal_base_frame
+  Add gimbal base frame
+* Contributors: Rafael Perez-Segui, Victor Massagué Respall, biancabnd
+
 1.2.1 (2024-05-24)
 ------------------
 
