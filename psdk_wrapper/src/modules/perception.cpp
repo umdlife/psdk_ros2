@@ -45,11 +45,14 @@ PerceptionModule::on_configure(const rclcpp_lifecycle::State &state)
       "psdk_ros2/perception_stereo_left_stream", rclcpp::SensorDataQoS());
   perception_stereo_vision_right_pub_ = create_publisher<sensor_msgs::msg::Image>(
       "psdk_ros2/perception_stereo_right_stream", rclcpp::SensorDataQoS());
-  perception_camera_parameters_pub_ = create_publisher<psdk_interfaces::msg::PerceptionCameraParameters>(
-      "psdk_ros2/perception_camera_parameters", 10);
-  perception_stereo_vision_service_ = create_service<PerceptionStereoVisionSetup>(
-      "psdk_ros2/start_perception",
-      std::bind(&PerceptionModule::start_perception_cb, this, std::placeholders::_1,  std::placeholders::_2));
+  perception_camera_parameters_pub_ =
+      create_publisher<psdk_interfaces::msg::PerceptionCameraParameters>(
+          "psdk_ros2/perception_camera_parameters", 10);
+  perception_stereo_vision_service_ =
+      create_service<PerceptionStereoVisionSetup>(
+          "psdk_ros2/start_perception",
+          std::bind(&PerceptionModule::start_perception_cb, this,
+                    std::placeholders::_1, std::placeholders::_2));
   return CallbackReturn::SUCCESS;
 }
 
@@ -175,7 +178,8 @@ PerceptionModule::start_perception_cb(
   bool streaming_result;
   if (request->start_stop)
   {
-    streaming_result = start_perception_stereo_cameras_stream(stereo_cameras_direction_);
+    streaming_result =
+        start_perception_stereo_cameras_stream(stereo_cameras_direction_);
     if (!streaming_result)
       {
         response->success = false;
@@ -200,40 +204,41 @@ PerceptionModule::start_perception_cb(
 }
 
 bool
-PerceptionModule::start_perception_stereo_cameras_stream(const uint stereo_cameras_direction)
+PerceptionModule::start_perception_stereo_cameras_stream(
+    const uint stereo_cameras_direction)
 {
   T_DjiReturnCode return_code;
   switch (stereo_cameras_direction)
   {
     case 0:
       RCLCPP_INFO(get_logger(), "Subscribe down stereo camera pair images.");
-      return_code = DjiPerception_SubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_DOWN,
-                                                            &c_DjiTest_PerceptionImageCallback);
+      return_code = DjiPerception_SubscribePerceptionImage(
+          DJI_PERCEPTION_RECTIFY_DOWN, &c_DjiTest_PerceptionImageCallback);
       break;
     case 1:
       RCLCPP_INFO(get_logger(), "Subscribe front stereo camera pair images.");
-      return_code = DjiPerception_SubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_FRONT,
-                                                            &c_DjiTest_PerceptionImageCallback);
+      return_code = DjiPerception_SubscribePerceptionImage(
+          DJI_PERCEPTION_RECTIFY_FRONT, &c_DjiTest_PerceptionImageCallback);
       break;
     case 2:
       RCLCPP_INFO(get_logger(), "Subscribe rear stereo camera pair images.");
-      return_code = DjiPerception_SubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_REAR,
-                                                            &c_DjiTest_PerceptionImageCallback);
+      return_code = DjiPerception_SubscribePerceptionImage(
+          DJI_PERCEPTION_RECTIFY_REAR, &c_DjiTest_PerceptionImageCallback);
       break;
     case 3:
       RCLCPP_INFO(get_logger(), "Subscribe up stereo camera pair images.");
-      return_code = DjiPerception_SubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_UP,
-                                                            &c_DjiTest_PerceptionImageCallback);
+      return_code = DjiPerception_SubscribePerceptionImage(
+          DJI_PERCEPTION_RECTIFY_UP, &c_DjiTest_PerceptionImageCallback);
       break;
     case 4:
       RCLCPP_INFO(get_logger(), "Subscribe left stereo camera pair images.");
-      return_code = DjiPerception_SubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_LEFT,
-                                                            &c_DjiTest_PerceptionImageCallback);
+      return_code = DjiPerception_SubscribePerceptionImage(
+          DJI_PERCEPTION_RECTIFY_LEFT, &c_DjiTest_PerceptionImageCallback);
       break;
     case 5:
       RCLCPP_INFO(get_logger(), "Subscribe right stereo camera pair images.");
-      return_code = DjiPerception_SubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_RIGHT,
-                                                            &c_DjiTest_PerceptionImageCallback);
+      return_code = DjiPerception_SubscribePerceptionImage(
+          DJI_PERCEPTION_RECTIFY_RIGHT, &c_DjiTest_PerceptionImageCallback);
       break;
   }
 
@@ -249,34 +254,41 @@ PerceptionModule::start_perception_stereo_cameras_stream(const uint stereo_camer
 }
 
 bool
-PerceptionModule::stop_perception_stereo_cameras_stream(const uint stereo_cameras_direction)
+PerceptionModule::stop_perception_stereo_cameras_stream(
+    const uint stereo_cameras_direction)
 {
   T_DjiReturnCode return_code;
   switch (stereo_cameras_direction)
   {
     case 0:
       RCLCPP_INFO(get_logger(), "Unsubscribe down stereo camera pair images.");
-      return_code = DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_DOWN);
+      return_code =
+          DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_DOWN);
       break;
     case 1:
       RCLCPP_INFO(get_logger(), "Unsubscribe front stereo camera pair images.");
-      return_code = DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_FRONT);
+      return_code = DjiPerception_UnsubscribePerceptionImage(
+          DJI_PERCEPTION_RECTIFY_FRONT);
       break;
     case 2:
       RCLCPP_INFO(get_logger(), "Unsubscribe rear stereo camera pair images.");
-      return_code = DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_REAR);
+      return_code =
+          DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_REAR);
       break;
     case 3:
       RCLCPP_INFO(get_logger(), "Unsubscribe up stereo camera pair images.");
-      return_code = DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_UP);
+      return_code =
+          DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_UP);
       break;
     case 4:
       RCLCPP_INFO(get_logger(), "Unsubscribe left stereo camera pair images.");
-      return_code = DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_LEFT);
+      return_code =
+          DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_LEFT);
       break;
     case 5:
       RCLCPP_INFO(get_logger(), "Unsubscribe right stereo camera pair images.");
-      return_code = DjiPerception_UnsubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_RIGHT);
+      return_code = DjiPerception_UnsubscribePerceptionImage(
+          DJI_PERCEPTION_RECTIFY_RIGHT);
       break;
   }
 
@@ -323,18 +335,36 @@ PerceptionModule::DjiTest_PerceptionImageCallback(T_DjiPerceptionImageInfo image
   perception_camera_parameters_msg.stereo_cameras_direction = stereo_cameras_direction_;
 
   // Populate the message fields
-  std::copy(std::begin(cameraParametersPacket.cameraParameters[stereo_cameras_direction_].leftIntrinsics),
-            std::end(cameraParametersPacket.cameraParameters[stereo_cameras_direction_].leftIntrinsics),
+  std::copy(std::begin(cameraParametersPacket
+                           .cameraParameters[stereo_cameras_direction_]
+                           .leftIntrinsics),
+            std::end(cameraParametersPacket
+                         .cameraParameters[stereo_cameras_direction_]
+                         .leftIntrinsics),
             std::begin(perception_camera_parameters_msg.left_intrinsics));
-  std::copy(std::begin(cameraParametersPacket.cameraParameters[stereo_cameras_direction_].rightIntrinsics),
-            std::end(cameraParametersPacket.cameraParameters[stereo_cameras_direction_].rightIntrinsics),
+  std::copy(std::begin(cameraParametersPacket
+                           .cameraParameters[stereo_cameras_direction_]
+                           .rightIntrinsics),
+            std::end(cameraParametersPacket
+                         .cameraParameters[stereo_cameras_direction_]
+                         .rightIntrinsics),
             std::begin(perception_camera_parameters_msg.right_intrinsics));
-  std::copy(std::begin(cameraParametersPacket.cameraParameters[stereo_cameras_direction_].rotationLeftInRight),
-            std::end(cameraParametersPacket.cameraParameters[stereo_cameras_direction_].rotationLeftInRight),
-            std::begin(perception_camera_parameters_msg.rotation_left_in_right));
-  std::copy(std::begin(cameraParametersPacket.cameraParameters[stereo_cameras_direction_].translationLeftInRight),
-            std::end(cameraParametersPacket.cameraParameters[stereo_cameras_direction_].translationLeftInRight),
-            std::begin(perception_camera_parameters_msg.translation_left_in_right));
+  std::copy(
+      std::begin(
+          cameraParametersPacket.cameraParameters[stereo_cameras_direction_]
+              .rotationLeftInRight),
+      std::end(
+          cameraParametersPacket.cameraParameters[stereo_cameras_direction_]
+              .rotationLeftInRight),
+      std::begin(perception_camera_parameters_msg.rotation_left_in_right));
+  std::copy(
+      std::begin(
+          cameraParametersPacket.cameraParameters[stereo_cameras_direction_]
+              .translationLeftInRight),
+      std::end(
+          cameraParametersPacket.cameraParameters[stereo_cameras_direction_]
+              .translationLeftInRight),
+      std::begin(perception_camera_parameters_msg.translation_left_in_right));
 
   perception_camera_parameters_pub_->publish(perception_camera_parameters_msg);
 

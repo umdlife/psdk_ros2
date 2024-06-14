@@ -147,7 +147,8 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
       perception_stereo_vision_left_pub_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       perception_stereo_vision_right_pub_;
-  rclcpp_lifecycle::LifecyclePublisher<psdk_interfaces::msg::PerceptionCameraParameters>::SharedPtr
+  rclcpp_lifecycle::LifecyclePublisher<
+      psdk_interfaces::msg::PerceptionCameraParameters>::SharedPtr
       perception_camera_parameters_pub_;
 
   bool is_module_initialized_{false};
