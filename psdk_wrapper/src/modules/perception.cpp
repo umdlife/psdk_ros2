@@ -227,7 +227,7 @@ PerceptionModule::start_perception_stereo_cameras_stream(const uint stereo_camer
       break;
     case 4:
       RCLCPP_INFO(get_logger(), "Subscribe left stereo camera pair images.");
-      return_code = DjiPerception_SubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_LEFT, 
+      return_code = DjiPerception_SubscribePerceptionImage(DJI_PERCEPTION_RECTIFY_LEFT,
                                                             &c_DjiTest_PerceptionImageCallback);
       break;
     case 5:
@@ -369,7 +369,6 @@ PerceptionModule::DjiTest_PerceptionImageCallback(T_DjiPerceptionImageInfo image
     img->header.frame_id = "stereo_cameras_link";
     perception_stereo_vision_right_pub_->publish(std::move(img));
   }
-
 }
 
 }  // namespace psdk_ros2
