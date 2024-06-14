@@ -98,15 +98,15 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
   bool deinit();
 
  private:
-  friend void c_DjiTest_PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo, 
-                                                uint8_t *imageRawBuffer, 
+  friend void c_DjiTest_PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo,
+                                                uint8_t *imageRawBuffer,
                                                 uint32_t bufferLen);
-  
+
   /* Streaming callbacks */
   /***
   * @brief Stereo camera stream of both left and right camera sensor
   */
-  void DjiTest_PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo, 
+  void DjiTest_PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo,
                                        uint8_t *imageRawBuffer,
                                        uint32_t bufferLen);
   /**
@@ -141,7 +141,7 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
   void clear_perception_stereo_cameras_stream();
 //   std::string get_optical_frame_id();
 
-  rclcpp::Service<PerceptionStereoVisionSetup>::SharedPtr 
+  rclcpp::Service<PerceptionStereoVisionSetup>::SharedPtr
       perception_stereo_vision_service_;
   rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::Image>::SharedPtr
       perception_stereo_vision_left_pub_;
@@ -156,7 +156,7 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
   * Populate the direction map for perception stereo camera direction.
   * refer typedef enum E_DjiPerceptionDirection for more information.
   */
-  std::unordered_map<std::string, uint8_t> direction_map_ = 
+  std::unordered_map<std::string, uint8_t> direction_map_ =
   {
     {"DOWN", 0},
     {"FRONT", 1},
@@ -165,7 +165,6 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
     {"LEFT", 4},
     {"RIGHT", 5}
   };
-
 };
 
 extern std::shared_ptr<PerceptionModule> global_perception_ptr_;

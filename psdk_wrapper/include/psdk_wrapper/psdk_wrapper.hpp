@@ -55,7 +55,9 @@ namespace psdk_ros2
 /**
  * @class psdk_ros2::PSDKWrapper
  * @brief A ROS 2 wrapper that brings all the DJI PSDK functionalities to ROS 2
- */
+ */Error: -12 07:22:45 [ERROR]   Stderr contents for CPP:
+26
+
 
 class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
 {

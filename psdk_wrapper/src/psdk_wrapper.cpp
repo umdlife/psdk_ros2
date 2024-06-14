@@ -51,7 +51,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
-  declare_parameter("mandatory_modules.perception",rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.perception", rclcpp::ParameterValue(true));
   declare_parameter("tf_frame_prefix", rclcpp::ParameterValue(""));
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
@@ -96,7 +96,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   gimbal_module_ = std::make_shared<GimbalModule>("gimbal_node");
   hms_module_ = std::make_shared<HmsModule>("hms_node");
   psdk_ros2::global_hms_ptr_ = hms_module_;
-  perception_module_= std::make_shared<PerceptionModule>("perception_node");
+  perception_module_ = std::make_shared<PerceptionModule>("perception_node");
   psdk_ros2::global_perception_ptr_ = perception_module_;
 
   // Start the threads
@@ -208,7 +208,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   // Deinitialize all modules
   if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
       !camera_module_->deinit() || !gimbal_module_->deinit() ||
-      !liveview_module_->deinit() || !hms_module_->deinit() || 
+      !liveview_module_->deinit() || !hms_module_->deinit() ||
       !perception_module_->deinit())
   {
     return CallbackReturn::FAILURE;
@@ -617,9 +617,9 @@ PSDKWrapper::initialize_psdk_modules()
        is_gimbal_module_mandatory_},
       {std::bind(&LiveviewModule::init, liveview_module_),
        is_liveview_module_mandatory_},
-      {std::bind(&HmsModule::init, hms_module_), 
+      {std::bind(&HmsModule::init, hms_module_),
       is_hms_module_mandatory_},
-      {std::bind(&PerceptionModule::init, perception_module_), 
+      {std::bind(&PerceptionModule::init, perception_module_),
       is_perception_module_mandatory_}};
 
   for (const auto &initializer : module_initializers)
