@@ -72,7 +72,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | app_key                       | String    | -                                  | Add your App key                            |
 | app_license                   | String    | -                                  | Add your App license                        |
 | developer_account             | String    | -                                  | Add your developer account (not mandatory)  |
-| baudrate                      | String    | 921600                             | -                                           |
+| baudrate                      | String    | 921600                             | The value configured on the dji Dji assitant software 2 on the onboard sdk section, takes precedence. If the DA2 software is configured with an unsupported baud rate, it will then retrieve the baud rate configured in the PSDK. If that is also not compatible, the baud rate will be automatically selected. |
 | num_of_initialization_retries | Int       | 1                                  | Num of retries to init the PSDK app         |
 | tf_frame_prefix               | String    | TF frame prefix                    | Add prefix before the frame name            |
 | imu_frame                     | String    | "psdk_imu_link"                    | -                                           |
