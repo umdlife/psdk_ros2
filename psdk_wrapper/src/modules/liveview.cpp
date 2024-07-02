@@ -120,6 +120,7 @@ LiveviewModule::init()
       {DJI_LIVEVIEW_CAMERA_POSITION_NO_3, (new DJICameraStreamDecoder())},
   };
   decode_stream_ = true;
+  payload_index_ = DJI_LIVEVIEW_CAMERA_POSITION_NO_1;
   is_module_initialized_ = true;
   return true;
 }
@@ -152,6 +153,12 @@ c_LiveviewConvertH264ToRgbCallback(E_DjiLiveViewCameraPosition position,
   {
     return global_liveview_ptr_->LiveviewConvertH264ToRgbCallback(
         position, buffer, buffer_length);
+  }
+
+  if (global_liveview_ptr_->payload_index_ == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
+  {
+    return global_liveview_ptr_->publish_fpv_camera_images(buffer,
+                                                           buffer_length);
   }
   return global_liveview_ptr_->publish_main_camera_images(buffer,
                                                           buffer_length);
@@ -190,33 +197,33 @@ LiveviewModule::camera_setup_streaming_cb(
     const std::shared_ptr<CameraSetupStreaming::Request> request,
     const std::shared_ptr<CameraSetupStreaming::Response> response)
 {
-  E_DjiLiveViewCameraPosition payload_index =
-      static_cast<E_DjiLiveViewCameraPosition>(request->payload_index);
   selected_camera_source_ =
       static_cast<E_DjiLiveViewCameraSource>(request->camera_source);
   decode_stream_ = request->decoded_output;
+  payload_index_ =
+      static_cast<E_DjiLiveViewCameraPosition>(request->payload_index);
 
   RCLCPP_INFO(get_logger(),
               "Setting up camera streaming for payload index %d and camera "
               "source %d. Output decoded: %d",
-              payload_index, selected_camera_source_, decode_stream_);
+              payload_index_, selected_camera_source_, decode_stream_);
 
   if (request->start_stop)
   {
     RCLCPP_INFO(get_logger(), "Starting streaming...");
     bool streaming_result;
-    if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_NO_1)
+    if (payload_index_ == DJI_LIVEVIEW_CAMERA_POSITION_NO_1)
     {
       char main_camera_name[] = "MAIN_CAMERA";
       streaming_result = start_camera_stream(&c_publish_main_streaming_callback,
-                                             &main_camera_name, payload_index,
+                                             &main_camera_name, payload_index_,
                                              selected_camera_source_);
     }
-    else if (payload_index == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
+    else if (payload_index_ == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
     {
       char fpv_camera_name[] = "FPV_CAMERA";
       streaming_result = start_camera_stream(&c_publish_fpv_streaming_callback,
-                                             &fpv_camera_name, payload_index,
+                                             &fpv_camera_name, payload_index_,
                                              selected_camera_source_);
     }
 
@@ -234,7 +241,7 @@ LiveviewModule::camera_setup_streaming_cb(
   else
   {
     RCLCPP_INFO(get_logger(), "Stopping camera streaming...");
-    if (stop_main_camera_stream(payload_index, selected_camera_source_))
+    if (stop_main_camera_stream(payload_index_, selected_camera_source_))
     {
       response->success = true;
       return;
@@ -331,7 +338,7 @@ LiveviewModule::publish_fpv_camera_images(const uint8_t *buffer,
   img->data = std::vector<uint8_t>(buffer, buffer + buffer_length);
   img->header.stamp = this->get_clock()->now();
   img->header.frame_id = "fpv_camera_link";
-  main_camera_stream_pub_->publish(std::move(img));
+  fpv_camera_stream_pub_->publish(std::move(img));
 }
 
 void
