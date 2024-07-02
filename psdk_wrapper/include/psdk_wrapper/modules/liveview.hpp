@@ -197,6 +197,7 @@ class LiveviewModule : public rclcpp_lifecycle::LifecycleNode
   const rmw_qos_profile_t& qos_profile_{rmw_qos_profile_services_default};
   bool decode_stream_{true};
   bool is_module_initialized_{false};
+  E_DjiLiveViewCameraPosition payload_index_;
 
   mutable std::shared_mutex global_ptr_mutex_;
 };
