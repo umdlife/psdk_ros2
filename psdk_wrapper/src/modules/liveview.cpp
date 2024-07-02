@@ -206,7 +206,7 @@ LiveviewModule::camera_setup_streaming_cb(
   RCLCPP_INFO(get_logger(),
               "Setting up camera streaming for payload index %d and camera "
               "source %d. Output decoded: %d",
-              payload_index, selected_camera_source_, decode_stream_);
+              payload_index_, selected_camera_source_, decode_stream_);
 
   if (request->start_stop)
   {
@@ -216,14 +216,14 @@ LiveviewModule::camera_setup_streaming_cb(
     {
       char main_camera_name[] = "MAIN_CAMERA";
       streaming_result = start_camera_stream(&c_publish_main_streaming_callback,
-                                             &main_camera_name, payload_index,
+                                             &main_camera_name, payload_index_,
                                              selected_camera_source_);
     }
     else if (payload_index_ == DJI_LIVEVIEW_CAMERA_POSITION_FPV)
     {
       char fpv_camera_name[] = "FPV_CAMERA";
       streaming_result = start_camera_stream(&c_publish_fpv_streaming_callback,
-                                             &fpv_camera_name, payload_index,
+                                             &fpv_camera_name, payload_index_,
                                              selected_camera_source_);
     }
 
@@ -241,7 +241,7 @@ LiveviewModule::camera_setup_streaming_cb(
   else
   {
     RCLCPP_INFO(get_logger(), "Stopping camera streaming...");
-    if (stop_main_camera_stream(payload_index, selected_camera_source_))
+    if (stop_main_camera_stream(payload_index_, selected_camera_source_))
     {
       response->success = true;
       return;
