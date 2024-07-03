@@ -2,6 +2,12 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#116 <https://github.com/umdlife/psdk_ros2/issues/116>`_ from umdlife/hotfix/fpv-stream
+  Use the fpv publisher to output the encoded streaming of the FPV camera
+* Contributors: Victor Massagué Respall, biancabnd
+
 1.3.0 (2024-05-31)
 ------------------
 * Merge pull request `#108 <https://github.com/umdlife/psdk_ros2/issues/108>`_ from umdlife/feat/multi-thread-all
