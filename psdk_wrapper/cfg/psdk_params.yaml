@@ -16,6 +16,7 @@
       gimbal_base_frame: "psdk_gimbal_base_link"
       gimbal_frame: "psdk_gimbal_link"
       camera_frame: "psdk_camera_link"
+      perception_camera_frame: "psdk_perception_camera_link"
       publish_transforms: true
 
       file_path: "/logs/media/"

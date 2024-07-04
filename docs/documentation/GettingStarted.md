@@ -89,6 +89,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - gimbal                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | - liveview                    | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | - hms                         | Bool      |  False                             | Trigger node failure, if module not loaded  |
+| - perception                  | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
 | - imu                         | Integer   | 100                                | -                                           |
 | - attitude                    | Integer   | 100                                | -                                           |

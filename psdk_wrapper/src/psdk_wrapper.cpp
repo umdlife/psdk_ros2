@@ -51,7 +51,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
-  declare_parameter("mandatory_modules.perception", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.perception",
+                    rclcpp::ParameterValue(true));
   declare_parameter("tf_frame_prefix", rclcpp::ParameterValue(""));
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
@@ -60,6 +61,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
                     rclcpp::ParameterValue("psdk_gimbal_base_link"));
   declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
   declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
+  declare_parameter("perception_camera_frame",
+                    rclcpp::ParameterValue("psdk_perception_camera_link"));
   declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
   declare_parameter("hms_return_codes_path", rclcpp::ParameterValue(""));
   declare_parameter("file_path", rclcpp::ParameterValue("/logs/media/"));
@@ -428,7 +431,8 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
   get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
-  get_parameter("mandatory_modules.perception", is_perception_module_mandatory_);
+  get_parameter("mandatory_modules.perception",
+                is_perception_module_mandatory_);
 
   get_non_mandatory_param("tf_frame_prefix",
                           telemetry_module_->params_.tf_frame_prefix);
@@ -441,6 +445,8 @@ PSDKWrapper::load_parameters()
                           telemetry_module_->params_.gimbal_base_frame);
   get_non_mandatory_param("camera_frame",
                           telemetry_module_->params_.camera_frame);
+  get_non_mandatory_param("perception_camera_frame",
+                          perception_module_->params_.perception_camera_frame);
   get_parameter("publish_transforms",
                 telemetry_module_->params_.publish_transforms);
   get_non_mandatory_param("hms_return_codes_path",
@@ -617,10 +623,9 @@ PSDKWrapper::initialize_psdk_modules()
        is_gimbal_module_mandatory_},
       {std::bind(&LiveviewModule::init, liveview_module_),
        is_liveview_module_mandatory_},
-      {std::bind(&HmsModule::init, hms_module_),
-      is_hms_module_mandatory_},
+      {std::bind(&HmsModule::init, hms_module_), is_hms_module_mandatory_},
       {std::bind(&PerceptionModule::init, perception_module_),
-      is_perception_module_mandatory_}};
+       is_perception_module_mandatory_}};
 
   for (const auto &initializer : module_initializers)
   {

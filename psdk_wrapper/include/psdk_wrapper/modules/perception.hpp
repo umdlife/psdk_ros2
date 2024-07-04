@@ -20,14 +20,16 @@
 
 #include <dji_perception.h>
 
-#include <unordered_map>
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <shared_mutex>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "psdk_interfaces/msg/perception_camera_parameters.hpp"
 #include "psdk_interfaces/srv/perception_stereo_vision_setup.hpp"
@@ -38,7 +40,8 @@ namespace psdk_ros2
 class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
 {
  public:
-  using PerceptionStereoVisionSetup = psdk_interfaces::srv::PerceptionStereoVisionSetup;
+  using PerceptionStereoVisionSetup =
+      psdk_interfaces::srv::PerceptionStereoVisionSetup;
 
   /**
    * @brief Construct a new PerceptionModule object
@@ -97,49 +100,62 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
    */
   bool deinit();
 
+  struct PerceptionParams
+  {
+    std::string perception_camera_frame;
+  };
+  PerceptionParams params_;
+
  private:
-  friend void c_DjiTest_PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo,
-                                                uint8_t *imageRawBuffer,
-                                                uint32_t bufferLen);
+  friend void c_PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo,
+                                        uint8_t* imageRawBuffer,
+                                        uint32_t bufferLen);
 
   /* Streaming callbacks */
-  /***
-  * @brief Stereo camera stream of both left and right camera sensor
-  */
-  void DjiTest_PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo,
-                                       uint8_t *imageRawBuffer,
-                                       uint32_t bufferLen);
+  /**
+   * @brief Stereo camera stream of both left and right camera sensor
+   */
+  void PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo,
+                               uint8_t* imageRawBuffer, uint32_t bufferLen);
+  /**
+   * @brief Stereo camera parameters publisher
+   * publish camera parametes of selected direction
+   * @return true/false True if pervious camera strem cleared successfully
+   * otherwise false
+   */
+  void perception_camera_parameters_publisher();
   /**
    * @brief Start Perception Streaming
    * @param request Perception stereo camera stream Direction
    * DOWN = 0, FRONT = 1, REAR = 2, UP = 3, LEFT = 4, RIGHT = 5
    * @param response PerceptionStereoVisionSetup service response
-  */
+   */
   void start_perception_cb(
       const std::shared_ptr<PerceptionStereoVisionSetup::Request> request,
       const std::shared_ptr<PerceptionStereoVisionSetup::Response> response);
 
   /**
-  * @brief Start the perception stereo camera stream
-  * @param stereo_cameras_direction select perception stereo cameras direction
-  * @return true/false Returns true if the streaming has been started
-  * correctly and False otherwise.
-  */
-  bool start_perception_stereo_cameras_stream(const uint stereo_cameras_direction);
+   * @brief Start the perception stereo camera stream
+   * @param stereo_cameras_direction select perception stereo cameras direction
+   * @return true/false Returns true if the streaming has been started
+   * correctly and False otherwise.
+   */
+  bool start_perception_stereo_cameras_stream(
+      const uint stereo_cameras_direction);
 
   /**
-  * @brief Stop the perception stereo camera stream
-  * @param stereo_cameras_direction select perception stereo cameras direction
-  * @return true/false Returns true if the streaming has been stoped
-  * correctly and False otherwise.
-  */
-  bool stop_perception_stereo_cameras_stream(const uint stereo_cameras_direction);
+   * @brief Stop the perception stereo camera stream
+   * @param stereo_cameras_direction select perception stereo cameras direction
+   * @return true/false Returns true if the streaming has been stoped
+   * correctly and False otherwise.
+   */
+  bool stop_perception_stereo_cameras_stream(
+      const uint stereo_cameras_direction);
 
   /**
   @brief Clear the previous perception stereo camera stream
   */
-  void clear_perception_stereo_cameras_stream();
-//   std::string get_optical_frame_id();
+  bool clear_perception_stereo_cameras_stream();
 
   rclcpp::Service<PerceptionStereoVisionSetup>::SharedPtr
       perception_stereo_vision_service_;
@@ -151,21 +167,28 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
       psdk_interfaces::msg::PerceptionCameraParameters>::SharedPtr
       perception_camera_parameters_pub_;
 
+  // Timer for publishing camera parameters at 20 hz
+  rclcpp::TimerBase::SharedPtr timer_;
+
   bool is_module_initialized_{false};
   int stereo_cameras_direction_;
   /**
-  * Populate the direction map for perception stereo camera direction.
-  * refer typedef enum E_DjiPerceptionDirection for more information.
-  */
+   * Populate the direction map for perception stereo camera direction.
+   * refer typedef enum E_DjiPerceptionDirection for more information.
+   */
   std::unordered_map<std::string, uint8_t> direction_map_ =
-  {
-    {"DOWN", 0},
-    {"FRONT", 1},
-    {"REAR", 2},
-    {"UP", 3},
-    {"LEFT", 4},
-    {"RIGHT", 5}
-  };
+    {
+      {"DOWN", 0}, {"FRONT", 1}, {"REAR", 2},
+      {"UP", 3},   {"LEFT", 4},  {"RIGHT", 5}
+    };
+
+  std::vector<E_DjiPerceptionDirection> perception_image_direction =
+    {
+      DJI_PERCEPTION_RECTIFY_DOWN, DJI_PERCEPTION_RECTIFY_FRONT,
+      DJI_PERCEPTION_RECTIFY_REAR, DJI_PERCEPTION_RECTIFY_UP,
+      DJI_PERCEPTION_RECTIFY_LEFT, DJI_PERCEPTION_RECTIFY_RIGHT
+    };
+  mutable std::shared_mutex global_ptr_mutex_;
 };
 
 extern std::shared_ptr<PerceptionModule> global_perception_ptr_;
