@@ -176,18 +176,14 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
    * Populate the direction map for perception stereo camera direction.
    * refer typedef enum E_DjiPerceptionDirection for more information.
    */
-  std::unordered_map<std::string, uint8_t> direction_map_ =
-    {
+  std::unordered_map<std::string, uint8_t> direction_map_ = {
       {"DOWN", 0}, {"FRONT", 1}, {"REAR", 2},
-      {"UP", 3},   {"LEFT", 4},  {"RIGHT", 5}
-    };
+      {"UP", 3},   {"LEFT", 4},  {"RIGHT", 5}};
 
-  std::vector<E_DjiPerceptionDirection> perception_image_direction =
-    {
+  std::vector<E_DjiPerceptionDirection> perception_image_direction = {
       DJI_PERCEPTION_RECTIFY_DOWN, DJI_PERCEPTION_RECTIFY_FRONT,
       DJI_PERCEPTION_RECTIFY_REAR, DJI_PERCEPTION_RECTIFY_UP,
-      DJI_PERCEPTION_RECTIFY_LEFT, DJI_PERCEPTION_RECTIFY_RIGHT
-    };
+      DJI_PERCEPTION_RECTIFY_LEFT, DJI_PERCEPTION_RECTIFY_RIGHT};
   mutable std::shared_mutex global_ptr_mutex_;
 };
 
