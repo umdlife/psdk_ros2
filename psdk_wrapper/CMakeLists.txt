@@ -40,7 +40,7 @@ include(FetchContent)
 FetchContent_Declare(
   Payload_SDK
   GIT_REPOSITORY https://github.com/dji-sdk/Payload-SDK.git
-  GIT_TAG 3.8.1
+  GIT_TAG 3.9.0
 )
 
 FetchContent_GetProperties(Payload_SDK)
