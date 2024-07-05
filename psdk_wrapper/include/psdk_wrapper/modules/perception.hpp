@@ -107,7 +107,7 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
   PerceptionParams params_;
 
  private:
-  friend void c_PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo,
+  friend void c_perception_image_callback(T_DjiPerceptionImageInfo imageInfo,
                                         uint8_t* imageRawBuffer,
                                         uint32_t bufferLen);
 
@@ -115,7 +115,7 @@ class PerceptionModule : public rclcpp_lifecycle::LifecycleNode
   /**
    * @brief Stereo camera stream of both left and right camera sensor
    */
-  void PerceptionImageCallback(T_DjiPerceptionImageInfo imageInfo,
+  void perception_image_callback(T_DjiPerceptionImageInfo imageInfo,
                                uint8_t* imageRawBuffer, uint32_t bufferLen);
   /**
    * @brief Stereo camera parameters publisher
