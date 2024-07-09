@@ -17,7 +17,7 @@ jobs:
           mv psdk_ros2/debian/create_debians.sh .
           ./create_debians.sh
       - name: Upload Debians
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@v4.3.4
         with:
           name: debians_amd64
           if-no-files-found: error
@@ -35,7 +35,7 @@ jobs:
           mv psdk_ros2/debian/create_debians.sh .
           ./create_debians.sh
       - name: Upload Debians
-        uses: actions/upload-artifact@v4.3.3
+        uses: actions/upload-artifact@v4.3.4
         with:
           name: debians_arm64
           if-no-files-found: error
@@ -48,7 +48,7 @@ jobs:
       contents: write
     steps:
       - name: Download Debians
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4.1.8
       - name: Find Debians
         run: |
           echo "INTERFACES_AMD64=$(ls debians_amd64/*interfaces*.deb)" >> $GITHUB_ENV

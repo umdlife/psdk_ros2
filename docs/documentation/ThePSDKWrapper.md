@@ -306,3 +306,17 @@ Moreover, one can check the current storage capacity of the SD card (`psdk_ros2/
 | psdk_ros2/gimbal_reset            | Service   |
 | psdk_ros2/gimbal_rotation         | Publisher |
 | psdk_ros2/gimbal_angles           | Topic     |
+
+
+### Perception
+
+The perception stereo streaming is managed by a ROS 2 service. Calling the `psdk_ros2/start_perception` you can select the direction of the stereo camera you want to stream (e.g. DOWN, FRONT, REAR, UP, LEFT, RIGHT) and whether to start or stop the streaming with a boolean. Once the streaming is started, you can see the images for left side stereo camera on the `psdk_ros2/perception_stereo_left_stream` and for right side stereo camera on the `psdk_ros2/perception_stereo_right_stream`. Currently only one direction stereo cameras (both left and right) feed can be access at a time.
+
+Moreover, one can get the camera parameters on the `psdk_ros2/perception_camera_parameters`
+
+| Name                                             | Type      |
+| ---------------------------------                | --------- |
+| psdk_ros2/start_perception                       | Service   |
+| psdk_ros2/perception_stereo_left_stream          | Topic     |
+| psdk_ros2/perception_stereo_right_stream         | Topic     |
+| psdk_ros2/perception_camera_parameters           | Topic     |

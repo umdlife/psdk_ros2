@@ -23,6 +23,7 @@ std::shared_ptr<psdk_ros2::TelemetryModule> psdk_ros2::global_telemetry_ptr_;
 std::shared_ptr<psdk_ros2::CameraModule> psdk_ros2::global_camera_ptr_;
 std::shared_ptr<psdk_ros2::LiveviewModule> psdk_ros2::global_liveview_ptr_;
 std::shared_ptr<psdk_ros2::HmsModule> psdk_ros2::global_hms_ptr_;
+std::shared_ptr<psdk_ros2::PerceptionModule> psdk_ros2::global_perception_ptr_;
 
 using namespace std::placeholders;  // NOLINT
 
@@ -50,6 +51,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.perception",
+                    rclcpp::ParameterValue(true));
   declare_parameter("tf_frame_prefix", rclcpp::ParameterValue(""));
   declare_parameter("imu_frame", rclcpp::ParameterValue("psdk_imu_link"));
   declare_parameter("body_frame", rclcpp::ParameterValue("psdk_base_link"));
@@ -58,6 +61,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
                     rclcpp::ParameterValue("psdk_gimbal_base_link"));
   declare_parameter("gimbal_frame", rclcpp::ParameterValue("psdk_gimbal_link"));
   declare_parameter("camera_frame", rclcpp::ParameterValue("psdk_camera_link"));
+  declare_parameter("perception_camera_frame",
+                    rclcpp::ParameterValue("psdk_perception_camera_link"));
   declare_parameter("publish_transforms", rclcpp::ParameterValue(true));
   declare_parameter("hms_return_codes_path", rclcpp::ParameterValue(""));
   declare_parameter("file_path", rclcpp::ParameterValue("/logs/media/"));
@@ -94,6 +99,8 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   gimbal_module_ = std::make_shared<GimbalModule>("gimbal_node");
   hms_module_ = std::make_shared<HmsModule>("hms_node");
   psdk_ros2::global_hms_ptr_ = hms_module_;
+  perception_module_ = std::make_shared<PerceptionModule>("perception_node");
+  psdk_ros2::global_perception_ptr_ = perception_module_;
 
   // Start the threads
   telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
@@ -103,6 +110,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   liveview_thread_ = std::make_unique<utils::NodeThread>(liveview_module_);
   gimbal_thread_ = std::make_unique<utils::NodeThread>(gimbal_module_);
   hms_thread_ = std::make_unique<utils::NodeThread>(hms_module_);
+  perception_thread_ = std::make_unique<utils::NodeThread>(perception_module_);
 }
 
 PSDKWrapper::~PSDKWrapper()
@@ -203,7 +211,8 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   // Deinitialize all modules
   if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
       !camera_module_->deinit() || !gimbal_module_->deinit() ||
-      !liveview_module_->deinit() || !hms_module_->deinit())
+      !liveview_module_->deinit() || !hms_module_->deinit() ||
+      !perception_module_->deinit())
   {
     return CallbackReturn::FAILURE;
   }
@@ -230,6 +239,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   liveview_thread_.reset();
   gimbal_thread_.reset();
   hms_thread_.reset();
+  perception_thread_.reset();
 
   // Destroy the modules
   telemetry_module_.reset();
@@ -238,6 +248,7 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   liveview_module_.reset();
   gimbal_module_.reset();
   hms_module_.reset();
+  perception_module_.reset();
 
   rclcpp::shutdown();
   return CallbackReturn::SUCCESS;
@@ -420,6 +431,8 @@ PSDKWrapper::load_parameters()
   get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
   get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
   get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
+  get_parameter("mandatory_modules.perception",
+                is_perception_module_mandatory_);
 
   get_non_mandatory_param("tf_frame_prefix",
                           telemetry_module_->params_.tf_frame_prefix);
@@ -432,6 +445,8 @@ PSDKWrapper::load_parameters()
                           telemetry_module_->params_.gimbal_base_frame);
   get_non_mandatory_param("camera_frame",
                           telemetry_module_->params_.camera_frame);
+  get_non_mandatory_param("perception_camera_frame",
+                          perception_module_->params_.perception_camera_frame);
   get_parameter("publish_transforms",
                 telemetry_module_->params_.publish_transforms);
   get_non_mandatory_param("hms_return_codes_path",
@@ -608,7 +623,9 @@ PSDKWrapper::initialize_psdk_modules()
        is_gimbal_module_mandatory_},
       {std::bind(&LiveviewModule::init, liveview_module_),
        is_liveview_module_mandatory_},
-      {std::bind(&HmsModule::init, hms_module_), is_hms_module_mandatory_}};
+      {std::bind(&HmsModule::init, hms_module_), is_hms_module_mandatory_},
+      {std::bind(&PerceptionModule::init, perception_module_),
+       is_perception_module_mandatory_}};
 
   for (const auto &initializer : module_initializers)
   {
@@ -697,7 +714,8 @@ PSDKWrapper::transition_modules_to_state(LifecycleState state)
       transition(camera_module_) != CallbackReturn::SUCCESS ||
       transition(liveview_module_) != CallbackReturn::SUCCESS ||
       transition(gimbal_module_) != CallbackReturn::SUCCESS ||
-      transition(hms_module_) != CallbackReturn::SUCCESS)
+      transition(hms_module_) != CallbackReturn::SUCCESS ||
+      transition(perception_module_) != CallbackReturn::SUCCESS)
   {
     return false;
   }
