@@ -45,6 +45,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FileInfo.msg"
   "msg/SubFileInfo.msg"
   "msg/FileAttributes.msg"
+  "msg/PerceptionCameraParameters.msg"
   "srv/CameraGetType.srv"
   "srv/CameraSetExposureModeEV.srv"
   "srv/CameraGetExposureModeEV.srv"
@@ -78,6 +79,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetGoHomeAltitude.srv"
   "srv/SetObstacleAvoidance.srv"
   "srv/GetObstacleAvoidance.srv"
+  "srv/PerceptionStereoVisionSetup.srv"
   "action/CameraDeleteFileByIndex.action"
   "action/CameraDownloadFileByIndex.action"
   DEPENDENCIES std_msgs geometry_msgs action_msgs

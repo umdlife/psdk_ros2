@@ -160,6 +160,7 @@ add_library(psdk_wrapper_libs SHARED
   src/modules/gimbal.cpp
   src/modules/liveview.cpp
   src/modules/hms.cpp
+  src/modules/perception.cpp
   src/utils/node_thread.cpp
   ${DJI_OSAL_PATH}/osal_fs.c
   ${DJI_OSAL_PATH}/osal_socket.c

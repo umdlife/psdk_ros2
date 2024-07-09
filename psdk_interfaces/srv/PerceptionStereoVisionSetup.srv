@@ -1,0 +1,7 @@
+#request
+string stereo_cameras_direction        # DOWN, FRONT, REAR, UP, LEFT, RIGHT
+bool start_stop             # 0 for stop and 1 for start
+---
+#response
+bool success
+string message

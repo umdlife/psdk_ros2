@@ -16,6 +16,7 @@
       gimbal_base_frame: "psdk_gimbal_base_link"
       gimbal_frame: "psdk_gimbal_link"
       camera_frame: "psdk_camera_link"
+      perception_camera_frame: "psdk_perception_camera_link"
       publish_transforms: true
 
       file_path: "/logs/media/"
@@ -31,6 +32,7 @@
         gimbal: false
         liveview: false
         hms: false
+        perception: false
 
       data_frequency: # Options are: 1, 5, 10, 50, 100, 200, 400 Hz
         imu: 100
