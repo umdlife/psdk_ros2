@@ -2,6 +2,13 @@
 Changelog for package psdk_interfaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#110 <https://github.com/umdlife/psdk_ros2/issues/110>`_ from bitcurious/perception
+  Added perception module
+* Add perception module
+* Contributors: biancabnd, bitcurious
+
 1.3.1 (2024-07-03)
 ------------------
 
