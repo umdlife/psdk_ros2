@@ -89,6 +89,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - gimbal                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | - liveview                    | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | - hms                         | Bool      |  False                             | Trigger node failure, if module not loaded  |
+| - perception                  | Bool      |  False                             | Trigger node failure, if module not loaded  |
 | data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
 | - imu                         | Integer   | 100                                | -                                           |
 | - attitude                    | Integer   | 100                                | -                                           |
@@ -107,9 +108,25 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - control_information         | Integer   | 1                                  | -                                           |
 | - esc_data_frequency          | Integer   | 1                                  | -                                           |
 
-## Udev rules
+## Set-up device permissions
 
-To avoid changing the device name each time you run the psdk application, you can use the following udev rules
+To retrieve the information from the drone, DJI's Payload-SDK requires read and write permissions for the devices it uses. To enable this, one can change the permissions of a certain device in isolation with:
+
+```bash
+# Example of permission change for device /dev/ttyUSB0
+# Add user to the dialout group
+sudo usermod -a -G dialout $USER
+# Allow read and write access to owner and group members
+sudo chmod 660 /dev/ttyUSB0
+# (Alternatively - less safe) allow read-write-execution permissions to all 
+sudo chmod 777 /dev/ttyUSB0
+```
+
+To make the changes persistent, one can define udev rules as explained in the following section. 
+
+### Udev rules
+
+To avoid changing the device name each time you run the psdk application and to make the permissions persistend, you can enable udev rules for the devices used by the Payload-SDK to connect to the drone. Below is an example of such udev rules for the devices used when connecting a DJI M300 via the OSKD Extension Module. 
 
 ```bash
 # DJI Serial Comm
@@ -117,3 +134,5 @@ SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="YourVendor", ATTRS{idProd
 # DJI Advanced Sensing
 SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="YourVendor", ATTRS{idProduct}=="YourProduct", MODE="0666", SYMLINK+="dji_advanced_sensing"
 ```
+
+Bear in mind that depending on your hardware set-up, the devices used for communicating with the drone will be different and thus you will need to make your own custom udev rules.  
