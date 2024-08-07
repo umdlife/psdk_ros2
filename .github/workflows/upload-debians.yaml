@@ -17,7 +17,7 @@ jobs:
           mv psdk_ros2/debian/create_debians.sh .
           ./create_debians.sh
       - name: Upload Debians
-        uses: actions/upload-artifact@v4.3.5
+        uses: actions/upload-artifact@v4.3.6
         with:
           name: debians_amd64
           if-no-files-found: error
@@ -35,7 +35,7 @@ jobs:
           mv psdk_ros2/debian/create_debians.sh .
           ./create_debians.sh
       - name: Upload Debians
-        uses: actions/upload-artifact@v4.3.5
+        uses: actions/upload-artifact@v4.3.6
         with:
           name: debians_arm64
           if-no-files-found: error
