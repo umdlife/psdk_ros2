@@ -608,7 +608,8 @@ PSDKWrapper::initialize_psdk_modules()
        is_gimbal_module_mandatory_},
       {std::bind(&LiveviewModule::init, liveview_module_),
        is_liveview_module_mandatory_},
-      {std::bind(&HmsModule::init, hms_module_), is_hms_module_mandatory_}};
+      // {std::bind(&HmsModule::init, hms_module_), is_hms_module_mandatory_}
+  };
 
   for (const auto &initializer : module_initializers)
   {
