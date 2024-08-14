@@ -903,10 +903,236 @@ void
 FlightControlModule::flight_control_generic_cb(
     const sensor_msgs::msg::Joy::SharedPtr msg)
 {
-  /** @todo implemnent generic control functionality */
+  /** @author Umesh Mane
+   * Contact: umeshmane280@gmail.com
+   */
+
   (void)msg;
-  RCLCPP_WARN(get_logger(),
-              "Generic control setpoint is not currently implemented!");
+  float x_setpoint = msg->axes[0];
+  float y_setpoint = msg->axes[1];
+  float z_setpoint = msg->axes[2];
+  float yaw_setpoint = (uint8_t)(msg->axes[3]);
+  uint8_t flag = msg->axes[4];
+
+  uint8_t HORI = (flag & 0xC0);
+  uint8_t VERT = (flag & 0x30);
+  uint8_t YAW = (flag & 0x08);
+  uint8_t FRAME = (flag & 0x06);
+  uint8_t HOLD = (flag & 0x01);
+
+  float x_cmd, y_cmd, z_cmd, yaw_cmd;
+  if (FRAME == Control::FRAME_GROUND)
+  {
+    FG = true;
+    // 1.1 Horizontal channels
+    if ((HORI == Control::HORIZONTAL_VELOCITY) ||
+        (HORI == Control::HORIZONTAL_POSITION))
+    {
+      x_cmd = y_setpoint;
+      y_cmd = x_setpoint;
+      if (HORI == Control::HORIZONTAL_VELOCITY)
+      {
+        HV = true;
+      }
+      if (HORI == Control::HORIZONTAL_POSITION)
+      {
+        HP = true;
+      }
+    }
+    else
+    {
+      // GROUND frame is specified, but angle and rate command is generated in
+      // body frame
+      //  Transform from FL to FR
+      x_cmd = psdk_utils::rad_to_deg(x_setpoint);
+      y_cmd = psdk_utils::rad_to_deg(-y_setpoint);
+      if (HORI == Control::HORIZONTAL_ANGLE)
+      {
+        HA = true;
+      }
+    }
+
+    // 1.2 Verticle Channel
+    if ((VERT == Control::VERTICAL_VELOCITY) ||
+        (VERT == Control::VERTICAL_POSITION))
+    {
+      z_cmd = z_setpoint;
+      if (VERT == Control::VERTICAL_VELOCITY)
+      {
+        VV = true;
+      }
+      if (VERT == Control::VERTICAL_POSITION)
+      {
+        VP = true;
+      }
+    }
+    else
+    {
+      // GROUND frame is specified, but thrust command is generated in body
+      // frame
+      z_cmd = z_setpoint;
+      if (VERT == Control::VERTICAL_THRUST)
+      {
+        VT = true;
+      }
+    }
+  }
+  else if (FRAME == Control::FRAME_BODY)
+  {
+    FB = true;
+    // 2.1 Horizontal channels
+    if ((HORI == Control::HORIZONTAL_VELOCITY) ||
+        (HORI == Control::HORIZONTAL_POSITION))
+    {
+      // The X and Y Vel and Pos should be only based on rotation after Yaw,
+      // whithout roll and pitch. Otherwise the behavior will be weird.
+      // Transform from F-R to F-L
+      x_cmd = x_setpoint;
+      y_cmd = -y_setpoint;
+      if (HORI == Control::HORIZONTAL_VELOCITY)
+      {
+        HV = true;
+      }
+      if (HORI == Control::HORIZONTAL_POSITION)
+      {
+        HP = true;
+      }
+    }
+    else
+    {
+      x_cmd = psdk_utils::rad_to_deg(x_setpoint);
+      y_cmd = psdk_utils::rad_to_deg(-y_setpoint);
+      if (HORI == Control::HORIZONTAL_ANGLE)
+      {
+        HA = true;
+      }
+    }
+
+    // 2.2 Vertical channel
+    if ((VERT == Control::VERTICAL_VELOCITY) ||
+        (VERT == Control::VERTICAL_POSITION))
+    {
+      // BODY frame is specified, but hight and z-velocity is generated in
+      // ground frame
+      z_cmd = z_setpoint;
+      if (VERT == Control::VERTICAL_VELOCITY)
+      {
+        VV = true;
+      }
+      if (VERT == Control::VERTICAL_POSITION)
+      {
+        VP = true;
+      }
+    }
+    else
+    {
+      z_cmd = z_setpoint;
+      if (VERT == Control::VERTICAL_THRUST)
+      {
+        VT = true;
+      }
+    }
+  }
+
+  // The behavior of yaw should be the same in either frame
+  if (YAW == Control::YAW_ANGLE)
+  {
+    tf2::Matrix3x3 rotation_FLU2ENU;
+    rotation_FLU2ENU.setRPY(0.0, 0.0, yaw_setpoint);
+    tf2::Matrix3x3 rotation_FRD2NED(psdk_utils::R_NED2ENU.transpose() *
+                                    rotation_FLU2ENU *
+                                    psdk_utils::R_FLU2FRD.transpose());
+    double temp1, temp2, temp_yaw;
+    rotation_FRD2NED.getRPY(temp1, temp2, temp_yaw);
+    yaw_cmd = static_cast<float>(temp_yaw);
+    yaw_cmd = psdk_utils::rad_to_deg(yaw_cmd);
+    YA = true;
+  }
+  else if (YAW == Control::YAW_RATE)
+  {
+    yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
+    YR = true;
+  }
+
+  T_DjiFlightControllerJoystickMode joystick_mode;
+
+  // Set horizontal control mode
+  if (HP)
+  {
+    joystick_mode.horizontalControlMode =
+        DJI_FLIGHT_CONTROLLER_HORIZONTAL_POSITION_CONTROL_MODE;
+  }
+  else if (HV)
+  {
+    joystick_mode.horizontalControlMode =
+        DJI_FLIGHT_CONTROLLER_HORIZONTAL_VELOCITY_CONTROL_MODE;
+  }
+  else if (HA)
+  {
+    joystick_mode.horizontalControlMode =
+        DJI_FLIGHT_CONTROLLER_HORIZONTAL_ANGLE_CONTROL_MODE;
+  }
+
+  // Set vertical control mode
+  if (VP)
+  {
+    joystick_mode.verticalControlMode =
+        DJI_FLIGHT_CONTROLLER_VERTICAL_POSITION_CONTROL_MODE;
+  }
+  else if (VV)
+  {
+    joystick_mode.verticalControlMode =
+        DJI_FLIGHT_CONTROLLER_VERTICAL_VELOCITY_CONTROL_MODE;
+  }
+  else if (VT)
+  {
+    joystick_mode.verticalControlMode =
+        DJI_FLIGHT_CONTROLLER_VERTICAL_THRUST_CONTROL_MODE;
+  }
+
+  // Set yaw control mode
+  if (YR)
+  {
+    joystick_mode.yawControlMode =
+        DJI_FLIGHT_CONTROLLER_YAW_ANGLE_RATE_CONTROL_MODE;
+  }
+  else if (YA)
+  {
+    joystick_mode.yawControlMode = DJI_FLIGHT_CONTROLLER_YAW_ANGLE_CONTROL_MODE;
+  }
+
+  // Set coordinate mode
+  if (FG)
+  {
+    joystick_mode.horizontalCoordinate =
+        DJI_FLIGHT_CONTROLLER_HORIZONTAL_GROUND_COORDINATE;
+  }
+  else if (FB)
+  {
+    joystick_mode.horizontalCoordinate =
+        DJI_FLIGHT_CONTROLLER_HORIZONTAL_BODY_COORDINATE;
+  }
+
+  // Set stable control mode
+  joystick_mode.stableControlMode =
+      DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE;
+
+  // Call the function to set the joystick mode
+  DjiFlightController_SetJoystickMode(joystick_mode);
+  T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
+                                                           yaw_cmd};
+  DjiFlightController_ExecuteJoystickAction(joystick_command);
+  // Clearing Flag
+  HP = false;
+  HV = false;
+  HA = false;
+  VP = false;
+  VV = false;
+  VT = false;
+  YR = false;
+  YA = false;
+  FG = false;
+  FB = false;
 }
 
 void

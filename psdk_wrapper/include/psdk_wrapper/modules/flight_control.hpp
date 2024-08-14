@@ -149,9 +149,8 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
    * @brief Callback function to exposing a generic control method of the
    * aircraft.The type of commands as well as the reference frame is specified
    * in a flag within the msg.
-   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z and yaw
+   * @param msg  sensor_msgs::msg::Joy. Axes represent the x, y, z, yaw and flag
    * command.
-   * @note This type of control is not implemented at this moment.
    */
   void flight_control_generic_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
 
@@ -440,6 +439,33 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
       get_horizontal_radar_obstacle_avoidance_srv_;
 
   bool is_module_initialized_{false};
+
+  // Initialising bool flag to call respective joystick mode.
+  bool HP = false;
+  bool HV = false;
+  bool HA = false;
+  bool VP = false;
+  bool VV = false;
+  bool VT = false;
+  bool YR = false;
+  bool YA = false;
+  bool FG = false;
+  bool FB = false;
+
+  // Decode values for control flag.
+  enum Control
+  {
+    FRAME_GROUND = 0x00,
+    FRAME_BODY = 0x02,
+    HORIZONTAL_VELOCITY = 0x40,
+    HORIZONTAL_POSITION = 0x80,
+    HORIZONTAL_ANGLE = 0x00,
+    VERTICAL_VELOCITY = 0x00,
+    VERTICAL_POSITION = 0x10,
+    VERTICAL_THRUST = 0x20,
+    YAW_ANGLE = 0x00,
+    YAW_RATE = 0x08,
+  };
 };
 
 }  // namespace psdk_ros2
