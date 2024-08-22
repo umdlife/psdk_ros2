@@ -51,6 +51,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("mandatory_modules.camera", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.gimbal", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.liveview", rclcpp::ParameterValue(true));
+  declare_parameter("mandatory_modules.hms", rclcpp::ParameterValue(true));
   declare_parameter("mandatory_modules.perception",
                     rclcpp::ParameterValue(true));
   declare_parameter("tf_frame_prefix", rclcpp::ParameterValue(""));
@@ -87,30 +88,33 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.esc_data_frequency", 1);
   declare_parameter("num_of_initialization_retries", 1);
 
-  // Create module nodes
-  flight_control_module_ =
-      std::make_shared<FlightControlModule>("flight_control_node");
-  telemetry_module_ = std::make_shared<TelemetryModule>("telemetry_node");
-  psdk_ros2::global_telemetry_ptr_ = telemetry_module_;
-  camera_module_ = std::make_shared<CameraModule>("camera_node");
-  psdk_ros2::global_camera_ptr_ = camera_module_;
-  liveview_module_ = std::make_shared<LiveviewModule>("liveview_node");
-  psdk_ros2::global_liveview_ptr_ = liveview_module_;
-  gimbal_module_ = std::make_shared<GimbalModule>("gimbal_node");
-  hms_module_ = std::make_shared<HmsModule>("hms_node");
-  psdk_ros2::global_hms_ptr_ = hms_module_;
-  perception_module_ = std::make_shared<PerceptionModule>("perception_node");
-  psdk_ros2::global_perception_ptr_ = perception_module_;
+  get_parameter("mandatory_modules.telemetry", is_telemetry_module_mandatory_);
+  get_parameter("mandatory_modules.flight_control",
+                is_flight_control_module_mandatory_);
+  get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
+  get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
+  get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
+  get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
+  get_parameter("mandatory_modules.perception",
+                is_perception_module_mandatory_);
 
-  // Start the threads
-  telemetry_thread_ = std::make_unique<utils::NodeThread>(telemetry_module_);
-  flight_control_thread_ =
-      std::make_unique<utils::NodeThread>(flight_control_module_);
-  camera_thread_ = std::make_unique<utils::NodeThread>(camera_module_);
-  liveview_thread_ = std::make_unique<utils::NodeThread>(liveview_module_);
-  gimbal_thread_ = std::make_unique<utils::NodeThread>(gimbal_module_);
-  hms_thread_ = std::make_unique<utils::NodeThread>(hms_module_);
-  perception_thread_ = std::make_unique<utils::NodeThread>(perception_module_);
+  create_module(is_telemetry_module_mandatory_, telemetry_module_,
+                telemetry_thread_, "telemetry_node",
+                psdk_ros2::global_telemetry_ptr_);
+  create_module(is_flight_control_module_mandatory_, flight_control_module_,
+                flight_control_thread_, "flight_control_node");
+  create_module(is_camera_module_mandatory_, camera_module_, camera_thread_,
+                "camera_node", psdk_ros2::global_camera_ptr_);
+  create_module(is_gimbal_module_mandatory_, gimbal_module_, gimbal_thread_,
+                "gimbal_node");
+  create_module(is_liveview_module_mandatory_, liveview_module_,
+                liveview_thread_, "liveview_node",
+                psdk_ros2::global_liveview_ptr_);
+  create_module(is_hms_module_mandatory_, hms_module_, hms_thread_, "hms_node",
+                psdk_ros2::global_hms_ptr_);
+  create_module(is_perception_module_mandatory_, perception_module_,
+                perception_thread_, "perception_node",
+                psdk_ros2::global_perception_ptr_);
 }
 
 PSDKWrapper::~PSDKWrapper()
@@ -151,8 +155,12 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   }
 
   telemetry_module_->set_aircraft_base(aircraft_base_info_);
-  telemetry_module_->set_camera_type(
-      camera_module_->get_attached_camera_type());
+
+  if (camera_module_)
+  {
+    telemetry_module_->set_camera_type(
+        camera_module_->get_attached_camera_type());
+  }
 
   // Delay the initialization of some modules due to dependencies
   if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
@@ -208,12 +216,22 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
   (void)state;
   RCLCPP_INFO(get_logger(), "Shutting down PSDKWrapper");
 
-  // Deinitialize all modules
-  if (!telemetry_module_->deinit() || !flight_control_module_->deinit() ||
-      !camera_module_->deinit() || !gimbal_module_->deinit() ||
-      !liveview_module_->deinit() || !hms_module_->deinit() ||
-      !perception_module_->deinit())
+  // Deinitialize all modules if they are initialized
+  if ((is_telemetry_module_mandatory_ && telemetry_module_ &&
+       !telemetry_module_->deinit()) ||
+      (is_flight_control_module_mandatory_ && flight_control_module_ &&
+       !flight_control_module_->deinit()) ||
+      (is_camera_module_mandatory_ && camera_module_ &&
+       !camera_module_->deinit()) ||
+      (is_gimbal_module_mandatory_ && gimbal_module_ &&
+       !gimbal_module_->deinit()) ||
+      (is_liveview_module_mandatory_ && liveview_module_ &&
+       !liveview_module_->deinit()) ||
+      (is_hms_module_mandatory_ && hms_module_ && !hms_module_->deinit()) ||
+      (is_perception_module_mandatory_ && perception_module_ &&
+       !perception_module_->deinit()))
   {
+    RCLCPP_ERROR(get_logger(), "Failed to deinitialize one or more modules.");
     return CallbackReturn::FAILURE;
   }
 
@@ -232,23 +250,19 @@ PSDKWrapper::on_shutdown(const rclcpp_lifecycle::State &state)
     return CallbackReturn::FAILURE;
   }
 
-  // Stop the threads
-  telemetry_thread_.reset();
-  flight_control_thread_.reset();
-  camera_thread_.reset();
-  liveview_thread_.reset();
-  gimbal_thread_.reset();
-  hms_thread_.reset();
-  perception_thread_.reset();
-
-  // Destroy the modules
-  telemetry_module_.reset();
-  flight_control_module_.reset();
-  camera_module_.reset();
-  liveview_module_.reset();
-  gimbal_module_.reset();
-  hms_module_.reset();
-  perception_module_.reset();
+  stop_and_destroy_module(is_telemetry_module_mandatory_, telemetry_module_,
+                          telemetry_thread_);
+  stop_and_destroy_module(is_flight_control_module_mandatory_,
+                          flight_control_module_, flight_control_thread_);
+  stop_and_destroy_module(is_camera_module_mandatory_, camera_module_,
+                          camera_thread_);
+  stop_and_destroy_module(is_gimbal_module_mandatory_, gimbal_module_,
+                          gimbal_thread_);
+  stop_and_destroy_module(is_liveview_module_mandatory_, liveview_module_,
+                          liveview_thread_);
+  stop_and_destroy_module(is_hms_module_mandatory_, hms_module_, hms_thread_);
+  stop_and_destroy_module(is_perception_module_mandatory_, perception_module_,
+                          perception_thread_);
 
   rclcpp::shutdown();
   return CallbackReturn::SUCCESS;
@@ -404,6 +418,69 @@ PSDKWrapper::set_environment()
   return true;
 }
 
+template <typename ModuleType>
+void
+PSDKWrapper::create_module(bool is_mandatory,
+                           std::shared_ptr<ModuleType> &module_ptr,
+                           std::unique_ptr<utils::NodeThread> &thread_ptr,
+                           const std::string &node_name,
+                           std::shared_ptr<ModuleType> &global_ptr)
+{
+  if (is_mandatory)
+  {
+    module_ptr = std::make_shared<ModuleType>(node_name);
+    if (global_ptr)
+    {
+      global_ptr = module_ptr;
+    }
+    thread_ptr = std::make_unique<utils::NodeThread>(module_ptr);
+  }
+}
+
+template <typename ModuleType>
+void
+PSDKWrapper::create_module(bool is_mandatory,
+                           std::shared_ptr<ModuleType> &module_ptr,
+                           std::unique_ptr<utils::NodeThread> &thread_ptr,
+                           const std::string &node_name)
+{
+  if (is_mandatory)
+  {
+    module_ptr = std::make_shared<ModuleType>(node_name);
+    thread_ptr = std::make_unique<utils::NodeThread>(module_ptr);
+  }
+}
+
+template <typename ModuleType>
+void
+PSDKWrapper::stop_and_destroy_module(
+    bool is_mandatory, std::shared_ptr<ModuleType> &module_ptr,
+    std::unique_ptr<utils::NodeThread> &thread_ptr)
+{
+  if (is_mandatory && module_ptr)
+  {
+    // Stop the thread
+    thread_ptr.reset();
+
+    // Destroy the module
+    module_ptr.reset();
+  }
+}
+
+template <typename ModuleType>
+bool
+PSDKWrapper::initialize_module(bool is_mandatory,
+                               std::shared_ptr<ModuleType> &module_ptr)
+{
+  if (is_mandatory && module_ptr)
+  {
+    // Using member function pointer and bind to initialize the module
+    auto init_func = std::bind(&ModuleType::init, module_ptr);
+    return init_func();
+  }
+  return true;  // If not mandatory or module is null, assume success
+}
+
 void
 PSDKWrapper::load_parameters()
 {
@@ -424,92 +501,102 @@ PSDKWrapper::load_parameters()
   RCLCPP_INFO(get_logger(), "Using connection configuration file: %s",
               params_.link_config_file_path.c_str());
 
-  get_parameter("mandatory_modules.telemetry", is_telemetry_module_mandatory_);
-  get_parameter("mandatory_modules.flight_control",
-                is_flight_control_module_mandatory_);
-  get_parameter("mandatory_modules.camera", is_camera_module_mandatory_);
-  get_parameter("mandatory_modules.gimbal", is_gimbal_module_mandatory_);
-  get_parameter("mandatory_modules.liveview", is_liveview_module_mandatory_);
-  get_parameter("mandatory_modules.hms", is_hms_module_mandatory_);
-  get_parameter("mandatory_modules.perception",
-                is_perception_module_mandatory_);
-
-  get_non_mandatory_param("tf_frame_prefix",
-                          telemetry_module_->params_.tf_frame_prefix);
-  get_non_mandatory_param("imu_frame", telemetry_module_->params_.imu_frame);
-  get_non_mandatory_param("body_frame", telemetry_module_->params_.body_frame);
-  get_non_mandatory_param("map_frame", telemetry_module_->params_.map_frame);
-  get_non_mandatory_param("gimbal_frame",
-                          telemetry_module_->params_.gimbal_frame);
-  get_non_mandatory_param("gimbal_base_frame",
-                          telemetry_module_->params_.gimbal_base_frame);
-  get_non_mandatory_param("camera_frame",
-                          telemetry_module_->params_.camera_frame);
-  get_non_mandatory_param("perception_camera_frame",
-                          perception_module_->params_.perception_camera_frame);
-  get_parameter("publish_transforms",
-                telemetry_module_->params_.publish_transforms);
-  get_non_mandatory_param("hms_return_codes_path",
-                          hms_module_->hms_return_codes_path_);
-  get_non_mandatory_param("file_path",
-                          camera_module_->default_path_to_download_media_);
   get_parameter("num_of_initialization_retries",
                 num_of_initialization_retries_);
-  // Get data frequency
-  get_and_validate_frequency("data_frequency.imu",
-                             telemetry_module_->params_.imu_frequency,
-                             IMU_TOPIC_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.attitude",
-                             telemetry_module_->params_.attitude_frequency,
-                             ATTITUDE_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.acceleration",
-                             telemetry_module_->params_.acceleration_frequency,
-                             ACCELERATION_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.velocity",
-                             telemetry_module_->params_.velocity_frequency,
-                             VELOCITY_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.angular_velocity",
-                             telemetry_module_->params_.angular_rate_frequency,
-                             ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.position",
-                             telemetry_module_->params_.position_frequency,
-                             POSITION_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.altitude",
-                             telemetry_module_->params_.altitude_frequency,
-                             ALTITUDE_TOPICS_MAX_FREQ);
-  get_and_validate_frequency(
-      "data_frequency.gps_fused_position",
-      telemetry_module_->params_.gps_fused_position_frequency,
-      GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.gps_data",
-                             telemetry_module_->params_.gps_data_frequency,
-                             GPS_DATA_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.rtk_data",
-                             telemetry_module_->params_.rtk_data_frequency,
-                             RTK_DATA_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.magnetometer",
-                             telemetry_module_->params_.magnetometer_frequency,
-                             MAGNETOMETER_TOPICS_MAX_FREQ);
-  get_and_validate_frequency(
-      "data_frequency.rc_channels_data",
-      telemetry_module_->params_.rc_channels_data_frequency,
-      RC_CHANNELS_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.esc_data_frequency",
-                             telemetry_module_->params_.esc_data_frequency,
-                             ESC_DATA_TOPICS_FREQ);
-  get_and_validate_frequency("data_frequency.gimbal_data",
-                             telemetry_module_->params_.gimbal_data_frequency,
-                             GIMBAL_DATA_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.flight_status",
-                             telemetry_module_->params_.flight_status_frequency,
-                             FLIGHT_STATUS_TOPICS_MAX_FREQ);
-  get_and_validate_frequency("data_frequency.battery_level",
-                             telemetry_module_->params_.battery_level_frequency,
-                             BATTERY_STATUS_TOPICS_MAX_FREQ);
-  get_and_validate_frequency(
-      "data_frequency.control_information",
-      telemetry_module_->params_.control_information_frequency,
-      CONTROL_DATA_TOPICS_MAX_FREQ);
+
+  if (is_perception_module_mandatory_)
+  {
+    get_non_mandatory_param(
+        "perception_camera_frame",
+        perception_module_->params_.perception_camera_frame);
+  }
+  if (is_hms_module_mandatory_)
+  {
+    get_non_mandatory_param("hms_return_codes_path",
+                            hms_module_->hms_return_codes_path_);
+  }
+  if (is_camera_module_mandatory_)
+  {
+    get_non_mandatory_param("file_path",
+                            camera_module_->default_path_to_download_media_);
+  }
+  if (is_telemetry_module_mandatory_)
+  {
+    get_non_mandatory_param("tf_frame_prefix",
+                            telemetry_module_->params_.tf_frame_prefix);
+    get_non_mandatory_param("imu_frame", telemetry_module_->params_.imu_frame);
+    get_non_mandatory_param("body_frame",
+                            telemetry_module_->params_.body_frame);
+    get_non_mandatory_param("map_frame", telemetry_module_->params_.map_frame);
+    get_non_mandatory_param("gimbal_frame",
+                            telemetry_module_->params_.gimbal_frame);
+    get_non_mandatory_param("gimbal_base_frame",
+                            telemetry_module_->params_.gimbal_base_frame);
+    get_non_mandatory_param("camera_frame",
+                            telemetry_module_->params_.camera_frame);
+    get_parameter("publish_transforms",
+                  telemetry_module_->params_.publish_transforms);
+    // Get data frequency
+    get_and_validate_frequency("data_frequency.imu",
+                               telemetry_module_->params_.imu_frequency,
+                               IMU_TOPIC_MAX_FREQ);
+    get_and_validate_frequency("data_frequency.attitude",
+                               telemetry_module_->params_.attitude_frequency,
+                               ATTITUDE_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.acceleration",
+        telemetry_module_->params_.acceleration_frequency,
+        ACCELERATION_TOPICS_MAX_FREQ);
+    get_and_validate_frequency("data_frequency.velocity",
+                               telemetry_module_->params_.velocity_frequency,
+                               VELOCITY_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.angular_velocity",
+        telemetry_module_->params_.angular_rate_frequency,
+        ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
+    get_and_validate_frequency("data_frequency.position",
+                               telemetry_module_->params_.position_frequency,
+                               POSITION_TOPICS_MAX_FREQ);
+    get_and_validate_frequency("data_frequency.altitude",
+                               telemetry_module_->params_.altitude_frequency,
+                               ALTITUDE_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.gps_fused_position",
+        telemetry_module_->params_.gps_fused_position_frequency,
+        GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
+    get_and_validate_frequency("data_frequency.gps_data",
+                               telemetry_module_->params_.gps_data_frequency,
+                               GPS_DATA_TOPICS_MAX_FREQ);
+    get_and_validate_frequency("data_frequency.rtk_data",
+                               telemetry_module_->params_.rtk_data_frequency,
+                               RTK_DATA_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.magnetometer",
+        telemetry_module_->params_.magnetometer_frequency,
+        MAGNETOMETER_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.rc_channels_data",
+        telemetry_module_->params_.rc_channels_data_frequency,
+        RC_CHANNELS_TOPICS_MAX_FREQ);
+    get_and_validate_frequency("data_frequency.esc_data_frequency",
+                               telemetry_module_->params_.esc_data_frequency,
+                               ESC_DATA_TOPICS_FREQ);
+    get_and_validate_frequency("data_frequency.gimbal_data",
+                               telemetry_module_->params_.gimbal_data_frequency,
+                               GIMBAL_DATA_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.flight_status",
+        telemetry_module_->params_.flight_status_frequency,
+        FLIGHT_STATUS_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.battery_level",
+        telemetry_module_->params_.battery_level_frequency,
+        BATTERY_STATUS_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.control_information",
+        telemetry_module_->params_.control_information_frequency,
+        CONTROL_DATA_TOPICS_MAX_FREQ);
+  }
 }
 
 bool
@@ -613,27 +700,18 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
 bool
 PSDKWrapper::initialize_psdk_modules()
 {
-  using ModuleInitializer = std::pair<std::function<bool()>, bool>;
-  std::vector<ModuleInitializer> module_initializers = {
-      {std::bind(&TelemetryModule::init, telemetry_module_),
-       is_telemetry_module_mandatory_},
-      {std::bind(&CameraModule::init, camera_module_),
-       is_camera_module_mandatory_},
-      {std::bind(&GimbalModule::init, gimbal_module_),
-       is_gimbal_module_mandatory_},
-      {std::bind(&LiveviewModule::init, liveview_module_),
-       is_liveview_module_mandatory_},
-      {std::bind(&HmsModule::init, hms_module_), is_hms_module_mandatory_},
-      {std::bind(&PerceptionModule::init, perception_module_),
-       is_perception_module_mandatory_}};
+  if (!initialize_module(is_telemetry_module_mandatory_, telemetry_module_))
+    return false;
+  if (!initialize_module(is_camera_module_mandatory_, camera_module_))
+    return false;
+  if (!initialize_module(is_gimbal_module_mandatory_, gimbal_module_))
+    return false;
+  if (!initialize_module(is_liveview_module_mandatory_, liveview_module_))
+    return false;
+  if (!initialize_module(is_hms_module_mandatory_, hms_module_)) return false;
+  if (!initialize_module(is_perception_module_mandatory_, perception_module_))
+    return false;
 
-  for (const auto &initializer : module_initializers)
-  {
-    if (!initializer.first() && initializer.second)
-    {
-      return false;
-    }
-  }
   return true;
 }
 
@@ -685,6 +763,7 @@ PSDKWrapper::transition_modules_to_state(LifecycleState state)
       std::shared_ptr<rclcpp_lifecycle::LifecycleNode>)>
       transition;
 
+  // Define the transition function based on the desired lifecycle state
   switch (state)
   {
     case LifecycleState::ACTIVATE:
@@ -707,19 +786,33 @@ PSDKWrapper::transition_modules_to_state(LifecycleState state)
       transition = [](std::shared_ptr<rclcpp_lifecycle::LifecycleNode> module)
       { return module->on_shutdown(rclcpp_lifecycle::State()); };
       break;
+    default:
+      return false;
   }
 
-  if (transition(telemetry_module_) != CallbackReturn::SUCCESS ||
-      transition(flight_control_module_) != CallbackReturn::SUCCESS ||
-      transition(camera_module_) != CallbackReturn::SUCCESS ||
-      transition(liveview_module_) != CallbackReturn::SUCCESS ||
-      transition(gimbal_module_) != CallbackReturn::SUCCESS ||
-      transition(hms_module_) != CallbackReturn::SUCCESS ||
-      transition(perception_module_) != CallbackReturn::SUCCESS)
+  // Check and transition only the mandatory modules
+  bool all_transitions_successful = true;
+
+  auto transition_if_mandatory =
+      [&](bool is_mandatory,
+          const std::shared_ptr<rclcpp_lifecycle::LifecycleNode> &module)
   {
-    return false;
-  }
-  return true;
+    if (is_mandatory && module && transition(module) != CallbackReturn::SUCCESS)
+    {
+      all_transitions_successful = false;
+    }
+  };
+
+  transition_if_mandatory(is_telemetry_module_mandatory_, telemetry_module_);
+  transition_if_mandatory(is_flight_control_module_mandatory_,
+                          flight_control_module_);
+  transition_if_mandatory(is_camera_module_mandatory_, camera_module_);
+  transition_if_mandatory(is_liveview_module_mandatory_, liveview_module_);
+  transition_if_mandatory(is_gimbal_module_mandatory_, gimbal_module_);
+  transition_if_mandatory(is_hms_module_mandatory_, hms_module_);
+  transition_if_mandatory(is_perception_module_mandatory_, perception_module_);
+
+  return all_transitions_successful;
 }
 
 }  // namespace psdk_ros2
