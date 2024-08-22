@@ -150,6 +150,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   if (!init(&user_info) || !initialize_psdk_modules())
   {
+    RCLCPP_INFO(get_logger(), "IFAILED HERE1");
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
@@ -166,6 +167,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
       is_flight_control_module_mandatory_)
   {
+    RCLCPP_INFO(get_logger(), "IFAILED HERE2");
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
@@ -173,6 +175,7 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if (!transition_modules_to_state(LifecycleState::CONFIGURE) ||
       !transition_modules_to_state(LifecycleState::ACTIVATE))
   {
+    RCLCPP_INFO(get_logger(), "IFAILED HERE3");
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
@@ -429,10 +432,7 @@ PSDKWrapper::create_module(bool is_mandatory,
   if (is_mandatory)
   {
     module_ptr = std::make_shared<ModuleType>(node_name);
-    if (global_ptr)
-    {
-      global_ptr = module_ptr;
-    }
+    global_ptr = module_ptr;
     thread_ptr = std::make_unique<utils::NodeThread>(module_ptr);
   }
 }
@@ -474,11 +474,10 @@ PSDKWrapper::initialize_module(bool is_mandatory,
 {
   if (is_mandatory && module_ptr)
   {
-    // Using member function pointer and bind to initialize the module
     auto init_func = std::bind(&ModuleType::init, module_ptr);
     return init_func();
   }
-  return true;  // If not mandatory or module is null, assume success
+  return true;
 }
 
 void
