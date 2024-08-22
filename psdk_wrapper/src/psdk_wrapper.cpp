@@ -699,17 +699,15 @@ PSDKWrapper::init(T_DjiUserInfo *user_info)
 bool
 PSDKWrapper::initialize_psdk_modules()
 {
-  if (!initialize_module(is_telemetry_module_mandatory_, telemetry_module_))
+  if (!initialize_module(is_telemetry_module_mandatory_, telemetry_module_) ||
+      !initialize_module(is_camera_module_mandatory_, camera_module_) ||
+      !initialize_module(is_gimbal_module_mandatory_, gimbal_module_) ||
+      !initialize_module(is_liveview_module_mandatory_, liveview_module_) ||
+      !initialize_module(is_hms_module_mandatory_, hms_module_) ||
+      !initialize_module(is_perception_module_mandatory_, perception_module_))
+  {
     return false;
-  if (!initialize_module(is_camera_module_mandatory_, camera_module_))
-    return false;
-  if (!initialize_module(is_gimbal_module_mandatory_, gimbal_module_))
-    return false;
-  if (!initialize_module(is_liveview_module_mandatory_, liveview_module_))
-    return false;
-  if (!initialize_module(is_hms_module_mandatory_, hms_module_)) return false;
-  if (!initialize_module(is_perception_module_mandatory_, perception_module_))
-    return false;
+  }
 
   return true;
 }
