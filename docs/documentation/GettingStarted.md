@@ -7,6 +7,7 @@ There are two main configuration files needed to correctly run the `psdk_ros2` w
    A json file similar to the one used within the Payload-SDK samples which allows you to configure the type of connection/link you are using to connect to the DJI drone. This is related to the hardware you are using to connect to the drone.
 2. **psdk_params.yaml** *(default path: psdk_wrapper/cfg)* \
    A yaml file which defines all ROS 2 parameters used by the wrapper. The information regarding the App configuration (e.g. app_id, app_ket, etc) can be configured here as a ROS 2 parameter.
+   IMPORTANT! You need to select which modules you want to load in this file before launching the wrapper.
 
 ### Hardware connection
 
@@ -83,13 +84,13 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | camera_frame                  | String    | "psdk_camera_link"                 | -                                           |
 | file download path            | String    | "/logs/media"                      | -                                           |
 | mandatory_modules             |           |                                    |                                             |
-| - telemetry                   | Bool      |  True                              | Trigger node failure, if module not loaded  |
-| - flight_control              | Bool      |  True                              | Trigger node failure, if module not loaded  |
-| - camera                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
-| - gimbal                      | Bool      |  False                             | Trigger node failure, if module not loaded  |
-| - liveview                    | Bool      |  False                             | Trigger node failure, if module not loaded  |
-| - hms                         | Bool      |  False                             | Trigger node failure, if module not loaded  |
-| - perception                  | Bool      |  False                             | Trigger node failure, if module not loaded  |
+| - telemetry                   | Bool      |  True                              | Load module (Needs to be true for operation)|
+| - flight_control              | Bool      |  True                              | Load module (Needs to be true for operation)|
+| - camera                      | Bool      |  True                              | Load module                                 |
+| - gimbal                      | Bool      |  True                              | Load module                                 |
+| - liveview                    | Bool      |  True                              | Load module                                 |
+| - hms                         | Bool      |  True                              | Load module                                 |
+| - perception                  | Bool      |  True                              | Load module                                 |
 | data_frequency                | Object    | -                                  | Options are: 1, 5, 10, 50, 100, 200, 400 Hz |
 | - imu                         | Integer   | 100                                | -                                           |
 | - attitude                    | Integer   | 100                                | -                                           |
