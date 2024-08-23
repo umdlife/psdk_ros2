@@ -150,7 +150,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
 
   if (!init(&user_info) || !initialize_psdk_modules())
   {
-    RCLCPP_INFO(get_logger(), "IFAILED HERE1");
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
@@ -167,7 +166,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if (!flight_control_module_->init(telemetry_module_->get_current_gps()) &&
       is_flight_control_module_mandatory_)
   {
-    RCLCPP_INFO(get_logger(), "IFAILED HERE2");
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
@@ -175,7 +173,6 @@ PSDKWrapper::on_activate(const rclcpp_lifecycle::State &state)
   if (!transition_modules_to_state(LifecycleState::CONFIGURE) ||
       !transition_modules_to_state(LifecycleState::ACTIVATE))
   {
-    RCLCPP_INFO(get_logger(), "IFAILED HERE3");
     rclcpp::shutdown();
     return CallbackReturn::FAILURE;
   }
