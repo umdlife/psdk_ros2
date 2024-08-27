@@ -46,8 +46,8 @@
 #include "psdk_wrapper/modules/gimbal.hpp"
 #include "psdk_wrapper/modules/hms.hpp"
 #include "psdk_wrapper/modules/liveview.hpp"
-#include "psdk_wrapper/modules/telemetry.hpp"
 #include "psdk_wrapper/modules/perception.hpp"
+#include "psdk_wrapper/modules/telemetry.hpp"
 #include "psdk_wrapper/utils/psdk_wrapper_utils.hpp"
 
 namespace psdk_ros2
@@ -121,6 +121,50 @@ class PSDKWrapper : public rclcpp_lifecycle::LifecycleNode
     std::string baudrate;
     std::string link_config_file_path;
   };
+  /**
+   * @brief Creates a PSDK module
+   * @tparam ModuleType Type of the module
+   * @param is_mandatory If the module is mandatory
+   * @param module_ptr Pointer to the module
+   * @param thread_ptr Pointer to the thread
+   * @param node_name Name of the node
+   * @param global_ptr Pointer to the global module
+   */
+  template <typename ModuleType>
+  void create_module(bool is_mandatory,
+                     std::shared_ptr<ModuleType>& module_ptr,         // NOLINT
+                     std::unique_ptr<utils::NodeThread>& thread_ptr,  // NOLINT
+                     const std::string& node_name,
+                     std::shared_ptr<ModuleType>& global_ptr);  // NOLINT
+
+  template <typename ModuleType>
+  void create_module(bool is_mandatory,
+                     std::shared_ptr<ModuleType>& module_ptr,         // NOLINT
+                     std::unique_ptr<utils::NodeThread>& thread_ptr,  // NOLINT
+                     const std::string& node_name);
+
+  /**
+   * @brief Stop and destroy a PSDK module
+   * @tparam ModuleType Type of the module
+   * @param is_mandatory If the module is mandatory
+   * @param module_ptr Pointer to the module
+   * @param thread_ptr Pointer to the thread
+   */
+  template <typename ModuleType>
+  void stop_and_destroy_module(
+      bool is_mandatory, std::shared_ptr<ModuleType>& module_ptr,  // NOLINT
+      std::unique_ptr<utils::NodeThread>& thread_ptr);             // NOLINT
+
+  /**
+   * @brief Initialize a PSDK module
+   * @tparam ModuleType Type of the module
+   * @param is_mandatory If the module is mandatory
+   * @param module_ptr Pointer to the module
+   * @return true/false
+   */
+  template <typename ModuleType>
+  bool initialize_module(bool is_mandatory,
+                         std::shared_ptr<ModuleType>& module_ptr);  // NOLINT
 
   /**
    * @brief Set the environment handlers
