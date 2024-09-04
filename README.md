@@ -26,3 +26,62 @@ Please notice that this wrapper is still a work in progress. While we aim to mak
 
 `psdk_ros2` wrapper is under the [Mozilla Public License Version 2.0](https://github.com/umdlife/psdk_ros2/blob/main/LICENSE.md). \
 Please note that the [DJI Payload-SDK](https://github.com/dji-sdk/Payload-SDK) libraries which are needed to run this wrapper use MIT License. 
+
+
+---
+
+Here's the step-by-step instructions for running the PSDK wrapper as a non-root user without requiring a password.
+
+
+## Running PSDK Wrapper as a Non-Root User
+
+To run the PSDK wrapper as a non-root user, switch to the `non_root_user` branch and configure it according to the instructions provided in the [PSDK ROS 2 Wiki](https://umdlife.github.io/psdk_ros2/index.html). However, running the wrapper in this way will still prompt for a password. 
+
+To avoid entering the password each time, follow the instructions below to modify the sudoers file so that specific commands can be executed without a password.
+
+### Step-by-Step Instructions
+
+1. **Backup the sudoers File**  
+   Before making any changes, back up the existing sudoers file as a precaution:
+   ```bash
+   sudo cp /etc/sudoers /etc/sudoers.bak
+   ```
+
+2. **Edit the sudoers File**  
+   You should never edit the sudoers file directly with a regular text editor. Instead, use `visudo`, which checks for syntax errors before saving:
+   ```bash
+   sudo visudo
+   ```
+
+3. **Modify the File**  
+   Inside the editor, find the section that looks like this:
+   ```bash
+   # Allow members of group sudo to execute any command
+   sudo ALL=(ALL:ALL) ALL
+   ```
+   Replace it with the following line to allow members of the sudo group to run commands without a password:
+   ```bash
+   sudo ALL=(ALL:ALL) NOPASSWD: ALL
+   ```
+
+4. **Save and Exit**  
+   - If `visudo` opens with Vim (default editor), press `Esc`, type `:wq`, and press Enter to save and exit.
+   - If `visudo` opens with Nano, press `Ctrl + O` to save, then Enter, and `Ctrl + X` to exit.
+
+
+5. **Testing the Configuration**  
+   Open a new terminal and run a command that typically requires a password, such as:
+   ```bash
+   sudo whoami
+   ```
+   If the command runs without prompting for a password, the configuration is correct. 
+
+6. **Run the PSDK Wrapper**  
+   Now, try launching the PSDK wrapper. It should initialize as a non-root user without requiring a password.
+   ```bash
+   ros2 launch psdk_wrapper wrapper.launch.py
+   ```
+
+---
+
+This configuration allows members of the sudo group to execute commands without needing to enter a password, streamlining the process of running the PSDK wrapper. If you encounter any issues, revert to the backed-up sudoers file (`/etc/sudoers.bak`) and review the changes.
