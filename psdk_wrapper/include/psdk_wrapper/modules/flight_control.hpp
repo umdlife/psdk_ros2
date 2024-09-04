@@ -389,6 +389,26 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<GetObstacleAvoidance::Request> request,
       const std::shared_ptr<GetObstacleAvoidance::Response> response);
 
+  /**
+   *@brief Sets horizontal control mode as per flag updates x, y, and z
+   * values and sets Joystick mode.
+   */
+  void set_horizontal_mode(float x_cmd, float y_cmd, float z_cmd, float yaw_cmd,
+                           uint8_t flag);
+
+  /**
+   * @brief Sets horizontal control mode as per flag updates x, y, and z
+   * values and sets Joystick mode.
+   */
+  void set_vertical_mode(float x_cmd, float y_cmd, float z_cmd, float yaw_cmd,
+                         uint8_t flag);
+  /**
+   *@brief Sets horizontal control mode as per flag updates yaw
+   * value and sets Joystick mode.
+   */
+  void set_yaw_mode(float x_cmd, float y_cmd, float z_cmd, float yaw_cmd,
+                    uint8_t flag);
+
   /* ROS 2 Subscribers */
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr
       flight_control_generic_sub_;
@@ -440,17 +460,8 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
 
   bool is_module_initialized_{false};
 
-  // Initialising bool flag to call respective joystick mode.
-  bool HP = false;
-  bool HV = false;
-  bool HA = false;
-  bool VP = false;
-  bool VV = false;
-  bool VT = false;
-  bool YR = false;
-  bool YA = false;
-  bool FG = false;
-  bool FB = false;
+  T_DjiFlightControllerJoystickMode joystick_mode;
+  float x_cmd, y_cmd, z_cmd, yaw_cmd;
 
   // Decode values for control flag.
   enum Control
@@ -466,6 +477,8 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
     YAW_ANGLE = 0x00,
     YAW_RATE = 0x08,
   };
+
+  uint8_t flag;
 };
 
 }  // namespace psdk_ros2

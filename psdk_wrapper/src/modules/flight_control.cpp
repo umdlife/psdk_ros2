@@ -22,7 +22,6 @@
 
 namespace psdk_ros2
 {
-
 FlightControlModule::FlightControlModule(const std::string &name)
     : rclcpp_lifecycle::LifecycleNode(
           name, "",
@@ -911,19 +910,55 @@ FlightControlModule::flight_control_generic_cb(
   float x_setpoint = msg->axes[0];
   float y_setpoint = msg->axes[1];
   float z_setpoint = msg->axes[2];
-  float yaw_setpoint = (uint8_t)(msg->axes[3]);
-  uint8_t flag = msg->axes[4];
+  float yaw_setpoint = msg->axes[3];
+  flag = (uint8_t)(msg->axes[4]);
+  // uint8_t flag = msg->axes[4];
 
-  uint8_t HORI = (flag & 0xC0);
-  uint8_t VERT = (flag & 0x30);
-  uint8_t YAW = (flag & 0x08);
   uint8_t FRAME = (flag & 0x06);
   uint8_t HOLD = (flag & 0x01);
-
-  float x_cmd, y_cmd, z_cmd, yaw_cmd;
+  // Set coordinate mode
   if (FRAME == Control::FRAME_GROUND)
   {
-    FG = true;
+    RCLCPP_INFO(get_logger(), "GROUND_FRAME");
+    joystick_mode.horizontalCoordinate =
+        DJI_FLIGHT_CONTROLLER_HORIZONTAL_GROUND_COORDINATE;
+  }
+  else if (FRAME == Control::FRAME_BODY)
+  {
+    RCLCPP_INFO(get_logger(), "BODY_FRAME");
+    joystick_mode.horizontalCoordinate =
+        DJI_FLIGHT_CONTROLLER_HORIZONTAL_BODY_COORDINATE;
+  }
+  // set horizontal mode
+  set_horizontal_mode(x_setpoint, y_setpoint, z_setpoint, yaw_setpoint, flag);
+  // set vertical mode
+  set_vertical_mode(x_setpoint, y_setpoint, z_setpoint, yaw_setpoint, flag);
+  // set yaw mode
+  set_yaw_mode(x_setpoint, y_setpoint, z_setpoint, yaw_setpoint, flag);
+
+  // Set stable control mode
+  joystick_mode.stableControlMode =
+      DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE;
+
+  // Call the function to set the joystick mode
+  DjiFlightController_SetJoystickMode(joystick_mode);
+
+  T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
+                                                           yaw_cmd};
+  DjiFlightController_ExecuteJoystickAction(joystick_command);
+}
+
+void
+FlightControlModule::set_horizontal_mode(float x_setpoint, float y_setpoint,
+                                         float z_setpoint, float yaw_setpoint,
+                                         uint8_t flag)
+{
+  uint8_t FRAME = (flag & 0x06);
+  uint8_t HORI = (flag & 0xC0);
+  // float x_cmd, y_cmd, z_cmd, yaw_cmd;
+  if (FRAME == Control::FRAME_GROUND)
+  {
+    RCLCPP_INFO(get_logger(), "HORIZONTAL_GROUND");
     // 1.1 Horizontal channels
     if ((HORI == Control::HORIZONTAL_VELOCITY) ||
         (HORI == Control::HORIZONTAL_POSITION))
@@ -932,11 +967,15 @@ FlightControlModule::flight_control_generic_cb(
       y_cmd = x_setpoint;
       if (HORI == Control::HORIZONTAL_VELOCITY)
       {
-        HV = true;
+        RCLCPP_INFO(get_logger(), "HORIZONTAL_VELOCITY");
+        joystick_mode.horizontalControlMode =
+            DJI_FLIGHT_CONTROLLER_HORIZONTAL_VELOCITY_CONTROL_MODE;
       }
       if (HORI == Control::HORIZONTAL_POSITION)
       {
-        HP = true;
+        RCLCPP_INFO(get_logger(), "HORIZONTAL_POSITION");
+        joystick_mode.horizontalControlMode =
+            DJI_FLIGHT_CONTROLLER_HORIZONTAL_POSITION_CONTROL_MODE;
       }
     }
     else
@@ -948,38 +987,15 @@ FlightControlModule::flight_control_generic_cb(
       y_cmd = psdk_utils::rad_to_deg(-y_setpoint);
       if (HORI == Control::HORIZONTAL_ANGLE)
       {
-        HA = true;
-      }
-    }
-
-    // 1.2 Verticle Channel
-    if ((VERT == Control::VERTICAL_VELOCITY) ||
-        (VERT == Control::VERTICAL_POSITION))
-    {
-      z_cmd = z_setpoint;
-      if (VERT == Control::VERTICAL_VELOCITY)
-      {
-        VV = true;
-      }
-      if (VERT == Control::VERTICAL_POSITION)
-      {
-        VP = true;
-      }
-    }
-    else
-    {
-      // GROUND frame is specified, but thrust command is generated in body
-      // frame
-      z_cmd = z_setpoint;
-      if (VERT == Control::VERTICAL_THRUST)
-      {
-        VT = true;
+        RCLCPP_INFO(get_logger(), "HORIZONTAL_ANGLE");
+        joystick_mode.horizontalControlMode =
+            DJI_FLIGHT_CONTROLLER_HORIZONTAL_ANGLE_CONTROL_MODE;
       }
     }
   }
   else if (FRAME == Control::FRAME_BODY)
   {
-    FB = true;
+    RCLCPP_INFO(get_logger(), "HORIZONTAL_BODY");
     // 2.1 Horizontal channels
     if ((HORI == Control::HORIZONTAL_VELOCITY) ||
         (HORI == Control::HORIZONTAL_POSITION))
@@ -991,11 +1007,15 @@ FlightControlModule::flight_control_generic_cb(
       y_cmd = -y_setpoint;
       if (HORI == Control::HORIZONTAL_VELOCITY)
       {
-        HV = true;
+        RCLCPP_INFO(get_logger(), "HORIZONTAL_VELOCITY");
+        joystick_mode.horizontalControlMode =
+            DJI_FLIGHT_CONTROLLER_HORIZONTAL_VELOCITY_CONTROL_MODE;
       }
       if (HORI == Control::HORIZONTAL_POSITION)
       {
-        HP = true;
+        RCLCPP_INFO(get_logger(), "HORIZONTAL_POSITION");
+        joystick_mode.horizontalControlMode =
+            DJI_FLIGHT_CONTROLLER_HORIZONTAL_POSITION_CONTROL_MODE;
       }
     }
     else
@@ -1004,10 +1024,58 @@ FlightControlModule::flight_control_generic_cb(
       y_cmd = psdk_utils::rad_to_deg(-y_setpoint);
       if (HORI == Control::HORIZONTAL_ANGLE)
       {
-        HA = true;
+        RCLCPP_INFO(get_logger(), "HORIZONTAL_ANGLE");
+        joystick_mode.horizontalControlMode =
+            DJI_FLIGHT_CONTROLLER_HORIZONTAL_ANGLE_CONTROL_MODE;
       }
     }
+  }
+}
 
+void
+FlightControlModule::set_vertical_mode(float x_setpoint, float y_setpoint,
+                                       float z_setpoint, float yaw_setpoint,
+                                       uint8_t flag)
+{
+  uint8_t FRAME = (flag & 0x06);
+  uint8_t VERT = (flag & 0x30);
+  if (FRAME == Control::FRAME_GROUND)
+  {
+    RCLCPP_INFO(get_logger(), "VERTICAL_GROUND");
+    // 1.2 Verticle Channel
+    if ((VERT == Control::VERTICAL_VELOCITY) ||
+        (VERT == Control::VERTICAL_POSITION))
+    {
+      z_cmd = z_setpoint;
+      if (VERT == Control::VERTICAL_VELOCITY)
+      {
+        RCLCPP_INFO(get_logger(), "VERTICAL_VELOCITY");
+        joystick_mode.verticalControlMode =
+            DJI_FLIGHT_CONTROLLER_VERTICAL_VELOCITY_CONTROL_MODE;
+      }
+      if (VERT == Control::VERTICAL_POSITION)
+      {
+        RCLCPP_INFO(get_logger(), "VERTICAL_POSITION");
+        joystick_mode.verticalControlMode =
+            DJI_FLIGHT_CONTROLLER_VERTICAL_POSITION_CONTROL_MODE;
+      }
+    }
+    else
+    {
+      // GROUND frame is specified, but thrust command is generated in body
+      // frame
+      z_cmd = z_setpoint;
+      if (VERT == Control::VERTICAL_THRUST)
+      {
+        RCLCPP_INFO(get_logger(), "VERTICAL_THRUST");
+        joystick_mode.verticalControlMode =
+            DJI_FLIGHT_CONTROLLER_VERTICAL_THRUST_CONTROL_MODE;
+      }
+    }
+  }
+  else if (FRAME == Control::FRAME_BODY)
+  {
+    RCLCPP_INFO(get_logger(), "VERTICAL_BODY");
     // 2.2 Vertical channel
     if ((VERT == Control::VERTICAL_VELOCITY) ||
         (VERT == Control::VERTICAL_POSITION))
@@ -1017,11 +1085,15 @@ FlightControlModule::flight_control_generic_cb(
       z_cmd = z_setpoint;
       if (VERT == Control::VERTICAL_VELOCITY)
       {
-        VV = true;
+        RCLCPP_INFO(get_logger(), "VERTICAL_VELOCITY");
+        joystick_mode.verticalControlMode =
+            DJI_FLIGHT_CONTROLLER_VERTICAL_VELOCITY_CONTROL_MODE;
       }
       if (VERT == Control::VERTICAL_POSITION)
       {
-        VP = true;
+        RCLCPP_INFO(get_logger(), "VERTICAL_POSITION");
+        joystick_mode.verticalControlMode =
+            DJI_FLIGHT_CONTROLLER_VERTICAL_POSITION_CONTROL_MODE;
       }
     }
     else
@@ -1029,12 +1101,21 @@ FlightControlModule::flight_control_generic_cb(
       z_cmd = z_setpoint;
       if (VERT == Control::VERTICAL_THRUST)
       {
-        VT = true;
+        RCLCPP_INFO(get_logger(), "VERTICAL_THRUST");
+        joystick_mode.verticalControlMode =
+            DJI_FLIGHT_CONTROLLER_VERTICAL_THRUST_CONTROL_MODE;
       }
     }
   }
+}
 
-  // The behavior of yaw should be the same in either frame
+void
+FlightControlModule::set_yaw_mode(float x_setpoint, float y_setpoint,
+                                  float z_setpoint, float yaw_setpoint,
+                                  uint8_t flag)
+{
+  uint8_t FRAME = (flag & 0x06);
+  uint8_t YAW = (flag & 0x08);
   if (YAW == Control::YAW_ANGLE)
   {
     tf2::Matrix3x3 rotation_FLU2ENU;
@@ -1046,93 +1127,16 @@ FlightControlModule::flight_control_generic_cb(
     rotation_FRD2NED.getRPY(temp1, temp2, temp_yaw);
     yaw_cmd = static_cast<float>(temp_yaw);
     yaw_cmd = psdk_utils::rad_to_deg(yaw_cmd);
-    YA = true;
+    RCLCPP_INFO(get_logger(), "YAW_ANGLE");
+    joystick_mode.yawControlMode = DJI_FLIGHT_CONTROLLER_YAW_ANGLE_CONTROL_MODE;
   }
   else if (YAW == Control::YAW_RATE)
   {
     yaw_cmd = psdk_utils::rad_to_deg(-yaw_setpoint);
-    YR = true;
-  }
-
-  T_DjiFlightControllerJoystickMode joystick_mode;
-
-  // Set horizontal control mode
-  if (HP)
-  {
-    joystick_mode.horizontalControlMode =
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_POSITION_CONTROL_MODE;
-  }
-  else if (HV)
-  {
-    joystick_mode.horizontalControlMode =
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_VELOCITY_CONTROL_MODE;
-  }
-  else if (HA)
-  {
-    joystick_mode.horizontalControlMode =
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_ANGLE_CONTROL_MODE;
-  }
-
-  // Set vertical control mode
-  if (VP)
-  {
-    joystick_mode.verticalControlMode =
-        DJI_FLIGHT_CONTROLLER_VERTICAL_POSITION_CONTROL_MODE;
-  }
-  else if (VV)
-  {
-    joystick_mode.verticalControlMode =
-        DJI_FLIGHT_CONTROLLER_VERTICAL_VELOCITY_CONTROL_MODE;
-  }
-  else if (VT)
-  {
-    joystick_mode.verticalControlMode =
-        DJI_FLIGHT_CONTROLLER_VERTICAL_THRUST_CONTROL_MODE;
-  }
-
-  // Set yaw control mode
-  if (YR)
-  {
+    RCLCPP_INFO(get_logger(), "YAW_RATE");
     joystick_mode.yawControlMode =
         DJI_FLIGHT_CONTROLLER_YAW_ANGLE_RATE_CONTROL_MODE;
   }
-  else if (YA)
-  {
-    joystick_mode.yawControlMode = DJI_FLIGHT_CONTROLLER_YAW_ANGLE_CONTROL_MODE;
-  }
-
-  // Set coordinate mode
-  if (FG)
-  {
-    joystick_mode.horizontalCoordinate =
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_GROUND_COORDINATE;
-  }
-  else if (FB)
-  {
-    joystick_mode.horizontalCoordinate =
-        DJI_FLIGHT_CONTROLLER_HORIZONTAL_BODY_COORDINATE;
-  }
-
-  // Set stable control mode
-  joystick_mode.stableControlMode =
-      DJI_FLIGHT_CONTROLLER_STABLE_CONTROL_MODE_ENABLE;
-
-  // Call the function to set the joystick mode
-  DjiFlightController_SetJoystickMode(joystick_mode);
-  T_DjiFlightControllerJoystickCommand joystick_command = {x_cmd, y_cmd, z_cmd,
-                                                           yaw_cmd};
-  DjiFlightController_ExecuteJoystickAction(joystick_command);
-  // Clearing Flag
-  HP = false;
-  HV = false;
-  HA = false;
-  VP = false;
-  VV = false;
-  VT = false;
-  YR = false;
-  YA = false;
-  FG = false;
-  FB = false;
 }
 
 void
