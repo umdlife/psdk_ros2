@@ -390,20 +390,20 @@ class FlightControlModule : public rclcpp_lifecycle::LifecycleNode
       const std::shared_ptr<GetObstacleAvoidance::Response> response);
 
   /**
-   *@brief Sets horizontal control mode as per flag updates x, y, and z
+   *@brief Sets horizontal control mode as per flag, updates x, y, and z
    * values and sets Joystick mode.
    */
   void set_horizontal_mode(float x_cmd, float y_cmd, float z_cmd, float yaw_cmd,
                            uint8_t flag);
 
   /**
-   * @brief Sets horizontal control mode as per flag updates x, y, and z
+   * @brief Sets vertical control mode as per, flag updates x, y, and z
    * values and sets Joystick mode.
    */
   void set_vertical_mode(float x_cmd, float y_cmd, float z_cmd, float yaw_cmd,
                          uint8_t flag);
   /**
-   *@brief Sets horizontal control mode as per flag updates yaw
+   *@brief Sets yaw control mode as per flag, updates yaw
    * value and sets Joystick mode.
    */
   void set_yaw_mode(float x_cmd, float y_cmd, float z_cmd, float yaw_cmd,
