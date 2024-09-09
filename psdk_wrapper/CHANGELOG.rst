@@ -2,6 +2,13 @@
 Changelog for package psdk_wrapper
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.3.2 (2024-07-09)
+------------------
+* Merge pull request `#110 <https://github.com/umdlife/psdk_ros2/issues/110>`_ from bitcurious/perception
+  Added perception module
+* Add perception module
+* Contributors: biancabnd, bitcurious
+
 1.3.1 (2024-07-03)
 ------------------
 * Merge pull request `#116 <https://github.com/umdlife/psdk_ros2/issues/116>`_ from umdlife/hotfix/fpv-stream
