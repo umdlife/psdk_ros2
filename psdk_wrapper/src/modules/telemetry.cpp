@@ -1806,11 +1806,26 @@ TelemetryModule::single_battery_index1_callback(
       single_battery_info->batteryState.batteryCommunicationAbnormal;
   single_battery_info_msg.is_embed =
       single_battery_info->batteryState.isBatteryEmbed;
-  if (single_battery_index1_pub_ && single_battery_index1_pub_->is_activated())
-  {
+
+  if (single_battery_index1_pub_ && single_battery_index1_pub_->is_activated()) {
     single_battery_index1_pub_->publish(single_battery_info_msg);
+  } else {
+    RCLCPP_ERROR(this->get_logger(), "Failed to publish single_battery_index1 data");
   }
 
+  // Store the latest battery 1 info with mutex protection
+  {
+    std::lock_guard<std::mutex> lock(battery_info_mutex_);
+    last_battery1_info_ = single_battery_info_msg;
+  }
+  has_battery1_info_.store(true, std::memory_order_relaxed);
+
+  // Publish combined state if both batteries have data and battery info subscription failed
+  if (has_battery1_info_.load(std::memory_order_relaxed) &&
+      has_battery2_info_.load(std::memory_order_relaxed) &&
+      battery_info_subscription_failed_.load(std::memory_order_relaxed)) {
+    publish_combined_battery_state();
+  }
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
 
@@ -1857,9 +1872,25 @@ TelemetryModule::single_battery_index2_callback(
       single_battery_info->batteryState.batteryCommunicationAbnormal;
   single_battery_info_msg.is_embed =
       single_battery_info->batteryState.isBatteryEmbed;
-  if (single_battery_index2_pub_ && single_battery_index2_pub_->is_activated())
-  {
+
+  if (single_battery_index2_pub_ && single_battery_index2_pub_->is_activated()) {
     single_battery_index2_pub_->publish(single_battery_info_msg);
+  } else {
+    RCLCPP_ERROR(this->get_logger(), "Failed to publish single_battery_index2 data");
+  }
+
+  // Store the latest battery 2 info with mutex protection
+  {
+    std::lock_guard<std::mutex> lock(battery_info_mutex_);
+    last_battery2_info_ = single_battery_info_msg;
+  }
+  has_battery2_info_.store(true, std::memory_order_relaxed);
+
+  // Publish combined state if both batteries have data and battery info subscription failed
+  if (has_battery1_info_.load(std::memory_order_relaxed) &&
+      has_battery2_info_.load(std::memory_order_relaxed) &&
+      battery_info_subscription_failed_.load(std::memory_order_relaxed)) {
+    publish_combined_battery_state();
   }
   return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
 }
@@ -2354,6 +2385,9 @@ TelemetryModule::subscribe_psdk_topics()
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_INFO, error %ld",
                    return_code);
+      battery_info_subscription_failed_.store(true, std::memory_order_relaxed);
+    } else {
+      battery_info_subscription_failed_.store(false, std::memory_order_relaxed);
     }
     return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_BATTERY_SINGLE_INFO_INDEX1,
@@ -2722,6 +2756,48 @@ TelemetryModule::initialize_aircraft_base_info()
   aircraft_base_.aircraftType = DJI_AIRCRAFT_TYPE_UNKNOWN;
   aircraft_base_.djiAdapterType = DJI_SDK_ADAPTER_TYPE_UNKNOWN;
   aircraft_base_.mountPosition = DJI_MOUNT_POSITION_UNKNOWN;
+}
+
+void 
+TelemetryModule::publish_combined_battery_state() {
+  sensor_msgs::msg::BatteryState combined_msg;
+  auto max_time = [](
+        const builtin_interfaces::msg::Time& t1,
+        const builtin_interfaces::msg::Time& t2) -> builtin_interfaces::msg::Time {
+    if (t1.sec > t2.sec) {
+      return t1;
+    } else if (t1.sec < t2.sec) {
+      return t2;
+    } else {
+      // Seconds are equal, compare nanoseconds
+      return t1.nanosec >= t2.nanosec ? t1 : t2;
+    }
+  };
+  {
+    std::lock_guard<std::mutex> lock(battery_info_mutex_);
+    combined_msg.header.stamp = max_time(last_battery1_info_.header.stamp, last_battery2_info_.header.stamp);
+    combined_msg.voltage = (last_battery1_info_.voltage + last_battery2_info_.voltage) / 2;
+    combined_msg.current = last_battery1_info_.current + last_battery2_info_.current;
+    combined_msg.capacity = last_battery1_info_.capacity_remain + last_battery2_info_.capacity_remain;
+    combined_msg.design_capacity = last_battery1_info_.full_capacity + last_battery2_info_.full_capacity;
+    combined_msg.percentage = (last_battery1_info_.capacity_percentage + last_battery2_info_.capacity_percentage) / 2;
+    combined_msg.temperature = std::max(last_battery1_info_.temperature, last_battery2_info_.temperature);
+  }
+  // Detailed debug log
+  RCLCPP_DEBUG(this->get_logger(),
+               "Combined battery data: voltage=%.2fV, current=%.2fA, capacity=%.2fAh, "
+               "percentage=%.2f, temperature=%.1fC",
+               combined_msg.voltage,
+               combined_msg.current,
+               combined_msg.capacity,
+               combined_msg.percentage,
+               combined_msg.temperature);
+
+  if (battery_pub_ && battery_pub_->is_activated()) {
+    battery_pub_->publish(combined_msg);
+  } else {
+    RCLCPP_ERROR(this->get_logger(), "Failed to publish combined battery state: Publisher not available");
+  }
 }
 
 }  // namespace psdk_ros2

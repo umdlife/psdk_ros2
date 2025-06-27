@@ -1113,6 +1113,15 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
 
   mutable std::shared_mutex current_state_mutex_;
   mutable std::shared_mutex global_ptr_mutex_;
+
+  /* Battery info merging utility */
+  void publish_combined_battery_state();
+  std::atomic<bool> battery_info_subscription_failed_{false};
+  std::atomic<bool> has_battery1_info_{false};
+  std::atomic<bool> has_battery2_info_{false};
+  psdk_interfaces::msg::SingleBatteryInfo last_battery1_info_;
+  psdk_interfaces::msg::SingleBatteryInfo last_battery2_info_;
+  std::mutex battery_info_mutex_;
 };
 
 extern std::shared_ptr<TelemetryModule> global_telemetry_ptr_;
