@@ -2303,19 +2303,6 @@ TelemetryModule::subscribe_psdk_topics()
                    return_code);
     }
     return_code = DjiFcSubscription_SubscribeTopic(
-        DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR,
-        get_frequency(params_.flight_status_frequency),
-        c_landing_gear_status_callback);
-
-    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(),
-                   "Could not subscribe successfully to topic "
-                   "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR, error %ld",
-                   return_code);
-    }
-
-    return_code = DjiFcSubscription_SubscribeTopic(
         DJI_FC_SUBSCRIPTION_TOPIC_STATUS_MOTOR_START_ERROR,
         get_frequency(params_.flight_status_frequency),
         c_motor_start_error_callback);
@@ -2338,6 +2325,22 @@ TelemetryModule::subscribe_psdk_topics()
       RCLCPP_ERROR(get_logger(),
                    "Could not subscribe successfully to topic "
                    "DJI_FC_SUBSCRIPTION_TOPIC_FLIGHT_ANOMALY, error %ld",
+                   return_code);
+    }
+  }
+
+  if (params_.landing_gear_frequency > 0)
+  {
+    return_code = DjiFcSubscription_SubscribeTopic(
+        DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR,
+        get_frequency(params_.landing_gear_frequency),
+        c_landing_gear_status_callback);
+
+    if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+    {
+      RCLCPP_ERROR(get_logger(),
+                   "Could not subscribe successfully to topic "
+                   "DJI_FC_SUBSCRIPTION_TOPIC_STATUS_LANDINGGEAR, error %ld",
                    return_code);
     }
   }

@@ -106,6 +106,7 @@ The following parameters can be configured in the *psdk_wrapper/cfg/psdk_params.
 | - gimbal_data                 | Integer   | 1                                  | -                                           |
 | - flight_status               | Integer   | 1                                  | -                                           |
 | - battery_level               | Integer   | 1                                  | -                                           |
+| - landing_gear                | Integer   | 0                                  | -                                           |
 | - control_information         | Integer   | 1                                  | -                                           |
 | - esc_data_frequency          | Integer   | 1                                  | -                                           |
 

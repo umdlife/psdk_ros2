@@ -307,6 +307,7 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
     int gimbal_data_frequency;
     int flight_status_frequency;
     int battery_level_frequency;
+    int landing_gear_frequency;
     int control_information_frequency;
     int esc_data_frequency;
   };

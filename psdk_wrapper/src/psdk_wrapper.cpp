@@ -84,6 +84,7 @@ PSDKWrapper::PSDKWrapper(const std::string &node_name)
   declare_parameter("data_frequency.gimbal_data", 1);
   declare_parameter("data_frequency.flight_status", 1);
   declare_parameter("data_frequency.battery_level", 1);
+  declare_parameter("data_frequency.landing_gear", 1);
   declare_parameter("data_frequency.control_information", 1);
   declare_parameter("data_frequency.esc_data_frequency", 1);
   declare_parameter("num_of_initialization_retries", 1);
@@ -588,6 +589,10 @@ PSDKWrapper::load_parameters()
         "data_frequency.battery_level",
         telemetry_module_->params_.battery_level_frequency,
         BATTERY_STATUS_TOPICS_MAX_FREQ);
+    get_and_validate_frequency(
+        "data_frequency.landing_gear",
+        telemetry_module_->params_.landing_gear_frequency,
+        FLIGHT_STATUS_TOPICS_MAX_FREQ);
     get_and_validate_frequency(
         "data_frequency.control_information",
         telemetry_module_->params_.control_information_frequency,
