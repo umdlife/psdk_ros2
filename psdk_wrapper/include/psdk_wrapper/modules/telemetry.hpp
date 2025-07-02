@@ -634,6 +634,10 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
    * @return T_DjiReturnCode error code indicating if the subscription has been
    * done correctly
    */
+  T_DjiReturnCode gimbal_angles_callback(const uint8_t* data,
+                                         uint16_t data_size,
+                                         const T_DjiDataTimestamp* timestamp);
+
 
   /**
    * @brief Retrieves the ESC data provided by DJI PSDK lib and publishes it on
@@ -893,9 +897,6 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
       const uint8_t* data, uint16_t data_size,
       const T_DjiDataTimestamp* timestamp);
 
-  T_DjiReturnCode gimbal_angles_callback(const uint8_t* data,
-                                         uint16_t data_size,
-                                         const T_DjiDataTimestamp* timestamp);
   /**
    * @brief Retrieves the gimbal status data provided by DJI PSDK lib and
    * publishes it on a ROS 2 topic. Provides the gimbal status data following
@@ -1113,6 +1114,17 @@ class TelemetryModule : public rclcpp_lifecycle::LifecycleNode
 
   mutable std::shared_mutex current_state_mutex_;
   mutable std::shared_mutex global_ptr_mutex_;
+
+  /* Static utility */
+  /**
+   * @brief Passtrough internal logs of PSDK library to rccl console.
+   * 
+   * @param data Point to buffer with Log string without null terminator and with \n at the end.
+   * @param dataLen Actual buffer size.
+   * @return T_DjiReturnCode error code indicating if the subscription has been
+   * done correctly
+   */
+  static T_DjiReturnCode dji_console_callback(const uint8_t *data, uint16_t dataLen);
 };
 
 extern std::shared_ptr<TelemetryModule> global_telemetry_ptr_;

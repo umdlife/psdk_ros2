@@ -15,7 +15,9 @@
  *
  */
 
+#include "dji_logger.h"
 #include "psdk_wrapper/modules/telemetry.hpp"
+
 namespace psdk_ros2
 {
 TelemetryModule::TelemetryModule(const std::string &name)
@@ -346,6 +348,18 @@ TelemetryModule::on_shutdown(const rclcpp_lifecycle::State &state)
   return CallbackReturn::SUCCESS;
 }
 
+T_DjiReturnCode
+TelemetryModule::dji_console_callback(const uint8_t *data, uint16_t dataLen)
+{
+  if (!data && dataLen > 0)
+  {
+    return DJI_ERROR_SYSTEM_MODULE_CODE_INVALID_PARAMETER;
+  }
+  std::string buf(reinterpret_cast<const char *>(data), static_cast<size_t>(dataLen - 1));
+  RCLCPP_INFO(global_telemetry_ptr_->get_logger(), "PSDK: %s", buf.c_str());
+  return DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS;
+}
+
 bool
 TelemetryModule::init()
 {
@@ -362,6 +376,17 @@ TelemetryModule::init()
                  "Could not initialize the telemetry module. Error code:  %ld",
                  return_code);
     return false;
+  }
+
+  static T_DjiLoggerConsole dji_console = {
+      TelemetryModule::dji_console_callback,
+      DJI_LOGGER_CONSOLE_LOG_LEVEL_INFO,
+      false};
+  return_code = DjiLogger_AddConsole(&dji_console);
+  if (return_code != DJI_ERROR_SYSTEM_MODULE_CODE_SUCCESS)
+  {
+    RCLCPP_WARN(get_logger(), "Could not add console logger. Error code: %ld",
+                 return_code);
   }
   is_module_initialized_ = true;
   return true;

@@ -499,99 +499,186 @@ PSDKWrapper::load_parameters()
 
   get_parameter("num_of_initialization_retries",
                 num_of_initialization_retries_);
+  RCLCPP_INFO(get_logger(), "Number of initialization retries: %d",
+                num_of_initialization_retries_);
 
   if (is_perception_module_mandatory_)
   {
     get_non_mandatory_param(
         "perception_camera_frame",
         perception_module_->params_.perception_camera_frame);
+    RCLCPP_INFO(get_logger(), "Perception camera frame: %s",
+                perception_module_->params_.perception_camera_frame.c_str());
   }
+
   if (is_hms_module_mandatory_)
   {
     get_non_mandatory_param("hms_return_codes_path",
                             hms_module_->hms_return_codes_path_);
+    RCLCPP_INFO(get_logger(), "HMS return codes path: %s",
+                hms_module_->hms_return_codes_path_.c_str());
   }
+
   if (is_camera_module_mandatory_)
   {
     get_non_mandatory_param("file_path",
                             camera_module_->default_path_to_download_media_);
+    RCLCPP_INFO(get_logger(), "Camera module file path: %s",
+                camera_module_->default_path_to_download_media_.c_str());
   }
+
   if (is_telemetry_module_mandatory_)
   {
     get_non_mandatory_param("tf_frame_prefix",
                             telemetry_module_->params_.tf_frame_prefix);
+    RCLCPP_INFO(get_logger(), "TF frame prefix: %s",
+                telemetry_module_->params_.tf_frame_prefix.c_str());
+
     get_non_mandatory_param("imu_frame", telemetry_module_->params_.imu_frame);
+    RCLCPP_INFO(get_logger(), "IMU frame: %s",
+                telemetry_module_->params_.imu_frame.c_str());
+
     get_non_mandatory_param("body_frame",
                             telemetry_module_->params_.body_frame);
+    RCLCPP_INFO(get_logger(), "Body frame: %s",
+                telemetry_module_->params_.body_frame.c_str());
+
     get_non_mandatory_param("map_frame", telemetry_module_->params_.map_frame);
+    RCLCPP_INFO(get_logger(), "Map frame: %s",
+                telemetry_module_->params_.map_frame.c_str());
+
     get_non_mandatory_param("gimbal_frame",
                             telemetry_module_->params_.gimbal_frame);
+    RCLCPP_INFO(get_logger(), "Gimbal frame: %s",
+                telemetry_module_->params_.gimbal_frame.c_str());
+
     get_non_mandatory_param("gimbal_base_frame",
                             telemetry_module_->params_.gimbal_base_frame);
+    RCLCPP_INFO(get_logger(), "Gimbal base frame: %s",
+                telemetry_module_->params_.gimbal_base_frame.c_str());
+
     get_non_mandatory_param("camera_frame",
                             telemetry_module_->params_.camera_frame);
+    RCLCPP_INFO(get_logger(), "Camera frame: %s",
+                telemetry_module_->params_.camera_frame.c_str());
+
     get_parameter("publish_transforms",
                   telemetry_module_->params_.publish_transforms);
     // Get data frequency
+    RCLCPP_INFO(
+        get_logger(), "Publish transforms: %s",
+        telemetry_module_->params_.publish_transforms ? "true" : "false");
+
+    // Frequency parameters
     get_and_validate_frequency("data_frequency.imu",
                                telemetry_module_->params_.imu_frequency,
                                IMU_TOPIC_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "IMU frequency: %d Hz",
+                telemetry_module_->params_.imu_frequency);
+
     get_and_validate_frequency("data_frequency.attitude",
                                telemetry_module_->params_.attitude_frequency,
                                ATTITUDE_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Attitude frequency: %d Hz",
+                telemetry_module_->params_.attitude_frequency);
+
     get_and_validate_frequency(
         "data_frequency.acceleration",
         telemetry_module_->params_.acceleration_frequency,
         ACCELERATION_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Acceleration frequency: %d Hz",
+                telemetry_module_->params_.acceleration_frequency);
+
     get_and_validate_frequency("data_frequency.velocity",
                                telemetry_module_->params_.velocity_frequency,
                                VELOCITY_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Velocity frequency: %d Hz",
+                telemetry_module_->params_.velocity_frequency);
+
     get_and_validate_frequency(
         "data_frequency.angular_velocity",
         telemetry_module_->params_.angular_rate_frequency,
         ANGULAR_VELOCITY_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Angular rate frequency: %d Hz",
+                telemetry_module_->params_.angular_rate_frequency);
+
     get_and_validate_frequency("data_frequency.position",
                                telemetry_module_->params_.position_frequency,
                                POSITION_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Position frequency: %d Hz",
+                telemetry_module_->params_.position_frequency);
+
     get_and_validate_frequency("data_frequency.altitude",
                                telemetry_module_->params_.altitude_frequency,
                                ALTITUDE_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Altitude frequency: %d Hz",
+                telemetry_module_->params_.altitude_frequency);
+
     get_and_validate_frequency(
         "data_frequency.gps_fused_position",
         telemetry_module_->params_.gps_fused_position_frequency,
         GPS_FUSED_POSITION_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "GPS fused position frequency: %d Hz",
+                telemetry_module_->params_.gps_fused_position_frequency);
+
     get_and_validate_frequency("data_frequency.gps_data",
                                telemetry_module_->params_.gps_data_frequency,
                                GPS_DATA_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "GPS data frequency: %d Hz",
+                telemetry_module_->params_.gps_data_frequency);
+
     get_and_validate_frequency("data_frequency.rtk_data",
                                telemetry_module_->params_.rtk_data_frequency,
                                RTK_DATA_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "RTK data frequency: %d Hz",
+                telemetry_module_->params_.rtk_data_frequency);
+
     get_and_validate_frequency(
         "data_frequency.magnetometer",
         telemetry_module_->params_.magnetometer_frequency,
         MAGNETOMETER_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Magnetometer frequency: %d Hz",
+                telemetry_module_->params_.magnetometer_frequency);
+
     get_and_validate_frequency(
         "data_frequency.rc_channels_data",
         telemetry_module_->params_.rc_channels_data_frequency,
         RC_CHANNELS_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "RC channels data frequency: %d Hz",
+                telemetry_module_->params_.rc_channels_data_frequency);
+
     get_and_validate_frequency("data_frequency.esc_data_frequency",
                                telemetry_module_->params_.esc_data_frequency,
                                ESC_DATA_TOPICS_FREQ);
+    RCLCPP_INFO(get_logger(), "ESC data frequency: %d Hz",
+                telemetry_module_->params_.esc_data_frequency);
+
     get_and_validate_frequency("data_frequency.gimbal_data",
                                telemetry_module_->params_.gimbal_data_frequency,
                                GIMBAL_DATA_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Gimbal data frequency: %d Hz",
+                telemetry_module_->params_.gimbal_data_frequency);
+
     get_and_validate_frequency(
         "data_frequency.flight_status",
         telemetry_module_->params_.flight_status_frequency,
         FLIGHT_STATUS_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Flight status frequency: %d Hz",
+                telemetry_module_->params_.flight_status_frequency);
+
     get_and_validate_frequency(
         "data_frequency.battery_level",
         telemetry_module_->params_.battery_level_frequency,
         BATTERY_STATUS_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Battery level frequency: %d Hz",
+                telemetry_module_->params_.battery_level_frequency);
+
     get_and_validate_frequency(
         "data_frequency.control_information",
         telemetry_module_->params_.control_information_frequency,
         CONTROL_DATA_TOPICS_MAX_FREQ);
+    RCLCPP_INFO(get_logger(), "Control information frequency: %d Hz",
+                telemetry_module_->params_.control_information_frequency);
   }
 }
 
